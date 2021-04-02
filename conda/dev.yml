@@ -25,9 +25,9 @@ dependencies:
     - pre-commit=2.10.1
     # Testing
     # ==================
-    - coverage=5.5
     - pytest=6.2.2
     - pytest-runner=5.3.0
+    - pytest-cov=2.11.1
     # Documentation
     # ==================
     - sphinx=3.5.1
