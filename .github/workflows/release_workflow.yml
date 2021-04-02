@@ -1,82 +1,11 @@
-name: CI/CD Build Workflow
+name: CI/CD Release Workflow
 
 on:
-    push:
-        branches: [main]
-
-    pull_request:
-        branches: [main]
-
-    workflow_dispatch:
-        inputs:
-            logLevel:
-                description: "Log level"
-                required: true
-                default: "warning"
-            tags:
-                description: "Test scenario tags"
+    release:
+        types: [published]
 
 jobs:
-    pre-commit-hooks:
-        runs-on: ubuntu-latest
-        timeout-minutes: 2
-        steps:
-            - name: Checkout Code Repository
-              uses: actions/checkout@v2
-
-            - name: Set up Python 3.8
-              uses: actions/setup-python@v2
-              with:
-                  python-version: 3.8
-
-            # Run all pre-commit hooks on all the files.
-            # Getting only staged files can be tricky in case a new PR is opened
-            # since the action is run on a branch in detached head state
-            - name: Install and Run Pre-commit
-              uses: pre-commit/action@v2.0.0
-
-    build:
-        runs-on: ubuntu-latest
-        defaults:
-            run:
-                shell: bash -l {0}
-        timeout-minutes: 5
-        steps:
-            - uses: actions/checkout@v2
-
-            - name: Cache Conda
-              uses: actions/cache@v2
-              env:
-                  # Increase this value to reset cache if conda/dev.yml has not changed in the workflow
-                  CACHE_NUMBER: 0
-              with:
-                  path: ~/conda_pkgs_dir
-                  key: ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-publish
-
-            - name: Set up Conda Environment
-              uses: conda-incubator/setup-miniconda@v2
-              with:
-                  activate-environment: "xcdat_dev"
-                  environment-file: conda/dev.yml
-                  channel-priority: strict
-                  python-version: 3.8
-                  auto-update-conda: true
-                  # IMPORTANT: This needs to be set for caching to work properly!
-                  use-only-tar-bz2: true
-
-            - name: Run Tests
-              run: |
-                  pytest
-
-            - name: Upload Coverage Report
-              uses: codecov/codecov-action@v1
-              with:
-                  file: "coverage.xml"
-                  fail_ci_if_error: true
-
     publish-docs:
-        if: github.event_name == 'push'
-        needs: [pre-commit-hooks, build]
         runs-on: ubuntu-latest
         defaults:
             run:
@@ -103,13 +32,16 @@ jobs:
                   restore-keys: |
                       ${{ runner.os }}-pip-
                       ${{ runner.os }}-
+
             - name: Install Dependencies
               run: |
                   pip install sphinx==3.5.1 sphinx_rtd_theme==0.5.1 sphinx-multiversion==0.2.4
+
             - name: Build Sphinx Docs
               run: |
                   cd docs
                   sphinx-multiversion source _build/html
+
             - name: Copy Docs and Commit
               run: |
                   # gh-pages branch must already exist
