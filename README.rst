@@ -22,7 +22,7 @@ xCDAT
         :target: http://mypy-lang.org/
         :alt: mypy
 
-Xarray for Climate Data Analysis Tools
+Xarray Extended with Climate Data Analysis Tools
 
 
 * Free software: MIT license

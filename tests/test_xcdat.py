@@ -4,8 +4,7 @@
 
 import pytest
 
-
-from xcdat import xcdat
+from xcdat import xcdat  # noqa: F401
 
 
 @pytest.fixture
