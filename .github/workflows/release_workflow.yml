@@ -40,7 +40,7 @@ jobs:
             - name: Build Sphinx Docs
               run: |
                   cd docs
-                  sphinx-multiversion source _build/html
+                  sphinx-multiversion . _build/html
 
             - name: Copy Docs and Commit
               run: |
