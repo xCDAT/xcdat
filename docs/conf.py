@@ -19,10 +19,12 @@
 #
 import os
 import sys
+from typing import Dict
 
-sys.path.insert(0, os.path.abspath(".."))
+import sphinx_rtd_theme
 
-import xcdat
+sys.path.insert(0, os.path.abspath(".."))  # noqa: I001, I003
+import xcdat  # noqa: I001, E402
 
 # -- General configuration ---------------------------------------------
 
@@ -32,7 +34,12 @@ import xcdat
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
-extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode"]
+extensions = [
+    "sphinx_rtd_theme",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.viewcode",
+    "sphinx_multiversion",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -84,7 +91,14 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = "alabaster"
+html_theme = "sphinx_rtd_theme"
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_sidebars = {
+    "**": [
+        "versions.html",
+    ],
+}
+
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
@@ -106,7 +120,7 @@ htmlhelp_basename = "xcdatdoc"
 
 # -- Options for LaTeX output ------------------------------------------
 
-latex_elements = {
+latex_elements: Dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',
@@ -152,3 +166,8 @@ texinfo_documents = [
         "Miscellaneous",
     ),
 ]
+
+# -- Options sphinx-multiversion -------------------------------------------
+smv_tag_whitelist = r"^v\d+\.\d+.\d+$"  # Include tags like "tags/v2.5.0"
+smv_branch_whitelist = r"^.*$"  # Include all branches
+smv_remote_whitelist = r"^(origin|upstream)$"  # Use branches from origin
