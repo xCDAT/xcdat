@@ -21,7 +21,7 @@ assignees: ""
 
 #### What happens? Any logs, error output, etc?
 
-<!-- Paste logs, error output, etc -->
+<!-- Paste logs, error output, etc. -->
 <!-- If it’s long, please paste to https://ghostbin.com/ and insert the link here. -->
 
 #### What were you expecting to happen?
