@@ -8,16 +8,22 @@ on:
         branches: [main]
 
     workflow_dispatch:
-        inputs:
-            logLevel:
-                description: "Log level"
-                required: true
-                default: "warning"
-            tags:
-                description: "Test scenario tags"
 
 jobs:
+    check-jobs-to-skip:
+        runs-on: ubuntu-latest
+        outputs:
+            should_skip: ${{ steps.skip_check.outputs.should_skip }}
+        steps:
+            - id: skip_check
+              uses: fkirc/skip-duplicate-actions@master
+              with:
+                  cancel_others: true
+                  paths_ignore: '["**/README.md", "**/docs/**"]'
+
     pre-commit-hooks:
+        needs: check-jobs-to-skip
+        if: ${{ needs.check-jobs-to-skip.outputs.should_skip != 'true' }}
         runs-on: ubuntu-latest
         timeout-minutes: 2
         steps:
@@ -36,6 +42,8 @@ jobs:
               uses: pre-commit/action@v2.0.0
 
     build:
+        needs: check-jobs-to-skip
+        if: ${{ needs.check-jobs-to-skip.outputs.should_skip != 'true' }}
         runs-on: ubuntu-latest
         defaults:
             run:
