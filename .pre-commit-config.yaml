@@ -9,7 +9,7 @@ repos:
           - id: trailing-whitespace
           - id: end-of-file-fixer
           - id: check-yaml
-            exclude: conda/meta.yaml
+            exclude: conda-recipe/meta.yaml
 
     - repo: https://github.com/psf/black
       rev: 20.8b1
