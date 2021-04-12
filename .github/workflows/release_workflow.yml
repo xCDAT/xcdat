@@ -73,8 +73,8 @@ jobs:
         runs-on: ubuntu-latest
         timeout-minutes: 10
         defaults:
-        run:
-            shell: bash -l {0}
+            run:
+                shell: bash -l {0}
         steps:
             - uses: actions/checkout@v2
 
