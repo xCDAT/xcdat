@@ -65,7 +65,7 @@ jobs:
               uses: conda-incubator/setup-miniconda@v2
               with:
                   activate-environment: "xcdat_dev"
-                  environment-file: conda/dev.yml
+                  environment-file: conda-env/dev.yml
                   channel-priority: strict
                   python-version: 3.8
                   auto-update-conda: true
