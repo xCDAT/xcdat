@@ -1,0 +1,15 @@
+# Conda xcdat package publishing environment
+name: xcdat_publish
+channels:
+    - conda-forge
+    - defaults
+dependencies:
+    # Base
+    # ==================
+    - python=3.8.8
+    - pip=21.0.1
+    - anaconda-client
+    - conda-build
+    - conda-verify
+
+prefix: /opt/miniconda3/envs/xcdat_publish

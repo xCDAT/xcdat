@@ -1,7 +1,3 @@
-# This config file is required for black.
-# Unforunately, black does not support setup.cfg (refer to link).
-# https://github.com/psf/black/issues/683#issuecomment-490236406
-
 [tool.black]
 line-length = 88
 target-version = ['py36']

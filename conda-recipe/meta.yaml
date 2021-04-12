@@ -1,0 +1,35 @@
+{% set version = "0.1.0" %}
+
+package:
+    name: xcdat
+    version: {{ version }}
+
+source:
+    path: ..
+
+build:
+    noarch: python
+    number: 0
+    script: python -m pip install --no-deps --ignore-installed .
+
+requirements:
+  host:
+    - python
+    - setuptools
+    - pip
+
+  run:
+    - python
+    - cartopy
+    - matplotlib
+    - netcdf4
+    - xarray
+    - xesmf
+
+about:
+    home: https://github.com/tomvothecoder/xcdat
+    license: MIT
+    summary: 'Xarray Extended with Climate Data Analysis Tools'
+    dev_url: https://github.com/tomvothecoder/xcdat
+    doc_url: https://tomvothecoder.github.io/xcdat
+    doc_source_url: https://github.com/tomvothecoder/xcdat/tree/main/docs

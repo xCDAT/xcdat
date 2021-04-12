@@ -1,5 +1,6 @@
 # xCDAT
 
+[![Anaconda-Server Badge](https://anaconda.org/tomvothecoder/xcdat/badges/version.svg)](https://anaconda.org/tomvothecoder/xcdat)
 [![CI/CD Build Workflow](https://github.com/tomvothecoder/xcdat/actions/workflows/build_workflow.yml/badge.svg)](https://github.com/tomvothecoder/xcdat/actions/workflows/build_workflow.yml)
 [![CI/CD Release Workflow](https://github.com/tomvothecoder/xcdat/actions/workflows/release_workflow.yml/badge.svg)](https://github.com/tomvothecoder/xcdat/actions/workflows/release_workflow.yml)
 [![Codecov](https://codecov.io/gh/tomvothecoder/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH)](https://codecov.io/gh/tomvothecoder/xcdat)
