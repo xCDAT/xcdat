@@ -9,7 +9,7 @@ xCDAT
 Xarray Extended with Climate Data Analysis Tools
 
 -  Free software: MIT license
--  Documentation: https://xcdat.readthedocs.io
+-  Documentation: https://tomvothecoder.github.io/xcdat/
 
 .. |Anaconda-Server Badge| image:: https://anaconda.org/tomvothecoder/xcdat/badges/version.svg
    :target: https://anaconda.org/tomvothecoder/xcdat
