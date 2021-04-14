@@ -107,3 +107,6 @@ ENV/
 
 # Input data
 *.nc
+
+# Anaconda
+conda-build/

@@ -32,6 +32,7 @@ clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and 
 
 clean-build: ## remove build artifacts
 	rm -fr build/
+	rm -fr conda-build/
 	rm -fr dist/
 	rm -fr .eggs/
 	find . -name '*.egg-info' -exec rm -fr {} +
@@ -49,6 +50,9 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr htmlcov/
 	rm -fr .pytest_cache
 	rm -f coverage.xml
+
+conda-build:  # Build xCDAT as an Anaconda package
+	conda build -c conda-forge --output-folder conda-build conda-recipe
 
 lint: ## check style with flake8
 	flake8 xcdat tests
