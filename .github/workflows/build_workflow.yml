@@ -19,7 +19,7 @@ jobs:
               uses: fkirc/skip-duplicate-actions@master
               with:
                   cancel_others: true
-                  paths_ignore: '["**/README.md", "**/docs/**", "**/ISSUE_TEMPLATE/**", "**/pull_request_template.md"]'
+                  paths_ignore: '["**/README.rst", "**/docs/**", "**/ISSUE_TEMPLATE/**", "**/pull_request_template.md"]'
 
     pre-commit-hooks:
         needs: check-jobs-to-skip

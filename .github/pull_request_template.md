@@ -1,5 +1,4 @@
 ## Description
-
 <!--
   Please include a summary of the change and which issue is fixed.
   Please also include relevant motivation and context.
@@ -9,7 +8,6 @@
 - Closes #<ISSUE_NUMBER_HERE>
 
 ## How Has This Been Tested?
-
 <!--
   Please describe the tests that you ran to verify your changes.
   Provide instructions so we can reproduce.
