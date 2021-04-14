@@ -83,7 +83,6 @@ jobs:
 
     publish-docs:
         if: github.event_name == 'push'
-        needs: [pre-commit-hooks, build]
         runs-on: ubuntu-latest
         defaults:
             run:
