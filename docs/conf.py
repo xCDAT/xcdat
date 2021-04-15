@@ -21,7 +21,9 @@ import os
 import sys
 from typing import Dict
 
-import sphinx_rtd_theme
+import alabaster
+import sphinx_rtd_theme  # noqa: F401
+from sphinx.ext.apidoc import main
 
 sys.path.insert(0, os.path.abspath(".."))  # noqa: I001, I003
 import xcdat  # noqa: I001, E402
@@ -35,10 +37,10 @@ import xcdat  # noqa: I001, E402
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-    "sphinx_rtd_theme",
+    # "sphinx_rtd_theme",
+    "alabaster",
     "sphinx.ext.autodoc",
     "sphinx.ext.viewcode",
-    "sphinx_multiversion",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -90,15 +92,13 @@ todo_include_todos = False
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-html_sidebars = {
-    "**": [
-        "versions.html",
-    ],
-}
 
+# TODO: Re-enable sphinx_rtd_theme after https://github.com/readthedocs/sphinx_rtd_theme/issues/1115 is fixed
+# html_theme = "sphinx_rtd_theme"
+# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+
+html_theme = "alabaster"
+html_theme_path = [alabaster.get_path()]
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
@@ -167,7 +167,25 @@ texinfo_documents = [
     ),
 ]
 
-# -- Options sphinx-multiversion -------------------------------------------
-smv_tag_whitelist = r"^v\d+\.\d+.\d+$"  # Include tags like "tags/v2.5.0"
-smv_branch_whitelist = r"^.*$"  # Include all branches
-smv_remote_whitelist = r"^(origin|upstream)$"  # Use branches from origin
+
+# -- Automate sphinx-apidoc  -------------------------------------------
+
+
+def run_apidoc(_):
+    """Automatically run `sphinx-apidoc` to generate API documentation
+
+    This function is useful for CI/CD to automate generating API docs without
+    the user having to run the the command and commiting.
+
+    More Info: https://github.com/readthedocs/readthedocs.org/issues/1139
+
+    """
+
+    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
+    cur_dir = os.path.abspath(os.path.dirname(__file__))
+    module = os.path.join(cur_dir, "..", "xcdat")
+    main(["-e", "-o", cur_dir, module, "--force"])
+
+
+def setup(app):
+    app.connect("builder-inited", run_apidoc)

@@ -1,7 +1,7 @@
 xCDAT
 =====
 
-|Anaconda-Server Badge| |CI/CD Build Workflow| |CI/CD Release Workflow|
+|Anaconda-Server Badge| |CI/CD Build Workflow| |CI/CD Release Workflow| |docs|
 |Codecov|
 
 |pre-commit| |Code style: black| |flake8| |Checked with mypy|
@@ -9,7 +9,7 @@ xCDAT
 Xarray Extended with Climate Data Analysis Tools
 
 -  Free software: MIT license
--  Documentation: https://tomvothecoder.github.io/xcdat/
+-  Documentation: https://xcdat.readthedocs.io/en/latest/
 
 .. |Anaconda-Server Badge| image:: https://anaconda.org/tomvothecoder/xcdat/badges/version.svg
    :target: https://anaconda.org/tomvothecoder/xcdat
@@ -17,6 +17,8 @@ Xarray Extended with Climate Data Analysis Tools
    :target: https://github.com/tomvothecoder/xcdat/actions/workflows/build_workflow.yml
 .. |CI/CD Release Workflow| image:: https://github.com/tomvothecoder/xcdat/actions/workflows/release_workflow.yml/badge.svg
    :target: https://github.com/tomvothecoder/xcdat/actions/workflows/release_workflow.yml
+.. |docs| image:: https://xcdat.readthedocs.io/en/latest/?badge=latest
+   :target: https://xcdat.readthedocs.io/en/latest/
 .. |Codecov| image:: https://codecov.io/gh/tomvothecoder/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
    :target: https://codecov.io/gh/tomvothecoder/xcdat
 .. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
