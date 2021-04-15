@@ -17,14 +17,13 @@ def open_datasets(
 ) -> Dict[str, xr.Dataset]:
     """Lazily loads datasets from a specified path
 
-    Args:
-        path (str): The path of the input files (e.g., "../input_data")
-        extension (Literal[, optional): [description]. Defaults to "None".
-
-    Returns:
-        Dict[str, xr.Dataset]: [description]
+    :param path: The path of the input files (e.g., "../input_data")
+    :type path: str
+    :param extension: [description], defaults to None
+    :type extension: extension, optional
+    :return: The extension of the input files
+    :rtype: Dict[str, xr.Dataset]
     """
-
     datasets: Dict[str, xr.Dataset] = dict()
     files_grabbed = []
 

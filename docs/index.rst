@@ -10,6 +10,7 @@ Welcome to xCDAT's documentation!
    usage
    modules
    contributing
+   maintainers
    authors
    history
 
