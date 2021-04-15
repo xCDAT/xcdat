@@ -24,10 +24,13 @@ export PRINT_HELP_PYSCRIPT
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
 # To run these commands: make -f Makefile <COMMAND>
+# ==================================================
 
 help:
 	@python -c "$$PRINT_HELP_PYSCRIPT" < $(MAKEFILE_LIST)
 
+# Clean local repository
+# ----------------------
 clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
@@ -45,14 +48,16 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '__pycache__' -exec rm -fr {} +
 
 clean-test: ## remove test and coverage artifacts
-	rm -fr .tox/
+	rm -fr test_coverage_reports/
 	rm -f .coverage
 	rm -fr htmlcov/
-	rm -fr .pytest_cache
 	rm -f coverage.xml
+	rm -fr .pytest_cache
 
-conda-build:  # Build xCDAT as an Anaconda package
-	conda build -c conda-forge --output-folder conda-build conda-recipe
+# Quality Assurance
+# ----------------------
+pre-commit:  # run pre-commit quality assurance checks
+	pre-commit run --all-files
 
 lint: ## check style with flake8
 	flake8 xcdat tests
@@ -60,9 +65,8 @@ lint: ## check style with flake8
 test: ## run tests quickly with the default Python and produces code coverage
 	pytest
 
-test-all: ## run tests on every Python version with tox
-	tox
-
+# Documentation
+# ----------------------
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/xcdat.rst
 	rm -f docs/modules.rst
@@ -73,6 +77,11 @@ docs: ## generate Sphinx HTML documentation, including API docs
 
 servedocs: docs ## compile the docs watching for changes
 	watchmedo shell-command -p '*.rst' -c '$(MAKE) -C docs html' -R -D .
+
+# Build
+# ----------------------
+conda-build:  # Build xCDAT as an Anaconda package
+	conda build -c conda-forge --output-folder conda-build conda-recipe
 
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install
