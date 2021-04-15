@@ -336,8 +336,7 @@ Helpful Commands
 ~~~~~~~~~~~~~~~~
 
 .. note::
-
-    Checkout the project's ``Makefile``, which includes aliases for many useful commands.
+    Run ``make help`` in the root of the project for a list of useful commands
 
 To run a subset of tests::
 

@@ -23,7 +23,7 @@ export PRINT_HELP_PYSCRIPT
 
 BROWSER := python -c "$$BROWSER_PYSCRIPT"
 
-# To run these commands: make -f Makefile <COMMAND>
+# To run these commands: make <COMMAND>
 # ==================================================
 
 help:
@@ -48,11 +48,12 @@ clean-pyc: ## remove Python file artifacts
 	find . -name '__pycache__' -exec rm -fr {} +
 
 clean-test: ## remove test and coverage artifacts
-	rm -fr test_coverage_reports/
+	rm -fr tests_coverage_reports/
 	rm -f .coverage
 	rm -fr htmlcov/
 	rm -f coverage.xml
 	rm -fr .pytest_cache
+	rm -rf .mypy_cache
 
 # Quality Assurance
 # ----------------------
@@ -70,7 +71,7 @@ test: ## run tests quickly with the default Python and produces code coverage
 docs: ## generate Sphinx HTML documentation, including API docs
 	rm -f docs/xcdat.rst
 	rm -f docs/modules.rst
-	sphinx-apidoc -o docs/ xcdat
+	cd docs && make html
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 	$(BROWSER) docs/_build/html/index.html
