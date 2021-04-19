@@ -26,12 +26,12 @@ If you are reporting a bug, please include:
 Fix Bugs
 ~~~~~~~~
 
-Look through the GitHub issues for bugs. Anything unassigned issues tagged with "Type: Bug" is open for implementation.
+Look through the GitHub issues for bugs. Any unassigned issues tagged with "Type: Bug" is open for implementation.
 
 Implement Features
 ~~~~~~~~~~~~~~~~~~
 
-Look through the GitHub issues for features. Anything unassigned issues tagged with "Type: Enhanacement" is open for implementation.
+Look through the GitHub issues for features. Any unassigned issues tagged with "Type: Enhancement" is open for implementation.
 
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
@@ -233,38 +233,44 @@ Before you submit a pull request, check that it meets these guidelines:
 3. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-4. Squash and rebase commits for a clean and navigatible Git history.
+4. Squash and rebase commits for a clean and navigable Git history.
 
 When you open a pull request on GitHub, there is a template available for use.
-
-
-Testing
--------
-Testing your local changes is important to ensure long-term maintaibility and extensibility of the project.
-If a function is hard to test, it is usually a symptom of being overly complex.
-
-Here are guides on how to use pytest to test your code:
-
-- https://docs.pytest.org/en/latest/
-- https://docs.python-guide.org/writing/tests/#py-test
-
-Guidelines
-~~~~~~~~~~
-
-*  Write tests for any new code
-*  Use the Coverage reports to see lines of code that need to be tested
-*  Cover as many edge cases as possible
-
-Things to Avoid
-~~~~~~~~~~~~~~~
-
-*  Pushing untested code
 
 
 Style Guide
 -----------
 
-This project integrates the Black code formatter for code styling. Please read about it more `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
+This project integrates the Black code formatter for code styling. If you want to learn more, please read about it `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
+
+It also leverages `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale.
+`mypy <https://mypy.readthedocs.io/en/stable/introduction.html>`_ performs optional static type checking through pre-commit.
+
+Testing
+-------
+Testing your local changes are important to ensure long-term maintainability and extensibility of the project.
+Since xCDAT is an open source library, we aim to avoid as many bugs as possible from reaching the end-user.
+
+To get started, here are guides on how to write tests using pytest:
+
+- https://docs.pytest.org/en/latest/
+- https://docs.python-guide.org/writing/tests/#py-test
+
+In most cases, if a function is hard to test, it is usually a symptom of being too complex (high cyclomatic-complexity).
+
+DOs for Testing
+~~~~~~~~~~~~~~~
+
+*  *DO* write tests for any new code
+*  *DO* use the Coverage reports to see lines of code that need to be tested
+*  *DO* focus on simplistic, small, reusable modules for unit testing
+*  *DO* cover as many edge cases as possible when testing
+
+DON'Ts for Testing
+~~~~~~~~~~~~~~~~~~
+
+*  *DON'T* push or merge untested code
+*  *DON'T* introduce dependencies in tests. Use Python `mocks <https://docs.python.org/3/library/unittest.mock.html>`_ to mock dependencies
 
 
 Documenting Code
@@ -272,24 +278,24 @@ Documenting Code
 If you are using VS code, the `Python Docstring Generator <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extension can be used to auto-generate a docstring snippet once a function/class has been written.
 If you want the extension to generate docstrings in Sphinx format, you must set the ``"autoDocstring.docstringFormat": "sphinx"`` setting, under File > Preferences > Settings.
 
-Note that it is best to write the docstrings once you have fully defined the function/class, as then the extension will generate the full dosctring.
+Note that it is best to write the docstrings once you have fully defined the function/class, as then the extension will generate the full docstring.
 If you make any changes to the code once a docstring is generated, you will have to manually go and update the affected docstrings.
 
 More info on docstrings here: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
 
-Guidelines
-~~~~~~~~~~
+DOs for Documenting Code
+~~~~~~~~~~~~~~~~~~~~~~~~
 
-*  Explain **why** something is done, its purpose, and its goal. The code shows **how** it is done, so commenting on this can be redundant.
-*  Explain ambigiuity or complexities to avoid confusion
-*  Embrace documentation as an integral part of the overall development process
-*  Treat documenting as code and follow principles such as *Don't Repeat Yourself* and *Easier to Change*
+*  *DO* explain **why** something is done, its purpose, and its goal. The code shows **how** it is done, so commenting on this can be redundant.
+*  *DO* explain ambiguity or complexities to avoid confusion
+*  *DO* embrace documentation as an integral part of the overall development process
+*  *DO* treat documenting as code and follow principles such as *Don't Repeat Yourself* and *Easier to Change*
 
-Things to Avoid
-~~~~~~~~~~~~~~~
+DON'Ts for Documenting Code
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-*  Don't write comments as a crutch for poor code
-*  Don't comment *every* function, data structure, type declaration
+*  *DON'T* write comments as a crutch for poor code
+*  *DON'T* comment *every* function, data structure, type declaration
 
 Example Function with Docstrings
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -329,11 +335,12 @@ Example Function with Docstrings
 Developer Tips
 --------------
 
-- Use `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale. mypy performs optional static type checking through pre-commit.
+* flake8 will warn you if the cyclomatic complexity of a function is too high.
+    * https://github.com/PyCQA/mccabe
 
 
 Helpful Commands
-~~~~~~~~~~~~~~~~
+----------------
 
 .. note::
     Run ``make help`` in the root of the project for a list of useful commands
