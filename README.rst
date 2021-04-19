@@ -17,8 +17,8 @@ Xarray Extended with Climate Data Analysis Tools
    :target: https://github.com/tomvothecoder/xcdat/actions/workflows/build_workflow.yml
 .. |CI/CD Release Workflow| image:: https://github.com/tomvothecoder/xcdat/actions/workflows/release_workflow.yml/badge.svg
    :target: https://github.com/tomvothecoder/xcdat/actions/workflows/release_workflow.yml
-.. |docs| image:: https://xcdat.readthedocs.io/en/latest/?badge=latest
-   :target: https://xcdat.readthedocs.io/en/latest/
+.. |docs| image:: https://readthedocs.org/projects/xcdat/badge/?version=latest
+   :target: https://xcdat.readthedocs.io/en/latest/?badge=latest
 .. |Codecov| image:: https://codecov.io/gh/tomvothecoder/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
    :target: https://codecov.io/gh/tomvothecoder/xcdat
 .. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
