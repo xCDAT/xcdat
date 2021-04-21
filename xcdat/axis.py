@@ -10,11 +10,11 @@ Axis = Literal["lat", "lon"]
 class AxisAccessor:
     axes_map = {
         "lat": {
-            "names": ["lat", "latitude"],
+            "coords": ["lat", "latitude"],
             "bounds_vars": ["lat_bnds", "latitude_bnds"],
         },
         "lon": {
-            "names": ["lon", "longitude"],
+            "coords": ["lon", "longitude"],
             "bounds_vars": ["lon_bnds", "longitude_bnds"],
         },
     }
@@ -53,6 +53,7 @@ class AxisAccessor:
         :rtype: xr.DataArray
         """
         axis_coords = self._extract_axis_coords(axis)
+        print(axis_coords)
 
         axis_mid = np.array(
             (np.array(axis_coords[1:]) + np.array(axis_coords[0:-1])) / 2.0
@@ -66,11 +67,12 @@ class AxisAccessor:
             axis_bnds[:, 0] = np.concatenate(([90], axis_mid))
             axis_bnds[:, 1] = np.concatenate((axis_mid, [-90]))
 
+        # TODO: Determine the coords value for "bnds"
         axis_bnds_var = xr.DataArray(
-            axis_bnds,
-            coords={axis: np.array(axis_coords), "nbnd": [0, 1]},
-            dims=[axis, "nbnd"],
-            attrs={"units": axis_coords.units, "calculated": True},
+            data=axis_bnds,
+            coords={axis: np.array(axis_coords), "bnds": [0, 1]},
+            dims=[axis, "bnds"],
+            attrs={"units": axis_coords.units, "is_calculated": True},
         )
 
         self._obj[f"{axis}_bnds"] = axis_bnds_var
@@ -81,20 +83,20 @@ class AxisAccessor:
 
         :param axis: "lat" or "lon" axis
         :type axis: Axis
-        :raises TypeError: If no matching coordinates exist for the axis
+        :raises KeyError: If an incorrect "axis" argument is passed
         :return: Matching coordinates
         :rtype: xr.DataArray
         """
 
-        axis_coord_names = AxisAccessor.axes_map[axis]["names"]
-        matching_coord = None
+        axis_coord_names = AxisAccessor.axes_map[axis]["coords"]
+        matching_coords = None
 
         for name in axis_coord_names:
-            matching_coord = self._obj.coords.get(name)
-            if matching_coord is not None:
+            matching_coords = self._obj.coords.get(name)
+            if matching_coords is not None:
                 break
 
-        if matching_coord is None:
+        if matching_coords is None:
             raise TypeError(f"No matching coordinates for axis: {axis}")
 
-        return matching_coord
+        return matching_coords
