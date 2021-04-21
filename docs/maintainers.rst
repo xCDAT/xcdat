@@ -34,8 +34,7 @@ This project uses `GitHub Actions <https://github.com/tomvothecoder/xcdat/action
   Jobs:
 
     1. Run ``pre-commit`` for formatting, linting, and type checking
-    2. Build conda environment and run test suite
-    3. Publish latest `master` docs (only on `push`)
+    2. Build conda development environment and run test suite
 
 2. CI/CD Release Workflow
 
@@ -43,5 +42,4 @@ This project uses `GitHub Actions <https://github.com/tomvothecoder/xcdat/action
 
   Jobs:
 
-    1. Publish new release docs
-    2. Publish Anaconda package
+    1. Publish Anaconda package
