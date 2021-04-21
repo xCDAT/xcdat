@@ -12,8 +12,10 @@
     "python.linting.flake8Args": ["--config=setup.cfg"],
     "python.linting.mypyEnabled": true,
     "python.pythonPath": "/opt/miniconda3/envs/xcdat_dev/bin/python",
-    "python.testing.pytestArgs": [],
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
-    "python.testing.pytestEnabled": true
+    "python.testing.pytestEnabled": true,
+    // Debugger doesn't work if pytest-cov is enabled
+    // https://github.com/microsoft/vscode-python/issues/693
+    "python.testing.pytestArgs": ["--no-cov"]
 }
