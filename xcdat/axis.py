@@ -30,7 +30,6 @@ class AxisAccessor:
         :return: The axis bounds, either existing bounds or calculated bounds
         :rtype: xr.DataArray
         """
-        self._obj["calculated_bounds"] = False
         bounds_vars = AxisAccessor.axes_map[axis]["bounds_vars"]
         matching_bounds_var = None
 
@@ -53,7 +52,6 @@ class AxisAccessor:
         :rtype: xr.DataArray
         """
         axis_coords = self._extract_axis_coords(axis)
-        print(axis_coords)
 
         axis_mid = np.array(
             (np.array(axis_coords[1:]) + np.array(axis_coords[0:-1])) / 2.0
