@@ -63,7 +63,7 @@ pre-commit:  # run pre-commit quality assurance checks
 lint: ## check style with flake8
 	flake8 xcdat tests
 
-test: ## run tests quickly with the default Python and produces code coverage
+test: ## run tests quickly with the default Python and produces code coverage report
 	pytest
 	$(BROWSER) tests_coverage_reports/htmlcov/index.html
 
