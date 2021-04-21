@@ -65,6 +65,8 @@ lint: ## check style with flake8
 
 test: ## run tests quickly with the default Python and produces code coverage
 	pytest
+	$(BROWSER) tests_coverage_reports/htmlcov/index.html
+
 
 # Documentation
 # ----------------------
