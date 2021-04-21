@@ -112,9 +112,11 @@ Recommended VSCode Extensions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     * `Python <https://marketplace.visualstudio.com/items?itemName=ms-python.python>`_
     * `Pylance <https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance>`_
+    * `Python Docstring Generator <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
+    * `Python Type Hint <https://marketplace.visualstudio.com/items?itemName=njqdev.vscode-python-typehint>`_
+    * `Better Comments <https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments>`_
     * `Jupyter <https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter>`_
     * `Visual Studio Intellicode <https://marketplace.visualstudio.com/items?itemName=VisualStudioExptTeam.vscodeintellicode>`_
-    * `Python Docstring Generator <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
 
 Local Development
 ~~~~~~~~~~~~~~~~~
@@ -150,7 +152,7 @@ Local Development
     $ conda env create -f conda-env/dev.yml
     $ conda activate xcdat_dev
 
-5. Install pre-commit (performs quality assurance (QA) checks)::
+5. Install pre-commit::
 
     $ pre-commit install
     pre-commit installed at .git/hooks/pre-commit
@@ -159,7 +161,7 @@ Local Development
 
     $ git checkout -b <BRANCH-NAME>
 
-7. `<OPTIONAL>` During or after making changes, perform QA checks using pre-commit::
+7. `<OPTIONAL>` During or after making changes, check for formatting or linting issues using pre-commit::
 
     # Step 9 performs this automatically on staged files in a commit
     $ pre-commit run --all-files
@@ -174,7 +176,8 @@ Local Development
 
 8. Generate code coverage report and check unit tests pass::
 
-    $ pytest
+    $ make test # Automatically opens HTML report in your browser
+    $ pytest # Does not automatically open HTML report in your browser
 
     ================================= test session starts =================================
     platform darwin -- Python 3.8.8, pytest-6.2.2, py-1.10.0, pluggy-0.13.1
@@ -196,7 +199,7 @@ Local Development
     Coverage HTML written to dir tests_coverage_reports/htmlcov
     Coverage XML written to file tests_coverage_reports/coverage.xml
 
-    - The Coverage HTML file contains a much more detailed coverage report (e.g., exact lines of untested code)
+    - The Coverage HTML report is much more detailed (e.g., exact lines of tested/untested code)
 
 9. Commit your changes::
 
@@ -241,9 +244,9 @@ When you open a pull request on GitHub, there is a template available for use.
 Style Guide
 -----------
 
-This project integrates the Black code formatter for code styling. If you want to learn more, please read about it `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
+xCDAT integrates the Black code formatter for code styling. If you want to learn more, please read about it `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
 
-It also leverages `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale.
+xCDAT also leverages `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale.
 `mypy <https://mypy.readthedocs.io/en/stable/introduction.html>`_ performs optional static type checking through pre-commit.
 
 Testing
@@ -352,24 +355,27 @@ $ pytest tests.test_xcdat
 FAQs
 ----
 
-Why Squash and Rebase Commits?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+What is xarray and how do I extend xarray for xCDAT?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+* https://xarray.pydata.org/en/stable/why-xarray.html
+* https://xarray.pydata.org/en/stable/internals.html#extending-xarray
 
+What and why for squashing and rebasing commits?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Before you merge a support branch back into ``master``, the branch is typically
 squashed down to a single* buildable commit, and then rebased on top of the main repo's ``master`` branch.
 
 \* *In some cases, it might be logical to have multiple squashed commits, as long as each commit passes the CI/CD build*
 
-Why squash and rebase commits?
+Why?
 
 * Ensures build passes from the commit
 * Cleans up Git history for easy navigation
 * Makes collaboration and review process more efficient
 * Makes handling conflicts from rebasing simple since you only have to deal with conflicted commits
 
-How to Squash and Rebase Commits
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
+How do I squash and rebase commits?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 1. `<OPTIONAL if you are forking>` Sync your fork of ``master`` (aka ``origin``) with the root ``master`` (aka ``upstream``) ::
 
     git checkout master
