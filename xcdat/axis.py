@@ -1,14 +1,26 @@
-from typing import Literal
+from typing import List, Literal, TypedDict
 
 import numpy as np
 import xarray as xr
 
-Axis = Literal["lat", "lon"]
-
 
 @xr.register_dataset_accessor("axis")
 class AxisAccessor:
-    axes_map = {
+    """A class used to represent an AxisAccessor (xarray dataset accessor)
+
+    :param xarray_obj: The Dataset object to be extended
+    :type xarray_obj: xr.DataArray
+    """
+
+    Axis = Literal["lat", "lon"]
+    AxesMapValue = TypedDict(
+        "AxesMapValue", {"coords": List[str], "bounds_vars": List[str]}
+    )
+    AxesMap = TypedDict("AxesMap", {"lat": AxesMapValue, "lon": AxesMapValue})
+
+    # Mapping of generic axes names to the possible names for Dataset
+    # coordinates and boundary variables
+    axes_map: AxesMap = {
         "lat": {
             "coords": ["lat", "latitude"],
             "bounds_vars": ["lat_bnds", "latitude_bnds"],
