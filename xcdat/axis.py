@@ -51,40 +51,44 @@ class AxisAccessor:
                 break
 
         if matching_bounds_var is None:
-            return self._calc_bounds(axis)
+            return self._generate_bounds(axis)
 
         return matching_bounds_var
 
-    def _calc_bounds(self, axis: Axis) -> xr.DataArray:
-        """Calculates axis bounds if it doesn't exist in the DataSet.
+    def _generate_bounds(self, axis: Axis, width: float = 1) -> xr.DataArray:
+        """Generates the bounds variable for an axis and adds it to the Dataset.
 
-        :param axis: "lat" or "lon" bounds
+        :param axis: [description]
         :type axis: Axis
-        :return: Axis bounds
+        :param width: Width of the bounds when axis length is 1, defaults to 1
+        :type width: float, optional
+        :raises TypeError: If the Dataset has coordinates without "units" attribute
+        :return: The generated axis bounds DataArray
         :rtype: xr.DataArray
         """
         axis_coords = self._extract_axis_coords(axis)
+        bounds = self._gen_base_bounds(axis_coords, width)
 
-        axis_mid = np.array(
-            (np.array(axis_coords[1:]) + np.array(axis_coords[0:-1])) / 2.0
-        )
-        axis_bnds = np.zeros((len(axis_coords), 2))
+        units_attr = axis_coords.attrs.get("units")
+        if units_attr is None:
+            raise TypeError(f"Dataset {axis} coordinates has no attribute 'units'")
+        if "degree" not in units_attr:
+            raise ValueError(
+                f"Dataset {axis} coordinates 'units' attr, {units_attr} does not contain 'degree'"
+            )
 
-        if np.sign(axis_coords[0]) < 0:
-            axis_bnds[:, 0] = np.concatenate(([-90], axis_mid))
-            axis_bnds[:, 1] = np.concatenate((axis_mid, [90]))
-        else:
-            axis_bnds[:, 0] = np.concatenate(([90], axis_mid))
-            axis_bnds[:, 1] = np.concatenate((axis_mid, [-90]))
+        if axis == "lon" and len(bounds.shape) == 2:
+            bounds = self._calc_lat_bounds(bounds)
+        if axis == "lat":
+            bounds = self._calc_lon_bounds(bounds)
 
-        # TODO: Determine the coords value for "bnds"
+        # Compose final DataArray to set as a data variable
         axis_bnds_var = xr.DataArray(
-            data=axis_bnds,
-            coords={axis: np.array(axis_coords), "bnds": [0, 1]},
+            data=bounds,
+            coords={axis: axis_coords.data},
             dims=[axis, "bnds"],
             attrs={"units": axis_coords.units, "is_calculated": True},
         )
-
         self._obj[f"{axis}_bnds"] = axis_bnds_var
         return axis_bnds_var
 
@@ -97,7 +101,6 @@ class AxisAccessor:
         :return: Matching coordinates
         :rtype: xr.DataArray
         """
-
         axis_coord_names = AxisAccessor.axes_map[axis]["coords"]
         matching_coords = None
 
@@ -110,3 +113,92 @@ class AxisAccessor:
             raise TypeError(f"No matching coordinates for axis: {axis}")
 
         return matching_coords
+
+    def _gen_base_bounds(
+        self,
+        axis_coords: xr.DataArray,
+        width: float,
+    ) -> np.ndarray:
+        """Generates the base 2D bounds array based on the axis coordinates variable.
+
+        :param axis_coords: The axis coordinates variable
+        :type axis_coords: xr.DataArray
+        :param width: Width of the bounds
+        :type width: float
+        :return: [description]
+        :rtype: np.ndarray
+        """
+        axis_coords_data = axis_coords.data
+
+        if len(axis_coords_data) > 1:
+            left = np.array([1.5 * axis_coords_data[0] - 0.5 * axis_coords_data[1]])
+            center = (axis_coords_data[0:-1] + axis_coords_data[1:]) / 2.0
+            right = np.array([1.5 * axis_coords_data[-1] - 0.5 * axis_coords_data[-2]])
+
+            bounds = np.concatenate((left, center, right))
+        else:
+            delta = width / 2.0
+            bounds = np.array([axis_coords[0] - delta, axis_coords[0] + delta])
+
+        bounds_2d = np.zeros((axis_coords_data.shape + (2,)), np.float64)
+        bounds_2d[..., 0] = bounds[:-1]
+        bounds_2d[..., 1] = bounds[1:]
+
+        return bounds_2d
+
+    def _calc_lat_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
+        """Calculate latitude boundaries and avoids floating point errors.
+
+        :param bounds_2d: [description]
+        :type bounds_2d: np.ndarray
+        :return: [description]
+        :rtype: np.ndarray
+
+        # TODO: If possible, refactor this method to simplify conditionals
+        """
+        min_neg_val = bounds_2d[0, 0]
+        min_pos_val = bounds_2d[0, 1]
+        second_max_pos_val = bounds_2d[-1, 0]
+        max_pos_val = bounds_2d[-1, 1]
+        max_degree_interval = 360.0
+
+        # Check if bounds are close to the max degree interval (360)
+        near_max_degree_interval: bool = abs(
+            abs(max_pos_val - min_neg_val) - max_degree_interval
+        ) < np.minimum(0.01, abs(min_pos_val - min_neg_val) * 0.1)
+
+        if near_max_degree_interval:
+            # For (-180, 180), if either bound is near an integer value, round both integers
+            # Otherwise it is not needed if all values are positive (0, 360)
+            start_bound_near_int: bool = (
+                abs(min_neg_val - np.floor(min_neg_val + 0.5))
+                < abs(min_pos_val - min_neg_val) * 0.01
+            )
+            end_bound_near_int: bool = (
+                abs(max_pos_val - np.floor(max_pos_val + 0.5))
+                < abs(max_pos_val - second_max_pos_val) * 0.01
+            )
+            if (
+                start_bound_near_int or end_bound_near_int
+            ) and min_neg_val * max_pos_val < 0:
+                bounds_2d[0, 0] = np.floor(min_neg_val + 0.5)
+                bounds_2d[0, 1] = np.floor(max_pos_val + 0.5)
+            else:
+                if max_pos_val > min_neg_val:
+                    bounds_2d[-1, 1] = min_neg_val + max_degree_interval
+                else:
+                    bounds_2d[0, 0] = max_pos_val + max_degree_interval
+
+        return bounds_2d
+
+    def _calc_lon_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
+        """Calculates longitude boundaries and avoids floating point errors.
+
+        :param bounds_2d: [description]
+        :type bounds_2d: np.ndarray
+        :return: [description]
+        :rtype: np.ndarray
+        """
+        bounds_2d[0, ...] = np.maximum(-90.0, np.minimum(90.0, bounds_2d[0, ...]))
+        bounds_2d[-1, ...] = np.maximum(-90.0, np.minimum(90.0, bounds_2d[-1, ...]))
+        return bounds_2d
