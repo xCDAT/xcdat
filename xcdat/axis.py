@@ -42,6 +42,8 @@ class AxisAccessor:
         :return: The axis bounds, either existing bounds or calculated bounds
         :rtype: xr.DataArray
         """
+        # TODO: Add logger about generated and not generated
+        # Explicit flag to generate bounds if it doesn't exist
         bounds_vars = AxisAccessor.axes_map[axis]["bounds_vars"]
         matching_bounds_var = None
 
@@ -78,9 +80,9 @@ class AxisAccessor:
             )
 
         if axis == "lon" and len(bounds.shape) == 2:
-            bounds = self._calc_lat_bounds(bounds)
-        if axis == "lat":
             bounds = self._calc_lon_bounds(bounds)
+        if axis == "lat":
+            bounds = self._calc_lat_bounds(bounds)
 
         # Compose final DataArray to set as a data variable
         axis_bnds_var = xr.DataArray(
@@ -121,6 +123,13 @@ class AxisAccessor:
     ) -> np.ndarray:
         """Generates the base 2D bounds array based on the axis coordinates variable.
 
+        If the axis is latitude, the endpoints of the bounds are capped at 90
+        and -90 respectively.
+
+        If the axis is longitude the endpoints of the bounds will be adjusted
+        as to ensure they are circular.
+
+
         :param axis_coords: The axis coordinates variable
         :type axis_coords: xr.DataArray
         :param width: Width of the bounds
@@ -128,13 +137,12 @@ class AxisAccessor:
         :return: [description]
         :rtype: np.ndarray
         """
-        axis_coords_data = axis_coords.data
+        data = axis_coords.data
 
-        if len(axis_coords_data) > 1:
-            left = np.array([1.5 * axis_coords_data[0] - 0.5 * axis_coords_data[1]])
-            center = (axis_coords_data[0:-1] + axis_coords_data[1:]) / 2.0
-            right = np.array([1.5 * axis_coords_data[-1] - 0.5 * axis_coords_data[-2]])
-
+        if len(data) > 1:
+            left = np.array([1.5 * data[0] - 0.5 * data[1]])
+            center = (data[0:-1] + data[1:]) / 2.0
+            right = np.array([1.5 * data[-1] - 0.5 * data[-2]])
             bounds = np.concatenate((left, center, right))
         else:
             delta = width / 2.0
@@ -143,7 +151,7 @@ class AxisAccessor:
         bounds_2d = np.array(list(zip(*(bounds[i:] for i in range(2)))))
         return bounds_2d
 
-    def _calc_lat_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
+    def _calc_lon_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
         """Calculate latitude boundaries and avoids floating point errors.
 
         :param bounds_2d: [description]
@@ -151,7 +159,6 @@ class AxisAccessor:
         :return: [description]
         :rtype: np.ndarray
 
-        # TODO: If possible, refactor this method to simplify conditionals
         """
         min_neg_val = bounds_2d[0, 0]
         min_pos_val = bounds_2d[0, 1]
@@ -188,7 +195,7 @@ class AxisAccessor:
 
         return bounds_2d
 
-    def _calc_lon_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
+    def _calc_lat_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
         """Calculates longitude boundaries and avoids floating point errors.
 
         :param bounds_2d: [description]
