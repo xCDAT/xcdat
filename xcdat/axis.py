@@ -51,11 +51,11 @@ class AxisAccessor:
                 break
 
         if matching_bounds_var is None:
-            return self._generate_bounds(axis)
+            return self._gen_bounds(axis)
 
         return matching_bounds_var
 
-    def _generate_bounds(self, axis: Axis, width: float = 1) -> xr.DataArray:
+    def _gen_bounds(self, axis: Axis, width: float = 1) -> xr.DataArray:
         """Generates the bounds variable for an axis and adds it to the Dataset.
 
         :param axis: [description]
@@ -140,10 +140,7 @@ class AxisAccessor:
             delta = width / 2.0
             bounds = np.array([axis_coords[0] - delta, axis_coords[0] + delta])
 
-        bounds_2d = np.zeros((axis_coords_data.shape + (2,)), np.float64)
-        bounds_2d[..., 0] = bounds[:-1]
-        bounds_2d[..., 1] = bounds[1:]
-
+        bounds_2d = np.array(list(zip(*(bounds[i:] for i in range(2)))))
         return bounds_2d
 
     def _calc_lat_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
