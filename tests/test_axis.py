@@ -429,15 +429,15 @@ class TestAxisAccessor:
         assert lat_bnds.identical(self.lat_bnds)
         assert lon_bnds.identical(self.lon_bnds)
 
-    def test_get_bounds_raises_errors(self):
+    def test_get_bounds_raises_errors_with_incorrect_axis_argument(self):
         obj = AxisAccessor(self.ds)
 
         with pytest.raises(KeyError):
-            # Raises error if incorrect axis param is passed
-            obj.get_bounds("incorrect_axis")  # type: ignore
+            obj.get_bounds("incorrect_axis_argument")  # type: ignore
 
     def test__gen_bounds_for_short_axis_name(self):
         obj = AxisAccessor(self.ds)
+
         # Check calculated lat bounds equal existing lat bounds
         lat_bnds = obj._gen_bounds("lat")
         assert lat_bnds.equals(self.lat_bnds)
@@ -483,12 +483,29 @@ class TestAxisAccessor:
             obj._extract_axis_coords("lat")
 
     def test__gen_base_bounds(self):
-        # result = AxisAccessor._gen_base_bounds(np.arange(0), 1)
-        # print(result)
-        pass
+        obj = AxisAccessor(self.ds)
+        width = 1
 
+        # If len(data) > 1
+        data = np.arange(0, 5)
+        bounds = np.arange(-0.5, 5, 1)
+        bounds_2d = np.array(list(zip(*(bounds[i:] for i in range(2)))))
+
+        result = obj._gen_base_bounds(data, width)
+        assert np.array_equal(result, bounds_2d)
+
+        # If len(data) <= 1
+        data = np.array([0])
+        bounds = np.array([-0.5, 0.5])
+        bounds_2d = np.array(list(zip(*(bounds[i:] for i in range(2)))))
+
+        result = obj._gen_base_bounds(data, width)
+        assert np.array_equal(result, bounds_2d)
+
+    @pytest.mark.xfail
     def test__calc_lat_bounds(self):
         pass
 
+    @pytest.mark.xfail
     def test__calc_lon_bounds(self):
         pass
