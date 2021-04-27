@@ -4,8 +4,6 @@ import xarray as xr
 
 from xcdat.axis import AxisAccessor
 
-# Static latitude and longitude bounds for DataArray bounds variables
-
 
 class TestAxisAccessor:
     @pytest.fixture(autouse=True)
