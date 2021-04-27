@@ -189,11 +189,9 @@ class AxisAccessor:
         :type bounds: np.ndarray
         :return: Adjusted longitude boundaries
         :rtype: np.ndarray
-
         """
-
+        # Example: [[-1, -0.5], [0.5, 1]]
         # [[min_bound_left, min_bound_right][max_bound_left, max_bound_right]]
-        # e.g [[-1, -0.5], [0.5, 1]]
         min_bound_left = bounds[0, 0]  # = -1
         min_right_right = bounds[0, 1]  # = -0.5
         max_bound_left = bounds[-1, 0]  # = 0/5
