@@ -56,7 +56,9 @@ class AxisAccessor:
 
         :param axis: "lat" or "lon" axis
         :type axis: Axis
-        :param generate: If True, generate the bounds regardless if it exists in the dataset or not. If False and the bounds already exist, return the existing bounds, defaults to False
+        :param generate: If True, generate the bounds regardless if it exists in the
+        dataset or not. If False and the bounds already exist, return the existing
+        bounds, defaults to False
         :type generate: bool, optional
         :return: Axis bounds
         :rtype: xr.DataArray
@@ -86,7 +88,8 @@ class AxisAccessor:
         :param width: Width of the bounds when axis length is 1, defaults to 1
         :type width: float, optional
         :raises TypeError: If Axis coordinates has no "units" attribute
-        :raises ValueError: If Axis coordinates' "units" attribute does not contain "degree" substring
+        :raises ValueError: If Axis coordinates' "units" attribute does not
+        contain "degree" substring
         :return: The generated axis bounds DataArray
         :rtype: xr.DataArray
         """
