@@ -168,7 +168,7 @@ class AxisAccessor:
     def _adjust_lat_bounds(self, bounds: np.ndarray) -> np.ndarray:
         """If necessary, adjusts latitude boundaries to avoid floating point errors.
 
-        The endpoints are also are capped at (-90, 90).
+        The endpoints are also capped at (-90, 90).
 
         :param bounds: Base latitude boundaries
         :type bounds: np.ndarray
