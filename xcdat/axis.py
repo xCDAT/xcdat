@@ -128,13 +128,6 @@ class AxisAccessor:
     ) -> np.ndarray:
         """Generates the base 2D bounds array based on the axis coordinates variable.
 
-        If the axis is latitude, the endpoints of the bounds are capped at 90
-        and -90 respectively.
-
-        If the axis is longitude the endpoints of the bounds will be adjusted
-        as to ensure they are circular.
-
-
         :param axis_coords: The axis coordinates variable
         :type axis_coords: xr.DataArray
         :param width: Width of the bounds
@@ -157,7 +150,10 @@ class AxisAccessor:
         return bounds_2d
 
     def _calc_lon_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
-        """Calculate latitude boundaries and avoids floating point errors.
+        """Calculate longitude boundaries and avoids floating point errors.
+
+        If the axis is longitude the endpoints of the bounds will be adjusted as
+        to ensure they are circular.
 
         :param bounds_2d: [description]
         :type bounds_2d: np.ndarray
@@ -171,27 +167,28 @@ class AxisAccessor:
         max_right_val = bounds_2d[-1, 1]
         max_degree_interval = 360.0
 
-        # Check if bounds are close to the max degree interval (360)
+        # Check bounds are close to the max degree interval
         near_max_degree_interval: bool = abs(
             abs(max_right_val - min_left_val) - max_degree_interval
         ) < np.minimum(0.01, abs(min_right_val - min_left_val) * 0.1)
+        min_left_val_near_int: bool = (
+            abs(min_left_val - np.floor(min_left_val + 0.5))
+            < abs(min_right_val - min_left_val) * 0.01
+        )
+        max_right_val_near_int: bool = (
+            abs(max_right_val - np.floor(max_right_val + 0.5))
+            < abs(max_right_val - max_left_val) * 0.01
+        )
 
         if near_max_degree_interval:
-            # For (-180, 180), if either bound is near an integer value, round both integers
-            # Otherwise it is not needed if all values are positive (0, 360)
-            start_bound_near_int: bool = (
-                abs(min_left_val - np.floor(min_left_val + 0.5))
-                < abs(min_right_val - min_left_val) * 0.01
-            )
-            end_bound_near_int: bool = (
-                abs(max_right_val - np.floor(max_right_val + 0.5))
-                < abs(max_right_val - max_left_val) * 0.01
-            )
+            # For (-180, 180), if either bound is near an integer value, round
+            # both integers.
             if (
-                start_bound_near_int or end_bound_near_int
+                min_left_val_near_int or max_right_val_near_int
             ) and min_left_val * max_right_val < 0:
                 bounds_2d[0, 0] = np.floor(min_left_val + 0.5)
                 bounds_2d[0, 1] = np.floor(max_right_val + 0.5)
+            # Otherwise it is not needed if all values are positive (0, 360)
             else:
                 if max_right_val > min_left_val:
                     bounds_2d[-1, 1] = min_left_val + max_degree_interval
@@ -201,7 +198,10 @@ class AxisAccessor:
         return bounds_2d
 
     def _calc_lat_bounds(self, bounds_2d: np.ndarray) -> np.ndarray:
-        """Calculates longitude boundaries and avoids floating point errors.
+        """Calculates latitude boundaries and avoids floating point errors.
+
+        If the axis is latitude, the endpoints of the bounds are capped at 90
+        and -90 respectively.
 
         :param bounds_2d: [description]
         :type bounds_2d: np.ndarray
