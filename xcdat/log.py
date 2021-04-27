@@ -5,7 +5,7 @@ import logging
 import logging.handlers
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # pragma: no cover
     from logging import Logger
 
 
@@ -13,6 +13,17 @@ def setup_custom_logger(name: str) -> "Logger":
     """Sets up a custom global logger.
 
     To use, instantiate a logger variable in xcdat/xcdat.py and import in other modules.
+
+    source: https://docs.python.org/2/howto/logging.html
+    logger.debug("") -> Detailed information, typically of interest only when diagnosing
+        problems.
+    logger.info("") -> Confirmation that things are working as expected.
+    logger.warning("") -> An indication that something unexpected happened, or indicative
+        of some problem in the near future
+    logger.error("") -> Due to a more serious problem, the software has not been able to
+        perform some function.
+    logger.critical("") -> A serious error, indicating that the program itself may be
+        unable to continue running.
 
     :param name: The name of the logger
     :type name: str
@@ -34,11 +45,3 @@ def setup_custom_logger(name: str) -> "Logger":
     logger.addHandler(consoleHandler)
 
     return logger
-
-
-# source: https://docs.python.org/2/howto/logging.html
-# logger.debug("")      // Detailed information, typically of interest only when diagnosing problems.
-# logger.info("")       // Confirmation that things are working as expected.
-# logger.warning("")    // An indication that something unexpected happened, or indicative of some problem in the near future
-# logger.error("")      // Due to a more serious problem, the software has not been able to perform some function.
-# logger.critical("")   // A serious error, indicating that the program itself may be unable to continue running.
