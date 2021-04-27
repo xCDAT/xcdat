@@ -194,7 +194,7 @@ class AxisAccessor:
         # [[min_bound_left, min_bound_right][max_bound_left, max_bound_right]]
         min_bound_left = bounds[0, 0]  # = -1
         min_right_right = bounds[0, 1]  # = -0.5
-        max_bound_left = bounds[-1, 0]  # = 0/5
+        max_bound_left = bounds[-1, 0]  # = 0.5
         max_bound_right = bounds[-1, 1]  # = 1
 
         # Variables are used to ensure circularity
