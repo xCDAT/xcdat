@@ -3,6 +3,8 @@ from typing import List, Literal, TypedDict
 import numpy as np
 import xarray as xr
 
+from xcdat.xcdat import logger
+
 
 @xr.register_dataset_accessor("axis")
 class AxisAccessor:
@@ -34,7 +36,7 @@ class AxisAccessor:
     def __init__(self, xarray_obj: xr.Dataset):
         self._obj = xarray_obj
 
-    def get_bounds(self, axis: Axis) -> xr.DataArray:
+    def get_bounds(self, axis: Axis, generate: bool = False) -> xr.DataArray:
         """Get bounds for an axis.
 
         :param axis: "lat" or "lon" axis
@@ -42,20 +44,23 @@ class AxisAccessor:
         :return: The axis bounds, either existing bounds or calculated bounds
         :rtype: xr.DataArray
         """
-        # TODO: Add logger about generated and not generated
-        # Explicit flag to generate bounds if it doesn't exist
+
         bounds_vars = AxisAccessor.axes_map[axis]["bounds_vars"]
         matching_bounds_var = None
+
+        if generate:
+            logger.info(f"Generated bounds for {axis} axis")
+            return self._gen_bounds(axis)
 
         for var in bounds_vars:
             matching_bounds_var = self._obj.data_vars.get(var)
             if matching_bounds_var is not None:
-                break
+                logger.info(f"Returning existing {axis} bounds from the dataset")
+                return matching_bounds_var
 
-        if matching_bounds_var is None:
-            return self._gen_bounds(axis)
-
-        return matching_bounds_var
+        raise ValueError(
+            f"{axis} bounds not found in the dataset. Pass generate=True to generate bounds."
+        )
 
     def _gen_bounds(self, axis: Axis, width: float = 1) -> xr.DataArray:
         """Generates the bounds variable for an axis and adds it to the Dataset.
@@ -89,7 +94,7 @@ class AxisAccessor:
             data=bounds,
             coords={axis: axis_coords.data},
             dims=[axis, "bnds"],
-            attrs={"units": axis_coords.units, "is_calculated": True},
+            attrs={"units": axis_coords.units, "is_generated": True},
         )
         self._obj[f"{axis}_bnds"] = axis_bnds_var
         return axis_bnds_var
@@ -160,38 +165,38 @@ class AxisAccessor:
         :rtype: np.ndarray
 
         """
-        min_neg_val = bounds_2d[0, 0]
-        min_pos_val = bounds_2d[0, 1]
-        second_max_pos_val = bounds_2d[-1, 0]
-        max_pos_val = bounds_2d[-1, 1]
+        min_left_val = bounds_2d[0, 0]
+        min_right_val = bounds_2d[0, 1]
+        max_left_val = bounds_2d[-1, 0]
+        max_right_val = bounds_2d[-1, 1]
         max_degree_interval = 360.0
 
         # Check if bounds are close to the max degree interval (360)
         near_max_degree_interval: bool = abs(
-            abs(max_pos_val - min_neg_val) - max_degree_interval
-        ) < np.minimum(0.01, abs(min_pos_val - min_neg_val) * 0.1)
+            abs(max_right_val - min_left_val) - max_degree_interval
+        ) < np.minimum(0.01, abs(min_right_val - min_left_val) * 0.1)
 
         if near_max_degree_interval:
             # For (-180, 180), if either bound is near an integer value, round both integers
             # Otherwise it is not needed if all values are positive (0, 360)
             start_bound_near_int: bool = (
-                abs(min_neg_val - np.floor(min_neg_val + 0.5))
-                < abs(min_pos_val - min_neg_val) * 0.01
+                abs(min_left_val - np.floor(min_left_val + 0.5))
+                < abs(min_right_val - min_left_val) * 0.01
             )
             end_bound_near_int: bool = (
-                abs(max_pos_val - np.floor(max_pos_val + 0.5))
-                < abs(max_pos_val - second_max_pos_val) * 0.01
+                abs(max_right_val - np.floor(max_right_val + 0.5))
+                < abs(max_right_val - max_left_val) * 0.01
             )
             if (
                 start_bound_near_int or end_bound_near_int
-            ) and min_neg_val * max_pos_val < 0:
-                bounds_2d[0, 0] = np.floor(min_neg_val + 0.5)
-                bounds_2d[0, 1] = np.floor(max_pos_val + 0.5)
+            ) and min_left_val * max_right_val < 0:
+                bounds_2d[0, 0] = np.floor(min_left_val + 0.5)
+                bounds_2d[0, 1] = np.floor(max_right_val + 0.5)
             else:
-                if max_pos_val > min_neg_val:
-                    bounds_2d[-1, 1] = min_neg_val + max_degree_interval
+                if max_right_val > min_left_val:
+                    bounds_2d[-1, 1] = min_left_val + max_degree_interval
                 else:
-                    bounds_2d[0, 0] = max_pos_val + max_degree_interval
+                    bounds_2d[0, 0] = max_right_val + max_degree_interval
 
         return bounds_2d
 

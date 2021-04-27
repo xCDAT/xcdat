@@ -356,34 +356,29 @@ LON_BNDS = np.array(
 class TestAxisAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
-        # Latitude
+        # Axes information
         lat = xr.DataArray(
             data=np.arange(-90, 91.25, 1.25),
             dims=["lat"],
             attrs={"units": "degrees_north", "axis": "Y"},
         )
-
-        # Longitude
         lon = xr.DataArray(
             data=np.arange(0, 360, 1.875),
             dims=["lon"],
             attrs={"units": "degrees_east", "axis": "x"},
         )
 
-        # Latitude bounds
         self.lat_bnds = xr.DataArray(
             data=LAT_BNDS,
             coords={"lat": lat.data},
             dims=["lat", "bnds"],
-            attrs={"units": "degrees_north", "is_calculated": True},
+            attrs={"units": "degrees_north", "is_generated": True},
         )
-
-        # Longitude bounds
         self.lon_bnds = xr.DataArray(
             data=LON_BNDS,
             coords={"lon": lon.data},
             dims=["lon", "bnds"],
-            attrs={"units": "degrees_east", "is_calculated": True},
+            attrs={"units": "degrees_east", "is_generated": True},
         )
 
         # Create Dataset using coordinates (for testing short axes names)
@@ -417,8 +412,19 @@ class TestAxisAccessor:
         obj = AxisAccessor(self.ds)
 
         # Check calculates lat bounds
-        lat_bnds = obj.get_bounds("lat")
-        lon_bnds = obj.get_bounds("lon")
+        lat_bnds = obj.get_bounds("lat", generate=True)
+        lon_bnds = obj.get_bounds("lon", generate=True)
+
+        assert lat_bnds.identical(self.lat_bnds)
+        assert lon_bnds.identical(self.lon_bnds)
+
+    def test_get_bounds_raises_value_error_if_bounds_are_nonexistent_and_don(self):
+        # Preexisting boundary data for comparison assertions
+        obj = AxisAccessor(self.ds)
+
+        # Check calculates lat bounds
+        lat_bnds = obj.get_bounds("lat", generate=True)
+        lon_bnds = obj.get_bounds("lon", generate=True)
 
         assert lat_bnds.identical(self.lat_bnds)
         assert lon_bnds.identical(self.lon_bnds)
@@ -435,12 +441,12 @@ class TestAxisAccessor:
         # Check calculated lat bounds equal existing lat bounds
         lat_bnds = obj._gen_bounds("lat")
         assert lat_bnds.equals(self.lat_bnds)
-        assert obj._obj.lat_bnds.is_calculated
+        assert obj._obj.lat_bnds.is_generated
 
         # # Check calculated lon bounds equal existing lon bounds
         lon_bnds = obj._gen_bounds("lon")
         assert lon_bnds.equals(self.lon_bnds)
-        assert obj._obj.lon_bnds.is_calculated
+        assert obj._obj.lon_bnds.is_generated
 
     def test__gen_bounds_for_long_axis_name(self):
         obj = AxisAccessor(self.ds_2)
@@ -448,12 +454,12 @@ class TestAxisAccessor:
         # Check calculated lat bounds equal existing lat bounds
         lat_bnds = obj._gen_bounds("lat")
         assert lat_bnds.equals(self.lat_bnds)
-        assert obj._obj.lat_bnds.is_calculated
+        assert obj._obj.lat_bnds.is_generated
 
         # Check calculated lon bounds equal existing lon bounds
         lon_bnds = obj._gen_bounds("lon")
         assert lon_bnds.equals(self.lon_bnds)
-        assert obj._obj.lon_bnds.is_calculated
+        assert obj._obj.lon_bnds.is_generated
 
     def test__extract_axis_coords(self):
         obj = AxisAccessor(self.ds)
