@@ -399,6 +399,7 @@ class TestAxisAccessor:
         obj = AxisAccessor(self.ds)
 
         # Assign bounds variables to replicate a DataSet that already has this info
+        # TODO: Check logger
         obj._obj = obj._obj.assign(lon_bnds=self.lon_bnds)
         lon_bnds = obj.get_bounds("lon")
         assert lon_bnds.identical(obj._obj.lon_bnds)
@@ -412,6 +413,7 @@ class TestAxisAccessor:
         obj = AxisAccessor(self.ds)
 
         # Check calculates lat bounds
+        # TODO: Check logger
         lat_bnds = obj.get_bounds("lat", generate=True)
         lon_bnds = obj.get_bounds("lon", generate=True)
 
@@ -503,9 +505,9 @@ class TestAxisAccessor:
         assert np.array_equal(result, bounds_2d)
 
     @pytest.mark.xfail
-    def test__calc_lat_bounds(self):
+    def test__adjust_lat_bounds(self):
         pass
 
     @pytest.mark.xfail
-    def test__calc_lon_bounds(self):
+    def test__adjust_lon_bounds(self):
         pass

@@ -11,7 +11,7 @@ class AxisAccessor:
     """A class used to represent an AxisAccessor (xarray dataset accessor)
 
     :param xarray_obj: The Dataset object to be extended
-    :type xarray_obj: xr.DataArray
+    :type xarray_obj: xr.Dataset
     """
 
     Axis = Literal["lat", "lon"]
@@ -39,23 +39,24 @@ class AxisAccessor:
     def get_bounds(self, axis: Axis, generate: bool = False) -> xr.DataArray:
         """Get bounds for an axis.
 
+        If generate=True, generate the bounds regardless if the exist in the dataset or not.
+        If generate=False and the bounds already exist, return the existing bounds.
+
         :param axis: "lat" or "lon" axis
         :type axis: Axis
-        :return: The axis bounds, either existing bounds or calculated bounds
+        :return: Axis bounds
         :rtype: xr.DataArray
         """
+        if generate:
+            logger.info(f"Generating bounds for {axis} axis")
+            return self._gen_bounds(axis)
 
         bounds_vars = AxisAccessor.axes_map[axis]["bounds_vars"]
         matching_bounds_var = None
-
-        if generate:
-            logger.info(f"Generated bounds for {axis} axis")
-            return self._gen_bounds(axis)
-
         for var in bounds_vars:
             matching_bounds_var = self._obj.data_vars.get(var)
             if matching_bounds_var is not None:
-                logger.info(f"Returning existing {axis} bounds from the dataset")
+                logger.info(f"Returning existing {axis} bounds from the dataset.")
                 return matching_bounds_var
 
         raise ValueError(
@@ -63,13 +64,14 @@ class AxisAccessor:
         )
 
     def _gen_bounds(self, axis: Axis, width: float = 1) -> xr.DataArray:
-        """Generates the bounds variable for an axis and adds it to the Dataset.
+        """Generates the bounds for an axis and adds it to the Dataset's data variables.
 
-        :param axis: [description]
+        :param axis: "lat" or "lon" axis
         :type axis: Axis
         :param width: Width of the bounds when axis length is 1, defaults to 1
         :type width: float, optional
-        :raises TypeError: If the Dataset has coordinates without "units" attribute
+        :raises TypeError: If Axis coordinates has no "units" attribute
+        :raises ValueError: If Axis coordinates' "units" attribute does not contain "degree"
         :return: The generated axis bounds DataArray
         :rtype: xr.DataArray
         """
@@ -78,17 +80,17 @@ class AxisAccessor:
 
         units_attr = axis_coords.attrs.get("units")
         if units_attr is None:
-            raise TypeError(f"Dataset {axis} coordinates has no attribute 'units'")
+            raise TypeError(f"Dataset {axis} coordinates has no attribute 'units'.")
         if "degree" not in units_attr:
             raise ValueError(
-                f"Dataset {axis} coordinates 'units' attr, {units_attr} does not contain 'degree'"
+                f"Dataset {axis} coordinates value for 'units' ('{units_attr}'), does not contain 'degree'."
             )
 
         # Adjust bounds to avoid floating point errors
-        if axis == "lon" and len(bounds.shape) == 2:
-            bounds = self._adjust_lon_bounds(bounds)
         if axis == "lat":
             bounds = self._adjust_lat_bounds(bounds)
+        if axis == "lon" and len(bounds.shape) == 2:
+            bounds = self._adjust_lon_bounds(bounds)
 
         # Compose final DataArray to set as a data variable
         axis_bnds_var = xr.DataArray(
@@ -101,7 +103,7 @@ class AxisAccessor:
         return axis_bnds_var
 
     def _extract_axis_coords(self, axis: Axis) -> xr.DataArray:
-        """Extracts the coordinates for the specified axis.
+        """Extracts the coordinates data variable for the specified axis.
 
         :param axis: "lat" or "lon" axis
         :type axis: Axis
@@ -148,11 +150,26 @@ class AxisAccessor:
         bounds_2d = np.array(list(zip(*(bounds[i:] for i in range(2)))))
         return bounds_2d
 
+    def _adjust_lat_bounds(self, base_lat_bnds: np.ndarray) -> np.ndarray:
+        """Adjusts latitude boundaries to avoid floating point errors.
+
+        The endpoints are also are capped at (-90, 90).
+
+        :param base_lat_bnds: Base latitude boundaries
+        :type base_lat_bnds: np.ndarray
+        :return: Adjusted latitude boundaries
+        :rtype: np.ndarray
+        """
+        lat_bnds = base_lat_bnds
+        lat_bnds[0, ...] = np.maximum(-90.0, np.minimum(90.0, lat_bnds[0, ...]))
+        lat_bnds[-1, ...] = np.maximum(-90.0, np.minimum(90.0, lat_bnds[-1, ...]))
+
+        return lat_bnds
+
     def _adjust_lon_bounds(self, base_lon_bounds: np.ndarray) -> np.ndarray:
         """Adjusts longitude boundaries to avoid floating point errors.
 
-        If the axis is longitude the endpoints of the bounds will be adjusted as
-        to ensure they are circular.
+        The endpoints are also adjusted to ensure circularity.
 
         :param base_lon_bounds: Base longitude boundaries
         :type base_lon_bounds: np.ndarray
@@ -166,11 +183,10 @@ class AxisAccessor:
         min_right_val = lon_bnds[0, 1]
         max_left_val = lon_bnds[-1, 0]
         max_right_val = lon_bnds[-1, 1]
-        max_degree_interval = 360.0
+        max_degree = 360.0
 
-        # Check bounds are close to the max degree interval
-        near_max_degree_interval: bool = abs(
-            abs(max_right_val - min_left_val) - max_degree_interval
+        bounds_near_max_degree: bool = abs(
+            abs(max_right_val - min_left_val) - max_degree
         ) < np.minimum(0.01, abs(min_right_val - min_left_val) * 0.1)
         min_left_val_near_int: bool = (
             abs(min_left_val - np.floor(min_left_val + 0.5))
@@ -181,7 +197,7 @@ class AxisAccessor:
             < abs(max_right_val - max_left_val) * 0.01
         )
 
-        if near_max_degree_interval:
+        if bounds_near_max_degree:
             # For (-180, 180), if either bound is near an integer value, round
             # both integers.
             if (
@@ -192,25 +208,8 @@ class AxisAccessor:
             # Otherwise it is not needed if all values are positive (0, 360)
             else:
                 if max_right_val > min_left_val:
-                    lon_bnds[-1, 1] = min_left_val + max_degree_interval
+                    lon_bnds[-1, 1] = min_left_val + max_degree
                 else:
-                    lon_bnds[0, 0] = max_right_val + max_degree_interval
+                    lon_bnds[0, 0] = max_right_val + max_degree
 
         return lon_bnds
-
-    def _adjust_lat_bounds(self, base_lat_bnds: np.ndarray) -> np.ndarray:
-        """Adjusts latitude boundaries to avoid floating point errors.
-
-        If the axis is latitude, the endpoints of the bounds are capped at 90
-        and -90 respectively.
-
-        :param base_lat_bnds: Base latitude boundaries
-        :type base_lat_bnds: np.ndarray
-        :return: Adjusted latitude boundaries
-        :rtype: np.ndarray
-        """
-        lat_bnds = base_lat_bnds
-        lat_bnds[0, ...] = np.maximum(-90.0, np.minimum(90.0, lat_bnds[0, ...]))
-        lat_bnds[-1, ...] = np.maximum(-90.0, np.minimum(90.0, lat_bnds[-1, ...]))
-
-        return lat_bnds
