@@ -35,12 +35,12 @@ class AxisAccessor:
 
     >>> # Assuming dataset has axes bounds
     >>> ds = xr.open_dataset("file_path")
-    >>> lat_bnds = ds.axis.get_bounds('lat', allow_generate=False)
+    >>> lat_bnds = ds.axis.get_bounds('lat', allow_generating=False)
     2021-04-28 11:30:04,196 [INFO]: axis.py(get_bounds:82) >> lat bounds were found in the dataset.
 
     >>> # Assuming dataset has no axes bounds
     >>> ds = xr.open_dataset("file_path")
-    >>> lat_bnds = ds.axis.get_bounds('lat', allow_generate=False)
+    >>> lat_bnds = ds.axis.get_bounds('lat', allow_generating=False)
     ValueError: lat bounds were not found in the dataset, bounds must be generated
     """
 
@@ -67,7 +67,7 @@ class AxisAccessor:
         self._dataset = xarray_obj
 
     def get_bounds(
-        self, axis: Axis, allow_generate: bool = True
+        self, axis: Axis, allow_generating: bool = True
     ) -> Optional[xr.DataArray]:
         """Get bounds for an axis.
 
@@ -76,10 +76,10 @@ class AxisAccessor:
 
         :param axis: "lat" or "lon" axis
         :type axis: Axis
-        :param allow_generate: If True, generate the bounds if they don't exist.
+        :param allow_generating: If True, generate the bounds if they don't exist.
             If False, return only existing bounds or throw error if it doesn't exist (useful
             for explicit method behavior or debugging), defaults to True
-        :type allow_generate: bool, optional
+        :type allow_generating: bool, optional
         :raises ValueError: [description]
         :return: Axis bounds or None
         :rtype: Optional[xr.DataArray]
@@ -93,12 +93,12 @@ class AxisAccessor:
                 logger.info(f"{axis} bounds were found in the dataset.")
                 return matching_bounds
 
-        if matching_bounds is None and allow_generate:
+        if matching_bounds is None and allow_generating:
             logger.warning(
                 f"{axis} bounds were not found in the dataset, generating bounds."
             )
             return self._gen_bounds(axis)
-        elif matching_bounds is None and not allow_generate:
+        elif matching_bounds is None and not allow_generating:
             raise ValueError(
                 f"{axis} bounds were not found in the dataset, bounds must be generated"
             )

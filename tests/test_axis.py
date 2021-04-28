@@ -87,7 +87,7 @@ class TestAxisAccessor:
         # Check raises error when bounds do not exist and not allowing generated bounds.
         with pytest.raises(ValueError):
             obj._dataset = obj._dataset.drop_vars(["lat_bnds"])
-            obj.get_bounds("lat", allow_generate=False)
+            obj.get_bounds("lat", allow_generating=False)
 
     def test_get_bounds_raises_error_with_incorrect_axis_argument(self):
         obj = AxisAccessor(self.ds)
