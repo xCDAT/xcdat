@@ -22,6 +22,7 @@ class TestAxisAccessor:
 
         # Generated axes boundaries for assertions
         self.lat_bnds = xr.DataArray(
+            name="lat_bnds",
             data=np.array(
                 [[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]
             ),
@@ -30,6 +31,7 @@ class TestAxisAccessor:
             attrs={"units": "degrees_north", "is_generated": True},
         )
         self.lon_bnds = xr.DataArray(
+            name="lon_bnds",
             data=np.array(
                 [
                     [-0.9375, 0.9375],
@@ -59,36 +61,33 @@ class TestAxisAccessor:
     def test_decorator_call(self):
         assert self.ds.axis._dataset.identical(self.ds)
 
-    def test_get_bounds_for_existing_bounds(self):
+    def test_get_bounds_when_bounds_exist_in_dataset(self):
         obj = AxisAccessor(self.ds)
         obj._dataset = obj._dataset.assign(
-            lon_bnds=self.lon_bnds, lat_bnds=self.lat_bnds
+            lat_bnds=self.lat_bnds,
+            lon_bnds=self.lon_bnds,
         )
 
+        lat_bnds = obj.get_bounds("lat")
+        assert lat_bnds is not None and lat_bnds.identical(self.lat_bnds)
+        assert lat_bnds.is_generated
+
         lon_bnds = obj.get_bounds("lon")
-        assert lon_bnds.identical(obj._dataset.lon_bnds)
+        assert lon_bnds is not None and lon_bnds.identical(self.lon_bnds)
+        assert lon_bnds.is_generated
+
+    def test_get_bounds_when_bounds_do_not_exist_in_dataset(self):
+        # Check bounds generated if bounds do not exist.
+        obj = AxisAccessor(self.ds)
 
         lat_bnds = obj.get_bounds("lat")
-        assert lat_bnds.identical(obj._dataset.lat_bnds)
+        assert lat_bnds is not None and lat_bnds.identical(self.lat_bnds)
+        assert lat_bnds.is_generated
 
-    def test_get_bounds_for_generated_bounds(self):
-        obj = AxisAccessor(self.ds)
-
-        lat_bnds = obj.get_bounds("lat", generate=True)
-        assert lat_bnds.identical(self.lat_bnds)
-        assert obj._dataset.lat_bnds.is_generated
-
-        lon_bnds = obj.get_bounds("lon", generate=True)
-        assert lon_bnds.identical(self.lon_bnds)
-        assert obj._dataset.lon_bnds.is_generated
-
-    def test_get_bounds_raises_error_when_bounds_are_nonexistent_and_generate_equals_False(
-        self,
-    ):
-        obj = AxisAccessor(self.ds)
-
+        # Check raises error when bounds do not exist and not allowing generated bounds.
         with pytest.raises(ValueError):
-            obj.get_bounds("lat")
+            obj._dataset = obj._dataset.drop_vars(["lat_bnds"])
+            obj.get_bounds("lat", allow_generate=False)
 
     def test_get_bounds_raises_error_with_incorrect_axis_argument(self):
         obj = AxisAccessor(self.ds)

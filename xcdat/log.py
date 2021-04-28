@@ -16,14 +16,14 @@ def setup_custom_logger(name: str) -> "Logger":
 
     source: https://docs.python.org/2/howto/logging.html
     logger.debug("") -> Detailed information, typically of interest only when diagnosing
-        problems.
+    problems.
     logger.info("") -> Confirmation that things are working as expected.
     logger.warning("") -> An indication that something unexpected happened, or indicative
-        of some problem in the near future
+    of some problem in the near future
     logger.error("") -> Due to a more serious problem, the software has not been able to
-        perform some function.
+    perform some function.
     logger.critical("") -> A serious error, indicating that the program itself may be
-        unable to continue running.
+    unable to continue running.
 
     :param name: The name of the logger
     :type name: str

@@ -1,4 +1,4 @@
-from typing import List, Literal, TypedDict
+from typing import List, Literal, Optional, TypedDict
 
 import numpy as np
 import xarray as xr
@@ -8,23 +8,40 @@ from xcdat.xcdat import logger
 
 @xr.register_dataset_accessor("axis")
 class AxisAccessor:
-    """A class used to represent an AxisAccessor (xarray dataset accessor)
+    """A class used to represent an AxisAccessor (xarray dataset accessor).
 
     :param xarray_obj: The Dataset object to be extended
     :type xarray_obj: xr.Dataset
 
     Examples
-    --------
-    Get bounds:
 
     >>> from xcdat import axis
+
+    Get bounds:
+
+    >>> # Assuming dataset has axes bounds
     >>> ds = xr.open_dataset("file_path")
-    >>> # Get generated bounds
-    >>> lat_bnds = ds.axis.get_bounds('lat', generate=True)
-    >>> lon_bnds = ds.axis.get_bounds('lon', generate=True)
-    >>> # Get existing bounds
     >>> lat_bnds = ds.axis.get_bounds('lat')
-    >>> lon_bnds = ds.axis.get_bounds('lon')
+    2021-04-28 11:30:04,196 [INFO]: axis.py(get_bounds:82) >> lat bounds were found in
+    the dataset.
+
+    >>> # Assuming dataset has no axes bounds
+    >>> ds = xr.open_dataset("file_path")
+    >>> lat_bnds = ds.axis.get_bounds("lat")
+    2021-04-28 11:31:51,052 [WARNING]: axis.py(get_bounds:86) >> lat bounds were not
+    found in the dataset, generating bounds.
+
+    Get bounds explicitly and do not generate bounds if none found:
+
+    >>> # Assuming dataset has axes bounds
+    >>> ds = xr.open_dataset("file_path")
+    >>> lat_bnds = ds.axis.get_bounds('lat', allow_generate=False)
+    2021-04-28 11:30:04,196 [INFO]: axis.py(get_bounds:82) >> lat bounds were found in the dataset.
+
+    >>> # Assuming dataset has no axes bounds
+    >>> ds = xr.open_dataset("file_path")
+    >>> lat_bnds = ds.axis.get_bounds('lat', allow_generate=False)
+    ValueError: lat bounds were not found in the dataset, bounds must be generated
     """
 
     # Type annotation definitions
@@ -49,36 +66,45 @@ class AxisAccessor:
     def __init__(self, xarray_obj: xr.Dataset):
         self._dataset = xarray_obj
 
-    def get_bounds(self, axis: Axis, generate: bool = False) -> xr.DataArray:
+    def get_bounds(
+        self, axis: Axis, allow_generate: bool = True
+    ) -> Optional[xr.DataArray]:
         """Get bounds for an axis.
 
-        It will either generate the bounds or return the existing bounds.
+        It will return the existing axis bounds in the Dataset if a match is found,
+        otherwise automatically generate the axis bounds.
 
         :param axis: "lat" or "lon" axis
         :type axis: Axis
-        :param generate: If True, generate the bounds regardless if it exists in the
-        dataset or not. If False and the bounds already exist, return the existing
-        bounds, defaults to False
-        :type generate: bool, optional
-        :return: Axis bounds
-        :rtype: xr.DataArray
+        :param allow_generate: If True, generate the bounds if they don't exist.
+            If False, return only existing bounds or throw error if it doesn't exist (useful
+            for explicit method behavior or debugging), defaults to True
+        :type allow_generate: bool, optional
+        :raises ValueError: [description]
+        :return: Axis bounds or None
+        :rtype: Optional[xr.DataArray]
         """
-        if generate:
-            logger.info(f"Generating bounds for {axis} axis")
-            return self._gen_bounds(axis)
-
         bounds_vars = AxisAccessor.axes_map[axis]["bounds_vars"]
-        matching_bounds_var = None
+        matching_bounds: Optional[xr.DataArray] = None
 
         for var in bounds_vars:
-            matching_bounds_var = self._dataset.data_vars.get(var)
-            if matching_bounds_var is not None:
-                logger.info(f"Returning existing {axis} bounds from the dataset.")
-                return matching_bounds_var
+            matching_bounds = self._dataset.data_vars.get(var)
+            if matching_bounds is not None:
+                logger.info(f"{axis} bounds were found in the dataset.")
+                return matching_bounds
 
-        raise ValueError(
-            f"{axis} bounds not found in the dataset. Pass generate=True to generate bounds."
-        )
+        if matching_bounds is None and allow_generate:
+            logger.warning(
+                f"{axis} bounds were not found in the dataset, generating bounds."
+            )
+            return self._gen_bounds(axis)
+        elif matching_bounds is None and not allow_generate:
+            raise ValueError(
+                f"{axis} bounds were not found in the dataset, bounds must be generated"
+            )
+
+        # Need a default return, but will never reach based on conditionals above
+        return None  # pragma: no cover
 
     def _gen_bounds(self, axis: Axis, width: float = 1) -> xr.DataArray:
         """Generates the bounds for an axis and adds it to the Dataset's data variables.
@@ -88,8 +114,8 @@ class AxisAccessor:
         :param width: Width of the bounds when axis length is 1, defaults to 1
         :type width: float, optional
         :raises TypeError: If Axis coordinates has no "units" attribute
-        :raises ValueError: If Axis coordinates' "units" attribute does not
-        contain "degree" substring
+        :raises ValueError: If Axis coordinates' "units" attribute does not contain
+            "degree" substring
         :return: The generated axis bounds DataArray
         :rtype: xr.DataArray
         """
@@ -104,21 +130,22 @@ class AxisAccessor:
                 f"Dataset {axis} coordinates value for 'units' ('{units_attr}'), does not contain 'degree' substring."
             )
 
-        # Perform adjustments based on boundary values as needed
+        # Perform adjustments as needed based on boundary values
         if axis == "lat":
             bounds = self._adjust_lat_bounds(bounds)
         if axis == "lon" and len(bounds.shape) == 2:
             bounds = self._adjust_lon_bounds(bounds)
 
         # Compose final DataArray to set as a variable
-        axis_bnds_var = xr.DataArray(
+        var_name = f"{axis}_bnds"
+        self._dataset[f"{axis}_bnds"] = xr.DataArray(
+            name=var_name,
             data=bounds,
             coords={axis: axis_coords.data},
             dims=[axis, "bnds"],
             attrs={"units": axis_coords.units, "is_generated": True},
         )
-        self._dataset[f"{axis}_bnds"] = axis_bnds_var
-        return axis_bnds_var
+        return self._dataset[f"{axis}_bnds"]
 
     def _extract_axis_coords(self, axis: Axis) -> xr.DataArray:
         """Extracts the axis' coordinates variable for the specified axis.
@@ -208,7 +235,7 @@ class AxisAccessor:
         bounds_diff = abs(max_bound_right - min_bound_left)
         bounds_diff_with_max_degree = abs(bounds_diff - max_degree_interval)
 
-        # For example, for 0.001 < 0.01, the bounds are above the threshold and considered
+        # For example, for 0.001 < 0.01, the bounds are below the threshold and considered
         # near the max degree interval so adjustment is necessary
         bounds_near_max_degree: bool = (
             bounds_diff_with_max_degree < max_degree_threshold
