@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 import logging
 import logging.handlers
 from typing import TYPE_CHECKING
@@ -34,7 +31,7 @@ def setup_custom_logger(name: str) -> "Logger":
     log_filemode = "w"  # w: overwrite; a: append
 
     # Setup
-    logging.basicConfig(format=log_format, filemode=log_filemode, level=logging.DEBUG)
+    logging.basicConfig(format=log_format, filemode=log_filemode, level=logging.INFO)
     logger = logging.getLogger(name)
     logger.propagate = False
 
