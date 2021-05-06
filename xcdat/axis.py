@@ -1,7 +1,8 @@
-from typing import List, Literal, Optional, TypedDict
+from typing import List, Optional
 
 import numpy as np
 import xarray as xr
+from typing_extensions import Literal, TypedDict
 
 from xcdat.xcdat import logger
 

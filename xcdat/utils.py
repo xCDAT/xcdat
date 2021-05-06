@@ -1,8 +1,9 @@
 import glob
 import os
-from typing import Dict, Literal, Tuple, get_args
+from typing import Dict, Tuple, get_args
 
 import xarray as xr
+from typing_extensions import Literal
 
 # Add supported extensions on as-need basis
 # https://xarray.pydata.org/en/stable/io.html#
