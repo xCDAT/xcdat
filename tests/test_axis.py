@@ -238,11 +238,13 @@ class TestAxisAccessor:
         # Checks adjustments made to ensure circularity
         expected = np.array([[-360.0001, -359.9], [-0.1, -0.0001]])
         result = obj._adjust_lon_bounds(base_bounds)
-        assert np.array_equal(result, expected)
+        # Both arrays are element-wise equal within a tolerance
+        assert np.allclose(result, expected)
 
         # If max bound right val <= min bound left value
         base_bounds = np.array([[0, -0.1], [-359.9, -360.0001]])
         # Checks adjustments made to ensure circularity
         expected = np.array([[-0.0001, -0.1], [-359.9, -360.0001]])
         result = obj._adjust_lon_bounds(base_bounds)
-        assert np.array_equal(result, expected)
+        # Both arrays are element-wise equal within a tolerance
+        assert np.allclose(result, expected)

@@ -264,8 +264,8 @@ class AxisAccessor:
                 bounds[0, 1] = np.floor(max_bound_right + 0.5)
             else:
                 if max_bound_right > min_bound_left:
-                    bounds[-1, 1] = round(min_bound_left + max_degree_interval, 4)
+                    bounds[-1, 1] = min_bound_left + max_degree_interval
                 else:
-                    bounds[0, 0] = round(max_bound_right + max_degree_interval, 4)
+                    bounds[0, 0] = max_bound_right + max_degree_interval
 
         return bounds
