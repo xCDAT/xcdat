@@ -107,6 +107,7 @@ ENV/
 .mypy_cache/
 
 # IDE settings
+.vscode/*
 !.vscode/settings.json
 .idea/
 

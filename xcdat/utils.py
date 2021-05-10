@@ -1,18 +1,20 @@
 import glob
 import os
-from typing import Dict, Literal, Tuple, get_args
+from typing import Dict, Tuple, get_args
 
 import xarray as xr
+from typing_extensions import Literal
 
 # Add supported extensions on as-need basis
 # https://xarray.pydata.org/en/stable/io.html#
-extension = Literal["nc"]
-SUPPORTED_EXTENSIONS: Tuple[extension, ...] = get_args(extension)
+Extension = Literal["nc"]
+
+SUPPORTED_EXTENSIONS: Tuple[Extension, ...] = get_args(Extension)
 
 
 def open_datasets(
     path: str,
-    extension: extension = None,
+    extension: Extension = None,
 ) -> Dict[str, xr.Dataset]:
     """Lazily loads datasets from a specified path
 
