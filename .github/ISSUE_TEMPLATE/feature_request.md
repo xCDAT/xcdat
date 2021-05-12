@@ -6,14 +6,14 @@ labels: "Type: Enhancement"
 assignees: ""
 ---
 
-#### Is your feature request related to a problem? Please describe
-<!-- A clear and concise description of what the problem is (e.g., I'm always frustrated when [...]) -->
+### Is your feature request related to a problem? If yes, Please describe
+<!-- Concise description of the problem -->
 
-#### Describe the solution you'd like
-<!-- A clear and concise description of what you want to happen. -->
+### Describe your proposed solution
+<!-- Concise description of your proposed solution. -->
 
-#### Describe alternatives you've considered
-<!-- A clear and concise description of any alternative solutions or features you've considered. -->
+### Describe alternatives solutions you've considered
+<!-- Concise description of any alternative solutions or features you've considered. -->
 
-#### Additional context
-<!-- Add any other context or screenshots about the feature request here. -->
+### Additional context
+<!-- Other context, examples, or screenshots about the feature request here. -->
