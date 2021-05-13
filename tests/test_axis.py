@@ -48,18 +48,21 @@ class TestAxisAccessor:
         # Create Dataset using coordinates (for testing short axes names)
         self.ds = xr.Dataset(coords={"lat": lat, "lon": lon})
 
-        # Create Dataset using coordinates (for testing long axes names)
-        self.ds_2 = xr.Dataset(
-            coords={"latitude": self.ds.lat, "longitude": self.ds.lon}
-        )
-        self.ds_2 = self.ds_2.swap_dims({"lat": "latitude", "lon": "longitude"})
-
     def test__init__(self):
         obj = AxisAccessor(self.ds)
         assert obj._dataset.identical(self.ds)
 
     def test_decorator_call(self):
         assert self.ds.axis._dataset.identical(self.ds)
+
+    def test_lat_bnds(self):
+        obj = AxisAccessor(self.ds)
+
+        assert obj.lat_bnds.identical(self.lat_bnds)  # type:ignore
+
+    def test_lon_bnds(self):
+        obj = AxisAccessor(self.ds)
+        assert obj.lon_bnds.identical(self.lon_bnds)  # type:ignore
 
     def test_get_bounds_when_bounds_exist_in_dataset(self):
         obj = AxisAccessor(self.ds)
@@ -92,7 +95,7 @@ class TestAxisAccessor:
     def test_get_bounds_raises_error_with_incorrect_axis_argument(self):
         obj = AxisAccessor(self.ds)
 
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError):
             obj.get_bounds("incorrect_axis_argument")  # type: ignore
 
     def test__gen_bounds_raises_errors(self):
@@ -119,39 +122,24 @@ class TestAxisAccessor:
         assert lon_bnds.equals(self.lon_bnds)
         assert obj._dataset.lon_bnds.is_generated
 
-    def test__gen_bounds_for_long_axis_name(self):
-        obj = AxisAccessor(self.ds_2)
-
-        lat_bnds = obj._gen_bounds("lat")
-        assert lat_bnds.equals(self.lat_bnds)
-        assert obj._dataset.lat_bnds.is_generated
-
-        lon_bnds = obj._gen_bounds("lon")
-        assert lon_bnds.equals(self.lon_bnds)
-        assert obj._dataset.lon_bnds.is_generated
-
     def test__extract_axis_coords(self):
         obj = AxisAccessor(self.ds)
 
         # Check lat axis coordinates exist
-        lat = obj._extract_axis_coords("lat")
+        lat = obj._get_coords("lat")
         assert lat is not None
 
         # Check lon axis coordinates exist
-        lon = obj._extract_axis_coords("lon")
+        lon = obj._get_coords("lon")
         assert lon is not None
 
     def test__extract_axis_coords_raises_errors(self):
         obj = AxisAccessor(self.ds)
 
-        # Raises error if incorrect `axis` param is passed
-        with pytest.raises(KeyError):
-            obj._extract_axis_coords("incorrect_axis")  # type: ignore
-
         # Raises error if `axis` param has no matching coords in the Dataset
         with pytest.raises(TypeError):
             obj._dataset = obj._dataset.drop_vars("lat")
-            obj._extract_axis_coords("lat")
+            obj._get_coords("lat")
 
     def test__gen_base_bounds(self):
         obj = AxisAccessor(self.ds)
