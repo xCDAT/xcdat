@@ -25,15 +25,14 @@ class AxisAccessor:
     >>> lat_bnds = ds.axis.lat_bnds
     >>> lon_bnds = ds.axis.lon_bnds
 
-    Get bounds explictly:
+    Get axis bounds explicitly:
 
     >>> ds = xr.open_dataset("file_path")
     >>> lat_bnds = ds.axis.get_bounds('lat')
     >>> lon_bnds = ds.axis.get_bounds('lon')
 
-    Get bounds explicitly and do not generate bounds if none found:
+    Get axis bounds explicitly and do not generate bounds if it doesn't exist:
 
-    >>> # Assuming dataset has axes bounds
     >>> ds = xr.open_dataset("file_path")
     >>> lat_bnds = ds.axis.get_bounds('lat', allow_generating=False)
     """
@@ -98,7 +97,7 @@ class AxisAccessor:
                 f"{axis} bounds were not found in the dataset, bounds must be generated"
             )
 
-        # Need a default return, but will never reach based on conditionals above
+        # Need a default return, but will never be reached based on conditionals.
         return None  # pragma: no cover
 
     def _gen_bounds(self, axis: Axis, width: float = 1) -> xr.DataArray:
