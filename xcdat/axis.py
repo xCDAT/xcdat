@@ -232,7 +232,6 @@ class AxisAccessor:
         bounds_near_max_degree: bool = (
             bounds_diff_with_max_degree < max_degree_threshold
         )
-
         if bounds_near_max_degree:
             min_bound_int_limit = abs(min_right_right - min_bound_left) * 0.01
             min_left_val_near_int: bool = (
