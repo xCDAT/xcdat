@@ -8,6 +8,7 @@ dependencies:
     # ==================
     - python=3.8.8
     - pip=21.0.1
+    - typing_extensions=3.7.4 # Required to make use of Python >=3.8 backported types
     - cartopy=0.18.0
     - matplotlib=3.3.4
     - netcdf4=1.5.6
