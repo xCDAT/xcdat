@@ -17,5 +17,6 @@
     "python.testing.pytestEnabled": true,
     // Debugger doesn't work if pytest-cov is enabled
     // https://github.com/microsoft/vscode-python/issues/693
-    "python.testing.pytestArgs": ["--no-cov"]
+    "python.testing.pytestArgs": ["--no-cov"],
+    "jupyter.notebookFileRoot": "${workspaceFolder}"
 }
