@@ -21,6 +21,7 @@ def open_dataset(
     path: str,
     data_var: Optional[str] = None,
     decode_times: bool = True,
+    center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
@@ -46,6 +47,10 @@ def open_dataset(
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
         This keyword may not be supported by all the backends, by default True.
+    center_times: bool
+        If True, center time coordinates using the midpoint between of its
+        upper and lower bounds. Otherwise, use the provided time coordinates,
+        by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -101,6 +106,11 @@ def open_dataset(
         ds = xr.open_dataset(path, decode_times=False, **kwargs)
 
     ds = _keep_single_var(ds, data_var)
+
+    if ds.cf.dims.get("T") is not None and center_times:
+        ds.temporal._time_bounds = ds.bounds.get_bounds("time")
+        ds = ds.temporal.center_times(ds)
+
     ds = ds.bounds.add_missing_bounds()
     if ds.cf.dims.get("X") is not None and lon_orient is not None:
         ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
@@ -120,6 +130,7 @@ def open_mfdataset(
     data_var: Optional[str] = None,
     preprocess: Optional[Callable] = None,
     decode_times: bool = True,
+    center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
     data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
     **kwargs: Dict[str, Any],
@@ -162,6 +173,10 @@ def open_mfdataset(
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
         This keyword may not be supported by all the backends, by default True.
+    center_times: bool
+        If True, center time coordinates using the midpoint between of its
+        upper and lower bounds. Otherwise, use the provided time coordinates,
+        by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -234,6 +249,11 @@ def open_mfdataset(
         **kwargs,
     )
     ds = _keep_single_var(ds, data_var)
+
+    if ds.cf.dims.get("T") is not None and center_times:
+        ds.temporal._time_bounds = ds.bounds.get_bounds("time")
+        ds = ds.temporal.center_times(ds)
+
     ds = ds.bounds.add_missing_bounds()
     if ds.cf.dims.get("X") is not None and lon_orient is not None:
         ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
@@ -486,6 +506,32 @@ def _keep_single_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Dataset
     return ds
 
 
+def get_data_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.DataArray:
+    """Get a data variable in the Dataset by key.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        The Dataset.
+    data_var : Optional[str]
+        The data variable key.
+
+    Returns
+    -------
+    xr.DataArray
+        The data variable.
+
+    Raises
+    ------
+    KeyError
+        If the data variable does not exist in the Dataset.
+    """
+    dv = dataset.get(data_var, None)
+    if dv is None:
+        raise KeyError(f"The data variable '{data_var}' does not exist in the Dataset.")
+    return dv.copy()
+
+
 def _preprocess_non_cf_dataset(
     ds: xr.Dataset, callable: Optional[Callable] = None
 ) -> xr.Dataset:
@@ -539,10 +585,6 @@ def _split_time_units_attr(units_attr: str) -> Tuple[str, str]:
     -------
     Tuple[str, str]
         The units (e.g, "months") and the reference date (e.g., "1800-01-01").
-
-    Raises
-    ------
-    KeyError
         If the units attribute doesn't exist for the time coordinates.
     """
     if units_attr is None:

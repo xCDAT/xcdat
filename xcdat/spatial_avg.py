@@ -1,4 +1,4 @@
-"""Averager module that contains functions related to geospatial averaging."""
+"""Module containing geospatial averaging functions."""
 from functools import reduce
 from typing import (
     Dict,
@@ -23,6 +23,7 @@ from xcdat.axis import (
     _align_lon_bounds_to_360,
     _get_prime_meridian_index,
 )
+from xcdat.dataset import get_data_var
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
@@ -99,13 +100,20 @@ class SpatialAverageAccessor:
 
         Examples
         --------
-        Import:
+        Import spatial averaging functionality:
 
         >>> import xcdat
 
         Open a dataset and limit to a single variable:
 
         >>> ds = xcdat.open_dataset("path/to/file.nc", var="tas")
+
+        Access spatial averaging method:
+
+        >>> # First option
+        >>> ds.spatial.spatial_avg(...)
+        >>> # Second option
+        >>> ds.xcdat.spatial_avg(...)
 
         Get global average time series:
 
@@ -134,12 +142,7 @@ class SpatialAverageAccessor:
         >>>     weights=weights)["tas"]
         """
         dataset = self._dataset.copy()
-        dv = dataset.get(data_var, None)
-        if dv is None:
-            raise KeyError(
-                f"The data variable '{data_var}' does not exist in the dataset."
-            )
-
+        dv = get_data_var(dataset, data_var)
         axis = self._validate_axis(dv, axis)
 
         if isinstance(weights, str) and weights == "generate":

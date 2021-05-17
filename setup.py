@@ -14,6 +14,7 @@ with open("HISTORY.rst") as history_file:
 
 # https://packaging.python.org/discussions/install-requires-vs-requirements/#install-requires
 install_requires: List[str] = [
+    "bottleneck",
     "cf_xarray",
     "dask",
     "netcdf4",

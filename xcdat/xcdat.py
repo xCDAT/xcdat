@@ -5,6 +5,7 @@ import xarray as xr
 
 from xcdat.bounds import BoundsAccessor, BoundsAxis
 from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SpatialAxis
+from xcdat.temporal_avg import Frequency, Mode, SeasonConfig, TemporalAverageAccessor
 from xcdat.utils import is_documented_by
 
 
@@ -42,6 +43,36 @@ class XCDATAccessor:
     ) -> xr.Dataset:
         obj = SpatialAverageAccessor(self._dataset)
         return obj.spatial_avg(data_var, axis, weights, lat_bounds, lon_bounds)
+
+    @is_documented_by(TemporalAverageAccessor.temporal_avg)
+    def temporal_avg(
+        self,
+        data_var: str,
+        mode: Mode,
+        freq: Frequency,
+        weighted: bool = True,
+        center_times: bool = False,
+        season_config: SeasonConfig = {
+            "dec_mode": "DJF",
+            "drop_incomplete_djf": False,
+            "custom_seasons": None,
+        },
+    ) -> xr.Dataset:
+        obj = TemporalAverageAccessor(self._dataset)
+        return obj.temporal_avg(
+            data_var, mode, freq, weighted, center_times, season_config
+        )
+
+    @is_documented_by(TemporalAverageAccessor.departures)
+    def departures(self, data_var: str) -> xr.Dataset:
+        obj = TemporalAverageAccessor(self._dataset)
+        return obj.departures(data_var)
+
+    @is_documented_by(TemporalAverageAccessor.center_times)
+    def center_times(self):
+        obj = TemporalAverageAccessor(self._dataset)
+        obj._time_bounds = self.get_bounds("T")
+        return obj.center_times(self._dataset)
 
     @property  # type: ignore
     @is_documented_by(BoundsAccessor.bounds)

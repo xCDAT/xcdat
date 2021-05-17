@@ -14,6 +14,7 @@ Top-level API
     dataset.has_cf_compliant_time
     dataset.decode_non_cf_time
     dataset.swap_lon_axis
+    dataset.get_data_var
     utils.compare_datasets
 
 .. currentmodule:: xarray
@@ -45,10 +46,13 @@ Methods
     Dataset.xcdat.get_bounds
     Dataset.xcdat.add_missing_bounds
     Dataset.xcdat.spatial_avg
+    Dataset.xcdat.temporal_avg
+    Dataset.xcdat.departures
+    Dataset.xcdat.center_times
 
 
 Dataset (individual accessors)
--------------------------------
+------------------------------
 
 .. _dsattr_2:
 
@@ -74,3 +78,6 @@ Methods
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
     Dataset.spatial.spatial_avg
+    Dataset.temporal.temporal_avg
+    Dataset.temporal.departures
+    Dataset.temporal.center_times
