@@ -10,14 +10,13 @@ source:
 build:
     noarch: python
     number: 0
-    script: python -m pip install --no-deps --ignore-installed .
+    script: python -m pip install . --no-deps --force-reinstall -vv
 
 requirements:
   host:
     - python
     - setuptools
     - pip
-
   run:
     - python
     - typing_extensions
@@ -25,7 +24,12 @@ requirements:
     - matplotlib
     - netcdf4
     - xarray
-    - xesmf
+    - typing_extensions
+
+test:
+  imports:
+    - xcdat
+    - xcdat.axis
 
 about:
     home: https://github.com/tomvothecoder/xcdat
