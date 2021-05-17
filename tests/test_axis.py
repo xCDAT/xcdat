@@ -1,52 +1,17 @@
 import numpy as np
 import pytest
-import xarray as xr
 
+from tests.fixtures import generate_dataset, lat_bnds, lon_bnds
 from xcdat.axis import AxisAccessor
 
 
 class TestAxisAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
-        # Axes information
-        lat = xr.DataArray(
-            data=np.array([-90, -88.75, 88.75, 90]),
-            dims=["lat"],
-            attrs={"units": "degrees_north", "axis": "Y"},
-        )
-        lon = xr.DataArray(
-            data=np.array([0, 1.875, 356.25, 358.125]),
-            dims=["lon"],
-            attrs={"units": "degrees_east", "axis": "x"},
-        )
+        self.ds = generate_dataset(bounds=False)
 
-        # Generated axes boundaries for assertions
-        self.lat_bnds = xr.DataArray(
-            name="lat_bnds",
-            data=np.array(
-                [[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]
-            ),
-            coords={"lat": lat.data},
-            dims=["lat", "bnds"],
-            attrs={"units": "degrees_north", "is_generated": True},
-        )
-        self.lon_bnds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array(
-                [
-                    [-0.9375, 0.9375],
-                    [0.9375, 179.0625],
-                    [179.0625, 357.1875],
-                    [357.1875, 359.0625],
-                ]
-            ),
-            coords={"lon": lon.data},
-            dims=["lon", "bnds"],
-            attrs={"units": "degrees_east", "is_generated": True},
-        )
-
-        # Create Dataset using coordinates (for testing short axes names)
-        self.ds = xr.Dataset(coords={"lat": lat, "lon": lon})
+        self.lat_bnds = lat_bnds.copy()
+        self.lon_bnds = lon_bnds.copy()
 
     def test__init__(self):
         obj = AxisAccessor(self.ds)
@@ -102,16 +67,16 @@ class TestAxisAccessor:
         obj = AxisAccessor(self.ds)
 
         # Dataset axis coordinates variable is missing "units" attr
+        obj._dataset.lat.attrs.pop("units")
         with pytest.raises(TypeError):
-            obj._dataset.lat.attrs.pop("units")
             obj._gen_bounds("lat")
 
         # Dataset axis coordinates variable "units" attr does not contain "degree" substring
+        obj._dataset.lat.attrs["units"] = "incorrect_value"
         with pytest.raises(ValueError):
-            obj._dataset.lat.attrs["units"] = "incorrect_value"
             obj._gen_bounds("lat")
 
-    def test__gen_bounds_for_short_axis_name(self):
+    def test__gen_bounds_generates_bounds(self):
         obj = AxisAccessor(self.ds)
 
         lat_bnds = obj._gen_bounds("lat")
@@ -136,9 +101,9 @@ class TestAxisAccessor:
     def test__extract_axis_coords_raises_errors(self):
         obj = AxisAccessor(self.ds)
 
+        obj._dataset = obj._dataset.drop_dims("lat")
         # Raises error if `axis` param has no matching coords in the Dataset
         with pytest.raises(TypeError):
-            obj._dataset = obj._dataset.drop_vars("lat")
             obj._get_coords("lat")
 
     def test__gen_base_bounds(self):

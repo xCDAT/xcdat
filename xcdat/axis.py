@@ -1,4 +1,3 @@
-"""Axis module that contains axis related functions."""
 from typing import Optional
 
 import numpy as np
@@ -189,10 +188,10 @@ class AxisAccessor:
             If an incorrect ``axis`` arg is passed.
         """
         matching_coords = self._dataset.coords.get(axis)
-        if matching_coords is not None:
-            return matching_coords
+        if matching_coords is None:
+            raise TypeError(f"No matching coordinates for axis: {axis}")
 
-        raise TypeError(f"No matching coordinates for axis: {axis}")
+        return matching_coords
 
     def _gen_base_bounds(
         self,

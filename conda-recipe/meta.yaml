@@ -31,6 +31,7 @@ test:
   imports:
     - xcdat
     - xcdat.axis
+    - xcdat.climatology
 
 about:
     home: https://github.com/tomvothecoder/xcdat
