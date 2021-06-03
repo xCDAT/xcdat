@@ -5,7 +5,8 @@ package:
     version: {{ version }}
 
 source:
-    path: ..
+  git_url: https://github.com/tomvothecoder/xcdat.git
+  git_rev: v{{ version }}
 
 build:
     noarch: python
