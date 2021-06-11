@@ -1,3 +1,4 @@
+"""Log module for setting up a logger."""
 import logging
 import logging.handlers
 from typing import TYPE_CHECKING
@@ -12,20 +13,34 @@ def setup_custom_logger(name: str) -> "Logger":
     To use, instantiate a logger variable in xcdat/xcdat.py and import in other modules.
 
     source: https://docs.python.org/2/howto/logging.html
-    logger.debug("") -> Detailed information, typically of interest only when diagnosing
-    problems.
-    logger.info("") -> Confirmation that things are working as expected.
-    logger.warning("") -> An indication that something unexpected happened, or indicative
-    of some problem in the near future
-    logger.error("") -> Due to a more serious problem, the software has not been able to
-    perform some function.
-    logger.critical("") -> A serious error, indicating that the program itself may be
-    unable to continue running.
 
     :param name: The name of the logger
     :type name: str
     :return: A Logger object
     :rtype: Logger
+
+    Examples
+    ---------
+
+    Detailed information, typically of interest only when diagnosing problems.
+
+    >>> logger.debug("")
+
+    Confirmation that things are working as expected.
+
+    >>> logger.info("")
+
+    An indication that something unexpected happened, or indicative of some problem in the near future
+
+    >>> logger.warning("")
+
+    The software has not been able to perform some function due to a more serious problem.
+
+    >>> logger.error("")
+
+    A serious error, indicating that the program itself may be unable to continue running.
+
+    >>> logger.critical("")
     """
     log_format = "%(asctime)s [%(levelname)s]: %(filename)s(%(funcName)s:%(lineno)s) >> %(message)s"
     log_filemode = "w"  # w: overwrite; a: append

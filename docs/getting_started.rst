@@ -1,12 +1,15 @@
 .. highlight:: shell
 
-============
-Installation
-============
+===============
+Getting Started
+===============
 
+
+Installation
+------------
 
 Stable release
---------------
+==============
 
 To install xCDAT using Conda, run:
 
@@ -16,14 +19,13 @@ To install xCDAT using Conda, run:
 
 This is the preferred method to install xCDAT, as it will always install the most recent stable release.
 
-If you don't have Conda installed, this `Miniconda installation guide`_ can guide
-you through the process.
+If you don't have Conda installed, this `Miniconda installation guide`_ can walk you through the process.
 
 .. _Miniconda installation guide: https://docs.conda.io/en/latest/miniconda.html
 
 
 From sources
-------------
+============
 
 The sources for xCDAT can be downloaded from the `Github repo`_.
 
