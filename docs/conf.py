@@ -21,10 +21,6 @@ import os
 import sys
 from typing import Dict
 
-import alabaster
-import sphinx_rtd_theme  # noqa: F401
-from sphinx.ext.apidoc import main
-
 sys.path.insert(0, os.path.abspath(".."))  # noqa: I001, I003
 import xcdat  # noqa: I001, E402
 
@@ -37,11 +33,19 @@ import xcdat  # noqa: I001, E402
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
-    # "sphinx_rtd_theme",
-    "alabaster",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
+    "sphinx_copybutton",
 ]
+
+autosummary_generate = True
+autodoc_member_order = "bysource"
+autodoc_default_options = {
+    "members": True,
+    "undoc-members": True,
+    "private-members": True,
+}
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -87,24 +91,33 @@ pygments_style = "sphinx"
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
+# sphinx-copybutton configurations
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
 
 # -- Options for HTML output -------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-
-# TODO: Re-enable sphinx_rtd_theme after https://github.com/readthedocs/sphinx_rtd_theme/issues/1115 is fixed
-# html_theme = "sphinx_rtd_theme"
-# html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
-
-html_theme = "alabaster"
-html_theme_path = [alabaster.get_path()]
+html_theme = "sphinx_book_theme"
 
 # Theme options are theme-specific and customize the look and feel of a
 # theme further.  For a list of options available for each theme, see the
 # documentation.
 #
-# html_theme_options = {}
+# sphinx_book_theme configurations
+# https://sphinx-book-theme.readthedocs.io/en/latest/configure.html
+html_theme_options = {
+    "repository_url": "https://github.com/tomvothecoder/xcdat",
+    "repository_branch": "master",
+    "path_to_docs": "docs",
+    "use_edit_page_button": True,
+    "use_repository_button": True,
+    "use_issues_button": True,
+    "use_download_button": True,
+    "use_fullscreen_button": True,
+}
+html_title = "xCDAT Documentation"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -168,24 +181,11 @@ texinfo_documents = [
 ]
 
 
-# -- Automate sphinx-apidoc  -------------------------------------------
-
-
-def run_apidoc(_):
-    """Automatically run `sphinx-apidoc` to generate API documentation
-
-    This function is useful for CI/CD to automate generating API docs without
-    the user having to run the the command and commiting.
-
-    More Info: https://github.com/readthedocs/readthedocs.org/issues/1139
-
-    """
-
-    sys.path.append(os.path.join(os.path.dirname(__file__), ".."))
-    cur_dir = os.path.abspath(os.path.dirname(__file__))
-    module = os.path.join(cur_dir, "..", "xcdat")
-    main(["-e", "-o", cur_dir, module, "--force"])
+def html_page_context(app, pagename, templatename, context, doctree):
+    # Disable edit button for docstring generated pages
+    if "generated" in pagename:
+        context["theme_use_edit_page_button"] = False
 
 
 def setup(app):
-    app.connect("builder-inited", run_apidoc)
+    app.connect("html-page-context", html_page_context)

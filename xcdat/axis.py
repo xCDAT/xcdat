@@ -1,10 +1,13 @@
+"""Axis module that contains axis related functions."""
 from typing import Optional
 
 import numpy as np
 import xarray as xr
 from typing_extensions import Literal
 
-from xcdat.xcdat import logger
+from xcdat.log import setup_custom_logger
+
+logger = setup_custom_logger("root")
 
 
 @xr.register_dataset_accessor("axis")
@@ -15,6 +18,7 @@ class AxisAccessor:
     :type xarray_obj: xr.Dataset
 
     Examples
+    ---------
 
     >>> import xarray as xr
     >>> from xcdat import axis
