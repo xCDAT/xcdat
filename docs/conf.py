@@ -37,8 +37,10 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
+    "sphinxcontrib.napoleon",
 ]
 
+# autosummary and autodoc configurations
 autosummary_generate = True
 autodoc_member_order = "bysource"
 autodoc_default_options = {
@@ -46,6 +48,18 @@ autodoc_default_options = {
     "undoc-members": True,
     "private-members": True,
 }
+autodoc_typehints = "none"
+
+# Napoleon configurations
+napoleon_google_docstring = False
+napoleon_numpy_docstring = True
+napoleon_use_param = False
+napoleon_use_rtype = False
+napoleon_preprocess_types = True
+
+# sphinx-copybutton configurations
+copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
+copybutton_prompt_is_regexp = True
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -91,9 +105,6 @@ pygments_style = "sphinx"
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
 
-# sphinx-copybutton configurations
-copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: "
-copybutton_prompt_is_regexp = True
 
 # -- Options for HTML output -------------------------------------------
 

@@ -1,44 +1,43 @@
 """Log module for setting up a logger."""
 import logging
 import logging.handlers
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:  # pragma: no cover
-    from logging import Logger
 
 
-def setup_custom_logger(name: str) -> "Logger":
-    """Sets up a custom global logger.
+def setup_custom_logger(name: str) -> logging.Logger:
+    """Sets up a custom logger.
 
-    To use, instantiate a logger variable in xcdat/xcdat.py and import in other modules.
+    Parameters
+    ----------
+    name : str
+        Name of the file where this function is called.
 
-    source: https://docs.python.org/2/howto/logging.html
-
-    :param name: The name of the logger
-    :type name: str
-    :return: A Logger object
-    :rtype: Logger
+    Returns
+    -------
+    logging.Logger
+        The logger.
 
     Examples
     ---------
-
-    Detailed information, typically of interest only when diagnosing problems.
+    Detailed information, typically of interest only when diagnosing problems:
 
     >>> logger.debug("")
 
-    Confirmation that things are working as expected.
+    Confirmation that things are working as expected:
 
     >>> logger.info("")
 
-    An indication that something unexpected happened, or indicative of some problem in the near future
+    An indication that something unexpected happened, or indicative of some
+    problem in the near future:
 
     >>> logger.warning("")
 
-    The software has not been able to perform some function due to a more serious problem.
+    The software has not been able to perform some function due to a more
+    serious problem:
 
     >>> logger.error("")
 
-    A serious error, indicating that the program itself may be unable to continue running.
+    A serious error, indicating that the program itself may be unable to
+    continue running:
 
     >>> logger.critical("")
     """

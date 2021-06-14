@@ -6,7 +6,7 @@ Project Maintenance
 
 This page covers tips for project maintenance.
 
-Releasing a new Version
+Releasing a New Version
 -----------------------
 
 1. Add updates to HISTORY.rst
