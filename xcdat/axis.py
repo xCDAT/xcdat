@@ -17,6 +17,7 @@ class AxisAccessor:
     ---------
     Import:
 
+    >>> import xarray as xr
     >>> from xcdat import axis
 
     Get latitude and longitude bounds as properties:
