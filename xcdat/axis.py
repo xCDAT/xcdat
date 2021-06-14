@@ -12,18 +12,15 @@ logger = setup_custom_logger("root")
 
 @xr.register_dataset_accessor("axis")
 class AxisAccessor:
-    """A class used to represent an AxisAccessor (xarray dataset accessor).
-
-    :param xarray_obj: The Dataset object to be extended
-    :type xarray_obj: xr.Dataset
+    """A class to represent the AxisAccessor xarray extension.
 
     Examples
     ---------
+    Import:
 
-    >>> import xarray as xr
     >>> from xcdat import axis
 
-    Get latitude and longitude bounds (cached properties):
+    Get latitude and longitude bounds as properties:
 
     >>> ds = xr.open_dataset("file_path")
     >>> lat_bnds = ds.axis.lat_bnds
@@ -41,27 +38,35 @@ class AxisAccessor:
     >>> lat_bnds = ds.axis.get_bounds('lat', allow_generating=False)
     """
 
-    # Type annotation definitions
+    # Type annotation aliases
     Axis = Literal["lat", "lon"]
 
     def __init__(self, xarray_obj: xr.Dataset):
+        """AxisAccesor initialization.
+
+        Parameters
+        ----------
+        xarray_obj : xr.Dataset
+        """
         self._dataset: xr.Dataset = xarray_obj
 
     @property
     def lat_bnds(self) -> Optional[xr.DataArray]:
-        """Get latitude boundaries and caches value.
+        """Latitude bounds property for quick access.
 
-        :return: Latitude boundaries
-        :rtype: Optional[xr.DataArray]
+        Returns
+        -------
+        Optional[xr.DataArray]
         """
         return self.get_bounds("lat")
 
     @property
     def lon_bnds(self) -> Optional[xr.DataArray]:
-        """Get longitude boundaries and caches value.
+        """Longitude bounds property for quick access.
 
-        :return: Longitude boundaries
-        :rtype: Optional[xr.DataArray]
+        Returns
+        -------
+        Optional[xr.DataArray]
         """
         return self.get_bounds("lon")
 
@@ -70,19 +75,28 @@ class AxisAccessor:
     ) -> Optional[xr.DataArray]:
         """Get bounds for an axis.
 
-        It will return the existing axis bounds in the Dataset if a match is found,
-        otherwise automatically generate the axis bounds.
+        Parameters
+        ----------
+        axis : Axis
+            The "lat" or "lon" axis.
+        allow_generating : bool, optional
+            If True, generate bounds if they don't exist. If False, return
+            only existing bounds or throw error if they don't exist, by default
+            True.
 
-        :param axis: "lat" or "lon" axis
-        :type axis: Axis
-        :param allow_generating: If True, generate the bounds if they don't exist.
-            If False, return only existing bounds or throw error if it doesn't exist (useful
-            for explicit method behavior or debugging), defaults to True
-        :type allow_generating: bool, optional
-        :raises ValueError: [description]
-        :return: Axis bounds or None
-        :rtype: Optional[xr.DataArray]
+        Returns
+        -------
+        Optional[xr.DataArray]
+            Axis bounds
+
+        Raises
+        ------
+        ValueError
+            If an incorrect ``axis`` arg is passed.
+        ValueError
+            If ``allow_generating=False`` and no bounds were found in the dataset.
         """
+
         if axis not in ["lat", "lon"]:
             raise ValueError("Axis must be 'lat' or 'lon")
 
@@ -105,17 +119,26 @@ class AxisAccessor:
         return None  # pragma: no cover
 
     def _gen_bounds(self, axis: Axis, width: float = 1) -> xr.DataArray:
-        """Generates the bounds for an axis and adds it to the Dataset's data variables.
+        """Generates the bounds for an axis and adds them to the Dataset variables.
 
-        :param axis: "lat" or "lon" axis
-        :type axis: Axis
-        :param width: Width of the bounds when axis length is 1, defaults to 1
-        :type width: float, optional
-        :raises TypeError: If Axis coordinates has no "units" attribute
-        :raises ValueError: If Axis coordinates' "units" attribute does not contain
-            "degree" substring
-        :return: The generated axis bounds DataArray
-        :rtype: xr.DataArray
+        Parameters
+        ----------
+        axis : Axis
+            The "lat" or "lon" bounds.
+        width : float, optional
+            Width of the bounds when axis length is 1, by default 1.
+
+        Returns
+        -------
+        xr.DataArray
+            The generated axis bounds.
+
+        Raises
+        ------
+        TypeError
+            If Axis coordinates has no "units" attribute.
+        ValueError
+            Generates the bounds for an axis and adds them to the Dataset variables.
         """
         axis_coords: xr.DataArray = self._get_coords(axis)
 
@@ -150,11 +173,20 @@ class AxisAccessor:
     def _get_coords(self, axis: Axis) -> xr.DataArray:
         """Get the coordinates for an axis.
 
-        :param axis: "lat" or "lon" axis
-        :type axis: Axis
-        :raises KeyError: If an incorrect `axis` argument is passed
-        :return: Matching coordinates
-        :rtype: xr.DataArray
+        Parameters
+        ----------
+        axis : Axis
+            The "lat" or "lon" axis.
+
+        Returns
+        -------
+        xr.DataArray
+            Matching coordinates for an axis.
+
+        Raises
+        ------
+        TypeError
+            If an incorrect ``axis`` arg is passed.
         """
         matching_coords = self._dataset.coords.get(axis)
         if matching_coords is not None:
@@ -167,14 +199,19 @@ class AxisAccessor:
         data: np.ndarray,
         width: float,
     ) -> np.ndarray:
-        """Generates the base 2D bounds for an axis.
+        """Generates the base 2-D bounds for an axis.
 
-        :param data: Axis coordinate data
-        :type data: np.ndarray
-        :param width: Width of the bounds
-        :type width: float
-        :return: Base 2D bounds for an axis coordinates variable
-        :rtype: np.ndarray
+        Parameters
+        ----------
+        data : np.ndarray
+            The axis coordinates data.
+        width : float
+            The width of the bounds.
+
+        Returns
+        -------
+        np.ndarray
+            The base 2-D bounds for an axis coordinates variable.
         """
         if len(data) > 1:
             left = np.array([1.5 * data[0] - 0.5 * data[1]])
@@ -189,14 +226,19 @@ class AxisAccessor:
         return bounds_2d
 
     def _adjust_lat_bounds(self, bounds: np.ndarray) -> np.ndarray:
-        """If necessary, adjusts latitude boundaries to avoid floating point errors.
+        """Adjusts latitude bounds to cap endpoints at (-90, 90).
 
-        The endpoints are also capped at (-90, 90).
+        It also avoids floating point errors.
 
-        :param bounds: Base latitude boundaries
-        :type bounds: np.ndarray
-        :return: Adjusted latitude boundaries
-        :rtype: np.ndarray
+        Parameters
+        ----------
+        bounds : np.ndarray
+            The base latitude bounds.
+
+        Returns
+        -------
+        np.ndarray
+            The adjusted latitude bounds.
         """
         bounds[0, ...] = np.maximum(-90.0, np.minimum(90.0, bounds[0, ...]))
         bounds[-1, ...] = np.maximum(-90.0, np.minimum(90.0, bounds[-1, ...]))
@@ -204,14 +246,19 @@ class AxisAccessor:
         return bounds
 
     def _adjust_lon_bounds(self, bounds: np.ndarray) -> np.ndarray:
-        """If necessary, adjusts longitude boundaries to avoid floating point errors.
+        """Adjusts longitude bounds to ensure circularity.
 
-        The endpoints may also be adjusted to ensure circularity.
+        It also avoids floating point errors.
 
-        :param bounds: Base longitude boundaries
-        :type bounds: np.ndarray
-        :return: Adjusted longitude boundaries
-        :rtype: np.ndarray
+        Parameters
+        ----------
+        bounds : np.ndarray
+            The base longitude bounds.
+
+        Returns
+        -------
+        np.ndarray
+            The adjusted latitude bounds.
         """
         # Example: [[-1, -0.5], [0.5, 1]]
         # [[min_bound_left, min_bound_right][max_bound_left, max_bound_right]]
