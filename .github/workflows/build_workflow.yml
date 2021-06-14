@@ -23,7 +23,7 @@ jobs:
 
     pre-commit-hooks:
         needs: check-jobs-to-skip
-        if: ${{ needs.check-jobs-to-skip.outputs.should_skip != 'true' }}
+        if: ${{ needs.check-jobs-to-skip.outputs.should_skip != 'true'}} || ${{ github.event_name == 'push' }}
         runs-on: ubuntu-latest
         timeout-minutes: 2
         steps:
@@ -43,7 +43,7 @@ jobs:
 
     build:
         needs: check-jobs-to-skip
-        if: ${{ needs.check-jobs-to-skip.outputs.should_skip != 'true' }}
+        if: ${{ needs.check-jobs-to-skip.outputs.should_skip != 'true'}} || ${{ github.event_name == 'push' }}
         runs-on: ubuntu-latest
         defaults:
             run:
