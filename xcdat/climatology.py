@@ -20,9 +20,6 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     The "time" dimension is preserved for reference, which would otherwise be
     replaced by the period.
 
-    Weighted averages account for time bounds, leap years and each month having
-    different number of days.
-
     Parameters
     ----------
     ds : xr.Dataset
@@ -30,7 +27,8 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     period : Period
         The period of time to group by.
     is_weighted : bool, optional
-        Perform grouping using weighted averages, by default True
+        Perform grouping using weighted averages (time bounds, leap years and
+        number of days for each month are considered), by default True.
 
     Returns
     -------
@@ -40,7 +38,7 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     Raises
     ------
     ValueError
-        If incorrect period argument is passed.
+        If incorrect ``period`` argument is passed.
     KeyError
         If the dataset does not have a "time" coordinates.
 
@@ -149,11 +147,10 @@ def _group_data(
     """Groups data variables to get their averages over a time period.
 
     It iterates over each non-bounds variable and groups them. This preserves
-    bounds variables if they exist, and the time dimension.
-
-    Once grouping is complete, attributes are added to the dataset to describe
-    the operation performed on it. This clearly distinguishes datasets that have
-    been manipulated from their original source.
+    bounds variables if they exist, and the time dimension. Once grouping is
+    complete, attributes are added to the dataset to describe the operation
+    performed on it. This distinguishes datasets that have been manipulated
+    from their original source.
 
     Parameters
     ----------
