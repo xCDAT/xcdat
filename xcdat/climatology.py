@@ -23,17 +23,31 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     Weighted averages account for time bounds, leap years and each month having
     different number of days.
 
-    :param ds: A Dataset object
-    :type ds: xr.Dataset
-    :param period: The period of time to group data by
-    :type period: Period
-    :param is_weighted: Calculate weighted averages, defaults to True
-    :type is_weighted: bool, optional
-    :return: Climatology cycle for a given period
-    :rtype: xr.Dataset
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset to calculate climatology cycle.
+    period : Period
+        The period of time to group by.
+    is_weighted : bool, optional
+        Perform grouping using weighted averages, by default True
+
+    Returns
+    -------
+    xr.Dataset
+        Climatology cycle for all data variables for a period of time.
+
+    Raises
+    ------
+    ValueError
+        If incorrect period argument is passed.
+    KeyError
+        If the dataset does not have a "time" coordinates.
 
     Examples
     --------
+    Import:
+
     >>> import xarray as xr
     >>> from xcdat.climatology import climatology, departure
     >>> ds = xr.open_dataset("file_path")
@@ -50,14 +64,14 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     >>> ds_climo_seasonal = climatology(ds, "season", is_weighted=False)
     >>> ds_climo_annual = climatology(ds, "year", is_weighted=False)
 
-    Access attribute for info on climatology operation (multiple ways)
+    Access attribute for info on climatology operation:
 
     >>> ds_climo_monthly.calculation_info
     {'type': 'climatology', 'period': 'month', 'is_weighted': True}
-
     >>> ds_climo_monthly.attrs["calculation_info"]
     {'type': 'climatology', 'period': 'month', 'is_weighted': True}
     """
+
     if period not in PERIODS:
         raise ValueError(
             "Incorrect period argument passed. Period must be month, season, or year."
@@ -76,21 +90,27 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
 def departure(ds_base: xr.Dataset, ds_climatology: xr.Dataset) -> xr.Dataset:
     """Calculates departures for a given climatology.
 
-    To calculate departure, first group the operation on the base dataset using
-    the same period and weights (if weighted) as the climo dataset.
+    First, the base dataset is grouped using the same period and weights (if
+    weighted) as the climatology dataset. After grouping, it iterates over each
+    non-bounds variable and get the difference between the base dataset and the
+    climatology dataset.
 
-    After grouping, iterate over each non-bounds variable and get the difference
-    between the base dataset and the climo dataset.
+    Parameters
+    ----------
+    ds_base : xr.Dataset
+        The base dataset.
+    ds_climatology : xr.Dataset
+        A climatology dataset.
 
-    :param ds: The base dataset
-    :type ds: xr.Dataset
-    :param ds_climatology: The climatology dataset
-    :type ds_climatology: xr.Dataset
-    :return: A climatology departure dataset
-    :rtype: xr.Dataset
+    Returns
+    -------
+    xr.Dataset
+        The climatology departure between the base and climatology datasets.
 
     Examples
     --------
+    Import:
+
     >>> import xarray as xr
     >>> from xcdat.climatology import climatology, departure
 
@@ -100,11 +120,10 @@ def departure(ds_base: xr.Dataset, ds_climatology: xr.Dataset) -> xr.Dataset:
     >>> ds_climo_monthly = climatology(ds, "month")
     >>> ds_departure = departure(ds, ds_climo_monthly)
 
-    Access attribute for info on departure operation (multiple ways)
+    Access attribute for info on departure operation:
 
     >>> ds_climo_monthly.calculation_info
     {'type': 'departure', 'period': 'month', 'is_weighted': True}
-
     >>> ds_climo_monthly.attrs["calculation_info"]
     {'type': 'departure', 'period': 'month', 'is_weighted': True}
     """
@@ -136,14 +155,21 @@ def _group_data(
     the operation performed on it. This clearly distinguishes datasets that have
     been manipulated from their original source.
 
-    :param ds: A Dataset object
-    :type ds: xr.Dataset
-    :param period: The period of time to group data by
-    :type period: Period
-    :param is_weighted: Calculate weighted averages, defaults to True
-    :type is_weighted: bool, optional
-    :return: The calculated climatology
-    :rtype: xr.Dataset
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset to perform group operation on.
+    calculation_type : Literal["climatology", "departure"]
+        The calculation type.
+    period : Period
+        The period of time to group on.
+    is_weighted : bool
+        Perform grouping using weighted averages.
+
+    Returns
+    -------
+    xr.Dataset
+        The dataset with grouped data variables.
     """
     time_period: TimePeriod = f"time.{period}"  # type:ignore
     weights = _calculate_weights(ds, time_period) if is_weighted else None
@@ -175,12 +201,17 @@ def _calculate_weights(ds: xr.Dataset, time_period: TimePeriod) -> xr.DataArray:
     Time bounds, leap years and number of days for each month are considered
     during grouping.
 
-    :param ds: A Dataset object
-    :type ds: xr.Dataset
-    :param time_period: The period of time for calculating weightes
-    :type time_period: TimePeriod
-    :return: The calculated weights based on the period of time
-    :rtype: xr.DataArray
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset to calculate weights for.
+    time_period : TimePeriod
+        The period of time to group by in xarray notation ("time.<period>").
+
+    Returns
+    -------
+    xr.DataArray
+        The weights based on a period of time.
     """
     months_lengths = _get_months_lengths(ds)
     weights: xr.DataArray = (
@@ -192,7 +223,7 @@ def _calculate_weights(ds: xr.Dataset, time_period: TimePeriod) -> xr.DataArray:
 
 
 def _get_months_lengths(ds: xr.Dataset) -> xr.DataArray:
-    """Get the lengths of the months based on the time coordinates.
+    """Get the months' lengths based on the time coordinates of a dataset.
 
     If time bounds exist, it will be used to generate the months' lengths. This
     allows for a robust calculation of weights because different datasets could
@@ -202,10 +233,15 @@ def _get_months_lengths(ds: xr.Dataset) -> xr.DataArray:
     If time bounds do not exist, use the time variable (which may be less
     accurate based on the previously described time recording differences).
 
-    :param ds: A Dataset object
-    :type ds: xr.Dataset
-    :return: The lengths of months
-    :rtype: xr.DataArray
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset to get months' lengths from.
+
+    Returns
+    -------
+    xr.DataArray
+        The months' lengths for the dataset.
     """
     time_bounds = ds.get("time_bnds")
 
@@ -223,12 +259,14 @@ def _get_months_lengths(ds: xr.Dataset) -> xr.DataArray:
 def _validate_weights(ds: xr.Dataset, weights: xr.DataArray, time_period: TimePeriod):
     """Validate that the sum of the weights for a dataset equals 1.0.
 
-    :param ds: A Dataset object
-    :type ds: xr.Dataset
-    :param weights: The calculated weights based on a period of time
-    :type weights: xr.DataArray
-    :param time_period: The period of time to group data by
-    :type time_period: TimePeriod
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset to validate weights for.
+    weights : xr.DataArray
+        The weights based on a period of time.
+    time_period : TimePeriod
+        The period of time to group by in xarray notation ("time.<period>").
     """
     expected_count = {
         "time.month": 12,
