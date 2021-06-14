@@ -15,15 +15,15 @@ Releasing a New Version
 
   ::
 
-      # Prepend "v" to <version>
-      # For release candidates, append "rc" to <version>
+      # Prepend "v" to <version>.
+      # For release candidates, append "rc" to <version>.
       git checkout -b v<version> -t origin/<version>
 
 4. Bump version using tbump.
 
   ::
 
-      # Exclude "v" and <version> should match step 2
+      # Exclude "v" and <version> should match step 3.
       # --no-tag is required since tagging is handled in step 5.
       tbump <version> --no-tag
 
