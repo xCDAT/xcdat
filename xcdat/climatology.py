@@ -1,3 +1,4 @@
+"""Functions related to calculating climatology cycles and departures."""
 from typing import Tuple, get_args
 
 import numpy as np

@@ -1,3 +1,4 @@
+"""Functions related to dataset axis information (e.g., getting bounds)."""
 from typing import Optional
 
 import numpy as np
