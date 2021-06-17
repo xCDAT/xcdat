@@ -32,6 +32,7 @@ test:
     - xcdat
     - xcdat.axis
     - xcdat.climatology
+    - xcdat.utils
 
 about:
     home: https://github.com/tomvothecoder/xcdat
