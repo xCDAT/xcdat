@@ -1,5 +1,6 @@
 """Functions related to calculating climatology cycles and departures."""
-from typing import Tuple, get_args
+
+from typing import Tuple, Union, get_args
 
 import numpy as np
 import xarray as xr
@@ -7,19 +8,53 @@ from typing_extensions import Literal
 
 from xcdat.log import logging
 
-# Available climatology periods
-Period = Literal["month", "season", "year"]
-# Available climatology periods in xarray notation
-TimePeriod = Literal["time.month", "time.season", "time.year"]
+# GROUPS
+# ======
+# Type alias representing available groups for the ``period`` param.
+PeriodGroup = Literal["ANNUALCYCLE", "SEASONALCYCLE", "YEAR"]
+# Tuple for available period groups.
+PERIOD_GROUPS = get_args(PeriodGroup)
+# Type alias representing xarray DateTime accessors.
+# http://xarray.pydata.org/en/stable/generated/xarray.core.accessor_dt.DatetimeAccessor.html
+DateTimeAccessor = Literal["time.month", "time.season", "time.year"]
+# Tuple for available xarray DateTime accessors.
+DATETIME_ACCESSORS = get_args(DateTimeAccessor)
 
-PERIODS: Tuple[Period, ...] = get_args(Period)
+#: Maps period groups to xarray DateTime accessors for xarray operations.
+PERIOD_GROUPS_TO_DATETIME = dict(zip(PERIOD_GROUPS, DATETIME_ACCESSORS))
+
+# MONTHS
+# ======
+# Type alias representing available months for the ``period`` param.
+Month = Literal[
+    "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEPT", "OCT", "NOV", "DEC"
+]
+# Tuple for available months.
+MONTHS = get_args(Month)
+
+# Maps str representation of months to integer for xarray operations.
+MONTHS_TO_INT = dict(zip(MONTHS, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
+
+# SEASONS
+# =======
+# Type alias representing available seasons for the ``period`` param.
+Season = Literal["DJF", "MAM", "JJA", "SON"]
+# Tuple for available seasons.
+SEASONS = get_args(Season)
+
+# ALL PERIODS
+# ===========
+# Type alias representing all of the available ``period`` param options.
+Period = Union[PeriodGroup, Month, Season]
+#: Tuple of all available options for the ``period`` param.
+PERIODS = PERIOD_GROUPS + MONTHS + SEASONS
 
 
 def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.Dataset:
     """Calculates a Dataset's climatology cycle for all data variables.
 
-    The "time" dimension is preserved for reference, which would otherwise be
-    replaced by the period.
+    The "time" dimension and any existing bounds variables are preserved in the
+    dataset.
 
     Parameters
     ----------
@@ -27,9 +62,10 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
         The dataset to calculate climatology cycle.
     period : Period
         The period of time to group by.
+        Refer to ``PERIODS`` for list of available options.
     is_weighted : bool, optional
-        Perform grouping using weighted averages (time bounds, leap years and
-        number of days for each month are considered), by default True.
+        Perform grouping using weighted averages, by default True.
+        Time bounds, leap years, and month lengths are considered.
 
     Returns
     -------
@@ -41,7 +77,7 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     ValueError
         If incorrect ``period`` argument is passed.
     KeyError
-        If the dataset does not have a "time" coordinates.
+        If the dataset does not have "time" coordinates.
 
     Examples
     --------
@@ -57,6 +93,7 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     >>> ds_climo_seasonal = climatology(ds, "season")
     >>> ds_climo_annual = climatology(ds, "year")
 
+
     Get monthly, seasonal, or annual unweighted climatology:
 
     >>> ds_climo_monthly = climatology(ds, "month", is_weighted=False)
@@ -70,10 +107,9 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     >>> ds_climo_monthly.attrs["calculation_info"]
     {'type': 'climatology', 'period': 'month', 'is_weighted': True}
     """
-
     if period not in PERIODS:
         raise ValueError(
-            "Incorrect period argument passed. Period must be month, season, or year."
+            f"Incorrect `period` argument passed. Supported periods include: {', '.join(PERIODS)}."
         )
 
     if ds.get("time") is None:
@@ -90,9 +126,9 @@ def departure(ds_base: xr.Dataset, ds_climatology: xr.Dataset) -> xr.Dataset:
     """Calculates departures for a given climatology.
 
     First, the base dataset is grouped using the same period and weights (if
-    weighted) as the climatology dataset. After grouping, it iterates over each
-    non-bounds variable and get the difference between the base dataset and the
-    climatology dataset.
+    weighted) as the climatology dataset. After grouping, it iterates over the
+    dataset to get the difference between non-bounds variables in the base
+    dataset and the climatology dataset. Bounds variables are preserved.
 
     Parameters
     ----------
@@ -145,13 +181,14 @@ def _group_data(
     period: Period,
     is_weighted: bool,
 ) -> xr.Dataset:
-    """Groups data variables to get their averages over a time period.
+    """Groups data variables by a period to get their averages.
 
-    It iterates over each non-bounds variable and groups them. This preserves
-    bounds variables if they exist, and the time dimension. Once grouping is
-    complete, attributes are added to the dataset to describe the operation
-    performed on it. This distinguishes datasets that have been manipulated
-    from their original source.
+    It iterates over each non-bounds variable and groups them. After grouping,
+    attributes are added to the dataset to describe the operation performed.
+    This distinguishes datasets that have been manipulated from their original source.
+
+    This "time" dimension and any existing bounds variables are preserved in the
+    dataset.
 
     Parameters
     ----------
@@ -169,9 +206,14 @@ def _group_data(
     xr.Dataset
         The dataset with grouped data variables.
     """
-    time_period: TimePeriod = f"time.{period}"  # type:ignore
-    weights = _calculate_weights(ds, time_period) if is_weighted else None
+    # Determine the xarray DateTime accessor for grouping operation and subset
+    # if the period is a single month or season.
+    if period in PERIOD_GROUPS:
+        dt_accessor: DateTimeAccessor = PERIOD_GROUPS_TO_DATETIME[period]
+    elif period in MONTHS + SEASONS:
+        ds, dt_accessor = _subset_data(ds, period)
 
+    weights = _calculate_weights(ds, dt_accessor) if is_weighted else None
     for key in ds.data_vars.keys():
         if "_bnds" not in str(key):
             data_var = ds[key]
@@ -179,7 +221,7 @@ def _group_data(
             if is_weighted:
                 data_var *= weights
 
-            ds[key] = data_var.groupby(time_period).sum(dim="time")
+            ds[key] = data_var.groupby(dt_accessor).sum(dim="time")
 
     ds.attrs.update(
         {
@@ -193,7 +235,33 @@ def _group_data(
     return ds
 
 
-def _calculate_weights(ds: xr.Dataset, time_period: TimePeriod) -> xr.DataArray:
+def _subset_data(ds: xr.Dataset, period: Period) -> Tuple[xr.Dataset, DateTimeAccessor]:
+    """Subsets a dataset for a single month or season.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset to subset.
+    period : Period
+        The period to subset with (a month or a season).
+
+    Returns
+    -------
+    Tuple[xr.Dataset, DateTimeAccessor]
+        The subsetted dataset and associated DateTime accessor.
+    """
+    if period in MONTHS:
+        dt_accessor: DateTimeAccessor = "time.month"
+        month_int = MONTHS_TO_INT[period]
+        ds = ds.where(ds[dt_accessor] == month_int, drop=True)
+    elif period in SEASONS:
+        dt_accessor = "time.season"
+        ds = ds.where(ds[dt_accessor] == period, drop=True)
+
+    return ds, dt_accessor
+
+
+def _calculate_weights(ds: xr.Dataset, dt_accessor: DateTimeAccessor) -> xr.DataArray:
     """Calculates weights for a Dataset based on a period of time.
 
     Time bounds, leap years and number of days for each month are considered
@@ -203,7 +271,7 @@ def _calculate_weights(ds: xr.Dataset, time_period: TimePeriod) -> xr.DataArray:
     ----------
     ds : xr.Dataset
         The dataset to calculate weights for.
-    time_period : TimePeriod
+    dt_accessor : DateTimeAccessor
         The period of time to group by in xarray notation ("time.<period>").
 
     Returns
@@ -213,9 +281,10 @@ def _calculate_weights(ds: xr.Dataset, time_period: TimePeriod) -> xr.DataArray:
     """
     months_lengths = _get_months_lengths(ds)
     weights: xr.DataArray = (
-        months_lengths.groupby(time_period) / months_lengths.groupby(time_period).sum()
+        months_lengths.groupby(dt_accessor) / months_lengths.groupby(dt_accessor).sum()
     )
-    _validate_weights(ds, weights, time_period)
+
+    _validate_weights(ds, weights, dt_accessor)
 
     return weights
 
@@ -254,7 +323,9 @@ def _get_months_lengths(ds: xr.Dataset) -> xr.DataArray:
     return months_lengths
 
 
-def _validate_weights(ds: xr.Dataset, weights: xr.DataArray, time_period: TimePeriod):
+def _validate_weights(
+    ds: xr.Dataset, weights: xr.DataArray, dt_accessor: DateTimeAccessor
+):
     """Validate that the sum of the weights for a dataset equals 1.0.
 
     Parameters
@@ -263,14 +334,15 @@ def _validate_weights(ds: xr.Dataset, weights: xr.DataArray, time_period: TimePe
         The dataset to validate weights for.
     weights : xr.DataArray
         The weights based on a period of time.
-    time_period : TimePeriod
+    dt_accessor : DateTimeAccessor
         The period of time to group by in xarray notation ("time.<period>").
     """
-    expected_count = {
-        "time.month": 12,
-        "time.season": 4,
-        "time.year": np.unique(ds.time.dt.year.data).size,
-    }
+    # 12 groups for 12 months in a year
+    # 4 groups for 4 seasons in year
+    # 1 group for a single month or season
+    period_groups = len(ds.time.groupby(dt_accessor).count())
 
-    expected = np.ones(expected_count[time_period])
-    np.testing.assert_allclose(weights.groupby(time_period).sum().values, expected)
+    expected_sum = np.ones(period_groups)
+    actual_sum = weights.groupby(dt_accessor).sum().values
+
+    np.testing.assert_allclose(actual_sum, expected_sum)
