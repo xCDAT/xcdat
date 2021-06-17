@@ -1,6 +1,6 @@
 """Functions related to calculating climatology cycles and departures."""
 
-from typing import Tuple, Union, get_args
+from typing import Union, get_args
 
 import numpy as np
 import xarray as xr
@@ -14,14 +14,6 @@ from xcdat.log import logging
 PeriodGroup = Literal["ANNUALCYCLE", "SEASONALCYCLE", "YEAR"]
 # Tuple for available period groups.
 PERIOD_GROUPS = get_args(PeriodGroup)
-# Type alias representing xarray DateTime accessors.
-# http://xarray.pydata.org/en/stable/generated/xarray.core.accessor_dt.DatetimeAccessor.html
-DateTimeAccessor = Literal["time.month", "time.season", "time.year"]
-# Tuple for available xarray DateTime accessors.
-DATETIME_ACCESSORS = get_args(DateTimeAccessor)
-
-#: Maps period groups to xarray DateTime accessors for xarray operations.
-PERIOD_GROUPS_TO_DATETIME = dict(zip(PERIOD_GROUPS, DATETIME_ACCESSORS))
 
 # MONTHS
 # ======
@@ -31,7 +23,6 @@ Month = Literal[
 ]
 # Tuple for available months.
 MONTHS = get_args(Month)
-
 # Maps str representation of months to integer for xarray operations.
 MONTHS_TO_INT = dict(zip(MONTHS, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
 
@@ -48,6 +39,20 @@ SEASONS = get_args(Season)
 Period = Union[PeriodGroup, Month, Season]
 #: Tuple of all available options for the ``period`` param.
 PERIODS = PERIOD_GROUPS + MONTHS + SEASONS
+
+# DATETIME ACCESSORS
+# ==================
+# Type alias representing xarray DateTime accessors.
+# http://xarray.pydata.org/en/stable/generated/xarray.core.accessor_dt.DatetimeAccessor.html
+DateTimeAccessor = Literal["time.month", "time.season", "time.year"]
+# Tuple for available xarray DateTime accessors.
+DATETIME_ACCESSORS = get_args(DateTimeAccessor)
+# Maps period options to xarray DateTime accessors for xarray operations.
+PERIODS_TO_DATETIME = {
+    **dict(zip(PERIOD_GROUPS, DATETIME_ACCESSORS)),
+    **{month: "time.month" for month in MONTHS},
+    **{season: "time.season" for season in SEASONS},
+}
 
 
 def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.Dataset:
@@ -208,10 +213,10 @@ def _group_data(
     """
     # Determine the xarray DateTime accessor for grouping operation and subset
     # if the period is a single month or season.
-    if period in PERIOD_GROUPS:
-        dt_accessor: DateTimeAccessor = PERIOD_GROUPS_TO_DATETIME[period]
-    elif period in MONTHS + SEASONS:
-        ds, dt_accessor = _subset_data(ds, period)
+    dt_accessor: DateTimeAccessor = PERIODS_TO_DATETIME[period]
+
+    if period in MONTHS + SEASONS:
+        ds = _subset_data(ds, period, dt_accessor)
 
     weights = _calculate_weights(ds, dt_accessor) if is_weighted else None
     for key in ds.data_vars.keys():
@@ -235,7 +240,9 @@ def _group_data(
     return ds
 
 
-def _subset_data(ds: xr.Dataset, period: Period) -> Tuple[xr.Dataset, DateTimeAccessor]:
+def _subset_data(
+    ds: xr.Dataset, period: Period, dt_accessor: DateTimeAccessor
+) -> xr.Dataset:
     """Subsets a dataset for a single month or season.
 
     Parameters
@@ -243,22 +250,22 @@ def _subset_data(ds: xr.Dataset, period: Period) -> Tuple[xr.Dataset, DateTimeAc
     ds : xr.Dataset
         The dataset to subset.
     period : Period
-        The period to subset with (a month or a season).
+        The single month or season to subset with.
+    dt_accessor : DateTimeAccessor
+        The DateTime accessor to subset with.
 
     Returns
     -------
-    Tuple[xr.Dataset, DateTimeAccessor]
+    xr.Dataset
         The subsetted dataset and associated DateTime accessor.
     """
     if period in MONTHS:
-        dt_accessor: DateTimeAccessor = "time.month"
         month_int = MONTHS_TO_INT[period]
         ds = ds.where(ds[dt_accessor] == month_int, drop=True)
     elif period in SEASONS:
-        dt_accessor = "time.season"
         ds = ds.where(ds[dt_accessor] == period, drop=True)
 
-    return ds, dt_accessor
+    return ds
 
 
 def _calculate_weights(ds: xr.Dataset, dt_accessor: DateTimeAccessor) -> xr.DataArray:
