@@ -1,6 +1,6 @@
 """Functions related to calculating climatology cycles and departures."""
 
-from typing import Union, get_args
+from typing import Dict, Union, get_args
 
 import numpy as np
 import xarray as xr
@@ -8,16 +8,16 @@ from typing_extensions import Literal
 
 from xcdat.log import logging
 
-# GROUPS
-# ======
-# Type alias representing available groups for the ``period`` param.
-PeriodGroup = Literal["ANNUALCYCLE", "SEASONALCYCLE", "YEAR"]
+# PERIODS
+# =======
+# Type alias representing climatology periods for the ``frequency`` param.
+Period = Literal["month", "season", "year"]
 # Tuple for available period groups.
-PERIOD_GROUPS = get_args(PeriodGroup)
+PERIODS = get_args(Period)
 
 # MONTHS
 # ======
-# Type alias representing available months for the ``period`` param.
+# Type alias representing months for the ``frequency`` param.
 Month = Literal[
     "JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEPT", "OCT", "NOV", "DEC"
 ]
@@ -28,46 +28,54 @@ MONTHS_TO_INT = dict(zip(MONTHS, (1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12)))
 
 # SEASONS
 # =======
-# Type alias representing available seasons for the ``period`` param.
+# Type alias representing seasons for the ``frequency`` param.
 Season = Literal["DJF", "MAM", "JJA", "SON"]
 # Tuple for available seasons.
 SEASONS = get_args(Season)
 
-# ALL PERIODS
-# ===========
-# Type alias representing all of the available ``period`` param options.
-Period = Union[PeriodGroup, Month, Season]
-#: Tuple of all available options for the ``period`` param.
-PERIODS = PERIOD_GROUPS + MONTHS + SEASONS
+# ALL FREQUENCIES
+# ===============
+# Type alias representing available ``frequency`` param options.
+Frequency = Union[Period, Month, Season]
+#: Tuple of available frequencies for the ``frequency`` param.
+FREQUENCIES = PERIODS + MONTHS + SEASONS
 
 # DATETIME ACCESSORS
 # ==================
 # Type alias representing xarray DateTime accessors.
-# http://xarray.pydata.org/en/stable/generated/xarray.core.accessor_dt.DatetimeAccessor.html
 DateTimeAccessor = Literal["time.month", "time.season", "time.year"]
-# Tuple for available xarray DateTime accessors.
-DATETIME_ACCESSORS = get_args(DateTimeAccessor)
-# Maps period options to xarray DateTime accessors for xarray operations.
-PERIODS_TO_DATETIME = {
-    **dict(zip(PERIOD_GROUPS, DATETIME_ACCESSORS)),
+# Maps available frequencies to xarray DateTime accessors for xarray operations.
+FREQUENCIES_TO_DATETIME: Dict[str, DateTimeAccessor] = {
+    **{period: f"time.{period}" for period in PERIODS},  # type: ignore
     **{month: "time.month" for month in MONTHS},
     **{season: "time.season" for season in SEASONS},
 }
 
 
-def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.Dataset:
+def climatology(
+    ds: xr.Dataset, frequency: Frequency, is_weighted: bool = True
+) -> xr.Dataset:
     """Calculates a Dataset's climatology cycle for all data variables.
 
     The "time" dimension and any existing bounds variables are preserved in the
     dataset.
 
+    # TODO: Daily climatology
+
     Parameters
     ----------
     ds : xr.Dataset
         The dataset to calculate climatology cycle.
-    period : Period
-        The period of time to group by.
-        Refer to ``PERIODS`` for list of available options.
+    frequency : Frequency
+        The frequency of time to group by. Available aliases:
+
+        - "month" for monthly climatologies
+        - "year" for annual climatologies
+        - "season": for seasonal climatologies
+        - "JAN", "FEB", ...,"DEC": for specific month climatology
+        - "DJF", "MAM", "JJA", or "SON": for specific season climatology
+
+        Refer to ``FREQUENCIES`` for a complete list of available options.
     is_weighted : bool, optional
         Perform grouping using weighted averages, by default True.
         Time bounds, leap years, and month lengths are considered.
@@ -75,12 +83,12 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     Returns
     -------
     xr.Dataset
-        Climatology cycle for all data variables for a period of time.
+        Climatology cycle for all data variables for a frequency of time.
 
     Raises
     ------
     ValueError
-        If incorrect ``period`` argument is passed.
+        If incorrect ``frequency`` argument is passed.
     KeyError
         If the dataset does not have "time" coordinates.
 
@@ -108,13 +116,13 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
     Access attribute for info on climatology operation:
 
     >>> ds_climo_monthly.calculation_info
-    {'type': 'climatology', 'period': 'month', 'is_weighted': True}
+    {'type': 'climatology', 'frequency': 'month', 'is_weighted': True}
     >>> ds_climo_monthly.attrs["calculation_info"]
-    {'type': 'climatology', 'period': 'month', 'is_weighted': True}
+    {'type': 'climatology', 'frequency': 'month', 'is_weighted': True}
     """
-    if period not in PERIODS:
+    if frequency not in FREQUENCIES:
         raise ValueError(
-            f"Incorrect `period` argument passed. Supported periods include: {', '.join(PERIODS)}."
+            f"Incorrect `frequency` argument passed. Supported frequencies include: {', '.join(FREQUENCIES)}."
         )
 
     if ds.get("time") is None:
@@ -123,14 +131,14 @@ def climatology(ds: xr.Dataset, period: Period, is_weighted: bool = True) -> xr.
         )
 
     ds_copy = ds.copy(deep=True)
-    ds_climatology = _group_data(ds_copy, "climatology", period, is_weighted)
+    ds_climatology = _group_data(ds_copy, "climatology", frequency, is_weighted)
     return ds_climatology
 
 
 def departure(ds_base: xr.Dataset, ds_climatology: xr.Dataset) -> xr.Dataset:
     """Calculates departures for a given climatology.
 
-    First, the base dataset is grouped using the same period and weights (if
+    First, the base dataset is grouped using the same frequency and weights (if
     weighted) as the climatology dataset. After grouping, it iterates over the
     dataset to get the difference between non-bounds variables in the base
     dataset and the climatology dataset. Bounds variables are preserved.
@@ -154,7 +162,7 @@ def departure(ds_base: xr.Dataset, ds_climatology: xr.Dataset) -> xr.Dataset:
     >>> import xarray as xr
     >>> from xcdat.climatology import climatology, departure
 
-    Get departure for any time period:
+    Get departure for any time frequency:
 
     >>> ds = xr.open_dataset("file_path")
     >>> ds_climo_monthly = climatology(ds, "month")
@@ -163,14 +171,14 @@ def departure(ds_base: xr.Dataset, ds_climatology: xr.Dataset) -> xr.Dataset:
     Access attribute for info on departure operation:
 
     >>> ds_climo_monthly.calculation_info
-    {'type': 'departure', 'period': 'month', 'is_weighted': True}
+    {'type': 'departure', 'frequency': 'month', 'is_weighted': True}
     >>> ds_climo_monthly.attrs["calculation_info"]
-    {'type': 'departure', 'period': 'month', 'is_weighted': True}
+    {'type': 'departure', 'frequency': 'month', 'is_weighted': True}
     """
-    period = ds_climatology.attrs["calculation_info"]["period"]
+    frequency = ds_climatology.attrs["calculation_info"]["frequency"]
     is_weighted = ds_climatology.attrs["calculation_info"]["is_weighted"]
     ds_departure = _group_data(
-        ds_base.copy(deep=True), "departure", period, is_weighted
+        ds_base.copy(deep=True), "departure", frequency, is_weighted
     )
 
     for key in ds_departure.data_vars.keys():
@@ -183,10 +191,10 @@ def departure(ds_base: xr.Dataset, ds_climatology: xr.Dataset) -> xr.Dataset:
 def _group_data(
     ds: xr.Dataset,
     calculation_type: Literal["climatology", "departure"],
-    period: Period,
+    frequency: Frequency,
     is_weighted: bool,
 ) -> xr.Dataset:
-    """Groups data variables by a period to get their averages.
+    """Groups data variables by a frequency to get their averages.
 
     It iterates over each non-bounds variable and groups them. After grouping,
     attributes are added to the dataset to describe the operation performed.
@@ -201,8 +209,8 @@ def _group_data(
         The dataset to perform group operation on.
     calculation_type : Literal["climatology", "departure"]
         The calculation type.
-    period : Period
-        The period of time to group on.
+    frequency : Frequency
+        The frequency of time to group on.
     is_weighted : bool
         Perform grouping using weighted averages.
 
@@ -211,12 +219,10 @@ def _group_data(
     xr.Dataset
         The dataset with grouped data variables.
     """
-    # Determine the xarray DateTime accessor for grouping operation and subset
-    # if the period is a single month or season.
-    dt_accessor: DateTimeAccessor = PERIODS_TO_DATETIME[period]
+    dt_accessor: DateTimeAccessor = FREQUENCIES_TO_DATETIME[frequency]
 
-    if period in MONTHS + SEASONS:
-        ds = _subset_data(ds, period, dt_accessor)
+    if frequency in MONTHS + SEASONS:
+        ds = _subset_data(ds, frequency, dt_accessor)
 
     weights = _calculate_weights(ds, dt_accessor) if is_weighted else None
     for key in ds.data_vars.keys():
@@ -232,7 +238,7 @@ def _group_data(
         {
             "calculation_info": {
                 "type": calculation_type,
-                "period": period,
+                "frequency": frequency,
                 "is_weighted": is_weighted,
             },
         }
@@ -241,7 +247,7 @@ def _group_data(
 
 
 def _subset_data(
-    ds: xr.Dataset, period: Period, dt_accessor: DateTimeAccessor
+    ds: xr.Dataset, frequency: Frequency, dt_accessor: DateTimeAccessor
 ) -> xr.Dataset:
     """Subsets a dataset for a single month or season.
 
@@ -249,7 +255,7 @@ def _subset_data(
     ----------
     ds : xr.Dataset
         The dataset to subset.
-    period : Period
+    frequency : Frequency
         The single month or season to subset with.
     dt_accessor : DateTimeAccessor
         The DateTime accessor to subset with.
@@ -259,17 +265,17 @@ def _subset_data(
     xr.Dataset
         The subsetted dataset and associated DateTime accessor.
     """
-    if period in MONTHS:
-        month_int = MONTHS_TO_INT[period]
+    if frequency in MONTHS:
+        month_int = MONTHS_TO_INT[frequency]
         ds = ds.where(ds[dt_accessor] == month_int, drop=True)
-    elif period in SEASONS:
-        ds = ds.where(ds[dt_accessor] == period, drop=True)
+    elif frequency in SEASONS:
+        ds = ds.where(ds[dt_accessor] == frequency, drop=True)
 
     return ds
 
 
 def _calculate_weights(ds: xr.Dataset, dt_accessor: DateTimeAccessor) -> xr.DataArray:
-    """Calculates weights for a Dataset based on a period of time.
+    """Calculates weights for a Dataset based on a frequency of time.
 
     Time bounds, leap years and number of days for each month are considered
     during grouping.
@@ -279,12 +285,12 @@ def _calculate_weights(ds: xr.Dataset, dt_accessor: DateTimeAccessor) -> xr.Data
     ds : xr.Dataset
         The dataset to calculate weights for.
     dt_accessor : DateTimeAccessor
-        The period of time to group by in xarray notation ("time.<period>").
+        The frequency of time to group by in xarray notation ("time.<frequency>").
 
     Returns
     -------
     xr.DataArray
-        The weights based on a period of time.
+        The weights based on a frequency of time.
     """
     months_lengths = _get_months_lengths(ds)
     weights: xr.DataArray = (
@@ -340,16 +346,16 @@ def _validate_weights(
     ds : xr.Dataset
         The dataset to validate weights for.
     weights : xr.DataArray
-        The weights based on a period of time.
+        The weights based on a frequency of time.
     dt_accessor : DateTimeAccessor
-        The period of time to group by in xarray notation ("time.<period>").
+        The frequency of time to group by in xarray notation ("time.<frequency>").
     """
     # 12 groups for 12 months in a year
     # 4 groups for 4 seasons in year
     # 1 group for a single month or season
-    period_groups = len(ds.time.groupby(dt_accessor).count())
+    frequency_groups = len(ds.time.groupby(dt_accessor).count())
 
-    expected_sum = np.ones(period_groups)
+    expected_sum = np.ones(frequency_groups)
     actual_sum = weights.groupby(dt_accessor).sum().values
 
     np.testing.assert_allclose(actual_sum, expected_sum)

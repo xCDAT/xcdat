@@ -57,7 +57,7 @@ class TestClimatology:
             attrs={
                 "calculation_info": {
                     "type": "climatology",
-                    "period": "season",
+                    "frequency": "season",
                     "is_weighted": True,
                 },
             },
@@ -82,7 +82,7 @@ class TestClimatology:
             attrs={
                 "calculation_info": {
                     "type": "climatology",
-                    "period": "season",
+                    "frequency": "season",
                     "is_weighted": False,
                 },
             },
@@ -120,7 +120,7 @@ class TestDeparture:
             attrs={
                 "calculation_info": {
                     "type": "departure",
-                    "period": "season",
+                    "frequency": "season",
                     "is_weighted": True,
                 },
             },
@@ -150,7 +150,7 @@ class TestDeparture:
             {
                 "calculation_info": {
                     "type": "departure",
-                    "period": "season",
+                    "frequency": "season",
                     "is_weighted": True,
                 },
             }
@@ -192,7 +192,7 @@ class TestDeparture:
             attrs={
                 "calculation_info": {
                     "type": "departure",
-                    "period": "season",
+                    "frequency": "season",
                     "is_weighted": False,
                 },
             },
@@ -222,7 +222,7 @@ class TestDeparture:
             {
                 "calculation_info": {
                     "type": "departure",
-                    "period": "season",
+                    "frequency": "season",
                     "is_weighted": False,
                 },
             }
@@ -252,7 +252,7 @@ class TestGroupData:
         # Check non-bounds variables were properly grouped and averaged
         result = _group_data(ds.copy(), "climatology", "season", is_weighted=True)
         assert result.attrs["calculation_info"]["type"] == "climatology"
-        assert result.attrs["calculation_info"]["period"] == "season"
+        assert result.attrs["calculation_info"]["frequency"] == "season"
         assert result.attrs["calculation_info"]["is_weighted"] is True
 
         ts_expected = np.ones((4, 4, 4))
@@ -271,7 +271,7 @@ class TestGroupData:
         # Check non-bounds variables were properly grouped and averaged
         result = _group_data(ds.copy(), "climatology", "season", is_weighted=False)
         assert result.attrs["calculation_info"]["type"] == "climatology"
-        assert result.attrs["calculation_info"]["period"] == "season"
+        assert result.attrs["calculation_info"]["frequency"] == "season"
         assert result.attrs["calculation_info"]["is_weighted"] is False
 
         ts_expected = np.full((4, 4, 4), 3)
