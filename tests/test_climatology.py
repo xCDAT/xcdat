@@ -12,9 +12,9 @@ from tests.fixtures import (
     time_bnds,
 )
 from xcdat.climatology import (
-    _calculate_weights,
     _get_months_lengths,
     _group_data,
+    calculate_weights,
     climatology,
     departure,
 )
@@ -59,6 +59,7 @@ class TestClimatology:
                     "type": "climatology",
                     "frequency": "season",
                     "is_weighted": True,
+                    "djf_type": None,
                 },
             },
         )
@@ -84,6 +85,7 @@ class TestClimatology:
                     "type": "climatology",
                     "frequency": "season",
                     "is_weighted": False,
+                    "djf_type": None,
                 },
             },
         )
@@ -122,6 +124,7 @@ class TestDeparture:
                     "type": "departure",
                     "frequency": "season",
                     "is_weighted": True,
+                    "djf_type": None,
                 },
             },
         )
@@ -152,6 +155,7 @@ class TestDeparture:
                     "type": "departure",
                     "frequency": "season",
                     "is_weighted": True,
+                    "djf_type": None,
                 },
             }
         )
@@ -194,6 +198,7 @@ class TestDeparture:
                     "type": "departure",
                     "frequency": "season",
                     "is_weighted": False,
+                    "djf_type": None,
                 },
             },
         )
@@ -224,6 +229,7 @@ class TestDeparture:
                     "type": "departure",
                     "frequency": "season",
                     "is_weighted": False,
+                    "djf_type": None,
                 },
             }
         )
@@ -290,14 +296,14 @@ class TestCalculateWeights:
     def setup(self):
         self.ds: xr.Dataset = generate_dataset(bounds=True)
 
-    def test__calculate_weights_monthly(self):
+    def test_calculate_weights_monthly(self):
         expected = np.array(
             [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
         )
-        result = _calculate_weights(self.ds, "time.month")
+        result = calculate_weights(self.ds, "month")
         assert np.allclose(result, expected)
 
-    def test__calculate_weights_seasonal(self):
+    def test_calculate_weights_seasonal(self):
         expected = np.array(
             [
                 0.34065934,
@@ -314,10 +320,10 @@ class TestCalculateWeights:
                 0.34065934,
             ],
         )
-        result = _calculate_weights(self.ds, "time.season")
+        result = calculate_weights(self.ds, "season")
         assert np.allclose(result, expected)
 
-    def test__calculate_weights_annual(self):
+    def test_calculate_weights_annual(self):
         expected = np.array(
             [
                 0.08469945,
@@ -335,7 +341,7 @@ class TestCalculateWeights:
             ]
         )
 
-        result = _calculate_weights(self.ds, "time.year")
+        result = calculate_weights(self.ds, "year")
         assert np.allclose(result, expected)
 
     def test__get_months_lengths_with_time_bounds(self):
