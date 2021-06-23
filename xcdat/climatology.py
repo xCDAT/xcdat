@@ -1,6 +1,6 @@
 """Functions related to calculating climatology cycles and departures."""
 
-from typing import Dict, Union, get_args
+from typing import Dict, Optional, Union, get_args
 
 import numpy as np
 import xarray as xr
@@ -40,20 +40,27 @@ Frequency = Union[Period, Month, Season]
 #: Tuple of available frequencies for the ``frequency`` param.
 FREQUENCIES = PERIODS + MONTHS + SEASONS
 
-# DATETIME ACCESSORS
+# DATETIME COMPONENTS
 # ==================
-# Type alias representing xarray DateTime accessors.
-DateTimeAccessor = Literal["time.month", "time.season", "time.year"]
-# Maps available frequencies to xarray DateTime accessors for xarray operations.
-FREQUENCIES_TO_DATETIME: Dict[str, DateTimeAccessor] = {
+# Type alias representing xarray DateTime components.
+DateTimeComponent = Literal["time.month", "time.season", "time.year"]
+# Maps available frequencies to xarray DateTime components for xarray operations.
+FREQUENCIES_TO_DATETIME: Dict[str, DateTimeComponent] = {
     **{period: f"time.{period}" for period in PERIODS},  # type: ignore
     **{month: "time.month" for month in MONTHS},
     **{season: "time.season" for season in SEASONS},
 }
 
 
+DJFType = Literal["scd", "sdd"]
+DJF_TYPES = get_args(DJFType)
+
+
 def climatology(
-    ds: xr.Dataset, frequency: Frequency, is_weighted: bool = True
+    ds: xr.Dataset,
+    frequency: Frequency,
+    is_weighted: bool = True,
+    djf_type: Optional[DJFType] = "scd",
 ) -> xr.Dataset:
     """Calculates a Dataset's climatology cycle for all data variables.
 
@@ -69,16 +76,44 @@ def climatology(
     frequency : Frequency
         The frequency of time to group by. Available aliases:
 
-        - "month" for monthly climatologies
-        - "year" for annual climatologies
-        - "season": for seasonal climatologies
-        - "JAN", "FEB", ...,"DEC": for specific month climatology
-        - "DJF", "MAM", "JJA", or "SON": for specific season climatology
+        - ``"month"`` for monthly climatologies.
+        - ``"year"`` for annual climatologies.
+        - ``"season"` for seasonal climatologies.
+        - ``"JAN", "FEB", ..., or "DEC"`` for specific month climatology.
+          - Averages the month across all seasons.
+        - ``"DJF", "MAM", "JJA", or "SON"`` for specific season climatology.
+          - Average the season across all years.
 
         Refer to ``FREQUENCIES`` for a complete list of available options.
     is_weighted : bool, optional
         Perform grouping using weighted averages, by default True.
         Time bounds, leap years, and month lengths are considered.
+    djf_type : Optional[DJFType], optional
+        Whether DJF climatology contains a seasonally continuous or
+        discontinuous December, by default "scd".
+
+        - ``"scd"`` for seasonally continuous December.
+        - ``"sdd"`` for seasonally discontinuous December.
+
+        Seasonally continuous December (``"scd"``) refers to continuity between
+        December and January. DJF starts on the first year Dec and second year
+        Jan/Feb, and ending on the second to last year Dec and last year Jan +
+        Feb). Incomplete seasons are dropped (first year Jan/ Feb and last year
+        Dec).
+
+        - Example Date Range: Jan/2015 - Dec/2017
+        - Start -> Dec/2015, Jan/2016, Feb/2016
+        - End -> Dec/2016, Jan/2017, Feb/2017
+        - Dropped incomplete seasons -> Jan/2015, Feb/2015, and Dec/2017
+
+        Seasonally discontinuous December (``"sdd"``) refers to discontinuity
+        between Feb and Dec. DJF starts on the first year Jan/Feb/Dec, and
+        ending on the last year Jan/Feb/Dec. This is the default xarray behavior
+        when grouping by season.
+
+        - Example Date Range: Jan/2015 - Dec/2017
+        - Start -> Jan/2015, Feb/2015, Dec/2015
+        - End -> Jan/2017, Feb/2017, Dec/2017
 
     Returns
     -------
@@ -120,18 +155,28 @@ def climatology(
     >>> ds_climo_monthly.attrs["calculation_info"]
     {'type': 'climatology', 'frequency': 'month', 'is_weighted': True}
     """
-    if frequency not in FREQUENCIES:
-        raise ValueError(
-            f"Incorrect `frequency` argument passed. Supported frequencies include: {', '.join(FREQUENCIES)}."
-        )
-
     if ds.get("time") is None:
         raise KeyError(
             "This dataset does not have 'time' coordinates. Cannot calculate climatology."
         )
 
+    if frequency not in FREQUENCIES:
+        raise ValueError(
+            f"Incorrect `frequency` argument. Supported frequencies include: {', '.join(FREQUENCIES)}."
+        )
+
+    if frequency != "DJF" and djf_type is not None:
+        raise ValueError("`djf_type` specified but `frequency` is not set to 'DJF'")
+
+    if djf_type not in DJF_TYPES:
+        raise ValueError(
+            f"Incorrect `djf_type` argument. Supported DJF types include: {', '.join(DJF_TYPES)}"
+        )
+
     ds_copy = ds.copy(deep=True)
-    ds_climatology = _group_data(ds_copy, "climatology", frequency, is_weighted)
+    ds_climatology = _group_data(
+        ds_copy, "climatology", frequency, is_weighted, djf_type
+    )
     return ds_climatology
 
 
@@ -177,8 +222,10 @@ def departure(ds_base: xr.Dataset, ds_climatology: xr.Dataset) -> xr.Dataset:
     """
     frequency = ds_climatology.attrs["calculation_info"]["frequency"]
     is_weighted = ds_climatology.attrs["calculation_info"]["is_weighted"]
+    djf_type = ds_climatology.attrs["calculation_info"]["djf_type"]
+
     ds_departure = _group_data(
-        ds_base.copy(deep=True), "departure", frequency, is_weighted
+        ds_base.copy(deep=True), "departure", frequency, is_weighted, djf_type
     )
 
     for key in ds_departure.data_vars.keys():
@@ -193,6 +240,7 @@ def _group_data(
     calculation_type: Literal["climatology", "departure"],
     frequency: Frequency,
     is_weighted: bool,
+    djf_type: Optional[DJFType],
 ) -> xr.Dataset:
     """Groups data variables by a frequency to get their averages.
 
@@ -213,68 +261,79 @@ def _group_data(
         The frequency of time to group on.
     is_weighted : bool
         Perform grouping using weighted averages.
+    djf_type : Optional[DJFType], optional
+        Whether DJF climatology contains a seasonally continuous or
+        discontinuous December.
 
     Returns
     -------
     xr.Dataset
         The dataset with grouped data variables.
     """
-    dt_accessor: DateTimeAccessor = FREQUENCIES_TO_DATETIME[frequency]
+    datetime_component: DateTimeComponent = FREQUENCIES_TO_DATETIME[frequency]
 
-    if frequency in MONTHS + SEASONS:
-        ds = _subset_data(ds, frequency, dt_accessor)
+    if frequency in MONTHS:
+        month_int = MONTHS_TO_INT[frequency]
+        ds = ds.where(ds[datetime_component] == month_int, drop=True)
+    elif frequency in SEASONS:
+        ds = ds.where(ds[datetime_component] == frequency, drop=True)
 
-    weights = _calculate_weights(ds, dt_accessor) if is_weighted else None
-    for key in ds.data_vars.keys():
-        if "_bnds" not in str(key):
-            data_var = ds[key]
+    weights = _calculate_weights(ds, datetime_component) if is_weighted else None
 
-            if is_weighted:
-                data_var *= weights
+    # DJF scd uses a custom grouping operation with rolling windows
+    if frequency == "DJF" and djf_type == "scd":
+        ds = _group_djf_scd(ds)
+        return ds
+    else:
+        for key in ds.data_vars.keys():
+            if "_bnds" not in str(key):
+                data_var = ds[key]
 
-            ds[key] = data_var.groupby(dt_accessor).sum(dim="time")
+                if is_weighted:
+                    data_var *= weights
 
-    ds.attrs.update(
-        {
-            "calculation_info": {
-                "type": calculation_type,
-                "frequency": frequency,
-                "is_weighted": is_weighted,
-            },
-        }
-    )
+                ds[key] = data_var.groupby(datetime_component).sum(dim="time")
+
+        ds.attrs.update(
+            {
+                "calculation_info": {
+                    "type": calculation_type,
+                    "frequency": frequency,
+                    "is_weighted": is_weighted,
+                    "djf_type": djf_type,
+                },
+            }
+        )
     return ds
 
 
-def _subset_data(
-    ds: xr.Dataset, frequency: Frequency, dt_accessor: DateTimeAccessor
-) -> xr.Dataset:
-    """Subsets a dataset for a single month or season.
+def _group_djf_scd(ds: xr.Dataset) -> xr.Dataset:
+    """Subsets DJF climatology dataset with seasonally continuous December.
 
     Parameters
     ----------
     ds : xr.Dataset
-        The dataset to subset.
-    frequency : Frequency
-        The single month or season to subset with.
-    dt_accessor : DateTimeAccessor
-        The DateTime accessor to subset with.
+        The DJF climatology dataset.
 
     Returns
     -------
     xr.Dataset
-        The subsetted dataset and associated DateTime accessor.
+        The DJF seasonally continuous climatology dataset
     """
-    if frequency in MONTHS:
-        month_int = MONTHS_TO_INT[frequency]
-        ds = ds.where(ds[dt_accessor] == month_int, drop=True)
-    elif frequency in SEASONS:
-        ds = ds.where(ds[dt_accessor] == frequency, drop=True)
+
+    # https://github.com/pydata/xarray/issues/810
+    # https://stackoverflow.com/questions/59234745/is-there-any-easy-way-to-compute-seasonal-mean-with-xarray
+    # https://stackoverflow.com/questions/64976340/keeping-time-series-while-grouping-by-season-in-xarray
+
+    # however, we loose Jan/ Feb in the first year and Dec in the last
+    ds_DJF = ds.rolling(min_periods=3, center=True, time=3)
+    # make annual mean
+    ds_DJF = ds_DJF.groupby("time.year").mean("time")
 
     return ds
 
 
-def _calculate_weights(ds: xr.Dataset, dt_accessor: DateTimeAccessor) -> xr.DataArray:
+def _calculate_weights(ds: xr.Dataset, dt_accessor: DateTimeComponent) -> xr.DataArray:
     """Calculates weights for a Dataset based on a frequency of time.
 
     Time bounds, leap years and number of days for each month are considered
@@ -337,7 +396,7 @@ def _get_months_lengths(ds: xr.Dataset) -> xr.DataArray:
 
 
 def _validate_weights(
-    ds: xr.Dataset, weights: xr.DataArray, dt_accessor: DateTimeAccessor
+    ds: xr.Dataset, weights: xr.DataArray, dt_accessor: DateTimeComponent
 ):
     """Validate that the sum of the weights for a dataset equals 1.0.
 
