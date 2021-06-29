@@ -35,13 +35,21 @@ jobs:
 
             - name: Additional Conda Config
               run: |
-                  conda install anaconda-client conda-build conda-verify
                   conda config --set anaconda_upload no
 
             - name: Build Conda Package
-              run: conda build -c conda-forge --output-folder conda-build conda-recipe
+              run: conda build -c conda-forge --output-folder . .
 
             - name: Publish to Anaconda
               env:
                   ANACONDA_API_TOKEN: ${{ secrets.ANACONDA_API_TOKEN }}
-              run: anaconda upload conda-build/noarch/*.tar.bz2 --label main --force
+              run: |
+                  label="main"
+                  for file in noarch/*.tar.bz2; do
+                      if [[ "$file" == noarch/*"rc"*.tar.bz2 ]]; then
+                      label="rc"
+                      fi
+                  done
+
+                  echo Uploading with \'$label\' label
+                  anaconda upload --label $label noarch/*.tar.bz2 --force
