@@ -31,13 +31,18 @@ class TestClimatology:
             dims=["season"],
         )
 
-    def test_climatology_throws_error_with_incorrect_period_arg(self):
+    def test_climatology_throws_error_with_incorrect_djf_type_arg(self):
         with pytest.raises(ValueError):
-            climatology(self.ds, "incorrect_period")  # type: ignore
+            climatology(self.ds, "DJF", djf_type="incorrect")  # type: ignore
+
+    def test_climatology_throws_error_with_incorrect_frequency_arg(self):
+        with pytest.raises(ValueError):
+            climatology(self.ds, "incorrect_frequency")  # type: ignore
 
     def test_climatology_throws_error_without_time_dimension(self):
         ds = self.ds.copy()
         ds = ds.drop_dims("time")
+
         with pytest.raises(KeyError):
             climatology(ds, "season")
 
@@ -59,7 +64,6 @@ class TestClimatology:
                     "type": "climatology",
                     "frequency": "season",
                     "is_weighted": True,
-                    "djf_type": None,
                 },
             },
         )
@@ -85,7 +89,6 @@ class TestClimatology:
                     "type": "climatology",
                     "frequency": "season",
                     "is_weighted": False,
-                    "djf_type": None,
                 },
             },
         )
@@ -124,7 +127,6 @@ class TestDeparture:
                     "type": "departure",
                     "frequency": "season",
                     "is_weighted": True,
-                    "djf_type": None,
                 },
             },
         )
@@ -155,7 +157,6 @@ class TestDeparture:
                     "type": "departure",
                     "frequency": "season",
                     "is_weighted": True,
-                    "djf_type": None,
                 },
             }
         )
@@ -198,7 +199,6 @@ class TestDeparture:
                     "type": "departure",
                     "frequency": "season",
                     "is_weighted": False,
-                    "djf_type": None,
                 },
             },
         )
@@ -229,7 +229,6 @@ class TestDeparture:
                     "type": "departure",
                     "frequency": "season",
                     "is_weighted": False,
-                    "djf_type": None,
                 },
             }
         )
