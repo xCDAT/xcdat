@@ -17,7 +17,7 @@ class TestAxisAccessor:
         lon = xr.DataArray(
             data=np.array([0, 1.875, 356.25, 358.125]),
             dims=["lon"],
-            attrs={"units": "degrees_east", "axis": "x"},
+            attrs={"units": "degrees_east", "axis": "X"},
         )
 
         # Generated axes boundaries for assertions
@@ -26,9 +26,9 @@ class TestAxisAccessor:
             data=np.array(
                 [[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]
             ),
-            coords={"lat": lat.data},
+            coords={"lat": lat},
             dims=["lat", "bnds"],
-            attrs={"units": "degrees_north", "is_generated": True},
+            attrs={"units": "degrees_north", "axis": "Y", "is_generated": True},
         )
         self.lon_bnds = xr.DataArray(
             name="lon_bnds",
@@ -40,9 +40,9 @@ class TestAxisAccessor:
                     [357.1875, 359.0625],
                 ]
             ),
-            coords={"lon": lon.data},
+            coords={"lon": lon},
             dims=["lon", "bnds"],
-            attrs={"units": "degrees_east", "is_generated": True},
+            attrs={"units": "degrees_east", "axis": "X", "is_generated": True},
         )
 
         # Create Dataset using coordinates (for testing short axes names)
@@ -98,6 +98,17 @@ class TestAxisAccessor:
         with pytest.raises(ValueError):
             obj.get_bounds("incorrect_axis_argument")  # type: ignore
 
+    def test__get_bounds_does_not_drop_attrs_of_existing_coords_when_generating_bounds(
+        self,
+    ):
+        ds = self.ds.copy()
+
+        lat_bnds = ds.axis.get_bounds("lat", allow_generating=True)
+        assert lat_bnds.equals(self.lat_bnds)
+        ds = ds.drop("lat_bnds")
+
+        assert ds.identical(self.ds)
+
     def test__gen_bounds_raises_errors(self):
         obj = AxisAccessor(self.ds)
 
@@ -111,7 +122,7 @@ class TestAxisAccessor:
             obj._dataset.lat.attrs["units"] = "incorrect_value"
             obj._gen_bounds("lat")
 
-    def test__gen_bounds_for_short_axis_name(self):
+    def test__gen_bounds_returns_bnds(self):
         obj = AxisAccessor(self.ds)
 
         lat_bnds = obj._gen_bounds("lat")
