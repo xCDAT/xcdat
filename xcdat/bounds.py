@@ -1,11 +1,11 @@
 """Bounds module for functions related to coordinate bounds."""
 import collections
-from typing import Dict, Optional, Tuple, get_args
+from typing import Dict, Optional, Tuple
 
 import cf_xarray as cfxr  # noqa: F401
 import numpy as np
 import xarray as xr
-from typing_extensions import Literal
+from typing_extensions import Literal, get_args
 
 from xcdat.logger import setup_custom_logger
 

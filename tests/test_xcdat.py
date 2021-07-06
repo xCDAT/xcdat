@@ -1,3 +1,6 @@
+import numpy as np
+import xarray as xr
+
 from tests.fixtures import generate_dataset, lat_bnds
 from xcdat.xcdat import XCDATAccessor
 
@@ -18,6 +21,28 @@ class TestXCDATAccessor:
     def test_decorator_call(self):
 
         self.ds.xcdat._dataset.identical(self.ds)
+
+    def test_weighted_spatial_average_for_lat_and_lon_region(self):
+        ds = self.ds_with_bnds.copy()
+
+        # Limit to just 3 data points to simplify testing.
+        ds = ds.isel(time=slice(None, 3))
+
+        # Change the value of the first element so that it is easier to identify
+        # changes in the output.
+        ds["ts"].data[0] = np.full((4, 4), 2.25)
+
+        result = ds.xcdat.spatial_avg(
+            "ts", axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+        )
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, 1.0, 1.0]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        assert result.identical(expected)
 
     def test_bounds_property_returns_expected(self):
         ds = self.ds_with_bnds.copy()
