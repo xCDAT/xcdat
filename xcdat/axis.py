@@ -164,9 +164,9 @@ class AxisAccessor:
         self._dataset[var_name] = xr.DataArray(
             name=var_name,
             data=bounds,
-            coords={axis: axis_coords.data},
+            coords={axis: axis_coords},
             dims=[axis, "bnds"],
-            attrs={"units": axis_coords.units, "is_generated": True},
+            attrs={**axis_coords.attrs, "is_generated": True},
         )
         return self._dataset[var_name]
 
