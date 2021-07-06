@@ -187,7 +187,6 @@ def decode_time_units(dataset: xr.Dataset):
     """
     time = dataset["time"]
     units_attr = time.attrs.get("units")
-
     if units_attr is None:
         raise KeyError(
             "No 'units' attribute found for time coordinate. Make sure to open "
