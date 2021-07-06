@@ -4,6 +4,7 @@ API Reference
 .. autosummary::
    :toctree: generated/
 
-   xcdat.coord
-   xcdat.log
-   xcdat.utils
+   xcdat.bounds
+   xcdat.dataset
+   xcdat.logger
+   xcdat.variable

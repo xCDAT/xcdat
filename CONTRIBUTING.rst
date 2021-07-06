@@ -183,14 +183,14 @@ Local Development
     plugins: anyio-2.2.0, cov-2.11.1
     collected 3 items
 
-    tests/test_utils.py ..
+    tests/test_dataset.py ..
     tests/test_xcdat.py .
 
     ---------- coverage: platform darwin, python 3.8.8-final-0 -----------
     Name                Stmts   Miss  Cover
     ---------------------------------------
     xcdat/__init__.py       3      0   100%
-    xcdat/utils.py         18      0   100%
+    xcdat/dataset.py       18      0   100%
     xcdat/xcdat.py          0      0   100%
     ---------------------------------------
     TOTAL                  21      0   100%

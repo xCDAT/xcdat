@@ -21,19 +21,18 @@ requirements:
   run:
     - python
     - typing_extensions
-    - cartopy
-    - matplotlib
     - netcdf4
     - xarray
-    - typing_extensions
+    - dask
     - cf_xarray
 
 test:
   imports:
     - xcdat
-    - xcdat.logs
-    - xcdat.coord
-    - xcdat.utils
+    - xcdat.bounds
+    - xcdat.dataset
+    - xcdat.logger
+    - xcdat.variable
 
 about:
     home: https://github.com/tomvothecoder/xcdat

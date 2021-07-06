@@ -1,4 +1,4 @@
-"""Coordinate module that contains coordinate related functions (e.g., getting bounds)."""
+"""Bounds module for functions related to coordinate bounds."""
 from typing import Optional, Tuple, get_args
 
 import cf_xarray as cfxr  # noqa: F401
@@ -6,40 +6,54 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Literal
 
-from xcdat.log import setup_custom_logger
+from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger("root")
 
+Coord = Literal["lat", "latitude", "lon", "longitude", "time"]
+#: Tuple of supported coordinates in xCDAT functions and methods.
+SUPPORTED_COORDS: Tuple[Coord, ...] = get_args(Coord)
 
-@xr.register_dataset_accessor("coord")
-class CoordAccessor:
-    """A class to represent the CoordAccessor xarray extension.
+
+@xr.register_dataset_accessor("bounds")
+class DatasetBoundsAccessor:
+    """A class to represent the DatasetBoundsAccessor.
 
     Examples
     ---------
     Import:
 
-    >>> from xcdat import coord
+    >>> from xcdat import bounds
 
     Get coordinate bounds if they exist, otherwise return generated bounds:
 
     >>> ds = xr.open_dataset("file_path")
-    >>> lat_bnds = ds.coord.get_bounds("lat") # or pass "latitude"
-    >>> lon_bnds = ds.coord.get_bounds("lon") # or pass "longitude"
-    >>> time_bnds = ds.coord.get_bounds("time")
+    >>> lat_bounds = ds.bounds.get_bounds("lat") # or pass "latitude"
+    >>> lon_bounds = ds.bounds.get_bounds("lon") # or pass "longitude"
+    >>> time_bounds = ds.bounds.get_bounds("time")
 
     Get coordinate bounds and don't generate if they don't exist:
 
     >>> ds = xr.open_dataset("file_path")
     >>> # Throws error if no bounds exist
-    >>> lat_bnds = ds.coord.get_bounds("lat", allow_generating=False)
+    >>> lat_bounds = ds.bounds.get_bounds("lat", allow_generating=False)
     """
-
-    Coord = Literal["lat", "latitude", "lon", "longitude", "time"]
-    COORD_ARGUMENTS: Tuple[Coord, ...] = get_args(Coord)
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
+
+    def get_bounds_for_all_coords(self, allow_generating=True) -> xr.Dataset:
+        """Gets existing bounds or generates new ones for supported coordinates.
+
+        Returns
+        -------
+        xr.Dataset
+        """
+        for coord in [*self._dataset.coords]:
+            if coord in SUPPORTED_COORDS:
+                self.get_bounds(coord, allow_generating)
+
+        return self._dataset
 
     def get_bounds(
         self,
@@ -75,10 +89,10 @@ class CoordAccessor:
         ValueError
             If ``allow_generating=False`` and no bounds were found in the dataset.
         """
-        if coord not in CoordAccessor.COORD_ARGUMENTS:
+        if coord not in SUPPORTED_COORDS:
             raise ValueError(
                 "Incorrect `coord` argument. Supported coordinates include: Supported "
-                f"arguments include: {', '.join(CoordAccessor.COORD_ARGUMENTS)}."
+                f"arguments include: {', '.join(SUPPORTED_COORDS)}."
             )
 
         try:
@@ -109,8 +123,8 @@ class CoordAccessor:
         coord : Coord
             The coordinate.
         width : float, optional
-            Width of the bounds relative to the position of the nearest points,
-            by default 0.5.
+            Width of the bounds relative to the position of the nearest
+            points, by default 0.5.
 
         Returns
         -------
@@ -201,3 +215,69 @@ class CoordAccessor:
             raise KeyError(f"No matching coordinates for coord: {coord}")
 
         return matching_coord
+
+
+@xr.register_dataarray_accessor("bounds")
+class DataArrayBoundsAccessor:
+    """A class representing the DataArrayBoundsAccessor.
+
+    Examples
+    --------
+    Import module:
+
+    >>> from xcdat import bounds
+    >>> from xcdat.dataset import open_dataset
+
+    Return attribute (refer to ``tas.bounds__dict__`` for attributes):
+
+    >>> tas.bounds.<attribute>
+
+    Copy axis bounds from parent Dataset to data variable:
+
+    >>> ds = open_dataset("file_path") # Auto-generates bounds if missing
+    >>> tas = ds["tas"]
+    >>> tas.bounds._copy_from_dataset(ds)
+    """
+
+    def __init__(self, dataarray: xr.DataArray):
+        self._dataarray = dataarray
+
+        self.lat = None
+        self.lon = None
+        self.time = None
+
+    def _copy_from_dataset(self, dataset: xr.Dataset):
+        """Copies coordinate bounds from the parent Dataset to object attrs.
+
+        In a Dataset, variables (e.g., "tas") and axis bounds (e.g.,
+        "lat_bnds") are stored in the Dataset's data variables. Since
+        variables and coordinate bounds are independent DataArrays, there
+        is no link between them. This becomes an issue in a scenario where
+        the user extracts a variable and needs to reference axis bounds.
+
+        This function solves this issue by copying the axis bounds from
+        the parent Dataset to the data variable as custom object
+        attributes.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The parent Dataset.
+        """
+        coords = [*dataset.coords]
+
+        boundless_coords = []
+        for coord in coords:
+            try:
+                bounds = dataset.cf.get_bounds(coord)
+                setattr(self, coord, bounds)
+            except KeyError:
+                boundless_coords.append(coord)
+
+        if boundless_coords:
+            raise ValueError(
+                "The dataset is missing bounds for the following coords: "
+                f"{', '.join(boundless_coords)}. Pass the dataset to"
+                "`xcdat.dataset.open_dataset` to auto-generate bounds before passing it "
+                "to this function."
+            )
