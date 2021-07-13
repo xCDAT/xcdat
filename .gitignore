@@ -113,3 +113,6 @@ ENV/
 
 # Anaconda
 conda-build/
+
+# Ad-hoc QA
+qa/

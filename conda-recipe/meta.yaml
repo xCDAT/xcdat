@@ -26,11 +26,14 @@ requirements:
     - netcdf4
     - xarray
     - typing_extensions
+    - cf_xarray
 
 test:
   imports:
     - xcdat
-    - xcdat.axis
+    - xcdat.logs
+    - xcdat.coord
+    - xcdat.utils
 
 about:
     home: https://github.com/tomvothecoder/xcdat

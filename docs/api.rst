@@ -4,6 +4,6 @@ API Reference
 .. autosummary::
    :toctree: generated/
 
-   xcdat.axis
+   xcdat.coord
    xcdat.log
    xcdat.utils
