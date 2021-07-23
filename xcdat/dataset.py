@@ -4,7 +4,11 @@ from typing import Any, Dict, List, Union
 import pandas as pd
 import xarray as xr
 
+<<<<<<< HEAD
 from xcdat import bounds  # noqa: F401
+=======
+from xcdat import coord  # noqa: F401
+>>>>>>> ac1c632... Update decorator refs from axis to coord
 
 
 def open_dataset(path: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
@@ -57,6 +61,11 @@ def open_dataset(path: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
     ds = decode_time_units(ds)
     ds = ds.bounds.fill_missing()
 
+<<<<<<< HEAD
+=======
+    ds.coord.get_bounds("lat", allow_generating=True)
+    ds.coord.get_bounds("lon", allow_generating=True)
+>>>>>>> ac1c632... Update decorator refs from axis to coord
     return ds
 
 
@@ -117,6 +126,11 @@ def open_mfdataset(paths: Union[str, List[str]], **kwargs) -> xr.Dataset:
     ds = decode_time_units(ds)
     ds = ds.bounds.fill_missing()
 
+<<<<<<< HEAD
+=======
+    ds.coord.get_bounds("lat", allow_generating=True)
+    ds.coord.get_bounds("lon", allow_generating=True)
+>>>>>>> ac1c632... Update decorator refs from axis to coord
     return ds
 
 
