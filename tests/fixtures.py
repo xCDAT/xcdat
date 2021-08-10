@@ -122,6 +122,26 @@ ts_non_cf_compliant = xr.DataArray(
     dims=["time", "lat", "lon"],
 )
 
+ts_with_bnds = xr.DataArray(
+    name="ts",
+    data=np.ones((2, 12, 4, 4)),
+    coords={
+        "bnds": np.array([0, 1]),
+        "time": time.assign_attrs(bounds="time_bnds"),
+        "lat": lat.assign_attrs(bounds="lat_bnds"),
+        "lon": lon.assign_attrs(bounds="lon_bnds"),
+        "lat_bnds": lat_bnds,
+        "lon_bnds": lon_bnds,
+        "time_bnds": time_bnds,
+    },
+    dims=[
+        "bnds",
+        "time",
+        "lat",
+        "lon",
+    ],
+)
+
 
 def generate_dataset(cf_compliant=True, has_bounds: bool = True) -> xr.Dataset:
     """Generates a dataset using coordinate and data variable fixtures.

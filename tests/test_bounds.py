@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from tests.fixtures import generate_dataset
+from tests.fixtures import generate_dataset, ts_with_bnds
 from xcdat.bounds import DataArrayBoundsAccessor, DatasetBoundsAccessor
 
 
@@ -72,44 +72,43 @@ class TestDatasetBoundsAccessor:
         assert self.ds.bounds._dataset.identical(self.ds)
 
     def test_get_bounds_when_bounds_exist_in_dataset(self):
-        obj = DatasetBoundsAccessor(self.ds)
-        obj._dataset = obj._dataset.assign(
+        ds = self.ds.copy()
+        ds = ds.assign(
             lat_bnds=self.lat_bnds,
             lon_bnds=self.lon_bnds,
         )
 
-        lat_bnds = obj.get_bounds("lat")
+        lat_bnds = ds.bounds.get_bounds("lat")
         assert lat_bnds is not None and lat_bnds.identical(self.lat_bnds)
         assert lat_bnds.is_generated
 
-        lon_bnds = obj.get_bounds("lon")
+        lon_bnds = ds.bounds.get_bounds("lon")
         assert lon_bnds is not None and lon_bnds.identical(self.lon_bnds)
         assert lon_bnds.is_generated
 
     def test_get_bounds_when_bounds_do_not_exist_in_dataset(self):
-        # Check bounds generated if bounds do not exist.
-        obj = DatasetBoundsAccessor(self.ds)
+        ds = self.ds.copy()
 
-        lat_bnds = obj.get_bounds("lat")
+        lat_bnds = ds.bounds.get_bounds("lat")
         assert lat_bnds is not None
         assert lat_bnds.identical(self.lat_bnds)
         assert lat_bnds.is_generated
 
-        lon_bnds = obj.get_bounds("lon")
+        lon_bnds = ds.bounds.get_bounds("lon")
         assert lon_bnds is not None
         assert lon_bnds.identical(self.lon_bnds)
         assert lon_bnds.is_generated
 
         # Check raises error when bounds do not exist and not allowing generated bounds.
         with pytest.raises(ValueError):
-            obj._dataset = obj._dataset.drop_vars(["lat_bnds"])
-            obj.get_bounds("lat", allow_generating=False)
+            ds = ds.drop_vars(["lat_bnds"])
+            ds.bounds.get_bounds("lat", allow_generating=False)
 
     def test_get_bounds_raises_error_with_incorrect_axis_argument(self):
-        obj = DatasetBoundsAccessor(self.ds)
+        ds = self.ds.copy()
 
         with pytest.raises(ValueError):
-            obj.get_bounds("incorrect_axis_argument")  # type: ignore
+            ds.bounds.get_bounds("incorrect_axis_argument")
 
     def test__get_bounds_does_not_drop_attrs_of_existing_coords_when_generating_bounds(
         self,
@@ -119,7 +118,7 @@ class TestDatasetBoundsAccessor:
         lat_bnds = ds.bounds.get_bounds("lat", allow_generating=True)
         assert lat_bnds.identical(self.lat_bnds)
 
-        ds = ds.drop("lat_bnds")
+        ds = ds.drop_vars("lat_bnds")
         assert ds.identical(self.ds)
 
     def test__generate_bounds_raises_errors_for_data_dim_and_length(self):
@@ -136,43 +135,42 @@ class TestDatasetBoundsAccessor:
             attrs={"units": "degrees_east", "axis": "X"},
         )
         ds = xr.Dataset(coords={"lat": lat, "lon": lon})
-        obj = DatasetBoundsAccessor(ds)
 
         # If coords dimensions does not equal 1.
         with pytest.raises(ValueError):
-            obj._generate_bounds("lat")
+            ds.bounds._generate_bounds("lat")
         # If coords are length of <=1.
         with pytest.raises(ValueError):
-            obj._generate_bounds("lon")
+            ds.bounds._generate_bounds("lon")
 
     def test__generate_bounds_returns_bounds(self):
-        obj = DatasetBoundsAccessor(self.ds)
+        ds = self.ds.copy()
 
-        lat_bnds = obj._generate_bounds("lat")
+        lat_bnds = ds.bounds._generate_bounds("lat")
         assert lat_bnds.equals(self.lat_bnds)
-        assert obj._dataset.lat_bnds.is_generated
+        assert ds.lat_bnds.is_generated
 
-        lon_bnds = obj._generate_bounds("lon")
+        lon_bnds = ds.bounds._generate_bounds("lon")
         assert lon_bnds.equals(self.lon_bnds)
-        assert obj._dataset.lon_bnds.is_generated
+        assert ds.lon_bnds.is_generated
 
     def test__get_coord(self):
-        obj = DatasetBoundsAccessor(self.ds)
+        ds = self.ds.copy()
 
         # Check lat axis coordinates exist
-        lat = obj._get_coord("lat")
+        lat = ds.bounds._get_coord("lat")
         assert lat is not None
 
         # Check lon axis coordinates exist
-        lon = obj._get_coord("lon")
+        lon = ds.bounds._get_coord("lon")
         assert lon is not None
 
     def test__get_coord_raises_error_if_coord_does_not_exist(self):
-        obj = DatasetBoundsAccessor(self.ds)
+        ds = self.ds.copy()
 
         with pytest.raises(KeyError):
-            obj._dataset = obj._dataset.drop_vars("lat")
-            obj._get_coord("lat")
+            ds = ds.drop_vars("lat")
+            ds.bounds._get_coord("lat")
 
 
 class TestDataArrayBoundsAccessor:
@@ -183,24 +181,37 @@ class TestDataArrayBoundsAccessor:
         self.ds.lon.attrs["bounds"] = "lon_bnds"
         self.ds.time.attrs["bounds"] = "time_bnds"
 
+    def test__init__(self):
+        obj = DataArrayBoundsAccessor(self.ds.ts)
+        assert obj._dataarray.identical(self.ds.ts)
+
     def test_decorator_call(self):
         expected = self.ds.ts
         result = self.ds["ts"].bounds._dataarray
         assert result.identical(expected)
 
-    def test__init__(self):
-        expected = self.ds.ts
-        result = DataArrayBoundsAccessor(self.ds["ts"])
-        assert result._dataarray.identical(expected)
-
-        assert result.lat is None
-        assert result.lon is None
-        assert result.time is None
-
     def test__copy_from_parent_copies_bounds(self):
-        result = DataArrayBoundsAccessor(self.ds["ts"])
-        result._copy_from_dataset(self.ds)
+        ts_expected = ts_with_bnds.copy()
 
-        assert self.ds.lat_bnds.identical(result.lat)
-        assert self.ds.lon_bnds.identical(result.lon)
-        assert self.ds.time_bnds.identical(result.time)
+        ts = self.ds["ts"].copy()
+        ts_result = ts.bounds.copy_from_parent(self.ds)
+
+        assert ts_result.identical(ts_expected)
+
+    def test__set_bounds_dim_adds_bnds(self):
+        ts = self.ds["ts"].copy()
+        ts_expected = ts.copy()
+        ts_expected = ts_expected.expand_dims(bnds=np.array([0, 1]))
+        ts_result = ts.bounds._set_bounds_dim(self.ds)
+
+        assert ts_result.identical(ts_expected)
+
+    def test__set_bounds_dim_adds_bounds(self):
+        ds = self.ds.swap_dims({"bnds": "bounds"}).copy()
+        ts = ds["ts"].copy()
+
+        ts_expected = ts.copy()
+        ts_expected = ts_expected.expand_dims(bounds=np.array([0, 1]))
+
+        ts_result = ts.bounds._set_bounds_dim(ds)
+        assert ts_result.identical(ts_expected)

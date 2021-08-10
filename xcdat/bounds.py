@@ -242,42 +242,94 @@ class DataArrayBoundsAccessor:
     def __init__(self, dataarray: xr.DataArray):
         self._dataarray = dataarray
 
-        self.lat = None
-        self.lon = None
-        self.time = None
+    def copy_from_parent(self, dataset: xr.Dataset) -> xr.DataArray:
+        """Copies coordinate bounds from the parent Dataset to the DataArray.
 
-    def _copy_from_dataset(self, dataset: xr.Dataset):
-        """Copies coordinate bounds from the parent Dataset to object attrs.
+        In an xarray.Dataset, variables (e.g., "tas") and coordinate bounds
+        (e.g., "lat_bnds") are stored in the Dataset's data variables as
+        independent DataArrays that have no link between one another [3]_. As a
+        result, this creates an issue when you need to reference coordinate
+        bounds after extracting a variable to work on it independently.
 
-        In a Dataset, variables (e.g., "tas") and axis bounds (e.g.,
-        "lat_bnds") are stored in the Dataset's data variables. Since
-        variables and coordinate bounds are independent DataArrays, there
-        is no link between them. This becomes an issue in a scenario where
-        the user extracts a variable and needs to reference axis bounds.
-
-        This function solves this issue by copying the axis bounds from
-        the parent Dataset to the data variable as custom object
-        attributes.
+        This function works around this issue by copying the coordinate bounds
+        from the parent Dataset to the DataArray variable.
 
         Parameters
         ----------
         dataset : xr.Dataset
             The parent Dataset.
-        """
-        coords = [*dataset.coords]
 
+        Returns
+        -------
+        xr.DataArray
+            The data variable with bounds coordinates in the list of coordinates.
+
+        Notes
+        -----
+
+        .. [3] https://github.com/pydata/xarray/issues/1475
+
+        """
+        da = self._dataarray.copy()
+        da = self._set_bounds_dim(dataset)
+
+        coords = [*dataset.coords]
         boundless_coords = []
         for coord in coords:
-            try:
-                bounds = dataset.cf.get_bounds(coord)
-                setattr(self, coord, bounds)
-            except KeyError:
-                boundless_coords.append(coord)
+            if coord in SUPPORTED_COORDS:
+                try:
+                    bounds = dataset.cf.get_bounds(coord)
+                    da[bounds.name] = bounds.copy()
+                except KeyError:
+                    boundless_coords.append(coord)
 
         if boundless_coords:
             raise ValueError(
                 "The dataset is missing bounds for the following coords: "
                 f"{', '.join(boundless_coords)}. Pass the dataset to"
-                "`xcdat.dataset.open_dataset` to auto-generate bounds before passing it "
-                "to this function."
+                "`xcdat.dataset.open_dataset` to auto-generate missing bounds first"
             )
+
+        self._dataarray = da
+        return self._dataarray
+
+    def _set_bounds_dim(self, dataset: xr.Dataset) -> xr.DataArray:
+        """Sets the bounds dimension in the DataArray using the parent Dataset.
+
+        The bounds dimension must be set before adding bounds to the DataArray
+        coordinates, otherwise the error below will be thrown:
+        ``ValueError: cannot add coordinates with new dimensions to a DataArray``.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The parent Dataset.
+
+        Returns
+        -------
+        xr.DataArray
+            The data variable with a bounds dimension.
+
+        Raises
+        ------
+        KeyError
+            When no bounds dimension exists in the parent Dataset.
+        """
+        da = self._dataarray.copy()
+        dims = dataset.dims.keys()
+
+        if "bnds" in dims:
+            bounds_dim = "bnds"
+        elif "bounds" in dims:
+            bounds_dim = "bounds"
+        else:
+            raise KeyError(
+                "No bounds dimension in the parent dataset. This indicates that there "
+                "are probably no coordinate bounds in the dataset. Pass the "
+                "dataset to `xcdat.dataset.open_dataset` to auto-generate bounds."
+            )
+
+        da = da.expand_dims(dim={bounds_dim: np.array([0, 1])})
+
+        self._dataarray = da
+        return self._dataarray

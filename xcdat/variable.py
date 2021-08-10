@@ -4,32 +4,30 @@ import xarray as xr
 from xcdat.bounds import DataArrayBoundsAccessor  # noqa: F401
 
 
-def open_variable(dataset: xr.Dataset, var_name: str) -> xr.DataArray:
-    """Opens a Dataset data variable with additional attributes.
+def open_variable(dataset: xr.Dataset, name: str) -> xr.DataArray:
+    """Opens a Dataset data variable and applies additional operations.
 
-    This function calls DataArray accessors on the data variable to store
-    additional attributes, which are cached in the DataArray object.
+    Operations include:
 
-    Attributes include:
-
-    - Coordinate bounds ("lat_bnds", "lon_bnds", "time_bnds)
+    - Propagate coordinate bounds from the parent ``Dataset`` to the
+      ``DataArray`` data variable.
 
     Parameters
     ----------
     dataset : xr.Dataset
         The parent Dataset.
-    var_name : str
-        The name of the variable to be opened.
+    name : str
+        The name of the data variable to be opened.
 
     Returns
     -------
     xr.DataArray
-        The variable with additional attributes.
+        The data variable.
 
     Notes
     -----
-    If you are coming from CDAT, the DataArray output is similar to a
-    TransientVariable, which contains references to bounds and other
+    If you are familiar with CDAT, the ``DataArray`` data variable output is
+    similar to a ``TransientVariable``, which stores coordinate bounds as object
     attributes.
 
     Examples
@@ -42,19 +40,26 @@ def open_variable(dataset: xr.Dataset, var_name: str) -> xr.DataArray:
     Open a variable from a Dataset:
 
     >>> ds = open_dataset("file_path") # Auto-generate bounds if missing
-    >>> tas = open_variable(ds, "tas")
+    >>> ts = open_variable(ds, "ts")
 
-    Return dictionary of bounds accessor attributes:
+    List coordinate bounds:
 
-    >>> tas.bounds.__dict__
+    >>> ts.coords
+    * bnds       (bnds) int64 0 1
+    * time       (time) datetime64[ns] 1850-01-16T12:00:00 ... 2005-12-16T12:00:00
+    * lat        (lat) float64 -90.0 -88.75 -87.5 -86.25 ... 86.25 87.5 88.75 90.0
+    * lon        (lon) float64 0.0 1.875 3.75 5.625 ... 352.5 354.4 356.2 358.1
+    lon_bnds   (lon, bnds) float64 ...
+    lat_bnds   (lat, bnds) float64 ...
+    time_bnds  (time, bnds) datetime64[ns] ...
 
-    Return coordinate bounds attributes:
+    Return coordinate bounds:
 
-    >>> tas.bounds.lat
-    >>> tas.bounds.lon
-    >>> tas.bounds.time
+    >>> ts.lon_bnds
+    >>> ts.lat_bnds
+    >>> ts.time_bnds
     """
-    data_var = dataset[var_name].copy()
-    data_var.bounds._copy_from_dataset(dataset)
+    data_var = dataset[name].copy()
+    data_var = data_var.bounds.copy_from_parent(dataset)
 
     return data_var
