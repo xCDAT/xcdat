@@ -13,7 +13,7 @@ with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
 # https://packaging.python.org/discussions/install-requires-vs-requirements/#install-requires
-requirements: List[str] = []
+requirements: List[str] = ["xarray", "pandas", "numpy"]
 
 setup_requirements = [
     "pytest-runner",

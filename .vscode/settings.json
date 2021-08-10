@@ -11,6 +11,7 @@
     "python.linting.flake8Enabled": true,
     "python.linting.flake8Args": ["--config=setup.cfg"],
     "python.linting.mypyEnabled": true,
+    "python.linting.mypyArgs": ["--config=setup.cfg"],
     "python.pythonPath": "/opt/miniconda3/envs/xcdat_dev/bin/python",
     "python.testing.unittestEnabled": false,
     "python.testing.nosetestsEnabled": false,
