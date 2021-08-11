@@ -17,12 +17,19 @@ class TestOpenDataset:
         self.file_path = f"{self.dir}/file.nc"
 
     def test_non_cf_compliant_time_is_decoded(self):
-        # Generate two dummy datasets with non-CF compliant time units.
+        # Generate dummy datasets with non-CF compliant time units that aren't
+        # encoded yet.
         ds = generate_dataset(cf_compliant=False, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        # Generate an expected dataset, which is a combination of both datasets
-        # with decoded time units and coordinate bounds.
+        result_ds = open_dataset(self.file_path)
+        # Replicates decode_times=False, which adds units to "time" coordinate.
+        # Refer to xcdat.bounds.DatasetBoundsAccessor._generate_bounds() for
+        # how attributes propagate from coord to coord bounds.
+        result_ds["time_bnds"].attrs["units"] = "months since 2000-01-01"
+
+        # Generate an expected dataset with non-CF compliant time units that are
+        # manually encoded
         expected_ds = generate_dataset(cf_compliant=True, has_bounds=True)
         expected_ds.time.attrs["units"] = "months since 2000-01-01"
         expected_ds.time_bnds.attrs["units"] = "months since 2000-01-01"
@@ -35,18 +42,12 @@ class TestOpenDataset:
         }
 
         # Check that non-cf compliant time was decoded and bounds were generated.
-        result_ds = open_dataset(self.file_path)
         assert result_ds.identical(expected_ds)
 
     def test_preserves_lat_and_lon_bounds_if_they_exist(self):
         # Create expected dataset which includes bounds.
-        expected_ds = generate_dataset(has_bounds=True)
+        expected_ds = generate_dataset(cf_compliant=True, has_bounds=True)
         expected_ds.to_netcdf(self.file_path)
-
-        # Need to add time units since decode time units is also called,
-        # which adds this attribute.
-        expected_ds.time.attrs["units"] = "days since 2000-01-01 00:00:00"
-        expected_ds.time_bnds.attrs["units"] = "days since 2000-01-01 00:00:00"
 
         # Check resulting dataset and expected are identical
         result_ds = open_dataset(self.file_path)
@@ -54,7 +55,7 @@ class TestOpenDataset:
 
     def test_generates_lat_and_lon_bounds_if_they_dont_exist(self):
         # Create expected dataset without bounds.
-        ds = generate_dataset(has_bounds=False)
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
         # Make sure bounds don't exist
@@ -84,10 +85,15 @@ class TestOpenMfDataset:
         # Generate two dummy datasets with non-CF compliant time units.
         ds1 = generate_dataset(cf_compliant=False, has_bounds=False)
         ds1.to_netcdf(self.file_path1)
-
         ds2 = generate_dataset(cf_compliant=False, has_bounds=False)
         ds2 = ds2.rename_vars({"ts": "tas"})
         ds2.to_netcdf(self.file_path2)
+
+        result_ds = open_mfdataset([self.file_path1, self.file_path2])
+        # Replicates decode_times=False, which adds units to "time" coordinate.
+        # Refer to xcdat.bounds.DatasetBoundsAccessor._generate_bounds() for
+        # how attributes propagate from coord to coord bounds.
+        result_ds.time_bnds.attrs["units"] = "months since 2000-01-01"
 
         # Generate an expected dataset, which is a combination of both datasets
         # with decoded time units and coordinate bounds.
@@ -104,7 +110,6 @@ class TestOpenMfDataset:
         }
 
         # Check that non-cf compliant time was decoded and bounds were generated.
-        result_ds = open_mfdataset([self.file_path1, self.file_path2])
         assert result_ds.identical(expected_ds)
 
     def test_preserves_lat_and_lon_bounds_if_they_exist(self):
@@ -117,10 +122,8 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         # Generate expected dataset, which is a combination of the two datasets.
-        expected_ds = generate_dataset(has_bounds=True)
+        expected_ds = generate_dataset(cf_compliant=True, has_bounds=True)
         expected_ds["tas"] = expected_ds["ts"].copy()
-        expected_ds.time.attrs["units"] = "days since 2000-01-01 00:00:00"
-        expected_ds.time_bnds.attrs["units"] = "days since 2000-01-01 00:00:00"
 
         # Check that the result is identical to the expected.
         result_ds = open_mfdataset([self.file_path1, self.file_path2])
@@ -155,7 +158,6 @@ class TestDecodeTimeUnits:
         # on the unit that needs to be tested (days (CF compliant) or months
         # (non-CF compliant).
         self.time_attrs = {
-            "units": None,
             "bounds": "time_bnds",
             "axis": "T",
             "long_name": "time",
@@ -165,7 +167,7 @@ class TestDecodeTimeUnits:
     def test_throws_error_if_function_is_called_on_already_decoded_cf_compliant_dataset(
         self,
     ):
-        ds = generate_dataset(cf_compliant=True)
+        ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
         with pytest.raises(KeyError):
             decode_time_units(ds)
@@ -173,11 +175,6 @@ class TestDecodeTimeUnits:
     def test_decodes_cf_compliant_time_units(self):
         # Create a dummy dataset with CF compliant time units.
         time_attrs = self.time_attrs
-        time_attrs.update({"units": "days since 2000-01-01"})
-        time_coord = xr.DataArray(
-            name="time", data=[0, 1, 2], dims=["time"], attrs=time_attrs
-        )
-        input_ds = xr.Dataset({"time": time_coord})
 
         # Create an expected dataset with properly decoded time units.
         expected_ds = xr.Dataset(
@@ -194,6 +191,13 @@ class TestDecodeTimeUnits:
                 )
             }
         )
+
+        # Update the time attrs to mimic decode_times=False
+        time_attrs.update({"units": "days since 2000-01-01"})
+        time_coord = xr.DataArray(
+            name="time", data=[0, 1, 2], dims=["time"], attrs=time_attrs
+        )
+        input_ds = xr.Dataset({"time": time_coord})
 
         # Check the resulting dataset is identical to the expected.
         result_ds = decode_time_units(input_ds)
