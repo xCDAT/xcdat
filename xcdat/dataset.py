@@ -15,6 +15,9 @@ def open_dataset(path: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
     - Decode all time units, including non-CF compliant units (months and years).
     - Generate bounds for supported coordinates if they don't exist.
 
+    NOTE: Using decode_times=False may add incorrect units for existing time
+    bounds (becomes "days since 1970-01-01  00:00:00").
+
     Parameters
     ----------
     path : str
@@ -64,6 +67,9 @@ def open_mfdataset(paths: Union[str, List[str]], **kwargs) -> xr.Dataset:
 
     - Decode all time units, including non-CF compliant units (months and years).
     - Generate bounds for supported coordinates if they don't exist.
+
+    NOTE: Using decode_times=False may add incorrect units for existing time
+    bounds (becomes "days since 1970-01-01  00:00:00").
 
     Parameters
     ----------
@@ -194,11 +200,10 @@ def decode_time_units(dataset: xr.Dataset):
     cf_compliant = units not in non_cf_units_to_freq.keys()
     if cf_compliant:
         dataset = xr.decode_cf(dataset, decode_times=True)
-        dataset.time.attrs["units"] = units_attr
     else:
-        # NOTE: Calendar type for "months" or years" does not matter because the
-        # number of days in a month does not play a factor when generating date
-        # ranges for these units.
+        # NOTE: The "calendar" attribute for units consisting of "months" or
+        # "years" is not factored when generating date ranges. The number of
+        # days in a month is not factored.
         decoded_time = xr.DataArray(
             data=pd.date_range(
                 start=reference_date,
@@ -214,7 +219,7 @@ def decode_time_units(dataset: xr.Dataset):
             "original_shape": decoded_time.shape,
             "units": units_attr,
             # pandas.date_range() returns "proleptic_gregorian" by default
-            "calendar": time.attrs.get("calendar", "proleptic_gregorian"),
+            "calendar": "proleptic_gregorian",
         }
 
         dataset = dataset.assign_coords({"time": decoded_time})

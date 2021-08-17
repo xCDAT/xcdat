@@ -9,8 +9,13 @@ import xarray as xr
 # side-effects caused by reference assignment.
 # https://xarray.pydata.org/en/stable/generated/xarray.DataArray.copy.html
 
-# Dataset coordinates
-time = xr.DataArray(
+# NOTE:
+# - Non-CF time includes "units" attr
+# - Coordinates with bounds includes "bounds" attr and vice versa
+
+# TIME
+# ====
+time_cf = xr.DataArray(
     data=[
         datetime(2000, 1, 1),
         datetime(2000, 2, 1),
@@ -26,25 +31,22 @@ time = xr.DataArray(
         datetime(2000, 12, 1),
     ],
     dims=["time"],
+    attrs={
+        "long_name": "time",
+        "standard_name": "time",
+        "axis": "T",
+    },
 )
-time_non_cf_compliant = xr.DataArray(
+time_non_cf = xr.DataArray(
     data=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
     dims=["time"],
-    attrs={"units": "months since 2000-01-01"},
+    attrs={
+        "long_name": "time",
+        "standard_name": "time",
+        "axis": "T",
+    },
 )
 
-lat = xr.DataArray(
-    data=np.array([-90, -88.75, 88.75, 90]),
-    dims=["lat"],
-    attrs={"units": "degrees_north", "axis": "Y"},
-)
-lon = xr.DataArray(
-    data=np.array([0, 1.875, 356.25, 358.125]),
-    dims=["lon"],
-    attrs={"units": "degrees_east", "axis": "X"},
-)
-
-# Dataset data variables (bounds)
 time_bnds = xr.DataArray(
     name="time_bnds",
     data=[
@@ -61,12 +63,13 @@ time_bnds = xr.DataArray(
         [datetime(2000, 10, 16, 12), datetime(2000, 11, 16)],
         [datetime(2000, 11, 16), datetime(2000, 12, 16)],
     ],
-    coords={"time": time},
+    coords={"time": time_cf},
     dims=["time", "bnds"],
-    attrs={"is_generated": "True"},
+    attrs={
+        "is_generated": "True",
+    },
 )
-
-time_bnds_non_cf_compliant = xr.DataArray(
+time_bnds_non_cf = xr.DataArray(
     name="time_bnds",
     data=[
         [datetime(1999, 12, 16, 12), datetime(2000, 1, 16, 12)],
@@ -82,16 +85,33 @@ time_bnds_non_cf_compliant = xr.DataArray(
         [datetime(2000, 10, 16, 12), datetime(2000, 11, 16)],
         [datetime(2000, 11, 16), datetime(2000, 12, 16)],
     ],
-    coords={"time": time.data},
+    coords={"time": time_non_cf},
     dims=["time", "bnds"],
     attrs={"is_generated": "True"},
+)
+
+# LATITUDE
+# ========
+lat = xr.DataArray(
+    data=np.array([-90, -88.75, 88.75, 90]),
+    dims=["lat"],
+    attrs={"units": "degrees_north", "axis": "Y"},
 )
 lat_bnds = xr.DataArray(
     name="lat_bnds",
     data=np.array([[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]),
     coords={"lat": lat.data},
     dims=["lat", "bnds"],
-    attrs={"units": "degrees_north", "axis": "Y", "is_generated": "True"},
+    attrs={"is_generated": "True"},
+)
+
+
+# LONGITUDE
+# =========
+lon = xr.DataArray(
+    data=np.array([0, 1.875, 356.25, 358.125]),
+    dims=["lon"],
+    attrs={"units": "degrees_east", "axis": "X"},
 )
 lon_bnds = xr.DataArray(
     name="lon_bnds",
@@ -105,84 +125,108 @@ lon_bnds = xr.DataArray(
     ),
     coords={"lon": lon.data},
     dims=["lon", "bnds"],
-    attrs={"units": "degrees_east", "axis": "X", "is_generated": "True"},
+    attrs={"is_generated": "True"},
 )
 
-# Dataset data variables (variables)
-ts = xr.DataArray(
+# VARIABLES
+# =========
+ts_cf = xr.DataArray(
     name="ts",
     data=np.ones((12, 4, 4)),
-    coords={"time": time, "lat": lat, "lon": lon},
-    dims=["time", "lat", "lon"],
-)
-ts_non_cf_compliant = xr.DataArray(
-    name="ts",
-    data=np.ones((12, 4, 4)),
-    coords={"time": time_non_cf_compliant, "lat": lat, "lon": lon},
+    coords={"time": time_cf, "lat": lat, "lon": lon},
     dims=["time", "lat", "lon"],
 )
 
-ts_with_bnds = xr.DataArray(
+ts_non_cf = xr.DataArray(
+    name="ts",
+    data=np.ones((12, 4, 4)),
+    coords={"time": time_non_cf, "lat": lat, "lon": lon},
+    dims=["time", "lat", "lon"],
+)
+
+# Special cases, after copying bounds from parent Dataset to data variable
+# using xCDAT.
+ts_with_bnds_from_parent_cf = xr.DataArray(
     name="ts",
     data=np.ones((2, 12, 4, 4)),
     coords={
         "bnds": np.array([0, 1]),
-        "time": time.assign_attrs(bounds="time_bnds"),
+        "time": time_cf.assign_attrs(bounds="time_bnds"),
         "lat": lat.assign_attrs(bounds="lat_bnds"),
         "lon": lon.assign_attrs(bounds="lon_bnds"),
+        "lat_bnds": lat_bnds.copy(),
+        "lon_bnds": lon_bnds.copy(),
+        "time_bnds": time_bnds.copy(),
+    },
+    dims=["bnds", "time", "lat", "lon"],
+)
+ts_with_bnds_from_parent_non_cf = xr.DataArray(
+    name="ts",
+    data=np.ones((2, 12, 4, 4)),
+    coords={
+        "bnds": np.array([0, 1]),
+        "time": time_cf.copy(),
+        "lat": lat.copy(),
+        "lon": lon.copy(),
         "lat_bnds": lat_bnds,
         "lon_bnds": lon_bnds,
-        "time_bnds": time_bnds,
+        "time_bnds": time_bnds_non_cf,
     },
-    dims=[
-        "bnds",
-        "time",
-        "lat",
-        "lon",
-    ],
+    dims=["bnds", "time", "lat", "lon"],
 )
 
 
-def generate_dataset(cf_compliant=True, has_bounds: bool = True) -> xr.Dataset:
+def generate_dataset(cf_compliant: bool, has_bounds: bool) -> xr.Dataset:
     """Generates a dataset using coordinate and data variable fixtures.
-
-    NOTE: Using ``.assign()`` to add data variables to an existing dataset will
-    remove attributes from existing coordinates. The workaround is to update a
-    data_vars dict then create the dataset. https://github.com/pydata/xarray/issues/2245
 
     Parameters
     ----------
     cf_compliant : bool, optional
-        CF compliant time units, by default True
+        CF compliant time units.
     has_bounds : bool, optional
-        Include bounds for coordinates, by default True
+        Include bounds for coordinates. This also adds the "bounds" attribute
+        to existing coordinates to link them to their respective bounds.
 
     Returns
     -------
     xr.Dataset
         Test dataset.
     """
-    data_vars = {}
-    coords = {
-        "lat": lat.copy(),
-        "lon": lon.copy(),
-    }
-
-    if cf_compliant:
-        coords.update({"time": time.copy()})
-        data_vars.update({"ts": ts.copy()})
-    else:
-        coords.update({"time": time_non_cf_compliant.copy()})
-        data_vars.update({"ts": ts_non_cf_compliant.copy()})
-
     if has_bounds:
-        data_vars.update(
-            {
-                "time_bnds": time_bnds.copy(),
+        ds = xr.Dataset(
+            data_vars={
+                "ts": ts_cf.copy(),
                 "lat_bnds": lat_bnds.copy(),
                 "lon_bnds": lon_bnds.copy(),
-            }
+            },
+            coords={"lat": lat.copy(), "lon": lon.copy()},
         )
 
-    ds = xr.Dataset(data_vars=data_vars, coords=coords)
+        if cf_compliant:
+            ds = ds.assign({"time_bnds": time_bnds.copy()})
+            ds = ds.assign_coords({"time": time_cf.copy()})
+        elif not cf_compliant:
+            ds = ds.assign({"time_bnds": time_bnds_non_cf.copy()})
+            ds = ds.assign_coords({"time": time_non_cf.copy()})
+            ds["time"] = ds.time.assign_attrs(units="months since 2000-01-01")
+
+        # If the "bounds" attribute is included in an existing DataArray and
+        # added to a new Dataset, it will get dropped. Therefore, it needs to be
+        # assigned to the DataArrays after they are added to Dataset.
+        ds["lat"] = ds.lat.assign_attrs(bounds="lat_bnds")
+        ds["lon"] = ds.lon.assign_attrs(bounds="lon_bnds")
+        ds["time"] = ds.time.assign_attrs(bounds="time_bnds")
+
+    elif not has_bounds:
+        ds = xr.Dataset(
+            data_vars={"ts": ts_cf.copy()},
+            coords={"lat": lat.copy(), "lon": lon.copy()},
+        )
+
+        if cf_compliant:
+            ds = ds.assign_coords({"time": time_cf.copy()})
+        elif not cf_compliant:
+            ds = ds.assign_coords({"time": time_non_cf.copy()})
+            ds["time"] = ds.time.assign_attrs(units="months since 2000-01-01")
+
     return ds
