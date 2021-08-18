@@ -55,7 +55,7 @@ def open_dataset(path: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
     """
     ds = xr.open_dataset(path, decode_times=False, **kwargs)
     ds = decode_time_units(ds)
-    ds = ds.bounds.get_bounds_for_all_coords()
+    ds = ds.bounds.fill_missing()
 
     return ds
 
@@ -115,7 +115,7 @@ def open_mfdataset(paths: Union[str, List[str]], **kwargs) -> xr.Dataset:
     """
     ds = xr.open_mfdataset(paths, decode_times=False, **kwargs)
     ds = decode_time_units(ds)
-    ds = ds.bounds.get_bounds_for_all_coords()
+    ds = ds.bounds.fill_missing()
 
     return ds
 

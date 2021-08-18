@@ -1,4 +1,5 @@
 """Bounds module for functions related to coordinate bounds."""
+import collections
 from typing import Dict, Hashable, List, Optional, Tuple, get_args
 
 import cf_xarray as cfxr  # noqa: F401
@@ -26,25 +27,58 @@ class DatasetBoundsAccessor:
 
     >>> from xcdat import bounds
 
-    Get coordinate bounds if they exist, otherwise return generated bounds:
+    Return dictionary of coordinate keys mapped to bounds DataArrays:
 
     >>> ds = xr.open_dataset("file_path")
+    >>> bounds = ds.bounds.bounds
+
+    Fill missing coordinate bounds in the Dataset:
+
+    >>> ds = xr.open_dataset("file_path")
+    >>> ds = ds.bounds.fill_missing()
+
+    Get coordinate bounds if they exist:
+
+    >>> ds = xr.open_dataset("file_path")
+    >>>
+    >>> # Throws error if bounds don't exist
     >>> lat_bounds = ds.bounds.get_bounds("lat") # or pass "latitude"
     >>> lon_bounds = ds.bounds.get_bounds("lon") # or pass "longitude"
     >>> time_bounds = ds.bounds.get_bounds("time")
 
-    Get coordinate bounds and don't generate if they don't exist:
+    Add coordinates bounds if they don't exist:
 
     >>> ds = xr.open_dataset("file_path")
-    >>> # Throws error if no bounds exist
-    >>> lat_bounds = ds.bounds.get_bounds("lat", allow_generating=False)
+    >>>
+    >>> # Throws error if bounds exist
+    >>> ds = ds.bounds.add_bounds("lat")
     """
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
-    def get_bounds_for_all_coords(self, allow_generating=True) -> xr.Dataset:
-        """Gets existing bounds or generates new ones for supported coordinates.
+    @property
+    def bounds(self) -> Dict[str, Optional[xr.DataArray]]:
+        """Returns a mapping of coordinate and axis keys to their bounds.
+
+        The dictionary provides all valid CF compliant keys for a coordinate.
+        For example, latitude will includes keys for "lat", "latitude", and "Y".
+
+        Returns
+        -------
+        Dict[str, Optional[xr.DataArray]]
+            Dictionary mapping coordinate keys to their bounds.
+        """
+        ds = self._dataset
+
+        bounds: Dict[str, Optional[xr.DataArray]] = {}
+        for coord, bounds_name in ds.cf.bounds.items():
+            bounds[coord] = ds.get(bounds_name, None)
+
+        return collections.OrderedDict(sorted(bounds.items()))
+
+    def fill_missing(self) -> xr.Dataset:
+        """Fills any missing bounds for supported coordinates in the Dataset.
 
         Returns
         -------
@@ -52,29 +86,20 @@ class DatasetBoundsAccessor:
         """
         for coord in [*self._dataset.coords]:
             if coord in SUPPORTED_COORDS:
-                self.get_bounds(coord, allow_generating)
+                try:
+                    self._dataset.cf.get_bounds(coord)
+                except KeyError:
+                    self._dataset = self.add_bounds(coord)
 
         return self._dataset
 
-    def get_bounds(
-        self,
-        coord: Coord,
-        allow_generating: bool = True,
-        width: float = 0.5,
-    ) -> Optional[xr.DataArray]:
-        """Get bounds for a coordinate, or generate bounds if it doesn't exist.
+    def get_bounds(self, coord: Coord) -> xr.DataArray:
+        """Get bounds for a coordinate.
 
         Parameters
         ----------
         coord : Coord
-            The "lat" or "lon" coordinate.
-        allow_generating : bool, optional
-            If True, generate bounds if they don't exist. If False, return
-            only existing bounds or throw error if they don't exist, by default
-            True.
-        width : float, optional
-            Represents the width of the bounds relative to the position of the
-            points if generating bounds, by default 0.5.
+            The coordinate key.
 
         Returns
         -------
@@ -85,8 +110,9 @@ class DatasetBoundsAccessor:
         ------
         ValueError
             If an incorrect ``coord`` argument is passed.
+
         ValueError
-            If ``allow_generating=False`` and no bounds were found in the dataset.
+            If bounds were not found in the dataset. They must be added.
         """
         if coord not in SUPPORTED_COORDS:
             raise ValueError(
@@ -97,38 +123,60 @@ class DatasetBoundsAccessor:
         try:
             bounds = self._dataset.cf.get_bounds(coord)
         except KeyError:
-            bounds = None
-            if bounds is None and not allow_generating:
-                raise ValueError(
-                    f"{coord} bounds were not found in the dataset, bounds must be generated"
-                )
-
-            logger.info(
-                f"{coord} bounds were not found in the dataset, generating bounds."
+            raise KeyError(
+                f"{coord} bounds were not found in the dataset, they must be added."
             )
-            bounds = self._generate_bounds(coord, width)
 
         return bounds
 
-    def _generate_bounds(
-        self,
-        coord: Coord,
-        width: float = 0.5,
-    ) -> xr.DataArray:
-        """Generates bounds for a coordinate using its data points.
+    def add_bounds(self, coord: Coord, width: float = 0.5) -> xr.Dataset:
+        """Add bounds for a coordinate using its data points.
+
+        If bounds already exist, they must be dropped first.
 
         Parameters
         ----------
         coord : Coord
-            The coordinate.
+            The coordinate key.
         width : float, optional
-            Width of the bounds relative to the position of the nearest
-            points, by default 0.5.
+            Width of the bounds relative to the position of the nearest points,
+            by default 0.5.
 
         Returns
         -------
-        xr.DataArray
-            The coordinate bounds.
+        xr.Dataset
+            The dataset with bounds added.
+
+        Raises
+        ------
+        ValueError
+            If bounds already exist. They must be dropped first.
+        """
+        try:
+            self._dataset.cf.get_bounds(coord)
+            raise ValueError(
+                f"{coord} bounds already exist. Drop them first to add new bounds."
+            )
+        except KeyError:
+            dataset = self._add_bounds(coord, width)
+
+        return dataset
+
+    def _add_bounds(self, coord: Coord, width: float = 0.5) -> xr.Dataset:
+        """Adds bounds for a coordinate using its data points.
+
+        Parameters
+        ----------
+        coord : Coord
+            The coordinate key.
+        width : float, optional
+            Width of the bounds relative to the position of the nearest points,
+            by default 0.5.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset with bounds added.
 
         Raises
         ------
@@ -179,17 +227,18 @@ class DatasetBoundsAccessor:
                 np.clip(bounds, -90, 90, out=bounds)
 
         # Add coordinate bounds to the dataset
+        dataset = self._dataset.copy()
         var_name = f"{coord}_bnds"
-        self._dataset[var_name] = xr.DataArray(
+        dataset[var_name] = xr.DataArray(
             name=var_name,
             data=bounds,
             coords={coord: da_coord},
             dims=[coord, "bnds"],
             attrs={"is_generated": "True"},
         )
-        self._dataset[da_coord.name].attrs["bounds"] = var_name
+        dataset[da_coord.name].attrs["bounds"] = var_name
 
-        return self._dataset[var_name]
+        return dataset
 
     def _get_coord(self, coord: Coord) -> xr.DataArray:
         """Get the matching coordinate in the dataset.
@@ -197,7 +246,7 @@ class DatasetBoundsAccessor:
         Parameters
         ----------
         coord : Coord
-            The coordinate.
+            The coordinate key.
 
         Returns
         -------
@@ -228,15 +277,28 @@ class DataArrayBoundsAccessor:
     >>> from xcdat import bounds
     >>> from xcdat.dataset import open_dataset
 
-    Return attribute (refer to ``tas.bounds__dict__`` for attributes):
-
-    >>> tas.bounds.<attribute>
-
-    Copy axis bounds from parent Dataset to data variable:
+    Copy coordinate bounds from parent Dataset to data variable:
 
     >>> ds = open_dataset("file_path") # Auto-generates bounds if missing
     >>> tas = ds["tas"]
     >>> tas.bounds._copy_from_dataset(ds)
+
+    Return dictionary of coordinate keys mapped to bounds DataArrays:
+
+    >>> tas.bounds.bounds
+
+    Return dictionary of coordinate keys mapped to bounds names:
+
+    >>> tas.bounds.bounds_names
+
+    Get bounds for a coordinate key:
+
+    >>> tas.bounds.get_bounds("lat")
+
+    Get name of bounds dimension:
+
+    >>> tas.bounds.get_bounds_dim_name("lat")
+
     """
 
     def __init__(self, dataarray: xr.DataArray):
@@ -398,7 +460,7 @@ class DataArrayBoundsAccessor:
         Parameters
         ----------
         coord : Coord
-            Name of the coordinate whose bounds are desired.
+            The coordinate key whose bounds are desired.
 
         Returns
         -------
@@ -418,7 +480,7 @@ class DataArrayBoundsAccessor:
         Parameters
         ----------
         coord : Coord
-            Name of the coordinate whose bounds dimension is desired.
+            The coordinate key whose bounds dimension is desired.
 
         Returns
         -------
