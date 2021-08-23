@@ -4,6 +4,7 @@
 Getting Started
 ===============
 
+This package assumes you have a working knowledge of xarray.
 
 Installation
 ------------
@@ -19,10 +20,9 @@ To install xCDAT using Conda, run:
 
 This is the preferred method to install xCDAT, as it will always install the most recent stable release.
 
-If you don't have Conda installed, this `Miniconda installation guide`_ can walk you through the process.
+If you don't have Conda installed, follow the `Miniconda installation guide`_.
 
 .. _Miniconda installation guide: https://docs.conda.io/en/latest/miniconda.html
-
 
 From sources
 ============
