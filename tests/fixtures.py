@@ -144,37 +144,6 @@ ts_non_cf = xr.DataArray(
     dims=["time", "lat", "lon"],
 )
 
-# Special cases, after copying bounds from parent Dataset to data variable
-# using xCDAT.
-ts_with_bnds_from_parent_cf = xr.DataArray(
-    name="ts",
-    data=np.ones((2, 12, 4, 4)),
-    coords={
-        "bnds": np.array([0, 1]),
-        "time": time_cf.assign_attrs(bounds="time_bnds"),
-        "lat": lat.assign_attrs(bounds="lat_bnds"),
-        "lon": lon.assign_attrs(bounds="lon_bnds"),
-        "lat_bnds": lat_bnds.copy(),
-        "lon_bnds": lon_bnds.copy(),
-        "time_bnds": time_bnds.copy(),
-    },
-    dims=["bnds", "time", "lat", "lon"],
-)
-ts_with_bnds_from_parent_non_cf = xr.DataArray(
-    name="ts",
-    data=np.ones((2, 12, 4, 4)),
-    coords={
-        "bnds": np.array([0, 1]),
-        "time": time_cf.copy(),
-        "lat": lat.copy(),
-        "lon": lon.copy(),
-        "lat_bnds": lat_bnds,
-        "lon_bnds": lon_bnds,
-        "time_bnds": time_bnds_non_cf,
-    },
-    dims=["bnds", "time", "lat", "lon"],
-)
-
 
 def generate_dataset(cf_compliant: bool, has_bounds: bool) -> xr.Dataset:
     """Generates a dataset using coordinate and data variable fixtures.

@@ -5,7 +5,6 @@ from typing import Dict, Hashable, List, Optional, Tuple, get_args
 import cf_xarray as cfxr  # noqa: F401
 import numpy as np
 import xarray as xr
-from cf_xarray.accessor import _get_bounds, _single, _variables, apply_mapper
 from typing_extensions import Literal
 
 from xcdat.logger import setup_custom_logger
@@ -73,7 +72,8 @@ class DatasetBoundsAccessor:
 
         bounds: Dict[str, Optional[xr.DataArray]] = {}
         for coord, bounds_name in ds.cf.bounds.items():
-            bounds[coord] = ds.get(bounds_name, None)
+            bound = ds.get(bounds_name[0], None)
+            bounds[coord] = bound
 
         return collections.OrderedDict(sorted(bounds.items()))
 
@@ -112,7 +112,7 @@ class DatasetBoundsAccessor:
             If an incorrect ``coord`` argument is passed.
 
         ValueError
-            If bounds were not found in the dataset. They must be added.
+            If bounds were not found. They must be added.
         """
         if coord not in SUPPORTED_COORDS:
             raise ValueError(
@@ -123,9 +123,7 @@ class DatasetBoundsAccessor:
         try:
             bounds = self._dataset.cf.get_bounds(coord)
         except KeyError:
-            raise KeyError(
-                f"{coord} bounds were not found in the dataset, they must be added."
-            )
+            raise KeyError(f"{coord} bounds were not found, they must be added.")
 
         return bounds
 
@@ -283,28 +281,40 @@ class DataArrayBoundsAccessor:
     >>> tas = ds["tas"]
     >>> tas.bounds._copy_from_dataset(ds)
 
-    Return dictionary of coordinate keys mapped to bounds DataArrays:
+    Return dictionary of axis and coordinate keys mapped to bounds DataArrays:
 
     >>> tas.bounds.bounds
 
     Return dictionary of coordinate keys mapped to bounds names:
 
     >>> tas.bounds.bounds_names
-
-    Get bounds for a coordinate key:
-
-    >>> tas.bounds.get_bounds("lat")
-
-    Get name of bounds dimension:
-
-    >>> tas.bounds.get_bounds_dim_name("lat")
-
     """
 
     def __init__(self, dataarray: xr.DataArray):
         self._dataarray = dataarray
 
-    def copy_from_parent(self, dataset: xr.Dataset) -> xr.DataArray:
+        # A Dataset container to store the bounds from the parent Dataset.
+        # A Dataset is used instead of a dictionary so that it is interoperable
+        # with cf_xarray and the DatasetBoundsAccessor class. This allows for
+        # the dynamic generation of a bounds dict that is name-agnostic (e.g.,
+        # "lat", "latitude", "Y" for latitude bounds). Refer to the ``bounds``
+        # class property below for more information.
+        self._bounds = xr.Dataset()
+
+    def copy(self) -> xr.DataArray:
+        """Copies the DataArray while maintaining accessor class attributes.
+
+        This method is invoked when a copy of a variable is made through
+        ``xcdat.variable.copy_variable()``.
+
+        Returns
+        -------
+        xr.DataArray
+            The DataArray within the accessor class.
+        """
+        return self._dataarray
+
+    def copy_from_parent(self, dataset: xr.Dataset):
         """Copies coordinate bounds from the parent Dataset to the DataArray.
 
         In an xarray.Dataset, variables (e.g., "tas") and coordinate bounds
@@ -332,20 +342,15 @@ class DataArrayBoundsAccessor:
         .. [3] https://github.com/pydata/xarray/issues/1475
 
         """
-        da = self._dataarray.copy()
-
-        # The bounds dimension must be set before adding bounds to the DataArray
-        # coordinates, otherwise the error below is thrown:
-        # "ValueError: cannot add coordinates with new dimensions to a DataArray"
-        da = self._set_bounds_dim(dataset)
+        bounds = self._bounds.copy()
 
         coords = [*dataset.coords]
         boundless_coords = []
         for coord in coords:
             if coord in SUPPORTED_COORDS:
                 try:
-                    bounds = dataset.cf.get_bounds(coord)
-                    da[bounds.name] = bounds.copy()
+                    coord_bounds = dataset.cf.get_bounds(coord)
+                    bounds[coord_bounds.name] = coord_bounds.copy()
                 except KeyError:
                     boundless_coords.append(coord)
 
@@ -356,56 +361,7 @@ class DataArrayBoundsAccessor:
                 "`xcdat.dataset.open_dataset` to auto-generate missing bounds first"
             )
 
-        self._dataarray = da
-        return self._dataarray
-
-    def _set_bounds_dim(self, dataset: xr.Dataset) -> xr.DataArray:
-        """
-        Sets the bounds dimension(s) in the DataArray based on the dims of the
-        parent Dataset.
-
-        This function uses the "bounds" attribute of each coordinate to map to
-        the bounds, then extracts the dimension from each bounds.
-
-        Parameters
-        ----------
-        dataset : xr.Dataset
-            The parent Dataset.
-
-        Returns
-        -------
-        xr.DataArray
-            The data variable with a bounds dimension.
-
-        Raises
-        ------
-        KeyError
-            When no bounds dimension exists in the parent Dataset.
-        """
-        da = self._dataarray.copy()
-        coords = dataset.cf.coordinates.keys()
-
-        dims = set()
-        for coord in coords:
-            try:
-                dims.add(dataset.cf.get_bounds_dim_name(coord))
-            except KeyError:
-                logger.warning(
-                    f"{coord} has no bounds, or the `bounds` attribute is missing to "
-                    "link to the bounds."
-                )
-
-        if len(dims) == 0:
-            raise KeyError(
-                "No bounds dimension in the parent dataset, which indicates that there "
-                "are probably no coordinate bounds. Try passing the dataset to "
-                "`xcdat.dataset.open_dataset` to auto-generate them."
-            )
-
-        for dim in dims:
-            da = da.expand_dims(dim={dim: np.array([0, 1])})
-
-        self._dataarray = da
+        self._bounds = bounds
         return self._dataarray
 
     @property
@@ -423,39 +379,30 @@ class DataArrayBoundsAccessor:
         -----
         Based on ``cf_xarray.accessor.CFDatasetAccessor.bounds``.
         """
-        da = self._dataarray
-        bounds: Dict[str, Optional[xr.DataArray]] = {}
-        for coord, bounds_name in self.bounds_names.items():
-            bounds[coord] = da.coords.get(bounds_name, None)  # type: ignore
+        self._check_bounds_are_set()
 
-        return bounds
+        bounds = DatasetBoundsAccessor(self._bounds)
+        return bounds.bounds
 
     @property
     def bounds_names(self) -> Dict[Hashable, List[str]]:
         """Returns a mapping of coordinate keys to the name of their bounds.
 
-        Missing coordinates are handled by ``self.copy_from_parent()``.
+        Wrapper for ``cf_xarray.accessor.CFDatasetAccessor.bounds_names``.
 
         Returns
         -------
         Dict[Hashable, List[str]]
             Dictionary mapping valid keys to the variable names of their bounds.
-
-        Notes
-        -----
-        Based on ``cf_xarray.accessor.CFDatasetAccessor.bounds_names``.
         """
-        da = self._dataarray
-        keys = da.coords
+        self._check_bounds_are_set()
 
-        vardict = {key: apply_mapper(_get_bounds, da, key, error=False) for key in keys}
-
-        # Each coord should have only one bound, thus select the first index
-        # TODO: Handle when there is more than one bounds per coordinate.
-        return {k: v[0] for k, v in vardict.items() if v}
+        return self._bounds.cf.bounds
 
     def get_bounds(self, coord: Coord) -> xr.DataArray:
         """Get bounds corresponding to a coordinate key.
+
+        Wrapper for ``cf_xarray.accessor.CFDatasetAccessor.get_bounds``.
 
         Parameters
         ----------
@@ -466,35 +413,15 @@ class DataArrayBoundsAccessor:
         -------
         DataArray
             The bounds for a coordinate key.
-
-        Notes
-        -----
-        Based on ``cf_xarray.accessor.CFDatasetAccessor.get_bounds``.
         """
-        # TODO: Handle when there is more than bounds dimension
-        return apply_mapper(_variables(_single(_get_bounds)), self._dataarray, coord)[0]
+        self._check_bounds_are_set()
 
-    def get_bounds_dim_name(self, coord: Coord) -> Hashable:
-        """Get bounds dimension name corresponding to coordinate key.
+        bounds = DatasetBoundsAccessor(self._bounds)
+        return bounds.get_bounds(coord)
 
-        Parameters
-        ----------
-        coord : Coord
-            The coordinate key whose bounds dimension is desired.
-
-        Returns
-        -------
-        Hashable
-            The bounds dimension name.
-
-        Notes
-        -----
-        Based on ``cf_xarray.accessor.CFDatasetAccessor.get_bounds_dim_name``.
-        """
-        crd = self._dataarray[coord]
-        bounds = self.get_bounds(coord)
-        bounds_dims = set(bounds.dims) - set(crd.dims)
-        assert len(bounds_dims) == 1
-        bounds_dim = bounds_dims.pop()
-        assert self._dataarray.sizes[bounds_dim] in [2, 4]
-        return bounds_dim
+    def _check_bounds_are_set(self):
+        if len(self._bounds) == 0:
+            raise ValueError(
+                "Variable bounds are not set. Copy them from the parent Dataset using "
+                "`<var>.bounds.copy_from_parent()`"
+            )
