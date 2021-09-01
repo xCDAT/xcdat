@@ -7,4 +7,3 @@ API Reference
    xcdat.bounds
    xcdat.dataset
    xcdat.logger
-   xcdat.variable
