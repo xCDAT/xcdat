@@ -3,7 +3,12 @@ import pytest
 import xarray as xr
 
 from tests.fixtures import generate_dataset
-from xcdat.dataset import decode_time_units, open_dataset, open_mfdataset
+from xcdat.dataset import (
+    dataset_keep_vars,
+    decode_time_units,
+    open_dataset,
+    open_mfdataset,
+)
 
 
 class TestOpenDataset:
@@ -15,6 +20,18 @@ class TestOpenDataset:
 
         # Paths to the dummy datasets.
         self.file_path = f"{self.dir}/file.nc"
+
+    def test_keep_vars_only_keeps_specified_vars(self):
+        ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+        # Create a modified version of the Dataset with a new var
+        ds_mod = ds.copy()
+        ds_mod["tas"] = ds_mod.ts.copy()
+
+        ds_mod.to_netcdf(self.file_path)
+
+        result_ds = open_dataset(self.file_path, keep_vars="ts")
+        assert result_ds.identical(ds)
 
     def test_non_cf_compliant_time_is_decoded(self):
         # Generate dummy datasets with non-CF compliant time units that aren't
@@ -80,6 +97,37 @@ class TestOpenMfDataset:
         # Paths to the dummy datasets.
         self.file_path1 = f"{self.dir}/file1.nc"
         self.file_path2 = f"{self.dir}/file2.nc"
+
+    def test_keep_vars_only_keeps_specified_vars(self):
+        # Generate two dummy datasets with non-CF compliant time units.
+        ds1 = generate_dataset(cf_compliant=False, has_bounds=False)
+        ds1.to_netcdf(self.file_path1)
+        ds2 = generate_dataset(cf_compliant=False, has_bounds=False)
+        ds2 = ds2.rename_vars({"ts": "tas"})
+        ds2.to_netcdf(self.file_path2)
+
+        result_ds = open_mfdataset([self.file_path1, self.file_path2], keep_vars="ts")
+
+        # Replicates decode_times=False, which adds units to "time" coordinate.
+        # Refer to xcdat.bounds.DatasetBoundsAccessor._add_bounds() for
+        # how attributes propagate from coord to coord bounds.
+        result_ds.time_bnds.attrs["units"] = "months since 2000-01-01"
+
+        # Generate an expected dataset, which is a combination of both datasets
+        # with decoded time units and coordinate bounds.
+        expected_ds = generate_dataset(cf_compliant=True, has_bounds=True)
+        expected_ds.time.attrs["units"] = "months since 2000-01-01"
+        expected_ds.time_bnds.attrs["units"] = "months since 2000-01-01"
+        expected_ds.time.encoding = {
+            "source": None,
+            "dtype": np.dtype(np.int64),
+            "original_shape": expected_ds.time.data.shape,
+            "units": "months since 2000-01-01",
+            "calendar": "proleptic_gregorian",
+        }
+
+        # Check that non-cf compliant time was decoded and bounds were generated.
+        assert result_ds.identical(expected_ds)
 
     def test_non_cf_compliant_time_is_decoded(self):
         # Generate two dummy datasets with non-CF compliant time units.
@@ -288,3 +336,36 @@ class TestDecodeTimeUnits:
             "calendar": "proleptic_gregorian",
         }
         assert result_ds.time.encoding == expected_ds.time.encoding
+
+
+class TestDatasetKeepVars:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+        self.ds_mod = self.ds.copy()
+        self.ds_mod["tas"] = self.ds_mod.ts.copy()
+
+    def test_raises_error_if_vars_list_is_empty(self):
+        with pytest.raises(IndexError):
+            dataset_keep_vars(self.ds_mod, [])
+
+    def test_only_keeps_specified_vars(self):
+        ds = dataset_keep_vars(self.ds_mod, ["ts"])
+
+        assert ds.identical(self.ds)
+
+    def test_only_keeps_specified_var(self):
+        ds = dataset_keep_vars(self.ds_mod, "ts")
+
+        assert ds.identical(self.ds)
+
+    def test_raises_error_if_var_does_not_exist_in_dataset(self):
+        with pytest.raises(KeyError):
+            dataset_keep_vars(self.ds_mod, ["nonexistent"])
+
+    def test_always_keeps_bounds(self):
+        ds = dataset_keep_vars(self.ds_mod, ["ts"])
+        assert ds.get("lat_bnds") is not None
+        assert ds.get("lon_bnds") is not None
+        assert ds.get("time_bnds") is not None

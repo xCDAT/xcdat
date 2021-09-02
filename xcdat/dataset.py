@@ -7,21 +7,25 @@ import xarray as xr
 from xcdat import bounds  # noqa: F401
 
 
-def open_dataset(path: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
+def open_dataset(
+    path: str, keep_vars: Union[str, List[str]] = None, **kwargs: Dict[str, Any]
+) -> xr.Dataset:
     """Wrapper for ``xarray.open_dataset`` that applies common operations.
 
     Operations include:
 
     - Decode all time units, including non-CF compliant units (months and years).
     - Generate bounds for supported coordinates if they don't exist.
-
-    NOTE: Using decode_times=False may add incorrect units for existing time
-    bounds (becomes "days since 1970-01-01  00:00:00").
+    - The option to keep a subset of variables in the Dataset.
 
     Parameters
     ----------
     path : str
         Path to Dataset.
+    keep_vars: Union[str, List[str]]
+        Variable(s) to keep in the Dataset. This is useful for subsetting a
+        Dataset with a large number of variables that aren't of interest,
+        defaults to None.
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_dataset``.
 
@@ -52,24 +56,41 @@ def open_dataset(path: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
 
     >>> from xcdat.dataset import open_dataset
     >>> ds = open_dataset("file_path")
+
+    Keep a single variable in the Dataset:
+
+    >>> from xcdat.dataset import open_dataset
+    >>> ds = open_dataset("file_path", keep_vars="tas")
+
+    Keep multiple variables in the Dataset:
+
+    >>> from xcdat.dataset import open_dataset
+    >>> ds = open_dataset("file_path", keep_vars=["ts", "tas"])
     """
+    # NOTE: Using decode_times=False may add incorrect units for existing time
+    # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_dataset(path, decode_times=False, **kwargs)
     ds = decode_time_units(ds)
     ds = ds.bounds.fill_missing()
 
+    if keep_vars is not None:
+        ds = dataset_keep_vars(ds, keep_vars)
+
     return ds
 
 
-def open_mfdataset(paths: Union[str, List[str]], **kwargs) -> xr.Dataset:
+def open_mfdataset(
+    paths: Union[str, List[str]],
+    keep_vars: Union[str, List[str]] = None,
+    **kwargs: Dict[str, Any],
+) -> xr.Dataset:
     """Wrapper for ``xarray.open_mfdataset`` that applies common operations.
 
     Operations include:
 
     - Decode all time units, including non-CF compliant units (months and years).
     - Generate bounds for supported coordinates if they don't exist.
-
-    NOTE: Using decode_times=False may add incorrect units for existing time
-    bounds (becomes "days since 1970-01-01  00:00:00").
+    - The option to keep a subset of variables in the Dataset.
 
     Parameters
     ----------
@@ -79,7 +100,10 @@ def open_mfdataset(paths: Union[str, List[str]], **kwargs) -> xr.Dataset:
         pathlib Paths. If concatenation along more than one dimension is desired,
         then ``paths`` must be a nested list-of-lists (see ``combine_nested``
         for details). (A string glob will be expanded to a 1-dimensional list.)
-
+    keep_vars: Union[str, List[str]]
+        Variable(s) to keep in the Dataset. This is useful for subsetting a
+        Dataset with a large number of variables that aren't of interest,
+        defaults to None.
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset`` and/or
         ``xarray.open_dataset``.
@@ -112,10 +136,25 @@ def open_mfdataset(paths: Union[str, List[str]], **kwargs) -> xr.Dataset:
 
     >>> from xcdat.dataset import open_mfdataset
     >>> ds = open_mfdataset(["file_path1", "file_path2"])
+
+    Keep a single variable in the Dataset:
+
+    >>> from xcdat.dataset import open_dataset
+    >>> ds = open_mfdataset(["file_path1", "file_path2"], keep_vars="tas")
+
+    Keep multiple variables in the Dataset:
+
+    >>> from xcdat.dataset import open_dataset
+    >>> ds = open_mfdataset(["file_path1", "file_path2"], keep_vars=["ts", "tas"])
     """
+    # NOTE: Using decode_times=False may add incorrect units for existing time
+    # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_mfdataset(paths, decode_times=False, **kwargs)
     ds = decode_time_units(ds)
     ds = ds.bounds.fill_missing()
+
+    if keep_vars is not None:
+        ds = dataset_keep_vars(ds, keep_vars)
 
     return ds
 
@@ -224,3 +263,55 @@ def decode_time_units(dataset: xr.Dataset):
 
         dataset = dataset.assign_coords({"time": decoded_time})
     return dataset
+
+
+def dataset_keep_vars(
+    dataset: xr.Dataset, keep_vars: Union[str, List[str]]
+) -> xr.Dataset:
+    """Keep specific variables in the Dataset and drop the rest.
+
+    This function is useful for subsetting a Dataset with a large number of
+    variables that aren't of interest, which could otherwise hinder performance
+    in Dataset operations like climatology calculation.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        The Dataset.
+    keep_vars : Union[str, List[str]]
+        The variables to keep.
+
+    Returns
+    -------
+    xr.Dataset
+        The Dataset with a subset of variables.
+
+    Raises
+    ------
+    KeyError
+        If the specified variable(s) are not found in the Dataset.
+    """
+    if isinstance(keep_vars, str):
+        keep_vars = [keep_vars]
+
+    if not keep_vars:
+        raise IndexError("An empty list was passed for variables to keep.")
+
+    missing_vars = []
+    for var in keep_vars:
+        if var not in list(dataset.data_vars.keys()):
+            missing_vars.append(var)
+    if missing_vars:
+        raise KeyError(
+            f"These specified variables are not in the dataset: {', '.join(missing_vars)}."
+        )
+
+    # dataset.cf.bounds.values() returns multiple keys corresponding to an axis,
+    # which means multiple of the same bounds name values. Thus, they are
+    # converted to a flattened list without repeats to avoid confusion.
+    keep_bounds = list(
+        {name for bound_names in dataset.cf.bounds.values() for name in bound_names}
+    )
+    # xarray is smart enough to ignore repeats when performing a `.get()`.
+    ds = dataset.get(keep_vars + keep_bounds)
+    return ds
