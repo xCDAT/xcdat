@@ -33,7 +33,7 @@ Releasing a New Version
 Continuous Integration / Continuous Delivery (CI/CD)
 -----------------------------------------------------
 
-This project uses `GitHub Actions <https://github.com/tomvothecoder/xcdat/actions>`_ to run two CI/CD workflows.
+This project uses `GitHub Actions <https://github.com/XCDAT/xcdat/actions>`_ to run two CI/CD workflows.
 
 1. CI/CD Build Workflow
 

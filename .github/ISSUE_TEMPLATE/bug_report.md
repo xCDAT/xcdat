@@ -1,6 +1,6 @@
 ---
 name: Bug report
-about: Create a report to help us improve xCDAT
+about: Create a report to help us improve XCDAT
 title: ""
 labels: "Type: Bug"
 assignees: ""
@@ -8,8 +8,7 @@ assignees: ""
 
 ### What versions of software are you using?
 
-- Operating System: ...
-- Package Version: ...
+-   Package Version: ...
 
 ### What are the steps to reproduce this issue?
 <!-- Paste the commands  -->

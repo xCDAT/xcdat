@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest an idea for xCDAT
+about: Suggest an idea for XCDAT
 title: ""
 labels: "Type: Enhancement"
 assignees: ""

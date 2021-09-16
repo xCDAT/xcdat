@@ -1,4 +1,4 @@
-"""Top-level package for xCDAT."""
+"""Top-level package for xcdat."""
 
 __author__ = """Tom Vo"""
 __email__ = "tomvothecoder@gmail.com"
