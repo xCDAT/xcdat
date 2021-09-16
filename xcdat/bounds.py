@@ -12,7 +12,7 @@ from xcdat.logger import setup_custom_logger
 logger = setup_custom_logger("root")
 
 Coord = Literal["lat", "latitude", "lon", "longitude", "time"]
-#: Tuple of supported coordinates in xCDAT functions and methods.
+#: Tuple of supported coordinates in XCDAT functions and methods.
 SUPPORTED_COORDS: Tuple[Coord, ...] = get_args(Coord)
 
 

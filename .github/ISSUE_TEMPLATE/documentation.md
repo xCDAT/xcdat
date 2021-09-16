@@ -1,6 +1,6 @@
 ---
 name: Documentation update
-about: Update xCDAT documentation
+about: Update XCDAT documentation
 title: ""
 labels: "Type: Documentation"
 assignees: ""

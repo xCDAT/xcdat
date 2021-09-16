@@ -5,7 +5,7 @@ package:
     version: {{ version }}
 
 source:
-  git_url: https://github.com/tomvothecoder/xcdat.git
+  git_url: https://github.com/XCDAT/xcdat.git
   git_rev: v{{ version }}
 
 build:
@@ -34,9 +34,9 @@ test:
     - xcdat.logger
 
 about:
-    home: https://github.com/tomvothecoder/xcdat
+    home: https://github.com/XCDAT/xcdat
     license: MIT
     summary: 'Xarray Extended with Climate Data Analysis Tools'
-    dev_url: https://github.com/tomvothecoder/xcdat
+    dev_url: https://github.com/XCDAT/xcdat
     doc_url: https://tomvothecoder.github.io/xcdat
-    doc_source_url: https://github.com/tomvothecoder/xcdat/tree/main/docs
+    doc_source_url: https://github.com/XCDAT/xcdat/tree/main/docs

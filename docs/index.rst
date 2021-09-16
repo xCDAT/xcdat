@@ -1,7 +1,7 @@
-xCDAT: Xarray Extended with Climate Data Analysis Tools
+XCDAT: Xarray Extended with Climate Data Analysis Tools
 =======================================================
 
-**xCDAT** is an open-source Python package built on `xarray <https://xarray.pydata.org/en/stable/>`_ for climate data analysis. It serves as the spiritual successor to `CDAT <https://github.com/CDAT/cdat>`_.
+**XCDAT** is an open-source Python package built on `xarray <https://xarray.pydata.org/en/stable/>`_ for climate data analysis. It serves as the spiritual successor to `CDAT <https://github.com/CDAT/cdat>`_.
 
 .. image:: _static/xarray_logo.png
   :target: https://xarray.pydata.org/en/stable
@@ -31,8 +31,8 @@ xCDAT: Xarray Extended with Climate Data Analysis Tools
    Project Maintenance <project_maintenance>
    What’s New <history>
    Team <authors>
-   GitHub Repository <https://github.com/tomvothecoder/xcdat>
+   GitHub Repository <https://github.com/XCDAT/xcdat>
 
 License
 -------
-xCDAT is available under the open source `MIT License <https://github.com/tomvothecoder/xcdat/blob/main/LICENSE>`_.
+XCDAT is available under the open source `MIT License <https://github.com/XCDAT/xcdat/blob/main/LICENSE>`_.

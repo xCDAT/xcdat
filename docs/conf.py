@@ -74,7 +74,7 @@ source_suffix = ".rst"
 master_doc = "index"
 
 # General information about the project.
-project = "xCDAT"
+project = "XCDAT"
 copyright = "2021, Tom Vo"
 author = "Tom Vo"
 
@@ -119,7 +119,7 @@ html_theme = "sphinx_book_theme"
 # sphinx_book_theme configurations
 # https://sphinx-book-theme.readthedocs.io/en/latest/configure.html
 html_theme_options = {
-    "repository_url": "https://github.com/tomvothecoder/xcdat",
+    "repository_url": "https://github.com/XCDAT/xcdat",
     "repository_branch": "master",
     "path_to_docs": "docs",
     "use_edit_page_button": True,
@@ -128,7 +128,7 @@ html_theme_options = {
     "use_download_button": True,
     "use_fullscreen_button": True,
 }
-html_title = "xCDAT Documentation"
+html_title = "XCDAT Documentation"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -163,7 +163,7 @@ latex_elements: Dict[str, str] = {
 # (source start file, target name, title, author, documentclass
 # [howto, manual, or own class]).
 latex_documents = [
-    (master_doc, "xcdat.tex", "xCDAT Documentation", "Tom Vo", "manual"),
+    (master_doc, "xcdat.tex", "XCDAT Documentation", "Tom Vo", "manual"),
 ]
 
 
@@ -171,7 +171,7 @@ latex_documents = [
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, "xcdat", "xCDAT Documentation", [author], 1)]
+man_pages = [(master_doc, "xcdat", "XCDAT Documentation", [author], 1)]
 
 
 # -- Options for Texinfo output ----------------------------------------
@@ -183,7 +183,7 @@ texinfo_documents = [
     (
         master_doc,
         "xcdat",
-        "xCDAT Documentation",
+        "XCDAT Documentation",
         author,
         "xcdat",
         "One line description of project.",

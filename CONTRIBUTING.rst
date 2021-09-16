@@ -13,7 +13,7 @@ Types of Contributions
 Report Bugs
 ~~~~~~~~~~~
 
-Report bugs at https://github.com/tomvothecoder/xcdat/issues.
+Report bugs at https://github.com/XCDAT/xcdat/issues.
 
 If you are reporting a bug, please include:
 
@@ -34,13 +34,13 @@ Look through the GitHub issues for features. Any unassigned issues tagged with "
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-xCDAT could always use more documentation, whether as part of the
-official xCDAT docs, or directly in the code through docstrings.
+XCDAT could always use more documentation, whether as part of the
+official XCDAT docs, or directly in the code through docstrings.
 
 Submit Feedback
 ~~~~~~~~~~~~~~~
 
-The best way to send feedback is to file an issue at https://github.com/tomvothecoder/xcdat/issues.
+The best way to send feedback is to file an issue at https://github.com/XCDAT/xcdat/issues.
 
 If you are proposing a feature:
 
@@ -91,7 +91,7 @@ at the commit level before submitting code reviews.
 
 Get Started
 ------------
-Ready to contribute? Here's how to set up xCDAT for local development.
+Ready to contribute? Here's how to set up XCDAT for local development.
 
 VSCode
 ~~~~~~
@@ -102,7 +102,7 @@ Get VSCode here: https://code.visualstudio.com
 
 VSCode Setup
 ^^^^^^^^^^^^
-xCDAT includes a VSCode settings file (``.vscode/setting.json``). This file automatically configures your IDE with the Conda development environment, quality assurance tools, code line-length rulers, and more.
+XCDAT includes a VSCode settings file (``.vscode/setting.json``). This file automatically configures your IDE with the Conda development environment, quality assurance tools, code line-length rulers, and more.
 
 Just open the cloned repository in VSCode and you are set!
 
@@ -138,7 +138,7 @@ Local Development
 
 2. Fork the ``xcdat`` repo on GitHub.
 
-    - If you are a maintainer, you can clone and branch directly from the root repository here: https://github.com/tomvothecoder/xcdat
+    - If you are a maintainer, you can clone and branch directly from the root repository here: https://github.com/XCDAT/xcdat
 
 3. Clone your fork locally::
 
@@ -242,15 +242,15 @@ When you open a pull request on GitHub, there is a template available for use.
 Style Guide
 -----------
 
-xCDAT integrates the Black code formatter for code styling. If you want to learn more, please read about it `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
+XCDAT integrates the Black code formatter for code styling. If you want to learn more, please read about it `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
 
-xCDAT also leverages `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale.
+XCDAT also leverages `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale.
 `mypy <https://mypy.readthedocs.io/en/stable/introduction.html>`_ performs optional static type checking through pre-commit.
 
 Testing
 -------
 Testing your local changes are important to ensure long-term maintainability and extensibility of the project.
-Since xCDAT is an open source library, we aim to avoid as many bugs as possible from reaching the end-user.
+Since XCDAT is an open source library, we aim to avoid as many bugs as possible from reaching the end-user.
 
 To get started, here are guides on how to write tests using pytest:
 
@@ -353,7 +353,7 @@ $ pytest tests.test_xcdat
 FAQs
 ----
 
-What is xarray and how do I extend xarray for xCDAT?
+What is xarray and how do I extend xarray for XCDAT?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * https://xarray.pydata.org/en/stable/why-xarray.html
 * https://xarray.pydata.org/en/stable/internals.html#extending-xarray
