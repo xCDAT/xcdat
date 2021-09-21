@@ -6,4 +6,4 @@ API Reference
 
    xcdat.bounds
    xcdat.dataset
-   xcdat.logger
+   xcdat.xcdat
