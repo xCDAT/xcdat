@@ -7,25 +7,22 @@ import xarray as xr
 from xcdat import bounds  # noqa: F401
 
 
-def open_dataset(
-    path: str, keep_vars: Union[str, List[str]] = None, **kwargs: Dict[str, Any]
-) -> xr.Dataset:
+def open_dataset(path: str, var: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
     """Wrapper for ``xarray.open_dataset`` that applies common operations.
 
     Operations include:
 
     - Decode all time units, including non-CF compliant units (months and years).
     - Generate bounds for supported coordinates if they don't exist.
-    - The option to keep a subset of variables in the Dataset.
+    - Limit the Dataset to a single variable. XCDAT operations are performed on
+      a single variable.
 
     Parameters
     ----------
     path : str
         Path to Dataset.
-    keep_vars: Union[str, List[str]]
-        Variable(s) to keep in the Dataset. This is useful for subsetting a
-        Dataset with a large number of variables that aren't of interest,
-        defaults to None.
+    var: str
+        The variable to keep in the Dataset.
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_dataset``.
 
@@ -70,19 +67,15 @@ def open_dataset(
     # NOTE: Using decode_times=False may add incorrect units for existing time
     # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_dataset(path, decode_times=False, **kwargs)
+    ds = keep_var(ds, var)
     ds = decode_time_units(ds)
     ds = ds.bounds.fill_missing()
-
-    if keep_vars is not None:
-        ds = dataset_keep_vars(ds, keep_vars)
 
     return ds
 
 
 def open_mfdataset(
-    paths: Union[str, List[str]],
-    keep_vars: Union[str, List[str]] = None,
-    **kwargs: Dict[str, Any],
+    paths: Union[str, List[str]], var: str, **kwargs: Dict[str, Any]
 ) -> xr.Dataset:
     """Wrapper for ``xarray.open_mfdataset`` that applies common operations.
 
@@ -90,7 +83,8 @@ def open_mfdataset(
 
     - Decode all time units, including non-CF compliant units (months and years).
     - Generate bounds for supported coordinates if they don't exist.
-    - The option to keep a subset of variables in the Dataset.
+    - Limit the Dataset to a single variable. XCDAT operations are performed on
+      a single variable.
 
     Parameters
     ----------
@@ -100,10 +94,8 @@ def open_mfdataset(
         pathlib Paths. If concatenation along more than one dimension is desired,
         then ``paths`` must be a nested list-of-lists (see ``combine_nested``
         for details). (A string glob will be expanded to a 1-dimensional list.)
-    keep_vars: Union[str, List[str]]
-        Variable(s) to keep in the Dataset. This is useful for subsetting a
-        Dataset with a large number of variables that aren't of interest,
-        defaults to None.
+    var: str
+        The variable to keep in the Dataset.
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset`` and/or
         ``xarray.open_dataset``.
@@ -150,11 +142,9 @@ def open_mfdataset(
     # NOTE: Using decode_times=False may add incorrect units for existing time
     # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_mfdataset(paths, decode_times=False, **kwargs)
+    ds = keep_var(ds, var)
     ds = decode_time_units(ds)
     ds = ds.bounds.fill_missing()
-
-    if keep_vars is not None:
-        ds = dataset_keep_vars(ds, keep_vars)
 
     return ds
 
@@ -265,21 +255,19 @@ def decode_time_units(dataset: xr.Dataset):
     return dataset
 
 
-def dataset_keep_vars(
-    dataset: xr.Dataset, keep_vars: Union[str, List[str]]
-) -> xr.Dataset:
-    """Keep specific variables in the Dataset and drop the rest.
+def keep_var(dataset: xr.Dataset, var: str) -> xr.Dataset:
+    """Keep a specific variable in the Dataset and drop the rest.
 
     This function is useful for subsetting a Dataset with a large number of
     variables that aren't of interest, which could otherwise hinder performance
-    in Dataset operations like climatology calculation.
+    in Dataset operations.
 
     Parameters
     ----------
     dataset : xr.Dataset
         The Dataset.
-    keep_vars : Union[str, List[str]]
-        The variables to keep.
+    var: str
+        The variable to keep in the Dataset.
 
     Returns
     -------
@@ -289,29 +277,17 @@ def dataset_keep_vars(
     Raises
     ------
     KeyError
-        If the specified variable(s) are not found in the Dataset.
+        If the specified variable is not found in the Dataset.
     """
-    if isinstance(keep_vars, str):
-        keep_vars = [keep_vars]
-
-    if not keep_vars:
-        raise IndexError("An empty list was passed for variables to keep.")
-
-    missing_vars = []
-    for var in keep_vars:
-        if var not in list(dataset.data_vars.keys()):
-            missing_vars.append(var)
-    if missing_vars:
-        raise KeyError(
-            f"These specified variables are not in the dataset: {', '.join(missing_vars)}."
-        )
+    if var not in dataset.data_vars.keys():
+        raise KeyError(f"The data variable {var} does not exist in the dataset.")
 
     # dataset.cf.bounds.values() returns multiple keys corresponding to an axis,
-    # which means multiple of the same bounds name values. Thus, they are
-    # converted to a flattened list without repeats to avoid confusion.
+    # which means the keys for bounds are repeated in the flattened list.
     keep_bounds = list(
         {name for bound_names in dataset.cf.bounds.values() for name in bound_names}
     )
-    # xarray is smart enough to ignore repeats when performing a `.get()`.
-    ds = dataset.get(keep_vars + keep_bounds)
+
+    # xarray is smart enough to ignore repeated keys.
+    ds = dataset[[var] + keep_bounds]
     return ds
