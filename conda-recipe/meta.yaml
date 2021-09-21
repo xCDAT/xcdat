@@ -32,6 +32,7 @@ test:
     - xcdat.bounds
     - xcdat.dataset
     - xcdat.logger
+    - xcdat.xcdat
 
 about:
     home: https://github.com/XCDAT/xcdat
