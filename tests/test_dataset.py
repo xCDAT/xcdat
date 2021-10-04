@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -23,7 +25,11 @@ class TestOpenDataset:
         ds_mod = ds.copy()
         ds_mod["tas"] = ds_mod.ts.copy()
 
-        ds_mod.to_netcdf(self.file_path)
+        # Suppress UserWarning regarding missing time.encoding "units" because
+        # it is not relevant to this test.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds_mod.to_netcdf(self.file_path)
 
         result_ds = open_dataset(self.file_path, var="ts")
         assert result_ds.identical(ds)
@@ -59,7 +65,12 @@ class TestOpenDataset:
     def test_preserves_lat_and_lon_bounds_if_they_exist(self):
         # Create expected dataset which includes bounds.
         expected_ds = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected_ds.to_netcdf(self.file_path)
+
+        # Suppress UserWarning regarding missing time.encoding "units" because
+        # it is not relevant to this test.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            expected_ds.to_netcdf(self.file_path)
 
         # Check resulting dataset and expected are identical
         result_ds = open_dataset(self.file_path, var="ts")
@@ -157,11 +168,15 @@ class TestOpenMfDataset:
     def test_preserves_lat_and_lon_bounds_if_they_exist(self):
         # Generate two dummy datasets.
         ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
-        ds1.to_netcdf(self.file_path1)
-
         ds2 = generate_dataset(cf_compliant=True, has_bounds=True)
         ds2 = ds2.rename_vars({"ts": "tas"})
-        ds2.to_netcdf(self.file_path2)
+
+        # Suppress UserWarnings regarding missing time.encoding "units" because
+        # it is not relevant to this test.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds1.to_netcdf(self.file_path1)
+            ds2.to_netcdf(self.file_path2)
 
         # Generate expected dataset, which is a combination of the two datasets.
         expected_ds = generate_dataset(cf_compliant=True, has_bounds=True)

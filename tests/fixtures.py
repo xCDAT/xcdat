@@ -100,7 +100,7 @@ lat = xr.DataArray(
 lat_bnds = xr.DataArray(
     name="lat_bnds",
     data=np.array([[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]),
-    coords={"lat": lat.data},
+    coords={"lat": lat},
     dims=["lat", "bnds"],
     attrs={"is_generated": "True"},
 )
@@ -123,7 +123,7 @@ lon_bnds = xr.DataArray(
             [357.1875, 359.0625],
         ]
     ),
-    coords={"lon": lon.data},
+    coords={"lon": lon},
     dims=["lon", "bnds"],
     attrs={"is_generated": "True"},
 )
