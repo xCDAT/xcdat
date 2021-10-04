@@ -12,7 +12,8 @@ def open_dataset(path: str, var: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
 
     Operations include:
 
-    - Decode all time units, including non-CF compliant units (months and years).
+    - If the dataset a time dimension, decode both CF and non-CF time units
+      (months and years).
     - Generate bounds for supported coordinates if they don't exist.
     - Limit the Dataset to a single variable. XCDAT operations are performed on
       a single variable.
@@ -68,9 +69,11 @@ def open_dataset(path: str, var: str, **kwargs: Dict[str, Any]) -> xr.Dataset:
     # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_dataset(path, decode_times=False, **kwargs)
     ds = keep_var(ds, var)
-    ds = decode_time_units(ds)
-    ds = ds.bounds.fill_missing()
 
+    if ds.cf.dims.get("T") is not None:
+        ds = decode_time_units(ds)
+
+    ds = ds.bounds.fill_missing()
     return ds
 
 
@@ -81,7 +84,8 @@ def open_mfdataset(
 
     Operations include:
 
-    - Decode all time units, including non-CF compliant units (months and years).
+    - If the dataset a time dimension, decode both CF and non-CF time units
+      (months and years).
     - Generate bounds for supported coordinates if they don't exist.
     - Limit the Dataset to a single variable. XCDAT operations are performed on
       a single variable.
@@ -143,9 +147,11 @@ def open_mfdataset(
     # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_mfdataset(paths, decode_times=False, **kwargs)
     ds = keep_var(ds, var)
-    ds = decode_time_units(ds)
-    ds = ds.bounds.fill_missing()
 
+    if ds.cf.dims.get("T") is not None:
+        ds = decode_time_units(ds)
+
+    ds = ds.bounds.fill_missing()
     return ds
 
 
