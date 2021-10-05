@@ -3,13 +3,15 @@ import logging
 import logging.handlers
 
 
-def setup_custom_logger(name: str) -> logging.Logger:
+def setup_custom_logger(name: str, propagate: bool = False) -> logging.Logger:
     """Sets up a custom logger.
 
     Parameters
     ----------
     name : str
         Name of the file where this function is called.
+    propagate : bool, optional
+        Whether to propagate logger messages or not, by default False
 
     Returns
     -------
@@ -47,7 +49,7 @@ def setup_custom_logger(name: str) -> logging.Logger:
     # Setup
     logging.basicConfig(format=log_format, filemode=log_filemode, level=logging.INFO)
     logger = logging.getLogger(name)
-    logger.propagate = False
+    logger.propagate = propagate
 
     # Console output
     consoleHandler = logging.StreamHandler()

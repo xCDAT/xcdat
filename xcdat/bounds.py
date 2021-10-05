@@ -1,6 +1,6 @@
 """Bounds module for functions related to coordinate bounds."""
 import collections
-from typing import Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import cf_xarray as cfxr  # noqa: F401
 import numpy as np
@@ -76,6 +76,25 @@ class DatasetBoundsAccessor:
             bounds[coord] = bound
 
         return collections.OrderedDict(sorted(bounds.items()))
+
+    @property
+    def names(self) -> List[str]:
+        """Returns a list of names for the bounds data variables in the Dataset.
+
+        Returns
+        -------
+        List[str]
+            A list of sorted dounds data variable names.
+        """
+        return sorted(
+            list(
+                {
+                    name
+                    for bound_names in self._dataset.cf.bounds.values()
+                    for name in bound_names
+                }
+            )
+        )
 
     def fill_missing(self) -> xr.Dataset:
         """Fills any missing bounds for supported coordinates in the Dataset.
