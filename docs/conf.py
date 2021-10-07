@@ -75,8 +75,8 @@ master_doc = "index"
 
 # General information about the project.
 project = "XCDAT"
-copyright = "2021, Tom Vo"
-author = "Tom Vo"
+copyright = "2021, XCDAT Developers"
+author = "XCDAT Developers"
 
 # The version info for the project you're documenting, acts as replacement
 # for |version| and |release|, also used in various other places throughout

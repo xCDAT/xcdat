@@ -32,7 +32,3 @@ XCDAT: Xarray Extended with Climate Data Analysis Tools
    What’s New <history>
    Team <authors>
    GitHub Repository <https://github.com/XCDAT/xcdat>
-
-License
--------
-XCDAT is available under the open source `MIT License <https://github.com/XCDAT/xcdat/blob/main/LICENSE>`_.

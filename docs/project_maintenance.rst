@@ -10,7 +10,7 @@ Releasing a New Version
 -----------------------
 
 1. Add updates to HISTORY.rst
-2. Checkout the latest ``master``.
+2. Checkout the latest ``main`` branch.
 3. Checkout a branch with the name of the version.
 
   ::
@@ -28,26 +28,16 @@ Releasing a New Version
       tbump <version> --no-tag
 
 5. Create a pull request to the main repo and merge it.
-6. Create a GitHub release. GitHub Actions will handle publishing the package to Anaconda.
+6. Create a GitHub release.
+7. Open a PR to the xcdat conda-forge feedstock with the latest changes.
 
 Continuous Integration / Continuous Delivery (CI/CD)
 -----------------------------------------------------
 
-This project uses `GitHub Actions <https://github.com/XCDAT/xcdat/actions>`_ to run two CI/CD workflows.
+This project uses `GitHub Actions <https://github.com/XCDAT/xcdat/actions>`_ to run the CI/CD build workflow.
 
-1. CI/CD Build Workflow
+This workflow is triggered by Git ``pull_request`` and ``push`` (merging PRs) events to the the main repo's ``main`` branch.
 
-  This workflow is triggered by Git ``pull_request`` and ``push`` (merging PRs) events to the the main repo's ``master``.
-
-  Jobs:
-
+Jobs:
     1. Run ``pre-commit`` for formatting, linting, and type checking
     2. Build conda development environment and run test suite
-
-2. CI/CD Release Workflow
-
-  This workflow is triggered by the Git ``publish`` event, which occurs when a new release is tagged.
-
-  Jobs:
-
-    1. Publish Anaconda package
