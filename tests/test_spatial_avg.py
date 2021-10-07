@@ -25,50 +25,37 @@ class TestSpatialAverage:
                 axis=["lat", "incorrect_axess"],
             )
 
-    def test_raises_error_if_lat_axes_does_not_exist(self):
+    def test_weighted_spatial_average_for_lat_and_lon_region_for_an_inferred_data_var(
+        self,
+    ):
         ds = self.ds.copy()
-        ds["ts"] = xr.DataArray(data=None, coords={"lon": ds.lon}, dims=["lon"])
-        with pytest.raises(KeyError):
-            ds.spatial.avg("ts", axis=["lat", "lon"])
+        ds.attrs["xcdat_infer"] = "ts"
 
-    def test_raises_error_if_lon_axes_does_not_exist(self):
-        ds = self.ds.copy()
-        ds["ts"] = xr.DataArray(data=None, coords={"lat": ds.lat}, dims=["lat"])
-        with pytest.raises(KeyError):
-            ds.spatial.avg("ts", axis=["lat", "lon"])
+        # `data_var` kwarg is not specified, so an inference is attempted
+        result = ds.spatial.avg(
+            axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+        )
 
-    def test_raises_error_if_axis_list_contains_unsupported_axes(self):
-        with pytest.raises(ValueError):
-            self.ds.spatial.avg(
-                "ts",
-                axis=["lat", "incorrect_axess"],
-            )
+        expected = self.ds.copy()
+        expected.attrs["xcdat_infer"] = "ts"
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, 1.0, 1.0]),
+            coords={"time": expected.time},
+            dims="time",
+        )
 
-    def test_raises_error_if_lat_bounds_type_is_not_a_tuple(self):
-        with pytest.raises(TypeError):
-            self.ds.spatial.avg(
-                "ts",
-                axis=["lat", "lon"],
-                lat_bounds=[-5.0, 5],
-                lon_bounds=(-170, -120.1),
-            )
+        assert result.identical(expected)
 
-    def test_raises_error_if_lon_bounds_type_is_not_a_tuple(self):
-        with pytest.raises(TypeError):
-            self.ds.spatial.avg(
-                "ts",
-                axis=["lat", "lon"],
-                lat_bounds=(-5.0, 5),
-                lon_bounds=[-170, -120.1],
-            )
-
-    def test_weighted_spatial_average_for_lat_and_lon_region(self):
+    def test_weighted_spatial_average_for_lat_and_lon_region_for_explicit_data_var(
+        self,
+    ):
         ds = self.ds.copy()
         result = ds.spatial.avg(
             "ts", axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
         expected = self.ds.copy()
+
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, 1.0, 1.0]),
             coords={"time": expected.time},
@@ -97,6 +84,33 @@ class TestSpatialAverage:
         assert result.identical(expected)
 
 
+class TestValidateAxis:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_raises_error_if_axis_list_contains_unsupported_axes(self):
+        with pytest.raises(ValueError):
+            self.ds.spatial._validate_axis(self.ds.ts, axis=["lat", "incorrect_axes"])
+
+    def test_raises_error_if_lat_axes_does_not_exist(self):
+        ds = self.ds.copy()
+        ds["ts"] = xr.DataArray(data=None, coords={"lon": ds.lon}, dims=["lon"])
+        with pytest.raises(KeyError):
+            ds.spatial._validate_axis(ds.ts, axis=["lat", "lon"])
+
+    def test_raises_error_if_lon_axes_does_not_exist(self):
+        ds = self.ds.copy()
+        ds["ts"] = xr.DataArray(data=None, coords={"lat": ds.lat}, dims=["lat"])
+        with pytest.raises(KeyError):
+            ds.spatial._validate_axis(ds.ts, axis=["lat", "lon"])
+
+    def test_returns_list_of_str_if_axis_is_a_single_supported_str_input(self):
+        result = self.ds.spatial._validate_axis(self.ds.ts, axis="lat")
+        expected = ["lat"]
+        assert result == expected
+
+
 class TestValidateRegionBounds:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -104,10 +118,10 @@ class TestValidateRegionBounds:
 
     def test_raises_error_if_bounds_type_is_not_a_tuple(self):
         with pytest.raises(TypeError):
-            self.ds.spatial._validate_region_bounds([1, 1])
+            self.ds.spatial._validate_region_bounds("lon", [1, 1])
 
         with pytest.raises(TypeError):
-            self.ds.spatial._validate_region_bounds("str")
+            self.ds.spatial._validate_region_bounds("lon", "str")
 
     def test_raises_error_if_there_are_0_elements_in_the_bounds(self):
         with pytest.raises(ValueError):

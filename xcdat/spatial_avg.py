@@ -7,6 +7,8 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Literal, TypedDict, get_args
 
+from xcdat.dataset import get_inferred_var
+
 #: Type alias for a dictionary of axes keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
 #: Type alias of supported axes strings for spatial averaging.
@@ -26,7 +28,7 @@ class DatasetSpatialAverageAccessor:
 
     def avg(
         self,
-        data_var_name: str,
+        data_var: Optional[str] = None,
         axis: Union[List[SupportedAxes], SupportedAxes] = ["lat", "lon"],
         weights: xr.DataArray = None,
         lat_bounds: Optional[RegionAxisBounds] = None,
@@ -47,9 +49,11 @@ class DatasetSpatialAverageAccessor:
 
         Parameters
         ----------
-        data_var_name: str
+        data_var: Optional[str], optional
             The name of the data variable inside the dataset to spatially
-            average.
+            average. If None, an inference to the desired data variable is
+            attempted with the Dataset's "xcdat_infer" attr and
+            ``get_inferred_var()``, by default None.
         axis : Union[List[SupportedAxes], SupportedAxes]
             List of axis dimensions or single axes dimension to average over.
             For example, ["lat", "lon"]  or "lat", by default ["lat", "lon"].
@@ -123,31 +127,17 @@ class DatasetSpatialAverageAccessor:
         >>>     weights=weights)["tas"]
         """
         dataset = self._dataset.copy()
-        data_var = dataset.get(data_var_name)
 
         if data_var is None:
-            raise KeyError(
-                f"The data variable {data_var_name} does not exist in the dataset."
-            )
-        if data_var.cf.axes.get("Y") is None:
-            raise KeyError(
-                "The data variable is missing a latitude dimension, which is required "
-                "for spatial averaging."
-            )
-        if data_var.cf.axes.get("X") is None:
-            raise KeyError(
-                "The data variable is missing a longitude dimension, which is required "
-                "for spatial averaging."
-            )
-
-        if isinstance(axis, str):
-            axis = [axis]
-        for axes in axis:
-            if axes not in SUPPORTED_AXES:
-                raise ValueError(
-                    "Incorrect `axis` argument. Supported axis include: "
-                    f"{', '.join(SUPPORTED_AXES)}."
+            da_data_var = get_inferred_var(dataset)
+        else:
+            da_data_var = dataset.get(data_var, None)
+            if da_data_var is None:
+                raise KeyError(
+                    f"The data variable '{data_var}' does not exist in the dataset."
                 )
+
+        axis = self._validate_axis(da_data_var, axis)
 
         if weights is None:
             if lat_bounds is not None:
@@ -156,12 +146,64 @@ class DatasetSpatialAverageAccessor:
                 self._validate_region_bounds("lon", lon_bounds)
             weights = self._get_weights(axis, lat_bounds, lon_bounds)
 
-        self._validate_weights(data_var, axis, weights)
-        dataset[data_var_name] = self._averager(data_var, axis, weights)
+        self._validate_weights(da_data_var, axis, weights)
+        dataset[da_data_var.name] = self._averager(da_data_var, axis, weights)
         return dataset
 
+    def _validate_axis(
+        self, data_var: xr.DataArray, axis: Union[List[SupportedAxes], SupportedAxes]
+    ) -> List[SupportedAxes]:
+        """Validates the ``axis`` arg based on a set of criteria.
+
+        This method checks if ``axis`` values are supported strings and if they
+        exist in ``data_var``.
+
+        Parameters
+        ----------
+        data_var : xr.DataArray
+            The data variable.
+        axis : Union[List[SupportedAxes], SupportedAxes]
+            List of axis dimensions or single axes dimension to average over.
+            For example, ["lat", "lon"]  or "lat".
+
+        Returns
+        -------
+        List[SupportedAxes]
+            List of axis dimensions or single axes dimension to average over.
+
+        Raises
+        ------
+        ValueError
+            If any value inside ``axis`` is not supported.
+        KeyError
+            If any value inside ``axis`` does not exist in the ``data_var``.
+        """
+        if isinstance(axis, str):
+            axis = [axis]
+
+        for axes in axis:
+            if axes not in SUPPORTED_AXES:
+                raise ValueError(
+                    "Incorrect `axis` argument. Supported axes include: "
+                    f"{', '.join(SUPPORTED_AXES)}."
+                )
+
+            # Must use a try and except because native xarray is not name
+            # agnostic with key access using axes names (e.g., "lat" is not
+            # linked to a "latitude" key ), and cf_xarray does not support
+            # `data_var.cf.get(axes, None)`.
+            try:
+                data_var.cf[axes]
+            except KeyError:
+                raise KeyError(
+                    f"The data variable '{data_var.name}' is missing a '{axes}' "
+                    "dimension, which is required for spatial averaging."
+                )
+
+        return axis
+
     def _validate_region_bounds(self, axis: SupportedAxes, bounds: RegionAxisBounds):
-        """Validates the type and value for the ``bounds`` argument.
+        """Validates the ``bounds`` arg based on a set of criteria.
 
         Parameters
         ----------
@@ -540,12 +582,12 @@ class DatasetSpatialAverageAccessor:
     def _validate_weights(
         self, data_var: xr.DataArray, axis: List[SupportedAxes], weights: xr.DataArray
     ):
-        """
-        Validates weights for dimensional alignment between the weights and the
-        data variable.
+        """Validates the ``weights`` arg based on a set of criteria.
 
-        This method assumes that the data variable has the latitude and
-        longitude axis dimensions.
+        This methods checks for the dimensional alignment between the
+        ``weights`` and ``data_var``. It assumes that ``data_var`` has the same
+        keys that are specified  in ``axis``, which has already been validated
+        using ``self._validate_axis()`` in ``self.avg()``.
 
         Parameters
         ----------

@@ -37,6 +37,12 @@ class TestDatasetBoundsAccessor:
         for key in expected.keys():
             assert result[key].identical(expected[key])
 
+    def test_names_property_returns_a_list_of_sorted_bounds_names(self):
+        result = self.ds_with_bnds.bounds.names
+        expected = ["lat_bnds", "lon_bnds", "time_bnds"]
+
+        assert result == expected
+
     def test_fill_missing_returns_dataset_with_filled_bounds(self):
         ds = self.ds_with_bnds.copy()
 
