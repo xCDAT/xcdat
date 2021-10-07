@@ -35,4 +35,4 @@ XCDAT: Xarray Extended with Climate Data Analysis Tools
 
 License
 -------
-XCDAT is available under the open source `MIT License <https://github.com/XCDAT/xcdat/blob/main/LICENSE>`_.
+XCDAT is available under the open source `Apache-2.0 License <https://github.com/XCDAT/xcdat/blob/main/LICENSE>`_.

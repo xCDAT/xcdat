@@ -1,14 +1,13 @@
 XCDAT
 =====
 
-|Anaconda-Server Badge| |CI/CD Build Workflow| |CI/CD Release Workflow| |docs|
-|Codecov|
+|CI/CD Build Workflow| |CI/CD Release Workflow| |docs| |Codecov|
 
 |pre-commit| |Code style: black| |flake8| |Checked with mypy|
 
 Xarray Extended with Climate Data Analysis Tools
 
--  Free software: MIT license
+-  Free software: Apache-20
 -  Documentation: https://xcdat.readthedocs.io/en/latest/
 
 .. |CI/CD Build Workflow| image:: https://github.com/XCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
