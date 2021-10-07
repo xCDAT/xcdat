@@ -9,17 +9,17 @@ This page covers tips for project maintenance.
 Releasing a New Version
 -----------------------
 
-1. Add updates to HISTORY.rst
-2. Checkout the latest ``main`` branch.
-3. Checkout a branch with the name of the version.
+1. Checkout the latest ``main`` branch.
+2. Checkout a branch with the name of the version.
 
   ::
 
       # Prepend "v" to <version>
       # For release candidates, append "rc" to <version>
-      git checkout -b v<version> -t origin/<version>
+      git checkout -b v<version>
+      git push --set-upstream origin v<version>
 
-4. Bump version using tbump.
+3. Bump version using tbump.
 
   ::
 
@@ -27,6 +27,7 @@ Releasing a New Version
       # --no-tag is required since tagging is handled in step 5.
       tbump <version> --no-tag
 
+4. Add updates to ``HISTORY.rst``
 5. Create a pull request to the main repo and merge it.
 6. Create a GitHub release.
 7. Open a PR to the xcdat conda-forge feedstock with the latest changes.
