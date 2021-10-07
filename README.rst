@@ -7,7 +7,6 @@ XCDAT
 
 Xarray Extended with Climate Data Analysis Tools
 
--  Free software: Apache-20
 -  Documentation: https://xcdat.readthedocs.io/en/latest/
 
 .. |CI/CD Build Workflow| image:: https://github.com/XCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
