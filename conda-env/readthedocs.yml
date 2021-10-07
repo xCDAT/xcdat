@@ -6,18 +6,17 @@ channels:
 dependencies:
     # Base
     # ==================
-    - python=3.8.8
-    - pip=21.0.1
-    - typing_extensions=3.7.4 # Required to make use of Python >=3.8 backported types
-    - netcdf4=1.5.6
-    - xarray=0.17.0
-    - dask=2021.7.0
-    - cf_xarray=0.6.0
+    - python=3.9.7
+    - pip=21.2.4
+    - typing_extensions=3.10.0.0 # Required to make use of Python >=3.8 backported types
+    - netcdf4=1.5.7
+    - xarray=0.19.0
+    - cf_xarray=0.6.1
+    - dask=2021.9.1
     # Documentation
     # ==================
-    - sphinx=3.5.1
+    - sphinx=4.2.0
     - sphinxcontrib-napoleon=0.7
-    - sphinx-copybutton=0.3.1
-    - pip:
-          - sphinx-book-theme==0.1.0
+    - sphinx-copybutton=0.4.0
+    - sphinx-book-theme==0.1.5
 prefix: /opt/miniconda3/envs/xcdat_rtd

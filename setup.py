@@ -15,13 +15,9 @@ with open("HISTORY.rst") as history_file:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/#install-requires
 requirements: List[str] = ["xarray", "pandas", "numpy"]
 
-setup_requirements = [
-    "pytest-runner",
-]
+setup_requirements: List[str] = []
 
-test_requirements = [
-    "pytest>=3",
-]
+test_requirements = ["pytest>=3"]
 
 setup(
     author="Tom Vo",

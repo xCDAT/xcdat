@@ -9,29 +9,28 @@ repos:
           - id: trailing-whitespace
           - id: end-of-file-fixer
           - id: check-yaml
-            exclude: conda-recipe/meta.yaml
 
     - repo: https://github.com/psf/black
-      rev: 20.8b1
+      rev: 21.9b0
       hooks:
           - id: black
 
     - repo: https://github.com/timothycrosley/isort
-      rev: 5.7.0
+      rev: 5.9.3
       hooks:
           - id: isort
 
     # Need to use flake8 GitHub mirror due to CentOS git issue with GitLab
     # https://github.com/pre-commit/pre-commit/issues/1206
     - repo: https://github.com/pycqa/flake8
-      rev: 3.8.4
+      rev: 3.9.2
       hooks:
           - id: flake8
             args: ["--config=setup.cfg"]
             additional_dependencies: [flake8-isort]
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v0.790
+      rev: v0.910
       hooks:
           - id: mypy
             args: ["--config=setup.cfg"]
