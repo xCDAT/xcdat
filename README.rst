@@ -1,7 +1,7 @@
 XCDAT
 =====
 
-|CI/CD Build Workflow| |CI/CD Release Workflow| |docs| |Codecov|
+|CI/CD Build Workflow| |docs| |Codecov|
 
 |pre-commit| |Code style: black| |flake8| |Checked with mypy|
 
@@ -12,8 +12,6 @@ Xarray Extended with Climate Data Analysis Tools
 
 .. |CI/CD Build Workflow| image:: https://github.com/XCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
    :target: https://github.com/XCDAT/xcdat/actions/workflows/build_workflow.yml
-.. |CI/CD Release Workflow| image:: https://github.com/XCDAT/xcdat/actions/workflows/release_workflow.yml/badge.svg
-   :target: https://github.com/XCDAT/xcdat/actions/workflows/release_workflow.yml
 .. |docs| image:: https://readthedocs.org/projects/xcdat/badge/?version=latest
    :target: https://xcdat.readthedocs.io/en/latest/?badge=latest
 .. |Codecov| image:: https://codecov.io/gh/XCDAT/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
