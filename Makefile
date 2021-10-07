@@ -78,8 +78,5 @@ docs: ## generate Sphinx HTML documentation, including API docs
 
 # Build
 # ----------------------
-conda-build:  # Build XCDAT as an Anaconda package
-	conda build -c conda-forge --output-folder conda-build conda-recipe
-
 install: clean ## install the package to the active Python's site-packages
 	python setup.py install

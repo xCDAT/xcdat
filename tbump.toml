@@ -24,8 +24,6 @@ tag_template = "v{new_version}"
 src = "setup.py"
 [[file]]
 src = "xcdat/__init__.py"
-[[file]]
-src = "conda-recipe/meta.yaml"
 
 # You can specify a list of commands to
 # run after the files have been patched
