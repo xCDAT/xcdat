@@ -23,3 +23,15 @@ Xarray Extended with Climate Data Analysis Tools
    :target: https://github.com/PyCQA/flake8
 .. |Checked with mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
    :target: http://mypy-lang.org/
+
+## Acknowledgement 
+
+This software is jointly developed by scientists and developers from the Energy Exascale Earth System Model (E3SM) Project and Program for Climate Model Diagnosis and Intercomparison (PCMDI). The work is performed for the E3SM project, which is sponsored by Earth System Model Development (ESMD) program, and the Simplifying ESM Analysis Through Standards (SEATS) project, which is sponsored by the Regional and Global Model Analysis (RGMA) program. ESMD and RGMA are programs for the Earth and Environmental Systems Sciences Division (EESSD) in the Office of Biological and Environmental Research (BER) within the Department of Energy's Office of Science.
+
+## License
+
+SPDX-License-Identifier: (Apache-2.0)
+
+See [LICENSE] for details
+
+`LLNL-CODE-819717`
