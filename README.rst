@@ -33,7 +33,16 @@ Xarray Extended with Climate Data Analysis Tools
 Acknowledgement
 ---------------
 
-This software is jointly developed by scientists and developers from the Energy Exascale Earth System Model ([E3SM](https://e3sm.org/)) Project and Program for Climate Model Diagnosis and Intercomparison ([PCMDI](https://pcmdi.llnl.gov/)). The work is performed for the E3SM project, which is sponsored by Earth System Model Development ([ESMD](https://climatemodeling.science.energy.gov/program/earth-system-model-development)) program, and the Simplifying ESM Analysis Through Standards (SEATS) project, which is sponsored by the Regional and Global Model Analysis ([RGMA](https://climatemodeling.science.energy.gov/program/regional-global-model-analysis)) program. ESMD and RGMA are programs for the Earth and Environmental Systems Sciences Division ([EESSD](https://science.osti.gov/ber/Research/eessd)) in the Office of Biological and Environmental Research ([BER](https://science.osti.gov/ber)) within the [Department of Energy](https://www.energy.gov/)'s [Office of Science](https://science.osti.gov/).
+This software is jointly developed by scientists and developers from the Energy Exascale Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and Intercomparison (`PCMDI`_). The work is performed for the E3SM project, which is sponsored by Earth System Model Development (`ESMD`_) program, and the Simplifying ESM Analysis Through Standards (SEATS) project, which is sponsored by the Regional and Global Model Analysis (`RGMA`_) program. ESMD and RGMA are programs for the Earth and Environmental Systems Sciences Division (`EESSD`_) in the Office of Biological and Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of Science`_.
+
+.. _E3SM: https://e3sm.org/
+.. _PCMDI: https://pcmdi.llnl.gov/
+.. _ESMD: https://climatemodeling.science.energy.gov/program/earth-system-model-development
+.. _RGMA: https://climatemodeling.science.energy.gov/program/regional-global-model-analysis
+.. _EESSD: https://science.osti.gov/ber/Research/eessd
+.. _BER: https://science.osti.gov/ber
+.. _Department of Energy: https://www.energy.gov/
+.. _Office of Science: https://science.osti.gov/
 
 License
 -------
