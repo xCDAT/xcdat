@@ -49,6 +49,6 @@ License
 
 SPDX-License-Identifier: (Apache-2.0)
 
-See `LICENSE<LICENSE>` for details
+See `LICENSE <LICENSE>`_ for details
 
 `LLNL-CODE-819717`
