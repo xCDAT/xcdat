@@ -426,14 +426,18 @@ class DatasetSpatialAverageAccessor:
         in-place between longitude conventions (-180 to 180) or (0 to 360).
         """
         lon_swap = lon.copy()
-        if type(lon_swap) == xr.core.dataarray.DataArray:
-            lon_swap.load()
         if to == "180":
             inds = np.where(lon_swap > 180)
-            lon_swap[inds] = lon_swap[inds] - 360
+            if type(lon_swap) == xr.core.dataarray.DataArray:
+                lon_swap.values[inds] = lon_swap[inds] - 360
+            else:
+                lon_swap[inds] = lon_swap[inds] - 360
         elif to == "360":
             inds = np.where(lon_swap < 0)
-            lon_swap[inds] = lon_swap[inds] + 360
+            if type(lon_swap) == xr.core.dataarray.DataArray:
+                lon_swap.values[inds] = lon_swap[inds] + 360
+            else:
+                lon_swap[inds] = lon_swap[inds] + 360
 
         return lon_swap
 
@@ -512,15 +516,14 @@ class DatasetSpatialAverageAccessor:
         # of 20, then the grid cells in between the region bounds (20 and 300)
         # are given zero weight (or partial weight if the grid bounds overlap
         # with the region bounds).
-        d_bounds.load()
         if r_bounds[1] >= r_bounds[0]:
             # Case 1 (simple case): not wrapping around prime meridian.
             # Adjustments for above / right of region.
-            d_bounds[d_bounds[:, 0] > r_bounds[1], 0] = r_bounds[1]
-            d_bounds[d_bounds[:, 1] > r_bounds[1], 1] = r_bounds[1]
+            d_bounds.values[d_bounds[:, 0] > r_bounds[1], 0] = r_bounds[1]
+            d_bounds.values[d_bounds[:, 1] > r_bounds[1], 1] = r_bounds[1]
             # Adjustments for below / left of region.
-            d_bounds[d_bounds[:, 0] < r_bounds[0], 0] = r_bounds[0]
-            d_bounds[d_bounds[:, 1] < r_bounds[0], 1] = r_bounds[0]
+            d_bounds.values[d_bounds[:, 0] < r_bounds[0], 0] = r_bounds[0]
+            d_bounds.values[d_bounds[:, 1] < r_bounds[0], 1] = r_bounds[0]
 
         else:
             # Case 2: wrapping around prime meridian [for longitude only]
