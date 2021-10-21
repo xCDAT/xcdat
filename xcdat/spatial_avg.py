@@ -426,6 +426,8 @@ class DatasetSpatialAverageAccessor:
         in-place between longitude conventions (-180 to 180) or (0 to 360).
         """
         lon_swap = lon.copy()
+        if type(lon_swap) == xr.core.dataarray.DataArray:
+            lon_swap.load()
         if to == "180":
             inds = np.where(lon_swap > 180)
             lon_swap[inds] = lon_swap[inds] - 360
@@ -510,6 +512,7 @@ class DatasetSpatialAverageAccessor:
         # of 20, then the grid cells in between the region bounds (20 and 300)
         # are given zero weight (or partial weight if the grid bounds overlap
         # with the region bounds).
+        d_bounds.load()
         if r_bounds[1] >= r_bounds[0]:
             # Case 1 (simple case): not wrapping around prime meridian.
             # Adjustments for above / right of region.
