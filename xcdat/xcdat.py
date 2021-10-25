@@ -1,9 +1,10 @@
 """Main xcdat module."""
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 import xarray as xr
 
 from xcdat.bounds import Coord, DatasetBoundsAccessor  # noqa: F401
+from xcdat.regridder.accessor import DatasetRegridderAccessor  # noqa: F401
 from xcdat.spatial_avg import DatasetSpatialAverageAccessor  # noqa: F401
 from xcdat.spatial_avg import RegionAxisBounds, SupportedAxes
 from xcdat.utils import is_documented_by
@@ -43,6 +44,13 @@ class XCDATAccessor:
     ) -> xr.Dataset:
         obj = DatasetSpatialAverageAccessor(self._dataset)
         return obj.avg(data_var, axis, weights, lat_bounds, lon_bounds)
+
+    @is_documented_by(DatasetRegridderAccessor.regrid)
+    def regrid(
+        self, dst_grid: xr.Dataset, tool: str, method: str, **options: Any
+    ) -> xr.Dataset:
+        obj = DatasetRegridderAccessor(self._dataset)
+        return obj.regrid(dst_grid, tool, method, **options)
 
     @property  # type: ignore
     @is_documented_by(DatasetBoundsAccessor.bounds)
