@@ -428,6 +428,8 @@ class DatasetSpatialAverageAccessor:
         lon_swap = lon.copy()
         if to == "180":
             inds = np.where(lon_swap > 180)
+            # if dataarray, update values attribute
+            # (compatible with chunked data)
             if type(lon_swap) == xr.core.dataarray.DataArray:
                 lon_swap.values[inds] = lon_swap[inds] - 360
             else:
@@ -515,7 +517,8 @@ class DatasetSpatialAverageAccessor:
         # the domain (e.g., for a left bound of 300 degrees and a right bound
         # of 20, then the grid cells in between the region bounds (20 and 300)
         # are given zero weight (or partial weight if the grid bounds overlap
-        # with the region bounds).
+        # with the region bounds). We update the values attribute, to maintain
+        # compatibility with chunked dataarrays.
         if r_bounds[1] >= r_bounds[0]:
             # Case 1 (simple case): not wrapping around prime meridian.
             # Adjustments for above / right of region.

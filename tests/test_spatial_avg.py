@@ -226,6 +226,18 @@ class TestSwapRegionLonAxis:
 
         assert np.array_equal(result, expected)
 
+    def test_successful_swap_from_180_to_360_for_dataarray(self):
+        result = self.ds.spatial._swap_lon_axes(self.ds.lon, to="360")
+        expected = np.array([0., 1.875, 356.25, 358.125])
+
+        assert np.array_equal(result, expected)
+
+    def test_successful_swap_from_360_to_180_for_dataarray(self):
+        expected = np.array([0., 1.875, -3.75, -1.875])
+        result = self.ds.spatial._swap_lon_axes(self.ds.lon, to="180")
+
+        assert np.array_equal(result, expected)
+
     def test_successful_swap_from_360_to_180(self):
         result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to="180")
         expected = np.array([0, 120, -179, 0])
@@ -599,6 +611,24 @@ class TestAverager:
             coords={"lat": self.ds.lat, "lon": self.ds.lon},
             dims=["lat", "lon"],
         )
+        result = self.ds.spatial._averager(
+            self.ds.ts, axis=["lat", "lon"], weights=weights
+        )
+        expected = xr.DataArray(
+            name="ts", data=np.ones(12), coords={"time": self.ds.time}, dims=["time"]
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_avg_over_lat_and_lon_axes_in_chunks(self):
+        self.ds = self.ds.chunk(2)
+
+        weights = xr.DataArray(
+            data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon},
+            dims=["lat", "lon"],
+        )
+
         result = self.ds.spatial._averager(
             self.ds.ts, axis=["lat", "lon"], weights=weights
         )
