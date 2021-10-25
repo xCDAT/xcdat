@@ -228,12 +228,12 @@ class TestSwapRegionLonAxis:
 
     def test_successful_swap_from_180_to_360_for_dataarray(self):
         result = self.ds.spatial._swap_lon_axes(self.ds.lon, to="360")
-        expected = np.array([0., 1.875, 356.25, 358.125])
+        expected = np.array([0.0, 1.875, 356.25, 358.125])
 
         assert np.array_equal(result, expected)
 
     def test_successful_swap_from_360_to_180_for_dataarray(self):
-        expected = np.array([0., 1.875, -3.75, -1.875])
+        expected = np.array([0.0, 1.875, -3.75, -1.875])
         result = self.ds.spatial._swap_lon_axes(self.ds.lon, to="180")
 
         assert np.array_equal(result, expected)
