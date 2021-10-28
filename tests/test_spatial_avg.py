@@ -713,19 +713,17 @@ class TestAverager:
         assert result.identical(expected)
 
     def test_weighted_avg_over_lat_and_lon_axes_in_chunks(self):
-        self.ds = self.ds.chunk(2)
+        ds = self.ds.copy().chunk(2)
 
         weights = xr.DataArray(
             data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon},
+            coords={"lat": ds.lat, "lon": ds.lon},
             dims=["lat", "lon"],
         )
 
-        result = self.ds.spatial._averager(
-            self.ds.ts, axis=["lat", "lon"], weights=weights
-        )
+        result = ds.spatial._averager(ds.ts, axis=["lat", "lon"], weights=weights)
         expected = xr.DataArray(
-            name="ts", data=np.ones(12), coords={"time": self.ds.time}, dims=["time"]
+            name="ts", data=np.ones(12), coords={"time": ds.time}, dims=["time"]
         )
 
         assert result.identical(expected)
