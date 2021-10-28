@@ -429,7 +429,7 @@ class DatasetSpatialAverageAccessor:
 
         # If chunking, must convert convert the xarray data structure from lazy
         # Dask arrays into eager, in-memory NumPy arrays before performing
-        # manipulations on the data. Otherwise,it raises `NotImplementedError
+        # manipulations on the data. Otherwise, it raises `NotImplementedError
         # xarray can't set arrays with multiple array indices to dask yet`
         if type(lon_swap.data) == Array:
             lon_swap.load()

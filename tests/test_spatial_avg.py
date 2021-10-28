@@ -55,7 +55,6 @@ class TestSpatialAverage:
         )
 
         expected = self.ds.copy()
-
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, 1.0, 1.0]),
             coords={"time": expected.time},
@@ -127,6 +126,7 @@ class TestValidateAxis:
     def test_returns_list_of_str_if_axis_is_a_single_supported_str_input(self):
         result = self.ds.spatial._validate_axis(self.ds.ts, axis="lat")
         expected = ["lat"]
+
         assert result == expected
 
 
@@ -384,6 +384,7 @@ class TestGetWeights:
             coords={"lat": self.ds.lat, "lon": self.ds.lon},
             dims=["lat", "lon"],
         )
+
         xr.testing.assert_allclose(result, expected)
 
     def test_returns_area_weights_for_region_within_lat(self):
@@ -533,6 +534,7 @@ class TestSetEqualLonBoundsToDomain:
             domain_bounds=self.domain_bounds, region_bounds=np.array([50, 50])
         )
         expected = np.array([-90, 90])
+
         assert np.array_equal(result, expected)
 
     def test_returns_same_region_bounds_if_values_are_not_equal(self):
@@ -540,6 +542,7 @@ class TestSetEqualLonBoundsToDomain:
             domain_bounds=self.domain_bounds, region_bounds=np.array([0, 50])
         )
         expected = np.array([0, 50])
+
         assert np.array_equal(result, expected)
 
 
@@ -557,6 +560,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         ).chunk(2)
+
         result = self.ds.spatial._scale_domain_to_region(
             domain_bounds=domain_bounds, region_bounds=np.array([-5, 5])
         )
@@ -583,6 +587,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         ).chunk(2)
+
         result = self.ds.spatial._scale_domain_to_region(
             domain_bounds=domain_bounds, region_bounds=np.array([190, 240])
         )
@@ -605,6 +610,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         result = self.ds.spatial._scale_domain_to_region(
             domain_bounds=domain_bounds, region_bounds=np.array([-5, 5])
         )
@@ -631,6 +637,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         result = self.ds.spatial._scale_domain_to_region(
             domain_bounds=domain_bounds, region_bounds=np.array([190, 240])
         )
@@ -642,6 +649,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         assert result.identical(expected)
 
     def test_scales_lon_bounds_when_wrapping_around_prime_meridian(self):
@@ -662,6 +670,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         result = self.ds.spatial._scale_domain_to_region(
             domain_bounds=domain_bounds, region_bounds=np.array([357.5, 10.0])
         )
@@ -682,6 +691,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         assert result.identical(expected)
 
 
@@ -737,6 +747,7 @@ class TestAverager:
             coords={"lat": self.ds.lat},
             dims=["lat"],
         )
+
         result = self.ds.spatial._averager(self.ds.ts, axis=["lat"], weights=weights)
         expected = xr.DataArray(
             name="ts",
@@ -754,6 +765,7 @@ class TestAverager:
             coords={"lon": self.ds.lon},
             dims=["lon"],
         )
+
         result = self.ds.spatial._averager(self.ds.ts, axis=["lon"], weights=weights)
         expected = xr.DataArray(
             name="ts",
@@ -770,6 +782,7 @@ class TestAverager:
             coords={"lat": self.ds.lat, "lon": self.ds.lon},
             dims=["lat", "lon"],
         )
+
         result = self.ds.spatial._averager(
             self.ds.ts, axis=["lat", "lon"], weights=weights
         )
