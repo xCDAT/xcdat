@@ -515,6 +515,9 @@ class DatasetSpatialAverageAccessor:
         d_bounds = domain_bounds.copy()
         r_bounds = region_bounds.copy()
 
+        if type(d_bounds.data) == Array:
+            d_bounds.load()
+
         # Since longitude is circular, the logic depends on whether the region
         # spans across the prime meridian or not. If a region does not include
         # the prime meridian, then grid cells between the upper/lower region
@@ -527,11 +530,11 @@ class DatasetSpatialAverageAccessor:
         if r_bounds[1] >= r_bounds[0]:
             # Case 1 (simple case): not wrapping around prime meridian.
             # Adjustments for above / right of region.
-            d_bounds.values[d_bounds[:, 0] > r_bounds[1], 0] = r_bounds[1]
-            d_bounds.values[d_bounds[:, 1] > r_bounds[1], 1] = r_bounds[1]
+            d_bounds[d_bounds[:, 0] > r_bounds[1], 0] = r_bounds[1]
+            d_bounds[d_bounds[:, 1] > r_bounds[1], 1] = r_bounds[1]
             # Adjustments for below / left of region.
-            d_bounds.values[d_bounds[:, 0] < r_bounds[0], 0] = r_bounds[0]
-            d_bounds.values[d_bounds[:, 1] < r_bounds[0], 1] = r_bounds[0]
+            d_bounds[d_bounds[:, 0] < r_bounds[0], 0] = r_bounds[0]
+            d_bounds[d_bounds[:, 1] < r_bounds[0], 1] = r_bounds[0]
 
         else:
             # Case 2: wrapping around prime meridian [for longitude only]

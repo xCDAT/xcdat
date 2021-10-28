@@ -83,6 +83,25 @@ class TestSpatialAverage:
 
         assert result.identical(expected)
 
+    def test_chunked_weighted_spatial_average_for_lat_region(self):
+        ds = self.ds.copy().chunk(2)
+
+        # Specifying axis as a str instead of list of str.
+        result = ds.spatial.avg(
+            "ts", axis="lat", lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+        )
+
+        expected = self.ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array(
+                [[2.25, 2.25, 2.25, 2.25], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
+            ),
+            coords={"time": expected.time, "lon": expected.lon},
+            dims=["time", "lon"],
+        )
+
+        assert result.identical(expected)
+
 
 class TestValidateAxis:
     @pytest.fixture(autouse=True)
@@ -528,6 +547,54 @@ class TestScaleDimToRegion:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_scales_chunked_lat_bounds_when_not_wrapping_around_prime_meridian(self):
+        domain_bounds = xr.DataArray(
+            name="lat_bnds",
+            data=np.array(
+                [[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]
+            ),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        ).chunk(2)
+        result = self.ds.spatial._scale_domain_to_region(
+            domain_bounds=domain_bounds, region_bounds=np.array([-5, 5])
+        )
+        expected = xr.DataArray(
+            name="lat_bnds",
+            data=np.array([[-5.0, -5.0], [-5.0, 0.0], [0.0, 5.0], [5.0, 5.0]]),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        )
+
+        assert result.identical(expected)
+
+    def test_scales_chunked_lon_bounds_when_not_wrapping_around_prime_meridian(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array(
+                [
+                    [359.0625, 360.9375],
+                    [0.9375, 179.0625],
+                    [179.0625, 357.1875],
+                    [357.1875, 359.0625],
+                ]
+            ),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        ).chunk(2)
+        result = self.ds.spatial._scale_domain_to_region(
+            domain_bounds=domain_bounds, region_bounds=np.array([190, 240])
+        )
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array(
+                [[240.0, 240.0], [190.0, 190.0], [190.0, 240.0], [240.0, 240.0]]
+            ),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        )
+        assert result.identical(expected)
 
     def test_scales_lat_bounds_when_not_wrapping_around_prime_meridian(self):
         domain_bounds = xr.DataArray(
