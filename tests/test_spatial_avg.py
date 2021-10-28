@@ -210,12 +210,31 @@ class TestValidateWeights:
             )
 
 
-class TestSwapRegionLonAxis:
+class TestSwapLonAxes:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_successful_swap_from_180_to_360(self):
+    def test_successful_swap_domain_dataarray_from_180_to_360(self):
+        # TODO: Create longitude datarray
+        lon_data = np.array([-65, 0, 120])
+        lon = xr.DataArray(data=lon_data, coords={"lon": lon_data}, dims="lon")
+
+        result = self.ds.spatial._swap_lon_axes(lon, to=360)
+        expected = np.array([295, 0, 120])
+
+        assert np.array_equal(result, expected)
+
+    def test_successful_swap_domain_dataarray_from_360_to_180(self):
+        # TODO: Create longitude datarray
+        lon_data = np.array([0, 120, 181, 360])
+        lon = xr.DataArray(data=lon_data, coords={"lon": lon_data}, dims="lon")
+
+        result = self.ds.spatial._swap_lon_axes(lon, to=180)
+        expected = np.array([0, 120, -179, 0])
+        assert np.array_equal(result, expected)
+
+    def test_successful_swap_region_ndarray_from_180_to_360(self):
         result = self.ds.spatial._swap_lon_axes(np.array([-65, 0, 120]), to=360)
         expected = np.array([295, 0, 120])
 
@@ -226,19 +245,7 @@ class TestSwapRegionLonAxis:
 
         assert np.array_equal(result, expected)
 
-    def test_successful_swap_from_180_to_360_for_dataarray(self):
-        result = self.ds.spatial._swap_lon_axes(self.ds.lon, to=360)
-        expected = np.array([0.0, 1.875, 356.25, 358.125])
-
-        assert np.array_equal(result, expected)
-
-    def test_successful_swap_from_360_to_180_for_dataarray(self):
-        expected = np.array([0.0, 1.875, -3.75, -1.875])
-        result = self.ds.spatial._swap_lon_axes(self.ds.lon, to=180)
-
-        assert np.array_equal(result, expected)
-
-    def test_successful_swap_from_360_to_180(self):
+    def test_successful_swap_region_ndarray_from_360_to_180(self):
         result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to=180)
         expected = np.array([0, 120, -179, 0])
 
