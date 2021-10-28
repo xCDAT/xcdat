@@ -427,19 +427,22 @@ class DatasetSpatialAverageAccessor:
         """
         lon_swap = lon.copy()
 
-        # Must convert convert an xarray data structure from lazy Dask arrays
-        # into eager, in-memory NumPy arrays before performing manipulations on
-        # the data. Otherwise, it raises `NotImplementedError xarray can't set
-        # arrays with multiple array indices to dask yet`
+        # If chunking, must convert convert an xarray data structure from lazy
+        # Dask arrays into eager, in-memory NumPy arrays before performing
+        # manipulations on the data. Otherwise it raises `NotImplementedError
+        # xarray can't set arrays with multiple array indices to dask yet`
         if type(lon_swap.data) == Array:
             lon_swap.load()
 
-        if to == 180:
-            lon_swap = ((lon_swap + 180) % 360) - 180
-        elif to == 360:
-            lon_swap = lon_swap % 360
-        else:
-            raise ValueError("Only longitude axis orientation 180 or 360 is supported.")
+        with xr.set_options(keep_attrs=True):
+            if to == 180:
+                lon_swap = ((lon_swap + 180) % 360) - 180
+            elif to == 360:
+                lon_swap = lon_swap % 360
+            else:
+                raise ValueError(
+                    "Only longitude axis orientation 180 or 360 is supported."
+                )
 
         return lon_swap
 

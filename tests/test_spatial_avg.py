@@ -215,26 +215,113 @@ class TestSwapLonAxes:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_successful_swap_domain_dataarray_from_180_to_360(self):
-        # TODO: Create longitude datarray
-        lon_data = np.array([-65, 0, 120])
-        lon = xr.DataArray(data=lon_data, coords={"lon": lon_data}, dims="lon")
+    def test_swap_chunked_domain_dataarray_from_180_to_360(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-65, -5], [-5, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        ).chunk(2)
 
-        result = self.ds.spatial._swap_lon_axes(lon, to=360)
-        expected = np.array([295, 0, 120])
+        result = self.ds.spatial._swap_lon_axes(domain, to=360)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[295, 355], [355, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
 
-        assert np.array_equal(result, expected)
+        assert result.identical(expected)
 
-    def test_successful_swap_domain_dataarray_from_360_to_180(self):
-        # TODO: Create longitude datarray
-        lon_data = np.array([0, 120, 181, 360])
-        lon = xr.DataArray(data=lon_data, coords={"lon": lon_data}, dims="lon")
+    def test_swap_chunked_domain_dataarray_from_360_to_180(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 120], [120, 181], [181, 360]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        ).chunk(2)
 
-        result = self.ds.spatial._swap_lon_axes(lon, to=180)
-        expected = np.array([0, 120, -179, 0])
-        assert np.array_equal(result, expected)
+        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 120], [120, -179], [-179, 0]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
 
-    def test_successful_swap_region_ndarray_from_180_to_360(self):
+        assert result.identical(expected)
+
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-0.25, 120], [120, 359.75]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        ).chunk(2)
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-0.25, 120], [120, -0.25]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+    def test_swap_domain_dataarray_from_180_to_360(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-65, -5], [-5, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=360)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[295, 355], [355, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+    def test_swap_domain_dataarray_from_360_to_180(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 120], [120, 181], [181, 360]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 120], [120, -179], [-179, 0]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-0.25, 120], [120, 359.75]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-0.25, 120], [120, -0.25]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+    def test_swap_region_ndarray_from_180_to_360(self):
         result = self.ds.spatial._swap_lon_axes(np.array([-65, 0, 120]), to=360)
         expected = np.array([295, 0, 120])
 
@@ -245,7 +332,7 @@ class TestSwapLonAxes:
 
         assert np.array_equal(result, expected)
 
-    def test_successful_swap_region_ndarray_from_360_to_180(self):
+    def test_swap_region_ndarray_from_360_to_180(self):
         result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to=180)
         expected = np.array([0, 120, -179, 0])
 
