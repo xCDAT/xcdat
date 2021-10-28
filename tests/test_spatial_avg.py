@@ -234,6 +234,16 @@ class TestSwapLonAxes:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
+    def test_raises_error_with_incorrect_orientation_to_swap_to(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-65, -5], [-5, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+        with pytest.raises(ValueError):
+            self.ds.spatial._swap_lon_axes(domain, to=9000)
+
     def test_swap_chunked_domain_dataarray_from_180_to_360(self):
         domain = xr.DataArray(
             name="lon_bnds",
