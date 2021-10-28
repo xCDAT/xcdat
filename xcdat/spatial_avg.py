@@ -405,20 +405,20 @@ class DatasetSpatialAverageAccessor:
     def _swap_lon_axes(
         self, lon: Union[xr.DataArray, np.ndarray], to: Literal[180, 360]
     ) -> Union[xr.DataArray, np.ndarray]:
-        """Swap the domain longitude axes orientation.
+        """Swap the longitude axes orientation.
 
         Parameters
         ----------
         lon : Union[xr.DataArray, np.ndarray]
              Longitude values to convert.
         to : Literal[180, 360]
-            Axis orientation to convert to, either 180 (-180 to 180) or 360 (0 to
-            360).
+            Axis orientation to convert to, either 180 (-180 to 180) or 360
+            (0 to 360).
 
         Returns
         -------
         xr.DataArray
-            Converted domain longitude values.
+            Converted longitude values.
 
         Notes
         -----
@@ -427,13 +427,15 @@ class DatasetSpatialAverageAccessor:
         """
         lon_swap = lon.copy()
 
-        # If chunking, must convert convert an xarray data structure from lazy
+        # If chunking, must convert convert the xarray data structure from lazy
         # Dask arrays into eager, in-memory NumPy arrays before performing
-        # manipulations on the data. Otherwise it raises `NotImplementedError
+        # manipulations on the data. Otherwise,it raises `NotImplementedError
         # xarray can't set arrays with multiple array indices to dask yet`
         if type(lon_swap.data) == Array:
             lon_swap.load()
 
+        # Must set keep_attrs=True or the xarray DataArray attrs will get
+        # dropped. This has no affect on NumPy arrays.
         with xr.set_options(keep_attrs=True):
             if to == 180:
                 lon_swap = ((lon_swap + 180) % 360) - 180
