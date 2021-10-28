@@ -356,8 +356,8 @@ class TestSwapLonAxes:
 
         assert np.array_equal(result, expected)
 
-        expected = np.array([180, 0, 180])
         result = self.ds.spatial._swap_lon_axes(np.array([-180, 0, 180]), to=360)
+        expected = np.array([180, 0, 180])
 
         assert np.array_equal(result, expected)
 
