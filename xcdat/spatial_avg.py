@@ -525,8 +525,7 @@ class DatasetSpatialAverageAccessor:
         # the domain (e.g., for a left bound of 300 degrees and a right bound
         # of 20, then the grid cells in between the region bounds (20 and 300)
         # are given zero weight (or partial weight if the grid bounds overlap
-        # with the region bounds). We update the values attribute, to maintain
-        # compatibility with chunked dataarrays.
+        # with the region bounds).
         if r_bounds[1] >= r_bounds[0]:
             # Case 1 (simple case): not wrapping around prime meridian.
             # Adjustments for above / right of region.
