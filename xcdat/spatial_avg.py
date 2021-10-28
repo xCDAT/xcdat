@@ -382,10 +382,10 @@ class DatasetSpatialAverageAccessor:
         Tuple[xr.DataArray, np.ndarray]
             Tuple consisting of the domain bounds and region bounds.
         """
-        # Normalize the lon axis orientation to "360" for domain and region
+        # Normalize the lon axis orientation to 360 for domain and region
         # bounds for orientation compatibility in the proceeding operations.
-        d_bounds: xr.DataArray = self._swap_lon_axes(domain_bounds.copy(), "360")
-        r_bounds: np.ndarray = self._swap_lon_axes(region_bounds.copy(), "360")
+        d_bounds: xr.DataArray = self._swap_lon_axes(domain_bounds.copy(), 360)
+        r_bounds: np.ndarray = self._swap_lon_axes(region_bounds.copy(), 360)
 
         # Find lon bound elements where the lower bound is greater than the
         # upper bound (e.g., across prime meridian or dateline, (359.375, 0.625))
@@ -402,17 +402,17 @@ class DatasetSpatialAverageAccessor:
         return d_bounds, r_bounds
 
     def _swap_lon_axes(
-        self, lon: Union[np.ndarray, xr.DataArray], to: Literal["180", "360"]
+        self, lon: Union[np.ndarray, xr.DataArray], to: Literal[180, 360]
     ) -> Union[np.ndarray, xr.DataArray]:
         """
-        Swap longitude axes orientation to "180" (-180 to 180) or "360" (0 to
+        Swap longitude axes orientation to 180 (-180 to 180) or 360 (0 to
         360).
 
         Parameters
         ----------
         lon : Union[np.ndarray, xr.DataArray]
             Longitude values to convert.
-        to : Literal["180", "360"]
+        to : Union[180, 360]
             Axis orientation to convert to.
 
         Returns
@@ -426,20 +426,26 @@ class DatasetSpatialAverageAccessor:
         in-place between longitude conventions (-180 to 180) or (0 to 360).
         """
         lon_swap = lon.copy()
-        if to == "180":
-            inds = np.where(lon_swap > 180)
-            # if dataarray, update values attribute
-            # (compatible with chunked data)
-            if type(lon_swap) == xr.core.dataarray.DataArray:
-                lon_swap.values[inds] = lon_swap[inds] - 360
-            else:
-                lon_swap[inds] = lon_swap[inds] - 360
-        elif to == "360":
-            inds = np.where(lon_swap < 0)
-            if type(lon_swap) == xr.core.dataarray.DataArray:
-                lon_swap.values[inds] = lon_swap[inds] + 360
-            else:
-                lon_swap[inds] = lon_swap[inds] + 360
+
+        # Must convert convert an xarray data structure from lazy Dask arrays
+        # into eager, in-memory NumPy arrays before performing manipulations on
+        # the data. Otherwise, it raises `NotImplementedError xarray can't set
+        # arrays with multiple array indices to dask yet`
+        if type(lon_swap) == xr.DataArray:
+            lon_swap.load()
+
+        if to == 180:
+            indices = np.where(lon_swap > 180)
+            count = len(indices[0])
+            if count > 0:
+                lon_swap[indices] = lon_swap[indices] - 360
+        elif to == 360:
+            indices = np.where(lon_swap < 0)
+            count = len(indices[0])
+            if count > 0:
+                lon_swap[indices] = lon_swap[indices] + 360
+        else:
+            raise ValueError("Only longitude axis orientation 180 or 360 is supported.")
 
         return lon_swap
 

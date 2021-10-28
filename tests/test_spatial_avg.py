@@ -216,37 +216,35 @@ class TestSwapRegionLonAxis:
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test_successful_swap_from_180_to_360(self):
-        result = self.ds.spatial._swap_lon_axes(np.array([-65, 0, 120]), to="360")
+        result = self.ds.spatial._swap_lon_axes(np.array([-65, 0, 120]), to=360)
         expected = np.array([295, 0, 120])
 
         assert np.array_equal(result, expected)
 
         expected = np.array([180, 0, 180])
-        result = self.ds.spatial._swap_lon_axes(np.array([-180, 0, 180]), to="360")
+        result = self.ds.spatial._swap_lon_axes(np.array([-180, 0, 180]), to=360)
 
         assert np.array_equal(result, expected)
 
     def test_successful_swap_from_180_to_360_for_dataarray(self):
-        result = self.ds.spatial._swap_lon_axes(self.ds.lon, to="360")
+        result = self.ds.spatial._swap_lon_axes(self.ds.lon, to=360)
         expected = np.array([0.0, 1.875, 356.25, 358.125])
 
         assert np.array_equal(result, expected)
 
     def test_successful_swap_from_360_to_180_for_dataarray(self):
         expected = np.array([0.0, 1.875, -3.75, -1.875])
-        result = self.ds.spatial._swap_lon_axes(self.ds.lon, to="180")
+        result = self.ds.spatial._swap_lon_axes(self.ds.lon, to=180)
 
         assert np.array_equal(result, expected)
 
     def test_successful_swap_from_360_to_180(self):
-        result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to="180")
+        result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to=180)
         expected = np.array([0, 120, -179, 0])
 
         assert np.array_equal(result, expected)
 
-        result = self.ds.spatial._swap_lon_axes(
-            np.array([-0.25, 120, 359.75]), to="180"
-        )
+        result = self.ds.spatial._swap_lon_axes(np.array([-0.25, 120, 359.75]), to=180)
         expected = np.array([-0.25, 120, -0.25])
 
         assert np.array_equal(result, expected)
