@@ -55,7 +55,6 @@ class TestSpatialAverage:
         )
 
         expected = self.ds.copy()
-
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, 1.0, 1.0]),
             coords={"time": expected.time},
@@ -66,6 +65,25 @@ class TestSpatialAverage:
 
     def test_weighted_spatial_average_for_lat_region(self):
         ds = self.ds.copy()
+
+        # Specifying axis as a str instead of list of str.
+        result = ds.spatial.avg(
+            "ts", axis="lat", lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+        )
+
+        expected = self.ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array(
+                [[2.25, 2.25, 2.25, 2.25], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
+            ),
+            coords={"time": expected.time, "lon": expected.lon},
+            dims=["time", "lon"],
+        )
+
+        assert result.identical(expected)
+
+    def test_chunked_weighted_spatial_average_for_lat_region(self):
+        ds = self.ds.copy().chunk(2)
 
         # Specifying axis as a str instead of list of str.
         result = ds.spatial.avg(
@@ -108,6 +126,7 @@ class TestValidateAxis:
     def test_returns_list_of_str_if_axis_is_a_single_supported_str_input(self):
         result = self.ds.spatial._validate_axis(self.ds.ts, axis="lat")
         expected = ["lat"]
+
         assert result == expected
 
 
@@ -210,31 +229,145 @@ class TestValidateWeights:
             )
 
 
-class TestSwapRegionLonAxis:
+class TestSwapLonAxes:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_successful_swap_from_180_to_360(self):
-        result = self.ds.spatial._swap_lon_axes(np.array([-65, 0, 120]), to="360")
+    def test_raises_error_with_incorrect_orientation_to_swap_to(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-65, -5], [-5, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+        with pytest.raises(ValueError):
+            self.ds.spatial._swap_lon_axes(domain, to=9000)
+
+    def test_swap_chunked_domain_dataarray_from_180_to_360(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-65, -5], [-5, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        ).chunk(2)
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=360)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[295, 355], [355, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+    def test_swap_chunked_domain_dataarray_from_360_to_180(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 120], [120, 181], [181, 360]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        ).chunk(2)
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 120], [120, -179], [-179, 0]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-0.25, 120], [120, 359.75]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        ).chunk(2)
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-0.25, 120], [120, -0.25]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+    def test_swap_domain_dataarray_from_180_to_360(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-65, -5], [-5, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=360)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[295, 355], [355, 0], [0, 120]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+    def test_swap_domain_dataarray_from_360_to_180(self):
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 120], [120, 181], [181, 360]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 120], [120, -179], [-179, 0]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+        domain = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-0.25, 120], [120, 359.75]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-0.25, 120], [120, -0.25]]),
+            dims=["lon", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.identical(expected)
+
+    def test_swap_region_ndarray_from_180_to_360(self):
+        result = self.ds.spatial._swap_lon_axes(np.array([-65, 0, 120]), to=360)
         expected = np.array([295, 0, 120])
 
         assert np.array_equal(result, expected)
 
+        result = self.ds.spatial._swap_lon_axes(np.array([-180, 0, 180]), to=360)
         expected = np.array([180, 0, 180])
-        result = self.ds.spatial._swap_lon_axes(np.array([-180, 0, 180]), to="360")
 
         assert np.array_equal(result, expected)
 
-    def test_successful_swap_from_360_to_180(self):
-        result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to="180")
+    def test_swap_region_ndarray_from_360_to_180(self):
+        result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to=180)
         expected = np.array([0, 120, -179, 0])
 
         assert np.array_equal(result, expected)
 
-        result = self.ds.spatial._swap_lon_axes(
-            np.array([-0.25, 120, 359.75]), to="180"
-        )
+        result = self.ds.spatial._swap_lon_axes(np.array([-0.25, 120, 359.75]), to=180)
         expected = np.array([-0.25, 120, -0.25])
 
         assert np.array_equal(result, expected)
@@ -261,6 +394,7 @@ class TestGetWeights:
             coords={"lat": self.ds.lat, "lon": self.ds.lon},
             dims=["lat", "lon"],
         )
+
         xr.testing.assert_allclose(result, expected)
 
     def test_returns_area_weights_for_region_within_lat(self):
@@ -410,6 +544,7 @@ class TestSetEqualLonBoundsToDomain:
             domain_bounds=self.domain_bounds, region_bounds=np.array([50, 50])
         )
         expected = np.array([-90, 90])
+
         assert np.array_equal(result, expected)
 
     def test_returns_same_region_bounds_if_values_are_not_equal(self):
@@ -417,6 +552,7 @@ class TestSetEqualLonBoundsToDomain:
             domain_bounds=self.domain_bounds, region_bounds=np.array([0, 50])
         )
         expected = np.array([0, 50])
+
         assert np.array_equal(result, expected)
 
 
@@ -424,6 +560,56 @@ class TestScaleDimToRegion:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_scales_chunked_lat_bounds_when_not_wrapping_around_prime_meridian(self):
+        domain_bounds = xr.DataArray(
+            name="lat_bnds",
+            data=np.array(
+                [[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]
+            ),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        ).chunk(2)
+
+        result = self.ds.spatial._scale_domain_to_region(
+            domain_bounds=domain_bounds, region_bounds=np.array([-5, 5])
+        )
+        expected = xr.DataArray(
+            name="lat_bnds",
+            data=np.array([[-5.0, -5.0], [-5.0, 0.0], [0.0, 5.0], [5.0, 5.0]]),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        )
+
+        assert result.identical(expected)
+
+    def test_scales_chunked_lon_bounds_when_not_wrapping_around_prime_meridian(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array(
+                [
+                    [359.0625, 360.9375],
+                    [0.9375, 179.0625],
+                    [179.0625, 357.1875],
+                    [357.1875, 359.0625],
+                ]
+            ),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        ).chunk(2)
+
+        result = self.ds.spatial._scale_domain_to_region(
+            domain_bounds=domain_bounds, region_bounds=np.array([190, 240])
+        )
+        expected = xr.DataArray(
+            name="lon_bnds",
+            data=np.array(
+                [[240.0, 240.0], [190.0, 190.0], [190.0, 240.0], [240.0, 240.0]]
+            ),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        )
+        assert result.identical(expected)
 
     def test_scales_lat_bounds_when_not_wrapping_around_prime_meridian(self):
         domain_bounds = xr.DataArray(
@@ -434,6 +620,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         result = self.ds.spatial._scale_domain_to_region(
             domain_bounds=domain_bounds, region_bounds=np.array([-5, 5])
         )
@@ -460,6 +647,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         result = self.ds.spatial._scale_domain_to_region(
             domain_bounds=domain_bounds, region_bounds=np.array([190, 240])
         )
@@ -471,6 +659,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         assert result.identical(expected)
 
     def test_scales_lon_bounds_when_wrapping_around_prime_meridian(self):
@@ -491,6 +680,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         result = self.ds.spatial._scale_domain_to_region(
             domain_bounds=domain_bounds, region_bounds=np.array([357.5, 10.0])
         )
@@ -511,6 +701,7 @@ class TestScaleDimToRegion:
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
+
         assert result.identical(expected)
 
 
@@ -559,6 +750,22 @@ class TestAverager:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
+    def test_chunked_weighted_avg_over_lat_and_lon_axes(self):
+        ds = self.ds.copy().chunk(2)
+
+        weights = xr.DataArray(
+            data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
+            coords={"lat": ds.lat, "lon": ds.lon},
+            dims=["lat", "lon"],
+        )
+
+        result = ds.spatial._averager(ds.ts, axis=["lat", "lon"], weights=weights)
+        expected = xr.DataArray(
+            name="ts", data=np.ones(12), coords={"time": ds.time}, dims=["time"]
+        )
+
+        assert result.identical(expected)
+
     def test_weighted_avg_over_lat_axes(self):
         weights = xr.DataArray(
             name="lat_wts",
@@ -566,6 +773,7 @@ class TestAverager:
             coords={"lat": self.ds.lat},
             dims=["lat"],
         )
+
         result = self.ds.spatial._averager(self.ds.ts, axis=["lat"], weights=weights)
         expected = xr.DataArray(
             name="ts",
@@ -583,6 +791,7 @@ class TestAverager:
             coords={"lon": self.ds.lon},
             dims=["lon"],
         )
+
         result = self.ds.spatial._averager(self.ds.ts, axis=["lon"], weights=weights)
         expected = xr.DataArray(
             name="ts",
@@ -599,6 +808,7 @@ class TestAverager:
             coords={"lat": self.ds.lat, "lon": self.ds.lon},
             dims=["lat", "lon"],
         )
+
         result = self.ds.spatial._averager(
             self.ds.ts, axis=["lat", "lon"], weights=weights
         )
