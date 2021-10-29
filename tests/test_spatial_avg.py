@@ -750,6 +750,22 @@ class TestAverager:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
+    def test_chunked_weighted_avg_over_lat_and_lon_axes(self):
+        ds = self.ds.copy().chunk(2)
+
+        weights = xr.DataArray(
+            data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
+            coords={"lat": ds.lat, "lon": ds.lon},
+            dims=["lat", "lon"],
+        )
+
+        result = ds.spatial._averager(ds.ts, axis=["lat", "lon"], weights=weights)
+        expected = xr.DataArray(
+            name="ts", data=np.ones(12), coords={"time": ds.time}, dims=["time"]
+        )
+
+        assert result.identical(expected)
+
     def test_weighted_avg_over_lat_axes(self):
         weights = xr.DataArray(
             name="lat_wts",
@@ -798,22 +814,6 @@ class TestAverager:
         )
         expected = xr.DataArray(
             name="ts", data=np.ones(12), coords={"time": self.ds.time}, dims=["time"]
-        )
-
-        assert result.identical(expected)
-
-    def test_weighted_avg_over_lat_and_lon_axes_in_chunks(self):
-        ds = self.ds.copy().chunk(2)
-
-        weights = xr.DataArray(
-            data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
-            coords={"lat": ds.lat, "lon": ds.lon},
-            dims=["lat", "lon"],
-        )
-
-        result = ds.spatial._averager(ds.ts, axis=["lat", "lon"], weights=weights)
-        expected = xr.DataArray(
-            name="ts", data=np.ones(12), coords={"time": ds.time}, dims=["time"]
         )
 
         assert result.identical(expected)
