@@ -2,6 +2,7 @@ import numpy as np
 import xarray as xr
 
 from tests.fixtures import generate_dataset, lat_bnds
+from xcdat.regridder import grid
 from xcdat.xcdat import XCDATAccessor
 
 
@@ -21,6 +22,15 @@ class TestXCDATAccessor:
     def test_decorator_call(self):
 
         self.ds.xcdat._dataset.identical(self.ds)
+
+    def test_regrid(self):
+        ds = self.ds.copy()
+
+        out_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
+
+        result = ds.xcdat.regrid(out_grid, "xesmf", "bilinear", data_var="ts")
+
+        assert result.ts.shape == (12, 45, 72)
 
     def test_weighted_spatial_average_for_lat_and_lon_region(self):
         ds = self.ds_with_bnds.copy()
