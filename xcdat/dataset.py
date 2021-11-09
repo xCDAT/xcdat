@@ -75,7 +75,7 @@ def open_dataset(
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing()
+    ds = ds.bounds.fill_missing_bounds()
     return ds
 
 
@@ -152,7 +152,7 @@ def open_mfdataset(
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing()
+    ds = ds.bounds.fill_missing_bounds()
     return ds
 
 
