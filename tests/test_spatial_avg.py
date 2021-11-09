@@ -2,11 +2,29 @@ import numpy as np
 import pytest
 import xarray as xr
 
-import xcdat.spatial_avg  # noqa: F401
 from tests.fixtures import generate_dataset
+from xcdat.spatial_avg import SpatialAverageAccessor
 
 
-class TestSpatialAverage:
+class TestSpatialAverageAcccessor:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test__init__(self):
+        ds = self.ds.copy()
+        obj = SpatialAverageAccessor(ds)
+
+        assert obj._dataset.identical(ds)
+
+    def test_decorator_call(self):
+        ds = self.ds.copy()
+        obj = ds.spatial
+
+        assert obj._dataset.identical(ds)
+
+
+class TestSpatialAvg:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -20,7 +38,7 @@ class TestSpatialAverage:
 
     def test_raises_error_if_data_var_not_in_dataset(self):
         with pytest.raises(KeyError):
-            self.ds.spatial.avg(
+            self.ds.spatial.spatial_avg(
                 "not_a_data_var",
                 axis=["lat", "incorrect_axess"],
             )
@@ -32,7 +50,7 @@ class TestSpatialAverage:
         ds.attrs["xcdat_infer"] = "ts"
 
         # `data_var` kwarg is not specified, so an inference is attempted
-        result = ds.spatial.avg(
+        result = ds.spatial.spatial_avg(
             axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
@@ -50,7 +68,7 @@ class TestSpatialAverage:
         self,
     ):
         ds = self.ds.copy()
-        result = ds.spatial.avg(
+        result = ds.spatial.spatial_avg(
             "ts", axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
@@ -67,7 +85,7 @@ class TestSpatialAverage:
         ds = self.ds.copy()
 
         # Specifying axis as a str instead of list of str.
-        result = ds.spatial.avg(
+        result = ds.spatial.spatial_avg(
             "ts", axis="lat", lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
@@ -86,7 +104,7 @@ class TestSpatialAverage:
         ds = self.ds.copy().chunk(2)
 
         # Specifying axis as a str instead of list of str.
-        result = ds.spatial.avg(
+        result = ds.spatial.spatial_avg(
             "ts", axis="lat", lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 

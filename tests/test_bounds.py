@@ -3,17 +3,17 @@ import pytest
 import xarray as xr
 
 from tests.fixtures import generate_dataset, lat_bnds, lon_bnds, time_bnds
-from xcdat.bounds import DatasetBoundsAccessor
+from xcdat.bounds import BoundsAccessor
 
 
-class TestDatasetBoundsAccessor:
+class TestBoundsAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
         self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test__init__(self):
-        obj = DatasetBoundsAccessor(self.ds)
+        obj = BoundsAccessor(self.ds)
         assert obj._dataset.identical(self.ds)
 
     def test_decorator_call(self):
