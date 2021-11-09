@@ -17,8 +17,8 @@ SUPPORTED_COORDS: Tuple[Coord, ...] = get_args(Coord)
 
 
 @xr.register_dataset_accessor("bounds")
-class DatasetBoundsAccessor:
-    """A class to represent the DatasetBoundsAccessor.
+class BoundsAccessor:
+    """A class to represent the BoundsAccessor.
 
     Examples
     ---------

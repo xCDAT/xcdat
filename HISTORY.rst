@@ -25,7 +25,7 @@ New Features
 
 -  Add ``DatasetBoundsAccessor`` class for filling missing bounds,
    returning mapping of bounds, returning names of bounds keys
--  Add ``XCDATBoundsAccessor`` class for accessing xcdat public methods
+-  Add ``BoundsAccessor`` class for accessing xcdat public methods
    from other accessor classes
 
    -  This will be probably be the API endpoint for most users, unless
