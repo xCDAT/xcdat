@@ -43,19 +43,44 @@ class TestBoundsAccessor:
 
         assert result == expected
 
-    def test_fill_missing_returns_dataset_with_filled_bounds(self):
+
+class TestFillMissingBounds:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_fills_bounds_in_dataset(self):
         ds = self.ds_with_bnds.copy()
 
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
-        result = ds.bounds.fill_missing()
+        result = ds.bounds.fill_missing_bounds()
         assert result.identical(self.ds_with_bnds)
 
-    def test_get_bounds_returns_error_when_bounds_dont_exist(self):
+    def test_does_not_fill_bounds_for_coord_of_len_less_than_2(
+        self,
+    ):
+        ds = self.ds_with_bnds.copy()
+        ds = ds.isel(time=slice(0, 1))
+        ds = ds.drop("time_bnds")
+
+        result = ds.bounds.fill_missing_bounds()
+        expected = ds.copy()
+        assert result.identical(expected)
+
+
+class TestGetBounds:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_raises_error_when_bounds_dont_exist(self):
         with pytest.raises(KeyError):
             self.ds.bounds.get_bounds("lat")
 
-    def test_get_bounds_when_bounds_exist_in_dataset(self):
+    def test_getting_existing_bounds_in_dataset(self):
         ds = self.ds_with_bnds.copy()
         lat_bnds = ds.bounds.get_bounds("lat")
         assert lat_bnds.identical(ds.lat_bnds)
@@ -64,16 +89,23 @@ class TestBoundsAccessor:
         assert lon_bnds.identical(ds.lon_bnds)
         assert lon_bnds.is_generated
 
-    def test_get_bounds_when_bounds_do_not_exist_in_dataset(self):
+    def test_get_nonexistent_bounds_in_dataset(self):
         ds = self.ds_with_bnds.copy()
 
         with pytest.raises(KeyError):
             ds = ds.drop_vars(["lat_bnds"])
             ds.bounds.get_bounds("lat")
 
-    def test_get_bounds_raises_error_with_incorrect_coord_argument(self):
+    def test_raises_error_with_incorrect_coord_arg(self):
         with pytest.raises(ValueError):
             self.ds.bounds.get_bounds("incorrect_coord_argument")
+
+
+class TestAddBounds:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test_add_bounds_raises_error_if_bounds_exist(self):
         ds = self.ds_with_bnds.copy()
@@ -118,7 +150,13 @@ class TestBoundsAccessor:
         assert ds.time_bnds.equals(time_bnds)
         assert ds.time_bnds.is_generated
 
-    def test__get_coord(self):
+
+class TestGetCoord:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
+
+    def test_gets_coords(self):
         ds = self.ds.copy()
 
         # Check lat axis coordinates exist
@@ -129,7 +167,7 @@ class TestBoundsAccessor:
         lon = ds.bounds._get_coord("lon")
         assert lon is not None
 
-    def test__get_coord_raises_error_if_coord_does_not_exist(self):
+    def test_raises_error_if_coord_does_not_exist(self):
         ds = self.ds.copy()
 
         ds = ds.drop_dims("lat")
