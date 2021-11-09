@@ -146,7 +146,10 @@ def open_mfdataset(
     >>> from xcdat.dataset import open_dataset
     >>> ds = open_mfdataset(["file_path1", "file_path2"], data_var=["ts", "tas"])
     """
-    ds = xr.open_mfdataset(paths, decode_times=False, **kwargs)
+    # Data variables are concatenated together with data_vars=“minimal”, where
+    # only data variables in which the dimension already appears are included.
+    # https://github.com/pydata/xarray/issues/438
+    ds = xr.open_mfdataset(paths, decode_times=False, data_vars="minimal", **kwargs)
     ds = infer_or_keep_var(ds, data_var)
 
     if ds.cf.dims.get("T") is not None:
