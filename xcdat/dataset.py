@@ -62,15 +62,13 @@ def open_dataset(
     Keep a single variable in the Dataset:
 
     >>> from xcdat.dataset import open_dataset
-    >>> ds = open_dataset("file_path", keep_vars="tas")
+    >>> ds = open_dataset("file_path", data_var="tas")
 
     Keep multiple variables in the Dataset:
 
     >>> from xcdat.dataset import open_dataset
-    >>> ds = open_dataset("file_path", keep_vars=["ts", "tas"])
+    >>> ds = open_dataset("file_path", data_var=["ts", "tas"])
     """
-    # NOTE: Using decode_times=False may add incorrect units for existing time
-    # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_dataset(path, decode_times=False, **kwargs)
     ds = infer_or_keep_var(ds, data_var)
 
@@ -141,15 +139,13 @@ def open_mfdataset(
     Keep a single variable in the Dataset:
 
     >>> from xcdat.dataset import open_dataset
-    >>> ds = open_mfdataset(["file_path1", "file_path2"], keep_vars="tas")
+    >>> ds = open_mfdataset(["file_path1", "file_path2"], data_var="tas")
 
     Keep multiple variables in the Dataset:
 
     >>> from xcdat.dataset import open_dataset
-    >>> ds = open_mfdataset(["file_path1", "file_path2"], keep_vars=["ts", "tas"])
+    >>> ds = open_mfdataset(["file_path1", "file_path2"], data_var=["ts", "tas"])
     """
-    # NOTE: Using decode_times=False may add incorrect units for existing time
-    # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_mfdataset(paths, decode_times=False, **kwargs)
     ds = infer_or_keep_var(ds, data_var)
 

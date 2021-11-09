@@ -107,9 +107,9 @@ class DatasetSpatialAverageAccessor:
 
         Get time series in Nino 3.4 domain:
 
-        >>> ts_n34 = ds.spatial.avg("tas", axis=["lat", "lon"],
+        >>> ts_n34 = ds.spatial.avg("ts", axis=["lat", "lon"],
         >>>     lat_bounds=(-5, 5),
-        >>>     lon_bounds=(-170, -120))["tas"]
+        >>>     lon_bounds=(-170, -120))["ts"]
 
         Get zonal mean time series:
 
