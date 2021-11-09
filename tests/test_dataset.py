@@ -54,7 +54,7 @@ class TestOpenDataset:
 
         result_ds = open_dataset(self.file_path, data_var="ts")
         # Replicates decode_times=False, which adds units to "time" coordinate.
-        # Refer to xcdat.bounds.BoundsAcccessor._add_bounds() for
+        # Refer to xcdat.bounds.BoundsAccessor._add_bounds() for
         # how attributes propagate from coord to coord bounds.
         result_ds["time_bnds"].attrs["units"] = "months since 2000-01-01"
 
@@ -129,7 +129,7 @@ class TestOpenMfDataset:
         result_ds = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
 
         # Replicates decode_times=False, which adds units to "time" coordinate.
-        # Refer to xcdat.bounds.BoundsAcccessor._add_bounds() for
+        # Refer to xcdat.bounds.BoundsAccessor._add_bounds() for
         # how attributes propagate from coord to coord bounds.
         result_ds.time_bnds.attrs["units"] = "months since 2000-01-01"
 
@@ -160,7 +160,7 @@ class TestOpenMfDataset:
 
         result_ds = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
         # Replicates decode_times=False, which adds units to "time" coordinate.
-        # Refer to xcdat.bounds.BoundsAcccessor._add_bounds() for
+        # Refer to xcdat.bounds.BoundsAccessor._add_bounds() for
         # how attributes propagate from coord to coord bounds.
         result_ds.time_bnds.attrs["units"] = "months since 2000-01-01"
 
