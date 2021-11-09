@@ -3,9 +3,8 @@ from typing import Dict, List, Optional, Union
 
 import xarray as xr
 
-from xcdat.bounds import BoundsAccessor, Coord  # noqa: F401
-from xcdat.spatial_avg import SpatialAverageAccessor  # noqa: F401
-from xcdat.spatial_avg import RegionAxisBounds, SupportedAxes
+from xcdat.bounds import BoundsAccessor, Coord
+from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SupportedAxes
 from xcdat.utils import is_documented_by
 
 
