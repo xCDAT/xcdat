@@ -1,4 +1,5 @@
 """Top-level package for xcdat."""
+from xcdat.axis import swap_lon_axis  # noqa: F401
 from xcdat.bounds import BoundsAccessor  # noqa: F401
 from xcdat.dataset import (  # noqa: F401
     decode_non_cf_time,

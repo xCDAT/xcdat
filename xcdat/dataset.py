@@ -8,6 +8,7 @@ import pandas as pd
 import xarray as xr
 
 from xcdat import bounds  # noqa: F401
+from xcdat.axis import swap_lon_axis
 from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
@@ -20,6 +21,7 @@ def open_dataset(
     path: str,
     data_var: Optional[str] = None,
     decode_times: bool = True,
+    lon_orient: Optional[Tuple[float, float]] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
     """Wrapper for ``xarray.open_dataset()`` that applies common operations.
@@ -31,6 +33,8 @@ def open_dataset(
     - Add missing bounds for supported axis
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable, while retaining any bounds data variables
+    - Option to swap the longitude axis orientation and sort in ascending order
+      if the axis exists in the Dataset.
 
     Parameters
     ----------
@@ -42,6 +46,16 @@ def open_dataset(
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
         This keyword may not be supported by all the backends, by default True.
+    lon_orient: Optional[Tuple[float, float]], optional
+        The orientation to use for the Dataset's longitude axis (if it exists),
+        by default None.
+
+        Supported options:
+
+          * None:  use the current orientation (if the longitude axis exists)
+          * (-180, 180): represents [-180, 180) in math notation
+          * (0, 360): represents [0, 360) in math notation
+
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_dataset``. Refer to the
         [1]_ xarray docs for accepted keyword arguments.
@@ -88,6 +102,9 @@ def open_dataset(
 
     ds = infer_or_keep_var(ds, data_var)
     ds = ds.bounds.add_missing_bounds()
+    if ds.cf.dims.get("X") is not None and lon_orient is not None:
+        ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
+
     return ds
 
 
@@ -103,6 +120,7 @@ def open_mfdataset(
     data_var: Optional[str] = None,
     preprocess: Optional[Callable] = None,
     decode_times: bool = True,
+    lon_orient: Optional[Tuple[float, float]] = None,
     data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
@@ -115,6 +133,8 @@ def open_mfdataset(
     - Add missing bounds for supported axis
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable, while retaining any bounds data variables
+    - Option to swap the longitude axis orientation and sort in ascending order
+      if the axis exists in the Dataset.
 
     ``data_vars`` defaults to ``"minimal"``, which concatenates data variables
     in a manner where only data variables in which the dimension already appears
@@ -142,6 +162,16 @@ def open_mfdataset(
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
         This keyword may not be supported by all the backends, by default True.
+    lon_orient: Optional[Tuple[float, float]], optional
+        The orientation to use for the Dataset's longitude axis (if it exists),
+        by default None.
+
+        Supported options:
+
+          * None:  use the current orientation (if the longitude axis exists)
+          * (-180, 180): represents [-180, 180) in math notation
+          * (0, 360): represents [0, 360) in math notation
+
     data_vars: Union[Literal["minimal", "different", "all"], List[str]], optional
         These data variables will be concatenated together:
           * "minimal": Only data variables in which the dimension already
@@ -154,6 +184,7 @@ def open_mfdataset(
           * "all": All data variables will be concatenated.
           * list of str: The listed data variables will be concatenated, in
             addition to the "minimal" data variables.
+
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
         the [2]_ xarray docs for accepted keyword arguments.
@@ -204,6 +235,9 @@ def open_mfdataset(
     )
     ds = infer_or_keep_var(ds, data_var)
     ds = ds.bounds.add_missing_bounds()
+    if ds.cf.dims.get("X") is not None and lon_orient is not None:
+        ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
+
     return ds
 
 

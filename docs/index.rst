@@ -19,7 +19,7 @@ These features include:
 
   - Name-agnostic retrieval of CF compliant coordinates and bounds using ``cf_xarray``
   - Generating a specific or all bounds for supported axes if they don't exist
-  - Ability to operate on both (0 to 360) and (-180 to 180) longitudinal axes orientations
+  - Ability to operate on both [0, 360) and [-180, 180) longitudinal axis orientations
 
 - Temporal averaging (weighted or unweighted)
 

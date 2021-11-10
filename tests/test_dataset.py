@@ -109,6 +109,66 @@ class TestOpenDataset:
         assert "lat_bnds" in result_data_vars
         assert "lon_bnds" in result_data_vars
 
+    def test_swaps_from_180_to_360_and_sorts_with_prime_meridian_cell(self):
+        ds = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([-180, -1, 0, 1, 179]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                )
+            },
+            data_vars={
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [-180.5, -1.5],
+                            [-1.5, -0.5],
+                            [-0.5, 0.5],
+                            [0.5, 1.5],
+                            [1.5, 179.5],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"is_generated": "True"},
+                ),
+            },
+        )
+        ds.to_netcdf(self.file_path)
+
+        result = open_dataset(self.file_path, lon_orient=(0, 360))
+        expected = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([0.0, 1.0, 179.0, 180.0, 359.0, 360.0]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                )
+            },
+            data_vars={
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [0, 0.5],
+                            [0.5, 1.5],
+                            [1.5, 179.5],
+                            [179.5, 358.5],
+                            [358.5, 359.5],
+                            [359.5, 360],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"is_generated": "True"},
+                ),
+            },
+            attrs={"xcdat_infer": "None"},
+        )
+        assert result.identical(expected)
+
 
 class TestOpenMfDataset:
     @pytest.fixture(autouse=True)
@@ -216,6 +276,66 @@ class TestOpenMfDataset:
         result_data_vars = list(result.data_vars.keys())
         assert "lat_bnds" in result_data_vars
         assert "lon_bnds" in result_data_vars
+
+    def test_swaps_from_180_to_360_and_sorts_with_prime_meridian_cell(self):
+        ds = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([-180, -1, 0, 1, 179]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                )
+            },
+            data_vars={
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [-180.5, -1.5],
+                            [-1.5, -0.5],
+                            [-0.5, 0.5],
+                            [0.5, 1.5],
+                            [1.5, 179.5],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"is_generated": "True"},
+                ),
+            },
+        )
+        ds.to_netcdf(self.file_path1)
+
+        result = open_mfdataset([self.file_path1], lon_orient=(0, 360))
+        expected = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([0.0, 1.0, 179.0, 180.0, 359.0, 360.0]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                )
+            },
+            data_vars={
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [0, 0.5],
+                            [0.5, 1.5],
+                            [1.5, 179.5],
+                            [179.5, 358.5],
+                            [358.5, 359.5],
+                            [359.5, 360],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"is_generated": "True"},
+                ),
+            },
+            attrs={"xcdat_infer": "None"},
+        )
+        assert result.identical(expected)
 
 
 class TestHasCFCompliantTime:
