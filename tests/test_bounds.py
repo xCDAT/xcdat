@@ -63,7 +63,7 @@ class TestFillMissingBounds:
     ):
         ds = self.ds_with_bnds.copy()
         ds = ds.isel(time=slice(0, 1))
-        ds = ds.drop("time_bnds")
+        ds = ds.drop_vars("time_bnds")
 
         result = ds.bounds.fill_missing_bounds()
         expected = ds.copy()

@@ -114,7 +114,7 @@ class BoundsAccessor:
                 try:
                     self._dataset = self.add_bounds(coord)
                 except ValueError as err:
-                    logger.warning(
+                    logger.debug(
                         f"{err} Make sure '{coord}' coordinates don't require bounds."
                     )
 
