@@ -23,9 +23,9 @@ def open_dataset(
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable while retaining any bounds data variables.
 
-    ``decode_times`` is set statically to ``False`` to check if the dataset
-    contains CF or non-CF compliant units, which determines if manual
-    decoding is necessary.
+    ``decode_times`` is statically set to ``False``. This enables a check
+    for whether the units in the time dimension (if it exists) contains CF or
+    non-CF compliant units, which determines if manual decoding is necessary.
 
     Parameters
     ----------
@@ -96,15 +96,15 @@ def open_mfdataset(
     - Option to limit the Dataset to a single regular (non-bounds) data variable
       while retaining any bounds data variables.
 
-    ``data_vars`` defaults to `"minimal"` so that data variables are
-    concatenated together with only preexisting dimensions. For example, the
-    time dimension will not be concatenated to the dimension of non-time data
-    variables such as "lat_bnds" or "lon_bnds". This behavior is similar to
-    opening up just a single Dataset.
+    ``data_vars`` defaults to `"minimal"` so that data variables across files
+    are concatenated together in a single Dataset object with only preexisting
+    dimensions. For example, the time dimension will not be concatenated to the
+    dimensions of non-time data variables such as "lat_bnds" or "lon_bnds". This
+    behavior is similar to opening up a single file using `open_dataset()`.
 
-    ``decode_times`` is set statically to ``False`` to check if the dataset
-    contains CF or non-CF compliant units, which determines if manual
-    decoding is necessary.
+    ``decode_times`` is statically set to ``False``. This enables a check
+    for whether the units in the time dimension (if it exists) contains CF or
+    non-CF compliant units, which determines if manual decoding is necessary.
 
     Parameters
     ----------
