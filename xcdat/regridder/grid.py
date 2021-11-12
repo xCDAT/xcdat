@@ -51,7 +51,7 @@ def create_uniform_grid(
 
     grid.lon.attrs["units"] = "degrees_east"
 
-    grid = grid.bounds.fill_missing()
+    grid = grid.bounds.fill_missing_bounds()
 
     return grid
 
