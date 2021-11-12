@@ -3,10 +3,9 @@ from typing import Any, Dict, List, Optional, Union
 
 import xarray as xr
 
-from xcdat.bounds import Coord, DatasetBoundsAccessor  # noqa: F401
+from xcdat.bounds import BoundsAccessor, Coord
 from xcdat.regridder.accessor import DatasetRegridderAccessor  # noqa: F401
-from xcdat.spatial_avg import DatasetSpatialAverageAccessor  # noqa: F401
-from xcdat.spatial_avg import RegionAxisBounds, SupportedAxes
+from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SupportedAxes
 from xcdat.utils import is_documented_by
 
 
@@ -33,7 +32,7 @@ class XCDATAccessor:
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
-    @is_documented_by(DatasetSpatialAverageAccessor.avg)
+    @is_documented_by(SpatialAverageAccessor.spatial_avg)
     def spatial_avg(
         self,
         data_var: Optional[str] = None,
@@ -42,8 +41,8 @@ class XCDATAccessor:
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
     ) -> xr.Dataset:
-        obj = DatasetSpatialAverageAccessor(self._dataset)
-        return obj.avg(data_var, axis, weights, lat_bounds, lon_bounds)
+        obj = SpatialAverageAccessor(self._dataset)
+        return obj.spatial_avg(data_var, axis, weights, lat_bounds, lon_bounds)
 
     @is_documented_by(DatasetRegridderAccessor.regrid)
     def regrid(
@@ -58,22 +57,22 @@ class XCDATAccessor:
         return obj.regrid(dst_grid, tool, method, data_var, **options)
 
     @property  # type: ignore
-    @is_documented_by(DatasetBoundsAccessor.bounds)
+    @is_documented_by(BoundsAccessor.bounds)
     def bounds(self) -> Dict[str, Optional[xr.DataArray]]:
-        obj = DatasetBoundsAccessor(self._dataset)
+        obj = BoundsAccessor(self._dataset)
         return obj.bounds
 
-    @is_documented_by(DatasetBoundsAccessor.fill_missing)
+    @is_documented_by(BoundsAccessor.fill_missing_bounds)
     def fill_missing_bounds(self) -> xr.Dataset:
-        obj = DatasetBoundsAccessor(self._dataset)
-        return obj.fill_missing()
+        obj = BoundsAccessor(self._dataset)
+        return obj.fill_missing_bounds()
 
-    @is_documented_by(DatasetBoundsAccessor.get_bounds)
+    @is_documented_by(BoundsAccessor.get_bounds)
     def get_bounds(self, coord: Coord) -> xr.DataArray:
-        obj = DatasetBoundsAccessor(self._dataset)
+        obj = BoundsAccessor(self._dataset)
         return obj.get_bounds(coord)
 
-    @is_documented_by(DatasetBoundsAccessor.add_bounds)
+    @is_documented_by(BoundsAccessor.add_bounds)
     def add_bounds(self, coord: Coord, width: float = 0.5) -> xr.Dataset:
-        obj = DatasetBoundsAccessor(self._dataset)
+        obj = BoundsAccessor(self._dataset)
         return obj.add_bounds(coord, width)

@@ -21,13 +21,13 @@ RegionAxisBounds = Tuple[Union[float, int], Union[float, int]]
 
 
 @xr.register_dataset_accessor("spatial")
-class DatasetSpatialAverageAccessor:
-    """A class to represent the DatasetSpatialAverageAccessor."""
+class SpatialAverageAccessor:
+    """A class to represent the SpatialAverageAccessor."""
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
-    def avg(
+    def spatial_avg(
         self,
         data_var: Optional[str] = None,
         axis: Union[List[SupportedAxes], SupportedAxes] = ["lat", "lon"],
@@ -103,17 +103,17 @@ class DatasetSpatialAverageAccessor:
 
         Get global average time series:
 
-        >>> ts_global = ds.spatial.avg("tas", axis=["lat", "lon"])["tas"]
+        >>> ts_global = ds.spatial.spatial_avg("tas", axis=["lat", "lon"])["tas"]
 
         Get time series in Nino 3.4 domain:
 
-        >>> ts_n34 = ds.spatial.avg("tas", axis=["lat", "lon"],
+        >>> ts_n34 = ds.spatial.spatial_avg("ts", axis=["lat", "lon"],
         >>>     lat_bounds=(-5, 5),
-        >>>     lon_bounds=(-170, -120))["tas"]
+        >>>     lon_bounds=(-170, -120))["ts"]
 
         Get zonal mean time series:
 
-        >>> ts_zonal = ds.spatial.avg("tas", axis=['lon'])["tas"]
+        >>> ts_zonal = ds.spatial.spatial_avg("tas", axis=['lon'])["tas"]
 
         Using custom weights for averaging:
 
@@ -124,7 +124,7 @@ class DatasetSpatialAverageAccessor:
         >>>     dims=["lat", "lon"],
         >>> )
         >>>
-        >>> ts_global = ds.spatial.avg("tas", axis=["lat","lon"],
+        >>> ts_global = ds.spatial.spatial_avg("tas", axis=["lat","lon"],
         >>>     weights=weights)["tas"]
         """
         dataset = self._dataset.copy()
@@ -603,7 +603,7 @@ class DatasetSpatialAverageAccessor:
         This methods checks for the dimensional alignment between the
         ``weights`` and ``data_var``. It assumes that ``data_var`` has the same
         keys that are specified  in ``axis``, which has already been validated
-        using ``self._validate_axis()`` in ``self.avg()``.
+        using ``self._validate_axis()`` in ``self.spatial_avg()``.
 
         Parameters
         ----------

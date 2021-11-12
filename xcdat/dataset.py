@@ -62,22 +62,20 @@ def open_dataset(
     Keep a single variable in the Dataset:
 
     >>> from xcdat.dataset import open_dataset
-    >>> ds = open_dataset("file_path", keep_vars="tas")
+    >>> ds = open_dataset("file_path", data_var="tas")
 
     Keep multiple variables in the Dataset:
 
     >>> from xcdat.dataset import open_dataset
-    >>> ds = open_dataset("file_path", keep_vars=["ts", "tas"])
+    >>> ds = open_dataset("file_path", data_var=["ts", "tas"])
     """
-    # NOTE: Using decode_times=False may add incorrect units for existing time
-    # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_dataset(path, decode_times=False, **kwargs)
     ds = infer_or_keep_var(ds, data_var)
 
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing()
+    ds = ds.bounds.fill_missing_bounds()
     return ds
 
 
@@ -141,22 +139,20 @@ def open_mfdataset(
     Keep a single variable in the Dataset:
 
     >>> from xcdat.dataset import open_dataset
-    >>> ds = open_mfdataset(["file_path1", "file_path2"], keep_vars="tas")
+    >>> ds = open_mfdataset(["file_path1", "file_path2"], data_var="tas")
 
     Keep multiple variables in the Dataset:
 
     >>> from xcdat.dataset import open_dataset
-    >>> ds = open_mfdataset(["file_path1", "file_path2"], keep_vars=["ts", "tas"])
+    >>> ds = open_mfdataset(["file_path1", "file_path2"], data_var=["ts", "tas"])
     """
-    # NOTE: Using decode_times=False may add incorrect units for existing time
-    # bounds (becomes "days since 1970-01-01  00:00:00").
     ds = xr.open_mfdataset(paths, decode_times=False, **kwargs)
     ds = infer_or_keep_var(ds, data_var)
 
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing()
+    ds = ds.bounds.fill_missing_bounds()
     return ds
 
 
@@ -211,7 +207,7 @@ def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Datase
     regular_vars: List[Hashable] = list(set(all_vars) ^ set(bounds_vars))
 
     if len(regular_vars) == 0:
-        logger.warning("This dataset only contains bounds data variables.")
+        logger.debug("This dataset only contains bounds data variables.")
 
     if data_var is None:
         if len(regular_vars) == 1:
@@ -220,7 +216,7 @@ def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Datase
             regular_vars_str = ", ".join(
                 f"'{var}'" for var in sorted(regular_vars)  # type:ignore
             )
-            logger.info(
+            logger.debug(
                 "This dataset contains more than one regular data variable "
                 f"({regular_vars_str}). If desired, pass the `data_var` kwarg to "
                 "reduce down to one regular data var."
@@ -399,7 +395,7 @@ def get_inferred_var(dataset: xr.Dataset) -> xr.DataArray:
                 "'xcdat_infer' to a regular (non-bounds) data variable."
             )
 
-        logger.info(
+        logger.debug(
             f"The data variable '{data_var.name}' was inferred from the Dataset attr "
             "'xcdat_infer' for this operation."
         )

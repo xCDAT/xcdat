@@ -54,7 +54,7 @@ class TestOpenDataset:
 
         result_ds = open_dataset(self.file_path, data_var="ts")
         # Replicates decode_times=False, which adds units to "time" coordinate.
-        # Refer to xcdat.bounds.DatasetBoundsAccessor._add_bounds() for
+        # Refer to xcdat.bounds.BoundsAccessor._add_bounds() for
         # how attributes propagate from coord to coord bounds.
         result_ds["time_bnds"].attrs["units"] = "months since 2000-01-01"
 
@@ -129,7 +129,7 @@ class TestOpenMfDataset:
         result_ds = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
 
         # Replicates decode_times=False, which adds units to "time" coordinate.
-        # Refer to xcdat.bounds.DatasetBoundsAccessor._add_bounds() for
+        # Refer to xcdat.bounds.BoundsAccessor._add_bounds() for
         # how attributes propagate from coord to coord bounds.
         result_ds.time_bnds.attrs["units"] = "months since 2000-01-01"
 
@@ -160,7 +160,7 @@ class TestOpenMfDataset:
 
         result_ds = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
         # Replicates decode_times=False, which adds units to "time" coordinate.
-        # Refer to xcdat.bounds.DatasetBoundsAccessor._add_bounds() for
+        # Refer to xcdat.bounds.BoundsAccessor._add_bounds() for
         # how attributes propagate from coord to coord bounds.
         result_ds.time_bnds.attrs["units"] = "months since 2000-01-01"
 
@@ -370,8 +370,8 @@ class TestInferOrKeepVar:
         self.ds_mod = self.ds.copy()
         self.ds_mod["tas"] = self.ds_mod.ts.copy()
 
-    def tests_raises_logger_warning_if_only_bounds_data_variables_exist(self, caplog):
-        caplog.set_level(logging.WARNING)
+    def tests_raises_logger_debug_if_only_bounds_data_variables_exist(self, caplog):
+        caplog.set_level(logging.DEBUG)
 
         ds = self.ds.copy()
         ds = ds.drop_vars("ts")
@@ -399,7 +399,7 @@ class TestInferOrKeepVar:
     def test_returns_dataset_if_it_contains_multiple_non_bounds_data_var_with_logger_msg(
         self, caplog
     ):
-        caplog.set_level(logging.INFO)
+        caplog.set_level(logging.DEBUG)
 
         ds = self.ds_mod.copy()
         result = infer_or_keep_var(ds, data_var=None)
@@ -452,7 +452,7 @@ class TestGetInferredVar:
             get_inferred_var(ds)
 
     def test_returns_inferred_data_var(self, caplog):
-        caplog.set_level(logging.INFO)
+        caplog.set_level(logging.DEBUG)
 
         ds = self.ds.copy()
         ds.attrs["xcdat_infer"] = "ts"
