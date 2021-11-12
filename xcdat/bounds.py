@@ -9,7 +9,7 @@ from typing_extensions import Literal, get_args
 
 from xcdat.logger import setup_custom_logger
 
-logger = setup_custom_logger("root")
+logger = setup_custom_logger(__name__)
 
 Coord = Literal["lat", "latitude", "lon", "longitude", "time"]
 #: Tuple of supported coordinates in XCDAT functions and methods.
@@ -34,7 +34,7 @@ class BoundsAccessor:
     Fill missing coordinate bounds in the Dataset:
 
     >>> ds = xr.open_dataset("file_path")
-    >>> ds = ds.bounds.fill_missing()
+    >>> ds = ds.bounds.fill_missing_bounds()
 
     Get coordinate bounds if they exist:
 
@@ -96,19 +96,27 @@ class BoundsAccessor:
             )
         )
 
-    def fill_missing(self) -> xr.Dataset:
+    def fill_missing_bounds(self) -> xr.Dataset:
         """Fills any missing bounds for supported coordinates in the Dataset.
 
         Returns
         -------
         xr.Dataset
         """
-        for coord in [*self._dataset.coords]:
-            if coord in SUPPORTED_COORDS:
+        coords = [
+            coord for coord in [*self._dataset.coords] if coord in SUPPORTED_COORDS
+        ]
+
+        for coord in coords:
+            try:
+                self.get_bounds(coord)
+            except KeyError:
                 try:
-                    self._dataset.cf.get_bounds(coord)
-                except KeyError:
                     self._dataset = self.add_bounds(coord)
+                except ValueError as err:
+                    logger.debug(
+                        f"{err} Make sure '{coord}' coordinates don't require bounds."
+                    )
 
         return self._dataset
 
@@ -170,7 +178,7 @@ class BoundsAccessor:
             If bounds already exist. They must be dropped first.
         """
         try:
-            self._dataset.cf.get_bounds(coord)
+            self.get_bounds(coord)
             raise ValueError(
                 f"{coord} bounds already exist. Drop them first to add new bounds."
             )

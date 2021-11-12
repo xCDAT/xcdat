@@ -75,7 +75,7 @@ def open_dataset(
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing()
+    ds = ds.bounds.fill_missing_bounds()
     return ds
 
 
@@ -152,7 +152,7 @@ def open_mfdataset(
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing()
+    ds = ds.bounds.fill_missing_bounds()
     return ds
 
 
@@ -207,7 +207,7 @@ def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Datase
     regular_vars: List[Hashable] = list(set(all_vars) ^ set(bounds_vars))
 
     if len(regular_vars) == 0:
-        logger.warning("This dataset only contains bounds data variables.")
+        logger.debug("This dataset only contains bounds data variables.")
 
     if data_var is None:
         if len(regular_vars) == 1:
@@ -216,7 +216,7 @@ def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Datase
             regular_vars_str = ", ".join(
                 f"'{var}'" for var in sorted(regular_vars)  # type:ignore
             )
-            logger.info(
+            logger.debug(
                 "This dataset contains more than one regular data variable "
                 f"({regular_vars_str}). If desired, pass the `data_var` kwarg to "
                 "reduce down to one regular data var."
@@ -395,7 +395,7 @@ def get_inferred_var(dataset: xr.Dataset) -> xr.DataArray:
                 "'xcdat_infer' to a regular (non-bounds) data variable."
             )
 
-        logger.info(
+        logger.debug(
             f"The data variable '{data_var.name}' was inferred from the Dataset attr "
             "'xcdat_infer' for this operation."
         )
