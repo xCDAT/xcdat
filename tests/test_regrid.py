@@ -15,6 +15,24 @@ class TestXESMFRegridder:
     def setup(self):
         self.ds = fixtures.generate_dataset(True, True)
 
+    def test_invalid_method(self):
+        ds = self.ds.copy()
+        ds.attrs["xcdat_infer"] = "ts"
+
+        new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
+
+        with pytest.raises(ValueError):
+            xesmf.XESMFRegridder(ds, new_grid, "bad value")
+
+    def test_invalid_extra_method(self):
+        ds = self.ds.copy()
+        ds.attrs["xcdat_infer"] = "ts"
+
+        new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
+
+        with pytest.raises(ValueError):
+            xesmf.XESMFRegridder(ds, new_grid, "bilinear", extrap_method="bad value")
+
     def test_inferred_data_var(self):
         ds = self.ds.copy()
         ds.attrs["xcdat_infer"] = "ts"
