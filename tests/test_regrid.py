@@ -43,7 +43,9 @@ class TestXESMFRegridder:
 
         new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
-        with pytest.raises(KeyError, match="The data variable 'clt' does not exist in the dataset."):
+        with pytest.raises(
+            KeyError, match="The data variable 'clt' does not exist in the dataset."
+        ):
             xesmf.XESMFRegridder(ds, new_grid, "bilinear", "clt")
 
 
@@ -86,12 +88,12 @@ class TestAccessor:
 
         assert output == "output data"
 
-        mock_regridder.return_value.regrid.assert_called_with(
-            self.data
-        )
+        mock_regridder.return_value.regrid.assert_called_with(self.data)
 
     def test_invalid_tool(self):
-        with pytest.raises(ValueError, match=r"Tool 'test' does not exist, valid choices"):
+        with pytest.raises(
+            ValueError, match=r"Tool 'test' does not exist, valid choices"
+        ):
             self.ac.regrid(mock.MagicMock(), "test", "conservative")
 
 
