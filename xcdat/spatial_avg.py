@@ -447,7 +447,7 @@ class SpatialAverageAccessor:
         # find instances of d_bounds spanning the prime meridian
         pmb_index = np.where(d_bounds[:, 1] - d_bounds[:, 0] < 0)[0]
         # check bounds to ensure they range from 0 to 360
-        if (np.min(d_bounds).values < 0) | (np.min(d_bounds).values > 360):
+        if (np.min(d_bounds).values < 0) | (np.max(d_bounds).values > 360):
             raise ValueError(
                 "Longitude bounds between 0 and 360. Use _swap_lon_axes"
                 "before calling _align_longitude_to_360_axis."

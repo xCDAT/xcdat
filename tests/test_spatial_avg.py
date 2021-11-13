@@ -454,6 +454,106 @@ class TestGetWeights:
         xr.testing.assert_allclose(result, expected)
 
 
+class TestValidateDomainBounds:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_raises_error_if_low_bounds_exceeds_high_bound(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[1, 0], [1, 2], [2, 3], [3, 4]]),
+            dims=["lon", "bnds"],
+        )
+        with pytest.raises(ValueError):
+            self.ds.spatial._validate_domain_bounds(domain_bounds)
+
+
+class TestDomainLongitudeAlignment:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_raises_error_if_bounds_below_0(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[-1, 1], [1, 90], [90, 180], [180, 359]]),
+            dims=["lon", "bnds"],
+        )
+        with pytest.raises(ValueError):
+            self.ds.spatial._align_longitude_to_360_axis(domain_bounds)
+
+    def test_raises_error_if_bounds_above_360(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[359, 361], [1, 90], [90, 180], [180, 359]]),
+            dims=["lon", "bnds"],
+        )
+        with pytest.raises(ValueError):
+            self.ds.spatial._align_longitude_to_360_axis(domain_bounds)
+
+    def test_raises_error_if_multiple_bounds_span_prime_meridian(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[359, 1], [1, 90], [90, 180], [180, 2]]),
+            dims=["lon", "bnds"],
+        )
+        with pytest.raises(ValueError):
+            self.ds.spatial._align_longitude_to_360_axis(domain_bounds)
+
+    def test_extends_bounds_array_for_cell_spanning_prime_meridian(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[359, 1], [1, 90], [90, 180], [180, 359]]),
+            dims=["lon", "bnds"],
+        )
+        expected_index = 0
+
+        expected_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 1], [1, 90], [90, 180], [180, 359], [359, 360]]),
+            dims=["lon", "bnds"],
+        )
+
+        result_index, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+            domain_bounds
+        )
+
+        assert (result_bounds.identical(expected_bounds)) & (
+            result_index == expected_index
+        )
+
+    def test_returns_original_array_if_no_cell_spans_prime_meridian(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[0, 1], [1, 90], [90, 180], [180, 360]]),
+            dims=["lon", "bnds"],
+        )
+
+        result_index, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+            domain_bounds
+        )
+
+        assert result_bounds.identical(domain_bounds)
+        assert result_index is None
+
+    def test_retains_total_weight(self):
+        # construct array spanning 0 to 360
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array([[359, 1], [1, 90], [90, 180], [180, 359]]),
+            dims=["lon", "bnds"],
+        )
+
+        null, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+            domain_bounds
+        )
+
+        dbdiff = np.sum(np.array(result_bounds[:, 1] - result_bounds[:, 0]))
+
+        assert dbdiff == 360.0
+
+
 class TestScaleDimToRegion:
     @pytest.fixture(autouse=True)
     def setup(self):
