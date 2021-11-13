@@ -29,7 +29,7 @@ class DatasetRegridderAccessor:
 
         Supported tools:
 
-        - xESMF
+        - xESMF (https://pangeo-xesmf.readthedocs.io/en/latest/)
 
         Parameters
         ----------
