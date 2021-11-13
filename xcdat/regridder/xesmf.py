@@ -38,8 +38,6 @@ class XESMFRegridder(BaseRegridder):
         - patch
         - nearest_s2d
         - nearest_d2s
-    data_var : str
-        Target variable to apply regridding to.
     periodic : bool
         Treat longitude as periodic. Used for global grids.
     extrap_method : str
@@ -69,7 +67,6 @@ class XESMFRegridder(BaseRegridder):
         src_grid: xr.Dataset,
         dst_grid: xr.Dataset,
         method: str,
-        data_var: str = None,
         periodic: bool = False,
         extrap_method: str = None,
         extrap_dist_exponent: float = None,
@@ -77,16 +74,6 @@ class XESMFRegridder(BaseRegridder):
     ):
         self._src_grid = src_grid
         self._dst_grid = dst_grid
-
-        if data_var is None:
-            src_var = dataset.get_inferred_var(src_grid)
-        else:
-            src_var = src_grid.get(data_var)
-
-            if src_var is None:
-                raise KeyError(
-                    f"The data variable {data_var!r} does not exist in the dataset."
-                )
 
         if method not in VALID_METHODS:
             raise ValueError(
@@ -99,7 +86,7 @@ class XESMFRegridder(BaseRegridder):
             )
 
         self._regridder = xe.Regridder(
-            src_var,
+            self._src_grid,
             self._dst_grid,
             method,
             periodic=periodic,

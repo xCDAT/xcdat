@@ -50,11 +50,10 @@ class XCDATAccessor:
         dst_grid: xr.Dataset,
         tool: str,
         method: str,
-        data_var: str = None,
         **options: Any,
     ) -> xr.Dataset:
         obj = DatasetRegridderAccessor(self._dataset)
-        return obj.regrid(dst_grid, tool, method, data_var, **options)
+        return obj.regrid(dst_grid, tool, method, **options)
 
     @property  # type: ignore
     @is_documented_by(BoundsAccessor.bounds)

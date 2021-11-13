@@ -40,11 +40,6 @@ class DatasetRegridderAccessor:
         method : str
             Method used for regridding, see specific regridder documentation
             for supported methods.
-        data_var : Optional[str]
-            The name of the data variable inside the dataset to regrid.
-            If None, an inference to the desired data variable inside is
-            attempted with the Dataset's "xcdat_infer" attr and
-            ``get_inferred_var()``, by default None.
         **options : Any
             These options are passed to the tool being used for regridding.
             See specific regridder documentation for available options.
@@ -78,7 +73,7 @@ class DatasetRegridderAccessor:
         """
         try:
             regridder = REGRID_TOOLS[tool](
-                self._ds, dst_grid, method=method, data_var=data_var, **options
+                self._ds, dst_grid, method=method, **options
             )
         except KeyError as e:
             raise ValueError(

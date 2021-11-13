@@ -56,16 +56,6 @@ class TestXESMFRegridder:
 
         assert result.ts.shape == (12, 45, 72)
 
-    def test_non_existant_data_var(self):
-        ds = self.ds.copy()
-
-        new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
-
-        with pytest.raises(
-            KeyError, match="The data variable 'clt' does not exist in the dataset."
-        ):
-            xesmf.XESMFRegridder(ds, new_grid, "bilinear", "clt")
-
 
 class TestGrid:
     def test_uniform_grid(self):
