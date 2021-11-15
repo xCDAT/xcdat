@@ -98,11 +98,12 @@ def open_mfdataset(
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable, while retaining any bounds data variables
 
-    ``data_vars`` defaults to `"minimal"` so that data variables across files
-    are concatenated together in a single Dataset object with only preexisting
-    dimensions. For example, the time dimension will not be concatenated to the
-    dimensions of non-time data variables such as "lat_bnds" or "lon_bnds". This
-    behavior is similar to opening up a single file using `open_dataset()`.
+    ``data_vars`` defaults to `"minimal"`, which concatenates data variables in
+    a manner where only data variables in which the dimension already appears
+    are included. For example, the time dimension will not be concatenated to
+    the dimensions of non-time data variables such as "lat_bnds" or "lon_bnds".
+    `"minimal"` is required for some XCDAT functions, including spatial
+    averaging where a reduction is performed using the lat/lon bounds.
 
     ``decode_times`` is statically set to ``False``. This enables a check
     for whether the units in the time dimension (if it exists) contains CF or
