@@ -453,6 +453,34 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
+    def test_weights_all_longitudes_for_equal_region_bounds(self):
+        expected = xr.DataArray(
+            data=np.array(
+                [1.875, 178.125, 178.125, 1.875],
+            ),
+            coords={"lon": self.ds.lon},
+            dims=["lon"],
+        )
+        result = self.ds.spatial._get_weights(
+            axis=["lon"], lat_bounds=None, lon_bounds=(0, 360)
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_weights_all_longitudes_for_explicit_equal_region_bounds(self):
+        expected = xr.DataArray(
+            data=np.array(
+                [1.875, 178.125, 178.125, 1.875],
+            ),
+            coords={"lon": self.ds.lon},
+            dims=["lon"],
+        )
+        result = self.ds.spatial._get_weights(
+            axis=["lon"], lat_bounds=None, lon_bounds=(10, 10)
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
 
 class TestValidateDomainBounds:
     @pytest.fixture(autouse=True)

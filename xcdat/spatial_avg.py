@@ -204,7 +204,7 @@ class SpatialAverageAccessor:
         return axis
 
     def _validate_domain_bounds(self, domain_bounds: xr.DataArray):
-        """Validates the ``bounds`` arg based on a set of criteria.
+        """Validates the ``domain_bounds`` arg based on a set of criteria.
 
         Parameters
         ----------
@@ -214,7 +214,7 @@ class SpatialAverageAccessor:
         Raises
         ------
         TypeError
-            If the ``bounds`` of a grid cell are not ordered low-to-high.
+            If the ``domain_bounds`` of a grid cell are not ordered low-to-high.
         """
         index_bad_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
         if len(index_bad_cells) > 0:
@@ -571,7 +571,8 @@ class SpatialAverageAccessor:
         # are given zero weight (or partial weight if the grid bounds overlap
         # with the region bounds).
         if r_bounds[1] >= r_bounds[0]:
-            # Case 1 (simple case): not wrapping around prime meridian.
+            # Case 1 (simple case): not wrapping around prime meridian (or
+            # latitude axis).
             # Adjustments for above / right of region.
             d_bounds[d_bounds[:, 0] > r_bounds[1], 0] = r_bounds[1]
             d_bounds[d_bounds[:, 1] > r_bounds[1], 1] = r_bounds[1]
