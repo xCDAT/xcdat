@@ -10,7 +10,7 @@
 
       <h3 align="center">
 
-   Xarray Extended with Climate Data Analysis Tools (XCDAT)
+   Xarray Extended with Climate Data Analysis Tools
 
    |conda-forge| |platforms| |CI/CD Build Workflow| |docs| |Codecov|
 
@@ -42,7 +42,7 @@
 
 
 XCDAT is a Python library built on `xarray`_ for climate data analysis on structured grids.
-It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library, with a focus on long-term maintainability and extensibility.
+It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library with a focus on long-term maintainability and extensibility.
 
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
@@ -50,30 +50,32 @@ It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_
 Planned Features
 -----------------
 
-XCDAT will include climate domain specific features and utilities that are helpful for general xarray usage.
+XCDAT will provide climate domain specific features and utilities that are helpful for general xarray usage.
 
-- Robust handling of CF compliant, common, and E3SM non-CF compliant metadata
+These features include:
+
+- Support for metadata that is CF compliant, E3SM non-CF compliant, and common
 - Robust handling of coordinates and its associated bounds
 
-  - Name-agnostic retrieval of bounds and coordinates (utilizes CF-xarray)
-  - Functions operate regardless of longitudinal axis orientation (0 to 360 or -180 to 180)
-  - Adding bounds and/or filling of all missing bounds
+  - Name-agnostic retrieval of CF compliant coordinates and bounds using ``cf_xarray``
+  - Generating specific bounds or filling all missing bounds for supported axes
+  - Ability to operate on both (0 to 360) and (-180 to 180) longitudinal axes orientations
 
-- Temporal averaging
+- Temporal averaging (weighted or unweighted)
 
   - Time series averaging and calculation of climatologies and anomalies
   - Use of time bounds for calculating weights
-  - Optional centering of time using time bounds (if not already performed)
+  - Optional centering of time using time bounds
 
-- Geospatial averaging (weighted) over rectilinear grid
+- Geospatial weighted averaging over rectilinear grid
 
   - Optional specification of regional domain
 
 - Horizontal and vertical regridding
-- Wrappers for opening datasets using ``xr.open_dataset()`` and ``xr.open_mfdataset()`` to apply common operations
+- Wrappers for opening datasets to apply common operations
 
   - Fill missing bounds
-  - Decoding of CF and non-CF time units and coordinate points
+  - Decoding of CF and non-CF time units
   - Optional centering of time axes using time bounds
   - Optional conversion of longitudinal axes orientation
 
@@ -82,12 +84,12 @@ XCDAT will include climate domain specific features and utilities that are helpf
 Criteria
 ~~~~~~~~~~~~~~~~
 
-The features of this package must meet a set of criteria before being considered for implementation.
+The features of this library must meet a set of criteria before being considered for implementation.
 
 1. Climate domain functionality and/or general xarray utility isn't provided natively with xarray
-2. No existing xarray-based packages implement the feature, or the implementation doesn't meet the XCDAT team's defined requirements.
-3. Function can be relatively simple to implement and not overly-flexible.
-4. Functions are often reused.
+2. No existing xarray-based packages implement the feature, or the implementation doesn't meet the XCDAT team's defined requirements
+3. Feature can be relatively simple to implement and not overly-flexible
+4. Feature is often reused
 
 Acknowledgement
 ---------------
