@@ -25,7 +25,7 @@ These features include:
 
   - Time series averaging and calculation of climatologies and anomalies
   - Use of time bounds for calculating weights
-  - Optional centering of time using time bounds
+  - Optional centering of time coordinates using time bounds
 
 - Geospatial weighted averaging over rectilinear grid
 
@@ -39,7 +39,7 @@ These features include:
 
   - Fill missing bounds
   - Decoding of CF and non-CF time units
-  - Optional centering of time axes using time bounds
+  - Optional centering of time coordinate using time bounds
   - Optional conversion of longitudinal axes orientation
 
 - Support for parallelism of XCDAT features using Dask
