@@ -42,7 +42,7 @@
 
 
 XCDAT is a Python library built on `xarray`_ for climate data analysis on structured grids.
-It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) package, with a focus on long-term maintainability and extensibility.
+It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library, with a focus on long-term maintainability and extensibility.
 
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
