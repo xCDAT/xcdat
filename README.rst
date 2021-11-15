@@ -74,7 +74,6 @@ These features include:
 - Horizontal and vertical structured regridding
 
   - Operate on rectilinear and cuvilinear grids
-  - Built on ``xesmf`` and a Python port of ``regrid2``
 
 - Wrappers for opening datasets to apply common operations
 
