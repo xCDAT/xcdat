@@ -71,7 +71,11 @@ These features include:
 
   - Optional specification of regional domain
 
-- Horizontal and vertical regridding
+- Horizontal and vertical structured regridding
+
+  - Operate on rectilinear and cuvilinear grids
+  - Built on ``xesmf`` and a Python port of ``regrid2``
+
 - Wrappers for opening datasets to apply common operations
 
   - Fill missing bounds
@@ -82,11 +86,11 @@ These features include:
 - Support for parallelism of XCDAT features using Dask
 
 Criteria
-~~~~~~~~~~~~~~~~
+~~~~~~~~
 
 The features of this library must meet a set of criteria before being considered for implementation.
 
-1. Climate domain functionality and/or general xarray utility isn't provided natively with xarray
+1. Climate domain functionality and/or general ``xarray`` utility isn't provided natively with ``xarray``
 2. No existing xarray-based packages implement the feature, or the implementation doesn't meet the XCDAT team's defined requirements
 3. Feature can be relatively simple to implement and not overly-flexible
 4. Feature is often reused
