@@ -18,10 +18,11 @@ def open_dataset(
 
     Operations include:
 
-    - If the dataset has a time dimension, decode both CF and non-CF time units.
-    - Generate bounds for supported coordinates if they don't exist.
+    - Decode both CF and non-CF compliant time units if the Dataset has a time
+      dimension
+    - Fill missing bounds for supported axes
     - Option to limit the Dataset to a single regular (non-bounds) data
-      variable while retaining any bounds data variables.
+      variable, while retaining any bounds data variables
 
     ``decode_times`` is statically set to ``False``. This enables a check
     for whether the units in the time dimension (if it exists) contains CF or
@@ -91,10 +92,11 @@ def open_mfdataset(
 
     Operations include:
 
-    - If the dataset has a time dimension, decode both CF and non-CF time units.
-    - Generate bounds for supported coordinates if they don't exist.
-    - Option to limit the Dataset to a single regular (non-bounds) data variable
-      while retaining any bounds data variables.
+    - Decode both CF and non-CF compliant time units if the Dataset has a time
+      dimension
+    - Fill missing bounds for supported axes
+    - Option to limit the Dataset to a single regular (non-bounds) data
+      variable, while retaining any bounds data variables
 
     ``data_vars`` defaults to `"minimal"` so that data variables across files
     are concatenated together in a single Dataset object with only preexisting
@@ -129,9 +131,8 @@ def open_mfdataset(
           * list of str: The listed data variables will be concatenated, in
             addition to the "minimal" data variables.
     kwargs : Dict[str, Any]
-        Additional arguments passed on to ``xarray.open_mfdataset`` and/or
-        ``xarray.open_dataset``. Refer to the [1]_ xarray docs for accepted
-        keyword arguments.
+        Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
+        the [2]_ xarray docs for accepted keyword arguments.
 
     Returns
     -------
