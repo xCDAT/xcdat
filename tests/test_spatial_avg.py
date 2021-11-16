@@ -260,7 +260,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         )
         with pytest.raises(ValueError):
-            self.ds.spatial._swap_lon_axes(domain, to=9000)
+            self.ds.spatial._swap_lon_axis(domain, to=9000)
 
     def test_swap_chunked_domain_dataarray_from_180_to_360(self):
         domain = xr.DataArray(
@@ -270,7 +270,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         ).chunk(2)
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=360)
+        result = self.ds.spatial._swap_lon_axis(domain, to=360)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[295, 355], [355, 0], [0, 120]]),
@@ -288,7 +288,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         ).chunk(2)
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        result = self.ds.spatial._swap_lon_axis(domain, to=180)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[0, 120], [120, -179], [-179, 0]]),
@@ -305,7 +305,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         ).chunk(2)
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        result = self.ds.spatial._swap_lon_axis(domain, to=180)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[-0.25, 120], [120, -0.25]]),
@@ -323,7 +323,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         )
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=360)
+        result = self.ds.spatial._swap_lon_axis(domain, to=360)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[295, 355], [355, 0], [0, 120]]),
@@ -341,7 +341,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         )
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        result = self.ds.spatial._swap_lon_axis(domain, to=180)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[0, 120], [120, -179], [-179, 0]]),
@@ -358,7 +358,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         )
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        result = self.ds.spatial._swap_lon_axis(domain, to=180)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[-0.25, 120], [120, -0.25]]),
@@ -369,23 +369,23 @@ class TestSwapLonAxes:
         assert result.identical(expected)
 
     def test_swap_region_ndarray_from_180_to_360(self):
-        result = self.ds.spatial._swap_lon_axes(np.array([-65, 0, 120]), to=360)
+        result = self.ds.spatial._swap_lon_axis(np.array([-65, 0, 120]), to=360)
         expected = np.array([295, 0, 120])
 
         assert np.array_equal(result, expected)
 
-        result = self.ds.spatial._swap_lon_axes(np.array([-180, 0, 180]), to=360)
+        result = self.ds.spatial._swap_lon_axis(np.array([-180, 0, 180]), to=360)
         expected = np.array([180, 0, 180])
 
         assert np.array_equal(result, expected)
 
     def test_swap_region_ndarray_from_360_to_180(self):
-        result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to=180)
+        result = self.ds.spatial._swap_lon_axis(np.array([0, 120, 181, 360]), to=180)
         expected = np.array([0, 120, -179, 0])
 
         assert np.array_equal(result, expected)
 
-        result = self.ds.spatial._swap_lon_axes(np.array([-0.25, 120, 359.75]), to=180)
+        result = self.ds.spatial._swap_lon_axis(np.array([-0.25, 120, 359.75]), to=180)
         expected = np.array([-0.25, 120, -0.25])
 
         assert np.array_equal(result, expected)
@@ -396,7 +396,7 @@ class TestGetWeights:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_returns_area_weights_for_region_within_lat_and_lon(self):
+    def test_area_weights_for_region_within_lat_and_lon(self):
         result = self.ds.spatial._get_weights(
             axis=["lat", "lon"], lat_bounds=(-5, 5), lon_bounds=(-170, -120)
         )
@@ -415,7 +415,7 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_returns_area_weights_for_region_within_lat(self):
+    def test_area_weights_for_region_within_lat(self):
         result = self.ds.spatial._get_weights(
             axis=["lat", "lon"], lat_bounds=(-5, 5), lon_bounds=None
         )
@@ -434,7 +434,7 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_returns_area_weights_for_region_within_lon(self):
+    def test_area_weights_for_region_within_lon(self):
         expected = xr.DataArray(
             data=np.array(
                 [
@@ -453,6 +453,79 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
+
+class TestGetLongitudeWeights:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_returns_weights_for_region_in_lon(self):
+        # Longitude axes orientation swaps from (-180, 180) to (0, 360).
+        result = self.ds.spatial._get_longitude_weights(
+            domain_bounds=self.ds.lon_bnds.copy(),
+            region_bounds=np.array([-170.0, -120.0]),
+        )
+
+        expected = xr.DataArray(
+            data=np.array([0.0, 0.0, 50.0, 0.0]),
+            coords={"lon": self.ds.lon},
+            dims=["lon"],
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_weights_for_region_in_lon_domain_with_both_spanning_p_meridian(self):
+        ds = self.ds.copy()
+        # Domain spans prime meridian.
+        ds.lon_bnds.data[:] = np.array([[359, 1], [1, 90], [90, 180], [180, 359]])
+
+        result = ds.spatial._get_longitude_weights(
+            domain_bounds=ds.lon_bnds,
+            # Region spans prime meridian.
+            region_bounds=np.array([359, 1]),
+        )
+        expected = xr.DataArray(
+            data=np.array([2.0, 0.0, 0.0, 0.0]),
+            coords={"lon": ds.lon},
+            dims=["lon"],
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_weights_for_region_in_lon_domain_with_domain_spanning_p_meridian(self):
+        ds = self.ds.copy()
+        # Domain spans prime meridian.
+        ds.lon_bnds.data[:] = np.array([[359, 1], [1, 90], [90, 180], [180, 359]])
+
+        # Longitude axes orientation swaps from (-180, 180) to (0, 360).
+        result = ds.spatial._get_longitude_weights(
+            domain_bounds=ds.lon_bnds,
+            region_bounds=np.array([-170.0, -120.0]),
+        )
+        expected = xr.DataArray(
+            data=np.array([0.0, 0.0, 0.0, 50.0]),
+            coords={"lon": ds.lon},
+            dims=["lon"],
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_weights_for_region_in_lon_domain_with_region_spanning_p_meridian(self):
+        ds = self.ds.copy()
+
+        result = ds.spatial._get_longitude_weights(
+            domain_bounds=ds.lon_bnds,
+            # Region spans prime meridian.
+            region_bounds=np.array([359, 1]),
+        )
+        expected = xr.DataArray(
+            data=np.array([1.875, 0.0625, 0.0, 0.0625]),
+            coords={"lon": ds.lon},
+            dims=["lon"],
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
     def test_weights_all_longitudes_for_equal_region_bounds(self):
         expected = xr.DataArray(
             data=np.array(
@@ -461,8 +534,9 @@ class TestGetWeights:
             coords={"lon": self.ds.lon},
             dims=["lon"],
         )
-        result = self.ds.spatial._get_weights(
-            axis=["lon"], lat_bounds=None, lon_bounds=(0, 360)
+        result = self.ds.spatial._get_longitude_weights(
+            domain_bounds=self.ds.lon_bnds.copy(),
+            region_bounds=np.array([0.0, 360.0]),
         )
 
         xr.testing.assert_allclose(result, expected)
@@ -475,8 +549,26 @@ class TestGetWeights:
             coords={"lon": self.ds.lon},
             dims=["lon"],
         )
-        result = self.ds.spatial._get_weights(
-            axis=["lon"], lat_bounds=None, lon_bounds=(10, 10)
+        result = self.ds.spatial._get_longitude_weights(
+            domain_bounds=self.ds.lon_bnds.copy(), region_bounds=np.array([10.0, 10.0])
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+
+class TestGetLatitudeWeights:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_weights_for_region_within_lat(self):
+        expected = xr.DataArray(
+            data=np.array([0.0, 0.087156, 0.087156, 0.0]),
+            coords={"lat": self.ds.lat},
+            dims=["lat"],
+        )
+        result = self.ds.spatial._get_latitude_weights(
+            domain_bounds=self.ds.lat_bnds, region_bounds=np.array([-5.0, 5.0])
         )
 
         xr.testing.assert_allclose(result, expected)
@@ -497,7 +589,7 @@ class TestValidateDomainBounds:
             self.ds.spatial._validate_domain_bounds(domain_bounds)
 
 
-class TestDomainLongitudeAlignment:
+class TestAlignLongitudeto360Axis:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -543,7 +635,7 @@ class TestDomainLongitudeAlignment:
             dims=["lon", "bnds"],
         )
 
-        result_index, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+        result_bounds, result_index = self.ds.spatial._align_longitude_to_360_axis(
             domain_bounds
         )
 
@@ -558,7 +650,7 @@ class TestDomainLongitudeAlignment:
             dims=["lon", "bnds"],
         )
 
-        result_index, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+        result_bounds, result_index = self.ds.spatial._align_longitude_to_360_axis(
             domain_bounds
         )
 
@@ -573,13 +665,42 @@ class TestDomainLongitudeAlignment:
             dims=["lon", "bnds"],
         )
 
-        null, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+        result_bounds, null = self.ds.spatial._align_longitude_to_360_axis(
             domain_bounds
         )
 
         dbdiff = np.sum(np.array(result_bounds[:, 1] - result_bounds[:, 0]))
 
         assert dbdiff == 360.0
+
+
+class TestCalculateWeights:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_returns_weights_as_the_absolute_difference_of_upper_and_lower_bounds(self):
+        lat = xr.DataArray(
+            name="lat",
+            data=np.array([-90.0, -88.75, 88.75, 90.0]),
+            coords={"lat": np.array([-90.0, -88.75, 88.75, 90.0])},
+            dims=["lat"],
+        )
+        lat_bounds = xr.DataArray(
+            data=np.array(
+                [[-90.0, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90.0]]
+            ),
+            coords={"lat": lat},
+            dims=["lat", "bnds"],
+        )
+
+        result = self.ds.spatial._calculate_weights(lat_bounds)
+        expected = xr.DataArray(
+            data=np.array([0.625, 89.375, 89.375, 0.625]),
+            coords={"lat": lat},
+            dims=["lat"],
+        )
+        assert result.identical(expected)
 
 
 class TestScaleDimToRegion:
@@ -751,17 +872,16 @@ class TestCombineWeights:
         }
 
     def test_weights_for_single_axes_is_the_same(self):
-        result = self.ds.spatial._combine_weights(
-            axis=["lat"], axis_weights=self.axis_weights
-        )
+        axis_weights = self.axis_weights
+        del axis_weights["lon"]
+
+        result = self.ds.spatial._combine_weights(axis_weights=self.axis_weights)
         expected = self.axis_weights["lat"]
 
         assert result.identical(expected)
 
     def test_weights_for_multiple_axes_is_a_matrix_multiplication(self):
-        result = self.ds.spatial._combine_weights(
-            axis=["lat", "lon"], axis_weights=self.axis_weights
-        )
+        result = self.ds.spatial._combine_weights(axis_weights=self.axis_weights)
         expected = xr.DataArray(
             data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
             coords={"lat": self.ds.lat, "lon": self.ds.lon},
