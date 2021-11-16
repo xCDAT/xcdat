@@ -329,11 +329,11 @@ class SpatialAverageAccessor:
 
         bounds: Dict[str, BoundsByType] = {
             "lat": {
-                "domain": self._dataset.bounds.get_bounds("lat"),
+                "domain": self._dataset.bounds.get_bounds("lat").copy(),
                 "region": lat_bounds,
             },
             "lon": {
-                "domain": self._dataset.bounds.get_bounds("lon"),
+                "domain": self._dataset.bounds.get_bounds("lon").copy(),
                 "region": lon_bounds,
             },
         }
@@ -500,16 +500,15 @@ class SpatialAverageAccessor:
         This method returns ``domain_bounds`` that are intended for calculating
         spatial weights only.
         """
-        d_bounds = domain_bounds.copy()
         # TODO: Refactor this check
-        if (np.min(d_bounds).values < 0) | (np.max(d_bounds).values > 360):
+        if (np.min(domain_bounds).values < 0) | (np.max(domain_bounds).values > 360):
             raise ValueError(
                 "Longitude bounds between 0 and 360. Use _swap_lon_axes"
                 "before calling _align_longitude_to_360_axis."
             )
 
         # FIXME: Apply default value as None
-        prime_meridian = np.where(d_bounds[:, 1] - d_bounds[:, 0] < 0)[0]
+        prime_meridian = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
         # there should be 0 or 1 such grid cells
         if len(prime_meridian) > 1:
             raise ValueError("More than one grid cell spans prime meridian.")
@@ -517,21 +516,23 @@ class SpatialAverageAccessor:
             # convert index array to integer index
             prime_meridian = prime_meridian[0]
             # reorient bound to span across zero (i.e., [361, 1] -> [-1, 1])
-            d_bounds[prime_meridian, 0] = d_bounds[prime_meridian, 0] - 360.0
+            domain_bounds[prime_meridian, 0] = domain_bounds[prime_meridian, 0] - 360.0
             # extend the dataarray to nlon+1 by concatenating the grid cell
             # that spans the prime meridian to the end
-            d_bounds = xr.concat((d_bounds, d_bounds[prime_meridian, :]), dim="lon")
+            domain_bounds = xr.concat(
+                (domain_bounds, domain_bounds[prime_meridian, :]), dim="lon"
+            )
             # produce an equivalent bound that spans 360
             # (i.e., [-1, 1] -> [359, 361])
-            repeat_bound = d_bounds[prime_meridian, :] + 360.0
+            repeat_bound = domain_bounds[prime_meridian, :] + 360.0
             # place this repeat bound at the end of the DataArray
-            d_bounds[-1, :] = repeat_bound
+            domain_bounds[-1, :] = repeat_bound
             # limit bounds to [0, 360]
-            d_bounds[prime_meridian, 0] = 0.0
-            d_bounds[-1, 1] = 360.0
+            domain_bounds[prime_meridian, 0] = 0.0
+            domain_bounds[-1, 1] = 360.0
         else:
             prime_meridian = None
-        return d_bounds, prime_meridian
+        return domain_bounds, prime_meridian
 
     def _swap_lon_axes(
         self, lon: Union[xr.DataArray, np.ndarray], to: Literal[180, 360]
