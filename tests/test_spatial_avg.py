@@ -497,7 +497,7 @@ class TestValidateDomainBounds:
             self.ds.spatial._validate_domain_bounds(domain_bounds)
 
 
-class TestDomainLongitudeAlignment:
+class TestAlignLongitudeto360Axis:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -543,7 +543,7 @@ class TestDomainLongitudeAlignment:
             dims=["lon", "bnds"],
         )
 
-        result_index, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+        result_bounds, result_index = self.ds.spatial._align_longitude_to_360_axis(
             domain_bounds
         )
 
@@ -558,7 +558,7 @@ class TestDomainLongitudeAlignment:
             dims=["lon", "bnds"],
         )
 
-        result_index, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+        result_bounds, result_index = self.ds.spatial._align_longitude_to_360_axis(
             domain_bounds
         )
 
@@ -573,7 +573,7 @@ class TestDomainLongitudeAlignment:
             dims=["lon", "bnds"],
         )
 
-        null, result_bounds = self.ds.spatial._align_longitude_to_360_axis(
+        result_bounds, null = self.ds.spatial._align_longitude_to_360_axis(
             domain_bounds
         )
 
