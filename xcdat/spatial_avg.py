@@ -464,12 +464,12 @@ class SpatialAverageAccessor:
         return np.abs(domain_bounds[:, 1] - domain_bounds[:, 0])
 
     def _align_longitude_to_360_axis(self, domain_bounds: xr.DataArray):
-        """Handles the prime meridian cell to ensure longitude circularity
+        """Handles prime meridian cells to align longitude axes to (0, 360).
 
-        This method ensures the domain bounds are within 0 to 360
-        by handling the grid cell that encompasses the prime meridian (e.g.,
-        [359, 1]). In this case, calculating longitudinal weights is complicated
-        because the weights are determined by the difference of the bounds.
+        This method ensures the domain bounds are within 0 to 360 by handling
+        the grid cell that encompasses the prime meridian (e.g., [359, 1]). In
+        this case, calculating longitudinal weights is complicated because the
+        weights are determined by the difference of the bounds.
 
         If this situation exists, the method will split this grid cell into
         two parts (one east and west of the prime meridian). The original
