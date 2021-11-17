@@ -58,7 +58,7 @@ These features include:
 - Robust handling of coordinates and its associated bounds
 
   - Name-agnostic retrieval of CF compliant coordinates and bounds using ``cf_xarray``
-  - Generating specific bounds or filling all missing bounds for supported axes
+  - Generating a specific or all bounds for supported axes if they don't exist
   - Ability to operate on both (0 to 360) and (-180 to 180) longitudinal axes orientations
 
 - Temporal averaging (weighted or unweighted)
@@ -77,7 +77,7 @@ These features include:
 
 - Wrappers for opening datasets to apply common operations
 
-  - Fill missing bounds
+  - Generate bounds for all supported axes if they don't exist
   - Decoding of CF and non-CF time units
   - Optional centering of time coordinate using time bounds
   - Optional conversion of longitudinal axes orientation
