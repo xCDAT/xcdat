@@ -42,7 +42,7 @@ Methods
 
     Dataset.xcdat.add_bounds
     Dataset.xcdat.get_bounds
-    Dataset.xcdat.fill_missing_bounds
+    Dataset.xcdat.add_missing_bounds
     Dataset.xcdat.spatial_avg
 
 
@@ -71,5 +71,5 @@ Methods
 
     Dataset.bounds.add_bounds
     Dataset.bounds.get_bounds
-    Dataset.bounds.fill_missing_bounds
+    Dataset.bounds.add_missing_bounds
     Dataset.spatial.spatial_avg

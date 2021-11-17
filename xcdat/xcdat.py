@@ -49,10 +49,10 @@ class XCDATAccessor:
         obj = BoundsAccessor(self._dataset)
         return obj.bounds
 
-    @is_documented_by(BoundsAccessor.fill_missing_bounds)
-    def fill_missing_bounds(self) -> xr.Dataset:
+    @is_documented_by(BoundsAccessor.add_missing_bounds)
+    def add_missing_bounds(self) -> xr.Dataset:
         obj = BoundsAccessor(self._dataset)
-        return obj.fill_missing_bounds()
+        return obj.add_missing_bounds()
 
     @is_documented_by(BoundsAccessor.get_bounds)
     def get_bounds(self, coord: Coord) -> xr.DataArray:

@@ -62,11 +62,11 @@ class TestXCDATAccessor:
         for key in expected.keys():
             assert result[key].identical(expected[key])
 
-    def test_fill_missing_bounds_returns_expected(self):
+    def test_add_missing_bounds_returns_expected(self):
         ds = self.ds_with_bnds.copy()
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
-        result = ds.xcdat.fill_missing_bounds()
+        result = ds.xcdat.add_missing_bounds()
         assert result.identical(self.ds_with_bnds)
 
     def test_get_bounds_returns_expected(self):

@@ -31,10 +31,10 @@ class BoundsAccessor:
     >>> ds = xr.open_dataset("file_path")
     >>> bounds = ds.bounds.bounds
 
-    Fill missing coordinate bounds in the Dataset:
+    Add missing coordinate bounds in the Dataset:
 
     >>> ds = xr.open_dataset("file_path")
-    >>> ds = ds.bounds.fill_missing_bounds()
+    >>> ds = ds.bounds.add_missing_bounds()
 
     Get coordinate bounds if they exist:
 
@@ -96,8 +96,8 @@ class BoundsAccessor:
             )
         )
 
-    def fill_missing_bounds(self) -> xr.Dataset:
-        """Fills any missing bounds for supported coordinates in the Dataset.
+    def add_missing_bounds(self) -> xr.Dataset:
+        """Adds any missing bounds for supported coordinates in the Dataset.
 
         Returns
         -------
