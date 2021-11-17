@@ -40,7 +40,7 @@ class BoundsAccessor:
     >>> lon_bounds = ds.bounds.get_bounds("lon") # or pass "longitude"
     >>> time_bounds = ds.bounds.get_bounds("time")
 
-    Add coordinate bounds for a specific axis if they don't exist.
+    Add coordinate bounds for a specific axis if they don't exist:
 
     >>> ds = ds.bounds.add_bounds("lat")
     """
@@ -50,7 +50,7 @@ class BoundsAccessor:
 
     @property
     def bounds(self) -> Dict[str, Optional[xr.DataArray]]:
-        """Returns a mapping of axis and coordinates keys to their bounds.
+        """Returns a mapping of axes and coordinates keys to their bounds.
 
         The dictionary provides all valid CF compliant keys for axes and
         coordinates. For example, latitude will includes keys for "lat",
@@ -90,7 +90,7 @@ class BoundsAccessor:
         )
 
     def add_missing_bounds(self) -> xr.Dataset:
-        """Adds any missing bounds for supported axes in the Dataset.
+        """Adds missing bounds for supported axes in the Dataset.
 
         Returns
         -------
@@ -143,7 +143,7 @@ class BoundsAccessor:
 
         return bounds
 
-    def add_bounds(self, axes: Axis, width: float = 0.5) -> xr.Dataset:
+    def add_bounds(self, axis: Axis, width: float = 0.5) -> xr.Dataset:
         """Add bounds for axis coordinates using coordinate data points.
 
         If bounds already exist, they must be dropped first.
@@ -167,12 +167,12 @@ class BoundsAccessor:
             If bounds already exist. They must be dropped first.
         """
         try:
-            self.get_bounds(axes)
+            self.get_bounds(axis)
             raise ValueError(
-                f"{axes} bounds already exist. Drop them first to add new bounds."
+                f"{axis} bounds already exist. Drop them first to add new bounds."
             )
         except KeyError:
-            dataset = self._add_bounds(axes, width)
+            dataset = self._add_bounds(axis, width)
 
         return dataset
 
