@@ -151,7 +151,7 @@ class BoundsAccessor:
         Parameters
         ----------
         axis : Axis
-            The coordinate key.
+            The axis key.
         width : float, optional
             Width of the bounds relative to the position of the nearest points,
             by default 0.5.
@@ -210,7 +210,7 @@ class BoundsAccessor:
 
         .. [2] https://cf-xarray.readthedocs.io/en/latest/generated/xarray.Dataset.cf.add_bounds.html#
         """
-        da_coord: xr.DataArray = self._get_coordss(axis)
+        da_coord: xr.DataArray = self._get_coords(axis)
 
         # Validate coordinate shape and dimensions
         if da_coord.ndim != 1:
@@ -254,7 +254,7 @@ class BoundsAccessor:
 
         return dataset
 
-    def _get_coordss(self, axis: Axis) -> xr.DataArray:
+    def _get_coords(self, axis: Axis) -> xr.DataArray:
         """Get the matching coordinates for an axis in the dataset.
 
         Parameters
