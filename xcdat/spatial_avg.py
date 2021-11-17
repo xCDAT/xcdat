@@ -31,7 +31,7 @@ class SpatialAverageAccessor:
         self,
         data_var: Optional[str] = None,
         axis: Union[List[SupportedAxes], SupportedAxes] = ["lat", "lon"],
-        weights: xr.DataArray = None,
+        weights: Union[Literal["generate"], xr.DataArray] = "generate",
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
     ) -> xr.Dataset:
@@ -58,7 +58,7 @@ class SpatialAverageAccessor:
         axis : Union[List[SupportedAxes], SupportedAxes]
             List of axis dimensions or single axes dimension to average over.
             For example, ["lat", "lon"]  or "lat", by default ["lat", "lon"].
-        weights : Optional[xr.DataArray], optional
+        weights : Union[Literal["generate"], xr.DataArray], optional
             A DataArray containing the regional weights used for weighted
             averaging. ``weights`` must include the same spatial axis dimensions
             and have the same dimensional sizes as the data variable. If None,
@@ -140,7 +140,7 @@ class SpatialAverageAccessor:
 
         axis = self._validate_axis(da_data_var, axis)
 
-        if weights is None:
+        if weights == "generate":
             if lat_bounds is not None:
                 self._validate_region_bounds("lat", lat_bounds)
             if lon_bounds is not None:

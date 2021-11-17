@@ -2,6 +2,7 @@
 from typing import Dict, List, Optional, Union
 
 import xarray as xr
+from typing_extensions import Literal
 
 from xcdat.bounds import BoundsAccessor, Coord
 from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SupportedAxes
@@ -36,7 +37,7 @@ class XCDATAccessor:
         self,
         data_var: Optional[str] = None,
         axis: Union[List[SupportedAxes], SupportedAxes] = ["lat", "lon"],
-        weights: xr.DataArray = None,
+        weights: Union[Literal["generate"], xr.DataArray] = "generate",
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
     ) -> xr.Dataset:
