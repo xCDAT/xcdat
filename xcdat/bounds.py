@@ -90,7 +90,7 @@ class BoundsAccessor:
         )
 
     def add_missing_bounds(self) -> xr.Dataset:
-        """Adds missing bounds for supported axes in the Dataset.
+        """Adds missing coordinate bounds for supported axes in the Dataset.
 
         Returns
         -------
@@ -177,7 +177,7 @@ class BoundsAccessor:
         return dataset
 
     def _add_bounds(self, axis: Axis, width: float = 0.5) -> xr.Dataset:
-        """Adds bounds for coordinates using its data points.
+        """Add bounds for axis coordinates using coordinate data points.
 
         Parameters
         ----------
@@ -210,7 +210,7 @@ class BoundsAccessor:
 
         .. [2] https://cf-xarray.readthedocs.io/en/latest/generated/xarray.Dataset.cf.add_bounds.html#
         """
-        da_coord: xr.DataArray = self._get_coord(axis)
+        da_coord: xr.DataArray = self._get_coordss(axis)
 
         # Validate coordinate shape and dimensions
         if da_coord.ndim != 1:
@@ -254,7 +254,7 @@ class BoundsAccessor:
 
         return dataset
 
-    def _get_coord(self, axis: Axis) -> xr.DataArray:
+    def _get_coordss(self, axis: Axis) -> xr.DataArray:
         """Get the matching coordinates for an axis in the dataset.
 
         Parameters
@@ -265,12 +265,12 @@ class BoundsAccessor:
         Returns
         -------
         xr.DataArray
-            Matching coordinate in the Dataset.
+            Matching coordinates in the Dataset.
 
         Raises
         ------
         TypeError
-            If no matching coordinate is found in the Dataset.
+            If no matching coordinates are found in the Dataset.
         """
         try:
             matching_coord = self._dataset.cf[axis]

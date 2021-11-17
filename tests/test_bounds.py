@@ -160,11 +160,11 @@ class TestGetCoord:
         ds = self.ds.copy()
 
         # Check lat axis coordinates exist
-        lat = ds.bounds._get_coord("lat")
+        lat = ds.bounds._get_coords("lat")
         assert lat is not None
 
         # Check lon axis coordinates exist
-        lon = ds.bounds._get_coord("lon")
+        lon = ds.bounds._get_coords("lon")
         assert lon is not None
 
     def test_raises_error_if_coord_does_not_exist(self):
@@ -172,4 +172,4 @@ class TestGetCoord:
 
         ds = ds.drop_dims("lat")
         with pytest.raises(KeyError):
-            ds.bounds._get_coord("lat")
+            ds.bounds._get_coords("lat")
