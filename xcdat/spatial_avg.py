@@ -422,9 +422,9 @@ class SpatialAverageAccessor:
     ) -> xr.DataArray:
         """Gets weights for the latitude axes.
 
-        This method scales the domain to a region (if selected). It scales the
-        area between two lines of latitude scales as the difference of the sine
-        of latitude bounds.
+        This method scales the domain to a region (if selected). It also scales
+        the area between two lines of latitude scales as the difference of the
+        sine of latitude bounds.
 
         Parameters
         ----------
@@ -467,7 +467,7 @@ class SpatialAverageAccessor:
     def _align_longitude_to_360_axis(
         self, domain_bounds: xr.DataArray
     ) -> Tuple[xr.DataArray, np.array]:
-        """Handles prime meridian cells to align longitude axes to (0, 360).
+        """Handles a prime meridian cell to align longitude axes to (0, 360).
 
         This method ensures the domain bounds are within 0 to 360 by handling
         the grid cell that encompasses the prime meridian (e.g., [359, 1]). In
@@ -536,7 +536,7 @@ class SpatialAverageAccessor:
             domain_bounds[-1, :] = repeat_bound
 
             # Update the lower-most min and upper-most max bounds to [0, 360].
-            # Resut: [[0, 1], [1, 90], [90, 180], [180, 359], [359, 360]
+            # Result: [[0, 1], [1, 90], [90, 180], [180, 359], [359, 360]]
             domain_bounds[p_meridian_index, 0], domain_bounds[-1, 1] = (0.0, 360.0)
 
         return domain_bounds, p_meridian_index
