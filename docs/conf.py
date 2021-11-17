@@ -118,6 +118,8 @@ html_theme = "sphinx_book_theme"
 #
 # sphinx_book_theme configurations
 # https://sphinx-book-theme.readthedocs.io/en/latest/configure.html
+html_logo = "_static/xcdat_logo.png"
+html_title = "XCDAT Documentation"
 html_theme_options = {
     "repository_url": "https://github.com/XCDAT/xcdat",
     "repository_branch": "master",
@@ -127,8 +129,8 @@ html_theme_options = {
     "use_issues_button": True,
     "use_download_button": True,
     "use_fullscreen_button": True,
+    "logo_only": True,
 }
-html_title = "XCDAT Documentation"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
