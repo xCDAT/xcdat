@@ -84,7 +84,7 @@ See `LICENSE <LICENSE>`_ for details
 
    Getting Started <getting_started>
    API Reference <api>
-   xarray API Reference <https://xarray.pydata.org/en/stable/api.html>
+   Xarray API Reference <https://xarray.pydata.org/en/stable/api.html>
 
 .. toctree::
    :maxdepth: 2

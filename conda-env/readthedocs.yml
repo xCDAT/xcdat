@@ -19,4 +19,5 @@ dependencies:
     - sphinxcontrib-napoleon=0.7
     - sphinx-copybutton=0.4.0
     - sphinx-book-theme==0.1.5
+    - sphinx-autosummary-accessors=0.2.1
 prefix: /opt/miniconda3/envs/xcdat_rtd
