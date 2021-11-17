@@ -59,10 +59,11 @@ class SpatialAverageAccessor:
             List of axis dimensions or single axes dimension to average over.
             For example, ["lat", "lon"]  or "lat", by default ["lat", "lon"].
         weights : Union[Literal["generate"], xr.DataArray], optional
-            A DataArray containing the regional weights used for weighted
+            If "generate", then weights are generated. Otherwise, pass a
+            DataArray containing the regional weights used for weighted
             averaging. ``weights`` must include the same spatial axis dimensions
-            and have the same dimensional sizes as the data variable. If None,
-            then weights are generated; by default None.
+            and have the same dimensional sizes as the data variable, by default
+            "generate".
         lat_bounds : Optional[RegionAxisBounds], optional
             A tuple of floats/ints for the regional latitude lower and upper
             boundaries. This arg is used when calculating axis weights, but is
