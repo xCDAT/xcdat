@@ -182,8 +182,8 @@ class SpatialAverageAccessor:
         if isinstance(axis, str):
             axis = [axis]
 
-        for axes in axis:
-            if axes not in SUPPORTED_AXES:
+        for dim in axis:
+            if dim not in SUPPORTED_AXES:
                 raise ValueError(
                     "Incorrect `axis` argument. Supported axes include: "
                     f"{', '.join(SUPPORTED_AXES)}."
@@ -194,10 +194,10 @@ class SpatialAverageAccessor:
             # linked to a "latitude" key ), and cf_xarray does not support
             # `data_var.cf.get(axes, None)`.
             try:
-                data_var.cf[axes]
+                data_var.cf[dim]
             except KeyError:
                 raise KeyError(
-                    f"The data variable '{data_var.name}' is missing a '{axes}' "
+                    f"The data variable '{data_var.name}' is missing a '{dim}' "
                     "dimension, which is required for spatial averaging."
                 )
 
@@ -338,39 +338,39 @@ class SpatialAverageAccessor:
             },
         }
         axis_weights: AxisWeights = {}
+        for dim, bounds_by_type in bounds.items():
+            if dim in axis:
+                d_bounds = bounds_by_type["domain"]
+                self._validate_domain_bounds(d_bounds)
 
-        for axes, bounds_by_type in bounds.items():
-            d_bounds = bounds_by_type["domain"]
-            self._validate_domain_bounds(d_bounds)
+                r_bounds = bounds_by_type["region"]
+                if r_bounds is not None:
+                    r_bounds = np.array(r_bounds, dtype="float")
 
-            r_bounds = bounds_by_type["region"]
-            if r_bounds is not None:
-                r_bounds = np.array(r_bounds, dtype="float")
+                if dim == "lon":
+                    weights = self._get_longitude_weights(d_bounds, r_bounds)
+                elif dim == "lat":
+                    weights = self._get_latitude_weights(d_bounds, r_bounds)
 
-            if axes == "lon":
-                weights = self._get_longitude_weights(d_bounds, r_bounds)
-            elif axes == "lat":
-                weights = self._get_latitude_weights(d_bounds, r_bounds)
+                weights.attrs = d_bounds.attrs
+                weights.name = dim + "_wts"
+                axis_weights[dim] = weights
 
-            weights.attrs = d_bounds.attrs
-            weights.name = axes + "_wts"
-            axis_weights[axes] = weights
-
-        weights = self._combine_weights(axis, axis_weights)
+        weights = self._combine_weights(axis_weights)
         return weights
 
     def _get_longitude_weights(
         self, domain_bounds: xr.DataArray, region_bounds: np.array
     ) -> xr.DataArray:
-        """Gets weights for the longitude axes.
+        """Gets weights for the longitude axis.
 
         This method performs longitudinal processing including (in order):
 
-        1. Align the axes orientations of the domain and region bounds to
+        1. Align the axis orientations of the domain and region bounds to
            (0, 360) to ensure compatibility in the proceeding steps.
         2. Handle grid cells that cross the prime meridian (e.g., [-1, 1])
-           by recreating the axes with two additional grid cells ([0, 1] and
-           [359, 360]) to ensure alignment with the (0, 360) axes orientation.
+           by recreating the axis with two additional grid cells ([0, 1] and
+           [359, 360]) to ensure alignment with the (0, 360) axis orientation.
            The prime meridian grid cell is returned as a variable to handle
            the length of weights in a proceeding step.
         3. Scale the domain down to a region (if selected).
@@ -397,8 +397,8 @@ class SpatialAverageAccessor:
         p_meridian_index: Optional[np.array] = None
 
         if region_bounds is not None:
-            domain_bounds = self._swap_lon_axes(domain_bounds, to=360)
-            region_bounds = self._swap_lon_axes(region_bounds, to=360)
+            domain_bounds = self._swap_lon_axis(domain_bounds, to=360)
+            region_bounds = self._swap_lon_axis(region_bounds, to=360)
 
             is_region_circular = region_bounds[1] - region_bounds[0] == 0
             if is_region_circular:
@@ -420,7 +420,7 @@ class SpatialAverageAccessor:
     def _get_latitude_weights(
         self, domain_bounds: xr.DataArray, region_bounds: xr.DataArray
     ) -> xr.DataArray:
-        """Gets weights for the latitude axes.
+        """Gets weights for the latitude axis.
 
         This method scales the domain to a region (if selected). It also scales
         the area between two lines of latitude scales as the difference of the
@@ -436,7 +436,7 @@ class SpatialAverageAccessor:
         Returns
         -------
         xr.DataArray
-            The latitude axes weights.
+            The latitude axis weights.
         """
         if region_bounds is not None:
             domain_bounds = self._scale_domain_to_region(domain_bounds, region_bounds)
@@ -508,7 +508,7 @@ class SpatialAverageAccessor:
         if (domain_bounds.values.min() < 0) | (domain_bounds.values.max() > 360):
             raise ValueError(
                 "Longitude bounds aren't inclusively between 0 and 360. "
-                "Use `_swap_lon_axes()` before calling `_align_longitude_to_360_axis()`."
+                "Use `_swap_lon_axis()` before calling `_align_longitude_to_360_axis()`."
             )
 
         p_meridian_index = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
@@ -541,10 +541,10 @@ class SpatialAverageAccessor:
 
         return domain_bounds, p_meridian_index
 
-    def _swap_lon_axes(
+    def _swap_lon_axis(
         self, lon: Union[xr.DataArray, np.ndarray], to: Literal[180, 360]
     ) -> Union[xr.DataArray, np.ndarray]:
-        """Swap the longitude axes orientation.
+        """Swap the longitude axis orientation.
 
         Parameters
         ----------
@@ -675,9 +675,7 @@ class SpatialAverageAccessor:
 
         return d_bounds
 
-    def _combine_weights(
-        self, axis: List[SupportedAxes], axis_weights: AxisWeights
-    ) -> xr.DataArray:
+    def _combine_weights(self, axis_weights: AxisWeights) -> xr.DataArray:
         """Generically rescales axis weights for a given region.
 
         This method creates an n-dimensional weighting array by performing
@@ -686,8 +684,6 @@ class SpatialAverageAccessor:
 
         Parameters
         ----------
-        axis : List[SupportedAxes]
-            List of axes that should be weighted.
         axis_weights : AxisWeights
             Dictionary of axis weights, where key is axes and value is the
             corresponding DataArray of weights.
@@ -699,10 +695,7 @@ class SpatialAverageAccessor:
             ``weights`` are 1-D and correspond to the specified axes (``axis``)
             in the region.
         """
-        weights = {
-            axes: weights for axes, weights in axis_weights.items() if axes in axis
-        }
-        region_weights = reduce((lambda x, y: x * y), weights.values())
+        region_weights = reduce((lambda x, y: x * y), axis_weights.values())
         return region_weights
 
     def _validate_weights(

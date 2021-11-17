@@ -260,7 +260,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         )
         with pytest.raises(ValueError):
-            self.ds.spatial._swap_lon_axes(domain, to=9000)
+            self.ds.spatial._swap_lon_axis(domain, to=9000)
 
     def test_swap_chunked_domain_dataarray_from_180_to_360(self):
         domain = xr.DataArray(
@@ -270,7 +270,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         ).chunk(2)
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=360)
+        result = self.ds.spatial._swap_lon_axis(domain, to=360)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[295, 355], [355, 0], [0, 120]]),
@@ -288,7 +288,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         ).chunk(2)
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        result = self.ds.spatial._swap_lon_axis(domain, to=180)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[0, 120], [120, -179], [-179, 0]]),
@@ -305,7 +305,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         ).chunk(2)
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        result = self.ds.spatial._swap_lon_axis(domain, to=180)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[-0.25, 120], [120, -0.25]]),
@@ -323,7 +323,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         )
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=360)
+        result = self.ds.spatial._swap_lon_axis(domain, to=360)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[295, 355], [355, 0], [0, 120]]),
@@ -341,7 +341,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         )
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        result = self.ds.spatial._swap_lon_axis(domain, to=180)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[0, 120], [120, -179], [-179, 0]]),
@@ -358,7 +358,7 @@ class TestSwapLonAxes:
             attrs={"is_generated": "True"},
         )
 
-        result = self.ds.spatial._swap_lon_axes(domain, to=180)
+        result = self.ds.spatial._swap_lon_axis(domain, to=180)
         expected = xr.DataArray(
             name="lon_bnds",
             data=np.array([[-0.25, 120], [120, -0.25]]),
@@ -369,23 +369,23 @@ class TestSwapLonAxes:
         assert result.identical(expected)
 
     def test_swap_region_ndarray_from_180_to_360(self):
-        result = self.ds.spatial._swap_lon_axes(np.array([-65, 0, 120]), to=360)
+        result = self.ds.spatial._swap_lon_axis(np.array([-65, 0, 120]), to=360)
         expected = np.array([295, 0, 120])
 
         assert np.array_equal(result, expected)
 
-        result = self.ds.spatial._swap_lon_axes(np.array([-180, 0, 180]), to=360)
+        result = self.ds.spatial._swap_lon_axis(np.array([-180, 0, 180]), to=360)
         expected = np.array([180, 0, 180])
 
         assert np.array_equal(result, expected)
 
     def test_swap_region_ndarray_from_360_to_180(self):
-        result = self.ds.spatial._swap_lon_axes(np.array([0, 120, 181, 360]), to=180)
+        result = self.ds.spatial._swap_lon_axis(np.array([0, 120, 181, 360]), to=180)
         expected = np.array([0, 120, -179, 0])
 
         assert np.array_equal(result, expected)
 
-        result = self.ds.spatial._swap_lon_axes(np.array([-0.25, 120, 359.75]), to=180)
+        result = self.ds.spatial._swap_lon_axis(np.array([-0.25, 120, 359.75]), to=180)
         expected = np.array([-0.25, 120, -0.25])
 
         assert np.array_equal(result, expected)
@@ -839,17 +839,16 @@ class TestCombineWeights:
         }
 
     def test_weights_for_single_axes_is_the_same(self):
-        result = self.ds.spatial._combine_weights(
-            axis=["lat"], axis_weights=self.axis_weights
-        )
+        axis_weights = self.axis_weights
+        del axis_weights["lon"]
+
+        result = self.ds.spatial._combine_weights(axis_weights=self.axis_weights)
         expected = self.axis_weights["lat"]
 
         assert result.identical(expected)
 
     def test_weights_for_multiple_axes_is_a_matrix_multiplication(self):
-        result = self.ds.spatial._combine_weights(
-            axis=["lat", "lon"], axis_weights=self.axis_weights
-        )
+        result = self.ds.spatial._combine_weights(axis_weights=self.axis_weights)
         expected = xr.DataArray(
             data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
             coords={"lat": self.ds.lat, "lon": self.ds.lon},
