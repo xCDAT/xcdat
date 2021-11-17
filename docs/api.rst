@@ -40,10 +40,10 @@ Methods
    :toctree: generated/
    :template: autosummary/accessor_method.rst
 
-    Dataset.xcdat.spatial_avg
     Dataset.xcdat.add_bounds
     Dataset.xcdat.get_bounds
     Dataset.xcdat.fill_missing_bounds
+    Dataset.xcdat.spatial_avg
 
 
 Dataset (individual accessors)
@@ -69,7 +69,7 @@ Methods
    :toctree: generated/
    :template: autosummary/accessor_method.rst
 
-    Dataset.spatial.spatial_avg
     Dataset.bounds.add_bounds
     Dataset.bounds.get_bounds
     Dataset.bounds.fill_missing_bounds
+    Dataset.spatial.spatial_avg
