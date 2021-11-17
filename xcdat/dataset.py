@@ -98,8 +98,8 @@ def open_mfdataset(
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable, while retaining any bounds data variables
 
-    ``data_vars`` defaults to `"minimal"`, which concatenates data variables in
-    a manner where only data variables in which the dimension already appears
+    ``data_vars`` defaults to ``"minimal"``, which concatenates data variables
+    in a manner where only data variables in which the dimension already appears
     are included. For example, the time dimension will not be concatenated to
     the dimensions of non-time data variables such as "lat_bnds" or "lon_bnds".
     `"minimal"` is required for some XCDAT functions, including spatial
