@@ -20,7 +20,7 @@ def open_dataset(
 
     - Decode both CF and non-CF compliant time units if the Dataset has a time
       dimension
-    - Fill missing bounds for supported axis
+    - Add missing bounds for supported axis
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable, while retaining any bounds data variables
 
@@ -78,7 +78,7 @@ def open_dataset(
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing_bounds()
+    ds = ds.bounds.add_missing_bounds()
     return ds
 
 
@@ -175,7 +175,7 @@ def open_mfdataset(
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing_bounds()
+    ds = ds.bounds.add_missing_bounds()
     return ds
 
 

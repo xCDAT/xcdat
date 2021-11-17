@@ -11,9 +11,9 @@ from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
 
-Coord = Literal["lat", "latitude", "lon", "longitude", "time"]
-#: Tuple of supported coordinates in XCDAT functions and methods.
-SUPPORTED_COORDS: Tuple[Coord, ...] = get_args(Coord)
+Axis = Literal["lat", "latitude", "lon", "longitude", "time"]
+#: Tuple of supported CF-compliant axes.
+SUPPORTED_AXES: Tuple[Axis, ...] = get_args(Axis)
 
 
 @xr.register_dataset_accessor("bounds")
@@ -28,28 +28,20 @@ class BoundsAccessor:
 
     Return dictionary of coordinate keys mapped to bounds DataArrays:
 
-    >>> ds = xr.open_dataset("file_path")
-    >>> bounds = ds.bounds.bounds
+    >>> ds.bounds.bounds
 
-    Fill missing coordinate bounds in the Dataset:
+    Add missing coordinate bounds for supported axes in the Dataset:
 
-    >>> ds = xr.open_dataset("file_path")
-    >>> ds = ds.bounds.fill_missing_bounds()
+    >>> ds = ds.bounds.add_missing_bounds()
 
     Get coordinate bounds if they exist:
 
-    >>> ds = xr.open_dataset("file_path")
-    >>>
-    >>> # Throws error if bounds don't exist
     >>> lat_bounds = ds.bounds.get_bounds("lat") # or pass "latitude"
     >>> lon_bounds = ds.bounds.get_bounds("lon") # or pass "longitude"
     >>> time_bounds = ds.bounds.get_bounds("time")
 
-    Add coordinates bounds if they don't exist:
+    Add coordinate bounds for a specific axis if they don't exist:
 
-    >>> ds = xr.open_dataset("file_path")
-    >>>
-    >>> # Throws error if bounds exist
     >>> ds = ds.bounds.add_bounds("lat")
     """
 
@@ -58,10 +50,11 @@ class BoundsAccessor:
 
     @property
     def bounds(self) -> Dict[str, Optional[xr.DataArray]]:
-        """Returns a mapping of coordinate and axis keys to their bounds.
+        """Returns a mapping of axes and coordinates keys to their bounds.
 
-        The dictionary provides all valid CF compliant keys for a coordinate.
-        For example, latitude will includes keys for "lat", "latitude", and "Y".
+        The dictionary provides all valid CF compliant keys for axes and
+        coordinates. For example, latitude will includes keys for "lat",
+        "latitude", and "Y".
 
         Returns
         -------
@@ -71,9 +64,9 @@ class BoundsAccessor:
         ds = self._dataset
 
         bounds: Dict[str, Optional[xr.DataArray]] = {}
-        for coord, bounds_name in ds.cf.bounds.items():
+        for axis, bounds_name in ds.cf.bounds.items():
             bound = ds.get(bounds_name[0], None)
-            bounds[coord] = bound
+            bounds[axis] = bound
 
         return collections.OrderedDict(sorted(bounds.items()))
 
@@ -96,37 +89,33 @@ class BoundsAccessor:
             )
         )
 
-    def fill_missing_bounds(self) -> xr.Dataset:
-        """Fills any missing bounds for supported coordinates in the Dataset.
+    def add_missing_bounds(self) -> xr.Dataset:
+        """Adds missing coordinate bounds for supported axes in the Dataset.
 
         Returns
         -------
         xr.Dataset
         """
-        coords = [
-            coord for coord in [*self._dataset.coords] if coord in SUPPORTED_COORDS
-        ]
+        axes = [axis for axis in [*self._dataset.coords] if axis in SUPPORTED_AXES]
 
-        for coord in coords:
+        for axis in axes:
             try:
-                self.get_bounds(coord)
+                self.get_bounds(axis)
             except KeyError:
                 try:
-                    self._dataset = self.add_bounds(coord)
+                    self._dataset = self.add_bounds(axis)
                 except ValueError as err:
-                    logger.debug(
-                        f"{err} Make sure '{coord}' coordinates don't require bounds."
-                    )
+                    logger.debug(f"{err}")
 
         return self._dataset
 
-    def get_bounds(self, coord: Coord) -> xr.DataArray:
-        """Get bounds for a coordinate.
+    def get_bounds(self, axis: Axis) -> xr.DataArray:
+        """Get bounds for axis coordinates.
 
         Parameters
         ----------
-        coord : Coord
-            The coordinate key.
+        axis : Axis
+            The axis key.
 
         Returns
         -------
@@ -136,33 +125,33 @@ class BoundsAccessor:
         Raises
         ------
         ValueError
-            If an incorrect ``coord`` argument is passed.
+            If an incorrect ``axis`` argument is passed.
 
         ValueError
             If bounds were not found. They must be added.
         """
-        if coord not in SUPPORTED_COORDS:
+        if axis not in SUPPORTED_AXES:
             raise ValueError(
-                "Incorrect `coord` argument. Supported coordinates include: Supported "
-                f"arguments include: {', '.join(SUPPORTED_COORDS)}."
+                "Incorrect `axis` argument. Supported axes include: "
+                f"include: {', '.join(SUPPORTED_AXES)}."
             )
 
         try:
-            bounds = self._dataset.cf.get_bounds(coord)
+            bounds = self._dataset.cf.get_bounds(axis)
         except KeyError:
-            raise KeyError(f"{coord} bounds were not found, they must be added.")
+            raise KeyError(f"{axis} bounds were not found, they must be added.")
 
         return bounds
 
-    def add_bounds(self, coord: Coord, width: float = 0.5) -> xr.Dataset:
-        """Add bounds for a coordinate using its data points.
+    def add_bounds(self, axis: Axis, width: float = 0.5) -> xr.Dataset:
+        """Add bounds for axis coordinates using coordinate data points.
 
         If bounds already exist, they must be dropped first.
 
         Parameters
         ----------
-        coord : Coord
-            The coordinate key.
+        axis : Axis
+            The axis key.
         width : float, optional
             Width of the bounds relative to the position of the nearest points,
             by default 0.5.
@@ -178,22 +167,22 @@ class BoundsAccessor:
             If bounds already exist. They must be dropped first.
         """
         try:
-            self.get_bounds(coord)
+            self.get_bounds(axis)
             raise ValueError(
-                f"{coord} bounds already exist. Drop them first to add new bounds."
+                f"{axis} bounds already exist. Drop them first to add new bounds."
             )
         except KeyError:
-            dataset = self._add_bounds(coord, width)
+            dataset = self._add_bounds(axis, width)
 
         return dataset
 
-    def _add_bounds(self, coord: Coord, width: float = 0.5) -> xr.Dataset:
-        """Adds bounds for a coordinate using its data points.
+    def _add_bounds(self, axis: Axis, width: float = 0.5) -> xr.Dataset:
+        """Add bounds for axis coordinates using coordinate data points.
 
         Parameters
         ----------
-        coord : Coord
-            The coordinate key.
+        axis : Axis
+            The axis key.
         width : float, optional
             Width of the bounds relative to the position of the nearest points,
             by default 0.5.
@@ -221,7 +210,7 @@ class BoundsAccessor:
 
         .. [2] https://cf-xarray.readthedocs.io/en/latest/generated/xarray.Dataset.cf.add_bounds.html#
         """
-        da_coord: xr.DataArray = self._get_coord(coord)
+        da_coord: xr.DataArray = self._get_coords(axis)
 
         # Validate coordinate shape and dimensions
         if da_coord.ndim != 1:
@@ -253,39 +242,39 @@ class BoundsAccessor:
 
         # Add coordinate bounds to the dataset
         dataset = self._dataset.copy()
-        var_name = f"{coord}_bnds"
+        var_name = f"{axis}_bnds"
         dataset[var_name] = xr.DataArray(
             name=var_name,
             data=bounds,
-            coords={coord: da_coord},
-            dims=[coord, "bnds"],
+            coords={axis: da_coord},
+            dims=[axis, "bnds"],
             attrs={"is_generated": "True"},
         )
         dataset[da_coord.name].attrs["bounds"] = var_name
 
         return dataset
 
-    def _get_coord(self, coord: Coord) -> xr.DataArray:
-        """Get the matching coordinate in the dataset.
+    def _get_coords(self, axis: Axis) -> xr.DataArray:
+        """Get the matching coordinates for an axis in the dataset.
 
         Parameters
         ----------
-        coord : Coord
-            The coordinate key.
+        axis : Axis
+            The axis key.
 
         Returns
         -------
         xr.DataArray
-            Matching coordinate in the Dataset.
+            Matching coordinates in the Dataset.
 
         Raises
         ------
         TypeError
-            If no matching coordinate is found in the Dataset.
+            If no matching coordinates are found in the Dataset.
         """
         try:
-            matching_coord = self._dataset.cf[coord]
+            matching_coord = self._dataset.cf[axis]
         except KeyError:
-            raise KeyError(f"No matching coordinates for coord: {coord}")
+            raise KeyError(f"No matching coordinates for axis: {axis}")
 
         return matching_coord
