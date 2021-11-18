@@ -119,8 +119,7 @@ class TestCheckTimeCfCompliant:
         self.file_path = f"{self.dir}/file.nc"
 
     def test_non_cf_compliant_time(self):
-        # Generate dummy datasets with non-CF compliant time units that aren't
-        # encoded yet.
+        # Generate dummy datasets with non-CF compliant time units
         ds = generate_dataset(cf_compliant=False, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
@@ -130,8 +129,7 @@ class TestCheckTimeCfCompliant:
         assert result is False
 
     def test_cf_compliant_time(self):
-        # Generate dummy datasets with non-CF compliant time units that aren't
-        # encoded yet.
+        # Generate dummy datasets with CF compliant time units
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
@@ -141,9 +139,9 @@ class TestCheckTimeCfCompliant:
         assert result is True
 
     def test_no_time_axis(self):
-        # Generate dummy datasets with non-CF compliant time units that aren't
-        # encoded yet.
+        # Generate dummy datasets with CF compliant time
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        # remove time axis
         ds = ds.isel(time=0)
         ds = ds.squeeze(drop=True)
         ds = ds.reset_coords()
@@ -156,8 +154,7 @@ class TestCheckTimeCfCompliant:
         assert result is None
 
     def test_glob_cf_compliant_time(self):
-        # Generate dummy datasets with non-CF compliant time units that aren't
-        # encoded yet.
+        # Generate dummy datasets with CF compliant time
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
@@ -167,8 +164,7 @@ class TestCheckTimeCfCompliant:
         assert result is True
 
     def test_list_cf_compliant_time(self):
-        # Generate dummy datasets with non-CF compliant time units that aren't
-        # encoded yet.
+        # Generate dummy datasets with CF compliant time units
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
