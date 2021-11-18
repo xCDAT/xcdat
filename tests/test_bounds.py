@@ -44,18 +44,18 @@ class TestBoundsAccessor:
         assert result == expected
 
 
-class TestFillMissingBounds:
+class TestAddMissingBounds:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
         self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_fills_bounds_in_dataset(self):
+    def test_adds_bounds_in_dataset(self):
         ds = self.ds_with_bnds.copy()
 
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
-        result = ds.bounds.fill_missing_bounds()
+        result = ds.bounds.add_missing_bounds()
         assert result.identical(self.ds_with_bnds)
 
     def test_does_not_fill_bounds_for_coord_of_len_less_than_2(
@@ -65,7 +65,7 @@ class TestFillMissingBounds:
         ds = ds.isel(time=slice(0, 1))
         ds = ds.drop_vars("time_bnds")
 
-        result = ds.bounds.fill_missing_bounds()
+        result = ds.bounds.add_missing_bounds()
         expected = ds.copy()
         assert result.identical(expected)
 
@@ -160,11 +160,11 @@ class TestGetCoord:
         ds = self.ds.copy()
 
         # Check lat axis coordinates exist
-        lat = ds.bounds._get_coord("lat")
+        lat = ds.bounds._get_coords("lat")
         assert lat is not None
 
         # Check lon axis coordinates exist
-        lon = ds.bounds._get_coord("lon")
+        lon = ds.bounds._get_coords("lon")
         assert lon is not None
 
     def test_raises_error_if_coord_does_not_exist(self):
@@ -172,4 +172,4 @@ class TestGetCoord:
 
         ds = ds.drop_dims("lat")
         with pytest.raises(KeyError):
-            ds.bounds._get_coord("lat")
+            ds.bounds._get_coords("lat")

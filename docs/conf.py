@@ -21,6 +21,8 @@ import os
 import sys
 from typing import Dict
 
+import sphinx_autosummary_accessors
+
 sys.path.insert(0, os.path.abspath(".."))  # noqa: I001, I003
 import xcdat  # noqa: I001, E402
 
@@ -35,6 +37,7 @@ import xcdat  # noqa: I001, E402
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
+    "sphinx_autosummary_accessors",
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinxcontrib.napoleon",
@@ -62,7 +65,7 @@ copybutton_prompt_text = r">>> |\.\.\. |\$ |In \[\d*\]: | {2,5}\.\.\.: | {5,8}: 
 copybutton_prompt_is_regexp = True
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ["_templates"]
+templates_path = ["_templates", sphinx_autosummary_accessors.templates_path]
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -118,6 +121,8 @@ html_theme = "sphinx_book_theme"
 #
 # sphinx_book_theme configurations
 # https://sphinx-book-theme.readthedocs.io/en/latest/configure.html
+html_logo = "_static/xcdat_logo.png"
+html_title = "XCDAT Documentation"
 html_theme_options = {
     "repository_url": "https://github.com/XCDAT/xcdat",
     "repository_branch": "master",
@@ -127,8 +132,8 @@ html_theme_options = {
     "use_issues_button": True,
     "use_download_button": True,
     "use_fullscreen_button": True,
+    "logo_only": True,
 }
-html_title = "XCDAT Documentation"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

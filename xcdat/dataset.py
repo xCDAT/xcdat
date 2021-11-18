@@ -3,6 +3,7 @@ from typing import Any, Dict, Hashable, List, Optional, Union
 
 import pandas as pd
 import xarray as xr
+from typing_extensions import Literal
 
 from xcdat import bounds  # noqa: F401
 from xcdat.logger import setup_custom_logger
@@ -17,10 +18,15 @@ def open_dataset(
 
     Operations include:
 
-    - If the dataset has a time dimension, decode both CF and non-CF time units.
-    - Generate bounds for supported coordinates if they don't exist.
+    - Decode both CF and non-CF compliant time units if the Dataset has a time
+      dimension
+    - Add missing bounds for supported axis
     - Option to limit the Dataset to a single regular (non-bounds) data
-      variable while retaining any bounds data variables.
+      variable, while retaining any bounds data variables
+
+    ``decode_times`` is statically set to ``False``. This enables a check
+    for whether the units in the time dimension (if it exists) contains CF or
+    non-CF compliant units, which determines if manual decoding is necessary.
 
     Parameters
     ----------
@@ -29,11 +35,8 @@ def open_dataset(
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
     kwargs : Dict[str, Any]
-        Additional arguments passed on to ``xarray.open_dataset``.
-
-        - Visit the xarray docs for accepted arguments [1]_.
-        - ``decode_times`` defaults to ``False`` to allow for the manual
-          decoding of non-CF time units.
+        Additional arguments passed on to ``xarray.open_dataset``. Refer to the
+        [1]_ xarray docs for accepted keyword arguments.
 
     Returns
     -------
@@ -75,23 +78,36 @@ def open_dataset(
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing_bounds()
+    ds = ds.bounds.add_missing_bounds()
     return ds
 
 
 def open_mfdataset(
     paths: Union[str, List[str]],
     data_var: Optional[str] = None,
+    data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
     """Wrapper for ``xarray.open_mfdataset()`` that applies common operations.
 
     Operations include:
 
-    - If the dataset has a time dimension, decode both CF and non-CF time units.
-    - Generate bounds for supported coordinates if they don't exist.
+    - Decode both CF and non-CF compliant time units if the Dataset has a time
+      dimension
+    - Fill missing bounds for supported axis
     - Option to limit the Dataset to a single regular (non-bounds) data
-      variable while retaining any bounds data variables.
+      variable, while retaining any bounds data variables
+
+    ``data_vars`` defaults to ``"minimal"``, which concatenates data variables
+    in a manner where only data variables in which the dimension already appears
+    are included. For example, the time dimension will not be concatenated to
+    the dimensions of non-time data variables such as "lat_bnds" or "lon_bnds".
+    `"minimal"` is required for some XCDAT functions, including spatial
+    averaging where a reduction is performed using the lat/lon bounds.
+
+    ``decode_times`` is statically set to ``False``. This enables a check
+    for whether the units in the time dimension (if it exists) contains CF or
+    non-CF compliant units, which determines if manual decoding is necessary.
 
     Parameters
     ----------
@@ -103,13 +119,21 @@ def open_mfdataset(
         for details). (A string glob will be expanded to a 1-dimensional list.)
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
+    data_vars: Union[Literal["minimal", "different", "all"], List[str]], optional
+        These data variables will be concatenated together:
+          * "minimal": Only data variables in which the dimension already
+            appears are included, default.
+          * "different": Data variables which are not equal (ignoring
+            attributes) across all datasets are also concatenated (as well as
+            all for which dimension already appears). Beware: this option may
+            load the data payload of data variables into memory if they are not
+            already loaded.
+          * "all": All data variables will be concatenated.
+          * list of str: The listed data variables will be concatenated, in
+            addition to the "minimal" data variables.
     kwargs : Dict[str, Any]
-        Additional arguments passed on to ``xarray.open_mfdataset`` and/or
-        ``xarray.open_dataset``.
-
-        - Visit the xarray docs for accepted arguments, [2]_ and [3]_.
-        - ``decode_times`` defaults to ``False`` to allow for the manual
-          decoding of non-CF time units.
+        Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
+        the [2]_ xarray docs for accepted keyword arguments.
 
     Returns
     -------
@@ -127,7 +151,6 @@ def open_mfdataset(
     ----------
 
     .. [2] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
-    .. [3] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
 
     Examples
     --------
@@ -146,13 +169,13 @@ def open_mfdataset(
     >>> from xcdat.dataset import open_dataset
     >>> ds = open_mfdataset(["file_path1", "file_path2"], data_var=["ts", "tas"])
     """
-    ds = xr.open_mfdataset(paths, decode_times=False, **kwargs)
+    ds = xr.open_mfdataset(paths, decode_times=False, data_vars=data_vars, **kwargs)
     ds = infer_or_keep_var(ds, data_var)
 
     if ds.cf.dims.get("T") is not None:
         ds = decode_time_units(ds)
 
-    ds = ds.bounds.fill_missing_bounds()
+    ds = ds.bounds.add_missing_bounds()
     return ds
 
 
