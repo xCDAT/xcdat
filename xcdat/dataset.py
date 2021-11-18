@@ -1,4 +1,5 @@
 """Dataset module for functions related to an xarray.Dataset."""
+from glob import glob
 from typing import Any, Dict, Hashable, List, Optional, Union
 
 import pandas as pd
@@ -169,11 +170,19 @@ def open_mfdataset(
     >>> from xcdat.dataset import open_dataset
     >>> ds = open_mfdataset(["file_path1", "file_path2"], data_var=["ts", "tas"])
     """
-    ds = xr.open_mfdataset(paths, decode_times=False, data_vars=data_vars, **kwargs)
-    ds = infer_or_keep_var(ds, data_var)
+    # check if time axis is cf_compliant
+    cf_compliant = _check_dataset_for_cf_compliant_time(paths)
 
-    if ds.cf.dims.get("T") is not None:
-        ds = decode_time_units(ds)
+    # if cf_compliant, let xarray decode the time units
+    # otherwise, decode using decode_time_units
+    if cf_compliant:
+        ds = xr.open_mfdataset(paths, decode_times=True, data_vars=data_vars, **kwargs)
+    else:
+        ds = xr.open_mfdataset(paths, decode_times=False, data_vars=data_vars, **kwargs)
+        if ds.cf.dims.get("T") is not None:
+            ds = decode_time_units(ds)
+
+    ds = infer_or_keep_var(ds, data_var)
 
     ds = ds.bounds.add_missing_bounds()
     return ds
@@ -362,6 +371,68 @@ def decode_time_units(dataset: xr.Dataset):
 
         dataset = dataset.assign_coords({"time": decoded_time})
     return dataset
+
+
+def _check_dataset_for_cf_compliant_time(path: Union[str, List[str]]):
+    """Determine if a dataset has cf_compliant time
+
+    Operations include:
+
+    - Open the file / dataset (in the case of multi-file datasets, only open
+      one file)
+    - Determine the time units and whether they are cf-compliant
+    - Return a Boolean (None if the time axis or time units do not exist)
+
+    Parameters
+    ----------
+    path : Union[str, List[str]]
+        Either a file (``"file.nc"``), a string glob in the form
+        ``"path/to/my/files/*.nc"``, or an explicit list of files to open.
+        Paths can be given as strings or as pathlib Paths. If concatenation
+        along more than one dimension is desired, then ``paths`` must be a
+        nested list-of-lists (see ``combine_nested`` for details). (A string
+        glob will be expanded to a 1-dimensional list.)
+
+    Returns
+    -------
+    Boolean
+        True if dataset is cf_compliant or False if not
+        Returns None if time or time units are not present
+
+    Notes
+    -----
+    This function only checks one file of multifile datasets (for performance).
+
+    """
+    # non-cf compliant units handled by xcdat
+    # Note: Should this be defined more globally? Is it possible to do the
+    # opposite (e.g., get the list of cf_compliant units and check that)?
+    non_cf_units_to_freq = ["months", "years"]
+
+    # Get one example file to check
+    # Note: This doesn't handle pathlib paths or a list of lists
+    if type(path) == str:
+        if "*" in path:
+            fn1 = glob(path)[0]
+        else:
+            fn1 = path
+    else:
+        fn1 = path[0]
+
+    # Open one file
+    ds = xr.open_dataset(fn1, decode_times=False)
+    # if there is no time dimension return None for the time units
+    # else get the time units
+    if ds.cf.dims.get("T") is None:
+        cf_compliant = None
+    else:
+        time = ds["time"]
+        units_attr = time.attrs.get("units")
+        units, reference_date = units_attr.split(" since ")
+        cf_compliant = units not in non_cf_units_to_freq
+    ds.close()
+
+    return cf_compliant
 
 
 def get_inferred_var(dataset: xr.Dataset) -> xr.DataArray:
