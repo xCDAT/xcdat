@@ -7,6 +7,7 @@ import xarray as xr
 
 from tests.fixtures import generate_dataset
 from xcdat.dataset import (
+    _check_dataset_for_cf_compliant_time,
     decode_time_units,
     get_inferred_var,
     infer_or_keep_var,
@@ -105,6 +106,77 @@ class TestOpenDataset:
         result_data_vars = list(result.data_vars.keys())
         assert "lat_bnds" in result_data_vars
         assert "lon_bnds" in result_data_vars
+
+
+class TestCheckTimeCfCompliant:
+    @pytest.fixture(autouse=True)
+    def setUp(self, tmp_path):
+        # Create temporary directory to save files.
+        self.dir = tmp_path / "input_data"
+        self.dir.mkdir()
+
+        # Paths to the dummy datasets.
+        self.file_path = f"{self.dir}/file.nc"
+
+    def test_non_cf_compliant_time(self):
+        # Generate dummy datasets with non-CF compliant time units that aren't
+        # encoded yet.
+        ds = generate_dataset(cf_compliant=False, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        result = _check_dataset_for_cf_compliant_time(self.file_path)
+
+        # Check that False is returned when the dataset has non-cf_compliant time
+        assert result is False
+
+    def test_cf_compliant_time(self):
+        # Generate dummy datasets with non-CF compliant time units that aren't
+        # encoded yet.
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        result = _check_dataset_for_cf_compliant_time(self.file_path)
+
+        # Check that True is returned when the dataset has cf_compliant time
+        assert result is True
+
+    def test_no_time_axis(self):
+        # Generate dummy datasets with non-CF compliant time units that aren't
+        # encoded yet.
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds = ds.isel(time=0)
+        ds = ds.squeeze(drop=True)
+        ds = ds.reset_coords()
+        ds = ds.drop_vars("time")
+        ds.to_netcdf(self.file_path)
+
+        result = _check_dataset_for_cf_compliant_time(self.file_path)
+
+        # Check that None is returned when there is no time axis
+        assert result is None
+
+    def test_glob_cf_compliant_time(self):
+        # Generate dummy datasets with non-CF compliant time units that aren't
+        # encoded yet.
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        result = _check_dataset_for_cf_compliant_time(f"{self.dir}" + "/*.nc")
+
+        # Check that the wildcard path input is correctly evaluated
+        assert result is True
+
+    def test_list_cf_compliant_time(self):
+        # Generate dummy datasets with non-CF compliant time units that aren't
+        # encoded yet.
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        flist = [self.file_path, self.file_path, self.file_path]
+        result = _check_dataset_for_cf_compliant_time(flist)
+
+        # Check that the list input is correctly evaluated
+        assert result is True
 
 
 class TestOpenMfDataset:
