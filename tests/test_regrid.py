@@ -30,29 +30,6 @@ class TestXESMFRegridder:
         with pytest.raises(ValueError):
             xesmf.XESMFRegridder(ds, new_grid, "bilinear", extrap_method="bad value")
 
-    def test_inferred_data_var(self):
-        ds = self.ds.copy()
-        ds.attrs["xcdat_infer"] = "ts"
-
-        new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
-
-        regridder = xesmf.XESMFRegridder(ds, new_grid, "bilinear")
-
-        result = regridder.regrid(ds)
-
-        assert result.ts.shape == (12, 45, 72)
-
-    def test_non_inferred_data_var(self):
-        ds = self.ds.copy()
-
-        new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
-
-        regridder = xesmf.XESMFRegridder(ds, new_grid, "bilinear", "ts")
-
-        result = regridder.regrid(ds)
-
-        assert result.ts.shape == (12, 45, 72)
-
 
 class TestGrid:
     def test_uniform_grid(self):
