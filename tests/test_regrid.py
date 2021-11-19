@@ -44,7 +44,10 @@ class TestGrid:
         assert new_grid.lon.units == "degrees_east"
 
     def test_gaussian_grid(self):
-        pass
+        new_grid = grid.create_gaussian_grid(32)
+
+        assert new_grid.lat.shape == (32,)
+        assert new_grid.lon.shape == (64,)
 
     def test_global_mean_grid(self):
         pass
