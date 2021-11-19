@@ -2,11 +2,8 @@ from unittest import mock
 
 import pytest
 
-from xcdat.regridder import accessor
-from xcdat.regridder import base
-from xcdat.regridder import grid
-from xcdat.regridder import xesmf
 from tests import fixtures
+from xcdat.regridder import accessor, base, grid, xesmf
 
 
 # TODO improve testing
