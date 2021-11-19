@@ -1,11 +1,7 @@
-from typing import Any
-
 import xarray as xr
 import xesmf as xe
 
-from xcdat import dataset
 from xcdat.regridder.base import BaseRegridder
-
 
 VALID_METHODS = [
     "bilinear",
