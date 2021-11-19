@@ -72,9 +72,7 @@ class DatasetRegridderAccessor:
         >>> ds.regridder.regrid(out_grid, tool="xesmf", method="bilinear")
         """
         try:
-            regridder = REGRID_TOOLS[tool](
-                self._ds, dst_grid, method=method, **options
-            )
+            regridder = REGRID_TOOLS[tool](self._ds, dst_grid, method=method, **options)
         except KeyError as e:
             raise ValueError(
                 f"Tool {e!s} does not exist, valid choices {list(REGRID_TOOLS)}"
