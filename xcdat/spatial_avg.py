@@ -369,11 +369,12 @@ class SpatialAverageAccessor:
 
         1. Align the axis orientations of the domain and region bounds to
            (0, 360) to ensure compatibility in the proceeding steps.
-        2. Handle grid cells that cross the prime meridian (e.g., [-1, 1])
-           by recreating the axis with two additional grid cells ([0, 1] and
-           [359, 360]) to ensure alignment with the (0, 360) axis orientation.
-           The prime meridian grid cell is returned as a variable to handle
-           the length of weights in a proceeding step.
+        2. Handle grid cells that cross the prime meridian (e.g., [-1, 1]) by
+           breaking such grid cells into two (e.g., [0, 1] and [359, 360]) to
+           ensure alignment with the (0, 360) axis orientation. This results in
+           a bounds axis of length(nlon)+1. The index of the grid cell that
+           crosses the prime meridian is returned in order to reduce the length
+           of weights to nlon.
         3. Scale the domain down to a region (if selected).
         4. Calculate weights using the domain bounds.
         5. If the prime meridian grid cell exists, use this cell's index to

@@ -396,7 +396,7 @@ class TestGetWeights:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_returns_area_weights_for_region_within_lat_and_lon(self):
+    def test_area_weights_for_region_within_lat_and_lon(self):
         result = self.ds.spatial._get_weights(
             axis=["lat", "lon"], lat_bounds=(-5, 5), lon_bounds=(-170, -120)
         )
@@ -415,7 +415,7 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_returns_area_weights_for_region_within_lat(self):
+    def test_area_weights_for_region_within_lat(self):
         result = self.ds.spatial._get_weights(
             axis=["lat", "lon"], lat_bounds=(-5, 5), lon_bounds=None
         )
@@ -434,7 +434,7 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_returns_area_weights_for_region_within_lon(self):
+    def test_area_weights_for_region_within_lon(self):
         expected = xr.DataArray(
             data=np.array(
                 [
@@ -459,36 +459,67 @@ class TestGetLongitudeWeights:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_returns_area_weights_for_region_within_lon(self):
-        expected = xr.DataArray(
-            data=np.array([0.0, 0.0, 50.0, 0.0]),
-            coords={"lon": self.ds.lon},
-            dims=["lon"],
-        )
+    def test_returns_weights_for_region_in_lon(self):
         # Longitude axes orientation swaps from (-180, 180) to (0, 360).
         result = self.ds.spatial._get_longitude_weights(
             domain_bounds=self.ds.lon_bnds.copy(),
             region_bounds=np.array([-170.0, -120.0]),
         )
-
-        xr.testing.assert_allclose(result, expected)
-
-    def test_returns_area_weights_for_region_within_lon_including_prime_meridian_cell(
-        self,
-    ):
-        ds = self.ds.copy()
-        ds.lon_bnds.data[:] = np.array([[359, 1], [1, 90], [90, 180], [180, 359]])
-
         expected = xr.DataArray(
-            data=np.array([0.0, 0.0, 0.0, 50.0]),
+            data=np.array([0.0, 0.0, 50.0, 0.0]),
             coords={"lon": self.ds.lon},
             dims=["lon"],
         )
 
+        xr.testing.assert_allclose(result, expected)
+
+    def test_weights_for_region_in_lon_domain_with_both_spanning_p_meridian(self):
+        ds = self.ds.copy()
+        # Domain spans prime meridian.
+        ds.lon_bnds.data[:] = np.array([[359, 1], [1, 90], [90, 180], [180, 359]])
+
+        result = ds.spatial._get_longitude_weights(
+            domain_bounds=ds.lon_bnds,
+            # Region spans prime meridian.
+            region_bounds=np.array([359, 1]),
+        )
+        expected = xr.DataArray(
+            data=np.array([2.0, 0.0, 0.0, 0.0]),
+            coords={"lon": ds.lon},
+            dims=["lon"],
+          
+        xr.testing.assert_allclose(result, expected)
+
+    def test_weights_for_region_in_lon_domain_with_domain_spanning_p_meridian(self):
+        ds = self.ds.copy()
+        # Domain spans prime meridian.
+        ds.lon_bnds.data[:] = np.array([[359, 1], [1, 90], [90, 180], [180, 359]])
+
         # Longitude axes orientation swaps from (-180, 180) to (0, 360).
-        result = self.ds.spatial._get_longitude_weights(
-            domain_bounds=self.ds.lon_bnds,
+        result = ds.spatial._get_longitude_weights(
+            domain_bounds=ds.lon_bnds,
             region_bounds=np.array([-170.0, -120.0]),
+        )
+        expected = xr.DataArray(
+            data=np.array([0.0, 0.0, 0.0, 50.0]),
+            coords={"lon": ds.lon},
+            dims=["lon"],
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_weights_for_region_in_lon_domain_with_region_spanning_p_meridian(self):
+        ds = self.ds.copy()
+
+        result = ds.spatial._get_longitude_weights(
+            domain_bounds=ds.lon_bnds,
+            # Region spans prime meridian.
+            region_bounds=np.array([359, 1]),
+        )
+        expected = xr.DataArray(
+            data=np.array([1.875, 0.0625, 0.0, 0.0625]),
+            coords={"lon": ds.lon},
+            dims=["lon"],
         )
 
         xr.testing.assert_allclose(result, expected)
@@ -528,7 +559,7 @@ class TestGetLatitudeWeights:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_returns_area_weights_for_region_within_lat(self):
+    def test_weights_for_region_within_lat(self):
         expected = xr.DataArray(
             data=np.array([0.0, 0.087156, 0.087156, 0.0]),
             coords={"lat": self.ds.lat},
