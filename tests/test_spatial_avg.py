@@ -465,7 +465,6 @@ class TestGetLongitudeWeights:
             domain_bounds=self.ds.lon_bnds.copy(),
             region_bounds=np.array([-170.0, -120.0]),
         )
-
         expected = xr.DataArray(
             data=np.array([0.0, 0.0, 50.0, 0.0]),
             coords={"lon": self.ds.lon},
@@ -488,8 +487,7 @@ class TestGetLongitudeWeights:
             data=np.array([2.0, 0.0, 0.0, 0.0]),
             coords={"lon": ds.lon},
             dims=["lon"],
-        )
-
+          
         xr.testing.assert_allclose(result, expected)
 
     def test_weights_for_region_in_lon_domain_with_domain_spanning_p_meridian(self):
