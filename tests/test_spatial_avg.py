@@ -540,7 +540,7 @@ class TestGetLongitudeWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_weights_all_longitudes_for_explicit_equal_region_bounds(self):
+    def test_weights_for_equal_region_bounds_representing_entire_lon_domain(self):
         expected = xr.DataArray(
             data=np.array(
                 [1.875, 178.125, 178.125, 1.875],
