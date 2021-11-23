@@ -220,9 +220,8 @@ class SpatialAverageAccessor:
         index_bad_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
         if len(index_bad_cells) > 0:
             raise ValueError(
-                "The bounds have unexpected ordering: "
-                "A lower bound has a greater value than an "
-                "upper bound"
+                "The bounds have unexpected ordering. A lower bound has a "
+                "greater value than an upper bound."
             )
 
     def _validate_region_bounds(self, axis: SupportedAxes, bounds: RegionAxisBounds):
@@ -425,8 +424,8 @@ class SpatialAverageAccessor:
         """Gets weights for the latitude axis.
 
         This method scales the domain to a region (if selected). It also scales
-        the area between two lines of latitude scales as the difference of the
-        sine of latitude bounds.
+        the area between two lines of latitude as the difference of the sine of
+        latitude bounds.
 
         Parameters
         ----------
@@ -514,11 +513,11 @@ class SpatialAverageAccessor:
             )
 
         p_meridian_index = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
-        if len(p_meridian_index) == 0:
+        if p_meridian_index.size == 0:
             p_meridian_index = None
-        elif len(p_meridian_index) > 1:
+        elif p_meridian_index.size > 1:
             raise ValueError("More than one grid cell spans prime meridian.")
-        elif len(p_meridian_index) == 1:
+        elif p_meridian_index.size == 1:
             # Example array: [[359, 1], [1, 90], [90, 180], [180, 359]]
             # Reorient bound to span across zero (i.e., [359, 1] -> [-1, 1]).
             # Result: [[-1, 1], [1, 90], [90, 180], [180, 359]]

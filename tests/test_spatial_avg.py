@@ -396,7 +396,7 @@ class TestGetWeights:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_area_weights_for_region_within_lat_and_lon(self):
+    def test_weights_for_region_in_lat_and_lon_domains(self):
         result = self.ds.spatial._get_weights(
             axis=["lat", "lon"], lat_bounds=(-5, 5), lon_bounds=(-170, -120)
         )
@@ -415,7 +415,7 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_area_weights_for_region_within_lat(self):
+    def test_area_weights_for_region_in_lat_domain(self):
         result = self.ds.spatial._get_weights(
             axis=["lat", "lon"], lat_bounds=(-5, 5), lon_bounds=None
         )
@@ -434,7 +434,7 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_area_weights_for_region_within_lon(self):
+    def test_weights_for_region_in_lon_domain(self):
         expected = xr.DataArray(
             data=np.array(
                 [
@@ -560,7 +560,7 @@ class TestGetLatitudeWeights:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_weights_for_region_within_lat(self):
+    def test_weights_for_region_in_lat_domain(self):
         expected = xr.DataArray(
             data=np.array([0.0, 0.087156, 0.087156, 0.0]),
             coords={"lat": self.ds.lat},
@@ -870,7 +870,7 @@ class TestCombineWeights:
             ),
         }
 
-    def test_weights_for_single_axes_is_the_same(self):
+    def test_weights_for_single_axis_are_identical(self):
         axis_weights = self.axis_weights
         del axis_weights["lon"]
 
@@ -879,7 +879,7 @@ class TestCombineWeights:
 
         assert result.identical(expected)
 
-    def test_weights_for_multiple_axes_is_a_matrix_multiplication(self):
+    def test_weights_for_multiple_axis_is_the_product_of_matrix_multiplication(self):
         result = self.ds.spatial._combine_weights(axis_weights=self.axis_weights)
         expected = xr.DataArray(
             data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
