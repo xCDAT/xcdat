@@ -459,7 +459,7 @@ class TestGetLongitudeWeights:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_returns_weights_for_region_in_lon(self):
+    def test_weights_for_region_in_lon_domain(self):
         # Longitude axes orientation swaps from (-180, 180) to (0, 360).
         result = self.ds.spatial._get_longitude_weights(
             domain_bounds=self.ds.lon_bnds.copy(),
