@@ -31,7 +31,7 @@ class SpatialAverageAccessor:
         self,
         data_var: Optional[str] = None,
         axis: Union[List[SupportedAxes], SupportedAxes] = ["lat", "lon"],
-        weights: xr.DataArray = None,
+        weights: Union[Literal["generate"], xr.DataArray] = "generate",
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
     ) -> xr.Dataset:
@@ -58,11 +58,12 @@ class SpatialAverageAccessor:
         axis : Union[List[SupportedAxes], SupportedAxes]
             List of axis dimensions or single axes dimension to average over.
             For example, ["lat", "lon"]  or "lat", by default ["lat", "lon"].
-        weights : Optional[xr.DataArray], optional
-            A DataArray containing the regional weights used for weighted
+        weights : Union[Literal["generate"], xr.DataArray], optional
+            If "generate", then weights are generated. Otherwise, pass a
+            DataArray containing the regional weights used for weighted
             averaging. ``weights`` must include the same spatial axis dimensions
-            and have the same dimensional sizes as the data variable. If None,
-            then weights are generated; by default None.
+            and have the same dimensional sizes as the data variable, by default
+            "generate".
         lat_bounds : Optional[RegionAxisBounds], optional
             A tuple of floats/ints for the regional latitude lower and upper
             boundaries. This arg is used when calculating axis weights, but is
@@ -140,7 +141,7 @@ class SpatialAverageAccessor:
 
         axis = self._validate_axis(da_data_var, axis)
 
-        if weights is None:
+        if weights == "generate":
             if lat_bounds is not None:
                 self._validate_region_bounds("lat", lat_bounds)
             if lon_bounds is not None:
@@ -182,8 +183,8 @@ class SpatialAverageAccessor:
         if isinstance(axis, str):
             axis = [axis]
 
-        for axes in axis:
-            if axes not in SUPPORTED_AXES:
+        for dim in axis:
+            if dim not in SUPPORTED_AXES:
                 raise ValueError(
                     "Incorrect `axis` argument. Supported axes include: "
                     f"{', '.join(SUPPORTED_AXES)}."
@@ -194,14 +195,34 @@ class SpatialAverageAccessor:
             # linked to a "latitude" key ), and cf_xarray does not support
             # `data_var.cf.get(axes, None)`.
             try:
-                data_var.cf[axes]
+                data_var.cf[dim]
             except KeyError:
                 raise KeyError(
-                    f"The data variable '{data_var.name}' is missing a '{axes}' "
+                    f"The data variable '{data_var.name}' is missing a '{dim}' "
                     "dimension, which is required for spatial averaging."
                 )
 
         return axis
+
+    def _validate_domain_bounds(self, domain_bounds: xr.DataArray):
+        """Validates the ``domain_bounds`` arg based on a set of criteria.
+
+        Parameters
+        ----------
+        domain_bounds: xr.DataArray
+            The bounds of an axis
+
+        Raises
+        ------
+        TypeError
+            If the ``domain_bounds`` of a grid cell are not ordered low-to-high.
+        """
+        index_bad_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
+        if len(index_bad_cells) > 0:
+            raise ValueError(
+                "The bounds have unexpected ordering. A lower bound has a "
+                "greater value than an upper bound."
+            )
 
     def _validate_region_bounds(self, axis: SupportedAxes, bounds: RegionAxisBounds):
         """Validates the ``bounds`` arg based on a set of criteria.
@@ -246,7 +267,7 @@ class SpatialAverageAccessor:
 
         if not isinstance(upper, float) and not isinstance(upper, int):
             raise TypeError(
-                f"Theregional {axis} upper bound is not a float or an integer."
+                f"The regional {axis} upper bound is not a float or an integer."
             )
 
         # For latitude, require that the upper bound be larger than the lower
@@ -303,109 +324,228 @@ class SpatialAverageAccessor:
         """
         BoundsByType = TypedDict(
             "BoundsByType",
-            {"domain": Optional[xr.DataArray], "region": Optional[RegionAxisBounds]},
+            {"domain": xr.DataArray, "region": Optional[RegionAxisBounds]},
         )
+
         bounds: Dict[str, BoundsByType] = {
             "lat": {
-                "domain": self._dataset.bounds.get_bounds("lat"),
+                "domain": self._dataset.bounds.get_bounds("lat").copy(),
                 "region": lat_bounds,
             },
             "lon": {
-                "domain": self._dataset.bounds.get_bounds("lon"),
+                "domain": self._dataset.bounds.get_bounds("lon").copy(),
                 "region": lon_bounds,
             },
         }
         axis_weights: AxisWeights = {}
-
         for dim, bounds_by_type in bounds.items():
-            domain_bounds = bounds_by_type["domain"]
-            region_bounds = bounds_by_type["region"]
+            if dim in axis:
+                d_bounds = bounds_by_type["domain"]
+                self._validate_domain_bounds(d_bounds)
 
-            if domain_bounds is not None:
-                dom_bounds = domain_bounds.copy()
+                r_bounds = bounds_by_type["region"]
+                if r_bounds is not None:
+                    r_bounds = np.array(r_bounds, dtype="float")
 
-                if region_bounds is not None:
-                    reg_bounds = np.array(region_bounds).astype(float)
-                    if dim == "lon":
-                        # Forces longitude bounds linearity for elements where
-                        # the upper value is greater than the lower value (e.g.,
-                        # across prime meridian or dateline) to avoid issues
-                        # in operations/calculations that operate using the lon
-                        # bounds.
-                        dom_bounds, reg_bounds = self._force_lon_linearity(
-                            dom_bounds, reg_bounds
-                        )
-                        # If the region bounds are equal, it means all longitude
-                        # values are specified (e.g., (360, 360) == (0, 360)).
-                        # As a result, set the region lon bounds to the domain
-                        # lon bounds (which represents all values).
-                        reg_bounds = self._set_equal_lon_bounds_to_domain(
-                            domain_bounds, reg_bounds
-                        )
-                    dom_bounds = self._scale_domain_to_region(dom_bounds, reg_bounds)
+                if dim == "lon":
+                    weights = self._get_longitude_weights(d_bounds, r_bounds)
+                elif dim == "lat":
+                    weights = self._get_latitude_weights(d_bounds, r_bounds)
 
-                if dim == "lat":
-                    # The area between two lines of latitude scales as the
-                    # difference of the sine of latitude bounds. This scaling
-                    # is applied here.
-                    dom_bounds = np.sin(np.radians(dom_bounds))
+                weights.attrs = d_bounds.attrs
+                weights.name = dim + "_wts"
+                axis_weights[dim] = weights
 
-                # Perform differencing to get weights and add metadata.
-                dim_wts = np.abs(dom_bounds[:, 1] - dom_bounds[:, 0])
-                dim_wts.attrs = dom_bounds.attrs
-                dim_wts.name = dim + "_wts"
-                axis_weights[dim] = dim_wts
-
-        weights = self._combine_weights(axis, axis_weights)
+        weights = self._combine_weights(axis_weights)
         return weights
 
-    def _force_lon_linearity(
-        self, domain_bounds: xr.DataArray, region_bounds: np.ndarray
-    ) -> Tuple[xr.DataArray, np.ndarray]:
-        """
-        Forces linearity for longitude bounds elements where the lower bound
-        is greater than the upper bound.
+    def _get_longitude_weights(
+        self, domain_bounds: xr.DataArray, region_bounds: np.array
+    ) -> xr.DataArray:
+        """Gets weights for the longitude axis.
 
-        Linearity is ensured so that operations performed using the longitude
-        axes and longitude bounds do not produce incorrect outputs. Across the
-        prime meridian or dateline are examples of where the lower bound may be
-        greater than the upper bound.
+        This method performs longitudinal processing including (in order):
+
+        1. Align the axis orientations of the domain and region bounds to
+           (0, 360) to ensure compatibility in the proceeding steps.
+        2. Handle grid cells that cross the prime meridian (e.g., [-1, 1]) by
+           breaking such grid cells into two (e.g., [0, 1] and [359, 360]) to
+           ensure alignment with the (0, 360) axis orientation. This results in
+           a bounds axis of length(nlon)+1. The index of the grid cell that
+           crosses the prime meridian is returned in order to reduce the length
+           of weights to nlon.
+        3. Scale the domain down to a region (if selected).
+        4. Calculate weights using the domain bounds.
+        5. If the prime meridian grid cell exists, use this cell's index to
+           handle the weights vector's increased length as a result of the two
+           additional grid cells. The extra weights are added to the prime
+           meridian grid cell and removed from the weights vector to ensure the
+           lengths of the weights and its corresponding domain remain in
+           alignment.
 
         Parameters
         ----------
         domain_bounds : xr.DataArray
-            The domain longitude bounds.
-        region_bounds : np.ndarray
-            The region longitude bounds.
+            The array of bounds for the latitude domain.
+        region_bounds : np.array
+            The array of bounds for latitude regional selection.
 
         Returns
         -------
-        Tuple[xr.DataArray, np.ndarray]
-            Tuple consisting of the domain bounds and region bounds.
+        xr.DataArray
+            The longitude axes weights.
         """
-        # Normalize the lon axis orientation to 360 for domain and region
-        # bounds for orientation compatibility in the proceeding operations.
-        d_bounds: xr.DataArray = self._swap_lon_axes(domain_bounds.copy(), to=360)
-        r_bounds: np.ndarray = self._swap_lon_axes(region_bounds.copy(), to=360)
+        p_meridian_index: Optional[np.array] = None
 
-        # Find lon bound elements where the lower bound is greater than the
-        # upper bound (e.g., across prime meridian or dateline, (359.375, 0.625))
-        # and force them to be linearly continuous.
-        row_indices = np.where((d_bounds[:, 1] - d_bounds[:, 0]) < 0)[0]
+        if region_bounds is not None:
+            domain_bounds = self._swap_lon_axis(domain_bounds, to=360)
+            region_bounds = self._swap_lon_axis(region_bounds, to=360)
 
-        if len(row_indices) > 0:
-            d_bounds[row_indices, 1] = d_bounds[row_indices, 1] + 360.0
+            is_region_circular = region_bounds[1] - region_bounds[0] == 0
+            if is_region_circular:
+                region_bounds = np.array([0.0, 360.0])
 
-        region_indices = np.where(r_bounds < float(np.min(d_bounds)))[0]
-        if len(region_indices) > 0:
-            r_bounds[region_indices] = r_bounds[region_indices] + 360.0
+            (
+                domain_bounds,
+                p_meridian_index,
+            ) = self._align_longitude_to_360_axis(domain_bounds)
+            domain_bounds = self._scale_domain_to_region(domain_bounds, region_bounds)
 
-        return d_bounds, r_bounds
+        weights = self._calculate_weights(domain_bounds)
+        if p_meridian_index is not None:
+            weights[p_meridian_index] = weights[p_meridian_index] + weights[-1]
+            weights = weights[0:-1]
 
-    def _swap_lon_axes(
+        return weights
+
+    def _get_latitude_weights(
+        self, domain_bounds: xr.DataArray, region_bounds: xr.DataArray
+    ) -> xr.DataArray:
+        """Gets weights for the latitude axis.
+
+        This method scales the domain to a region (if selected). It also scales
+        the area between two lines of latitude as the difference of the sine of
+        latitude bounds.
+
+        Parameters
+        ----------
+        domain_bounds : xr.DataArray
+            The array of bounds for the latitude domain.
+        region_bounds : np.array
+            The array of bounds for latitude regional selection.
+
+        Returns
+        -------
+        xr.DataArray
+            The latitude axis weights.
+        """
+        if region_bounds is not None:
+            domain_bounds = self._scale_domain_to_region(domain_bounds, region_bounds)
+
+        domain_bounds = np.sin(np.radians(domain_bounds))
+        weights = self._calculate_weights(domain_bounds)
+
+        return weights
+
+    def _calculate_weights(self, domain_bounds: xr.DataArray):
+        """Calculate weights for the domain.
+
+        This method takes the absolute difference between the upper and lower
+        bound values to calculate weights.
+
+        Parameters
+        ----------
+        domain_bounds : xr.DataArray
+            The array of bounds for a domain.
+
+        Returns
+        -------
+        xr.DataArray
+            The weights for an axes.
+        """
+        return np.abs(domain_bounds[:, 1] - domain_bounds[:, 0])
+
+    def _align_longitude_to_360_axis(
+        self, domain_bounds: xr.DataArray
+    ) -> Tuple[xr.DataArray, np.array]:
+        """Handles a prime meridian cell to align longitude axes to (0, 360).
+
+        This method ensures the domain bounds are within 0 to 360 by handling
+        the grid cell that encompasses the prime meridian (e.g., [359, 1]). In
+        this case, calculating longitudinal weights is complicated because the
+        weights are determined by the difference of the bounds.
+
+        If this situation exists, the method will split this grid cell into
+        two parts (one east and west of the prime meridian). The original
+        grid cell will have domain bounds extending east of the prime meridian
+        and an extra set of bounds will be concatenated to ``domain_bounds``
+        corresponding to the domain bounds west of the prime meridian. For
+        instance, a grid cell spanning -1 to 1, will be broken into a cell
+        from 0 to 1 and 359 to 360 (or -1 to 0). The index of the original
+        prime meridian grid cell is returned as ``p_meridian_index`` along with
+        the updated ``domain_bounds``.
+
+        If no domain grid bounds span across the prime meridian, the original
+        ``domain_bounds`` are returned and `p_meridian_index` returns None.
+
+        Parameters
+        ----------
+        domain_bounds : xr.DataArray
+            The domain's bounds. The bounds should have values between 0 and
+            360.
+
+        Returns
+        -------
+        Tuple[xr.DataArray, Optional[np.array]]
+           A tuple, with the first element being the domain bounds DataArray,
+           and the second being an np.array with a single element representing
+           the index of the prime meridian grid cell.
+
+        Notes
+        -----
+        This method returns ``domain_bounds`` that are intended for calculating
+        spatial weights only.
+        """
+        if (domain_bounds.values.min() < 0) | (domain_bounds.values.max() > 360):
+            raise ValueError(
+                "Longitude bounds aren't inclusively between 0 and 360. "
+                "Use `_swap_lon_axis()` before calling `_align_longitude_to_360_axis()`."
+            )
+
+        p_meridian_index = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
+        if p_meridian_index.size == 0:
+            p_meridian_index = None
+        elif p_meridian_index.size > 1:
+            raise ValueError("More than one grid cell spans prime meridian.")
+        elif p_meridian_index.size == 1:
+            # Example array: [[359, 1], [1, 90], [90, 180], [180, 359]]
+            # Reorient bound to span across zero (i.e., [359, 1] -> [-1, 1]).
+            # Result: [[-1, 1], [1, 90], [90, 180], [180, 359]]
+            domain_bounds[p_meridian_index, 0] = (
+                domain_bounds[p_meridian_index, 0] - 360.0
+            )
+            # Extend the array to nlon+1 by concatenating the grid cell that
+            # spans the prime meridian to the end.
+            # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [-1, 1]]
+            domain_bounds = xr.concat(
+                (domain_bounds, domain_bounds[p_meridian_index, :]), dim="lon"
+            )
+            # Add an equivalent bound that spans 360
+            # (i.e., [-1, 1] -> [359, 361]) to the end of the array.
+            # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [359, 361]]
+            repeat_bound = domain_bounds[p_meridian_index, :][0] + 360.0
+            domain_bounds[-1, :] = repeat_bound
+
+            # Update the lower-most min and upper-most max bounds to [0, 360].
+            # Result: [[0, 1], [1, 90], [90, 180], [180, 359], [359, 360]]
+            domain_bounds[p_meridian_index, 0], domain_bounds[-1, 1] = (0.0, 360.0)
+
+        return domain_bounds, p_meridian_index
+
+    def _swap_lon_axis(
         self, lon: Union[xr.DataArray, np.ndarray], to: Literal[180, 360]
     ) -> Union[xr.DataArray, np.ndarray]:
-        """Swap the longitude axes orientation.
+        """Swap the longitude axis orientation.
 
         Parameters
         ----------
@@ -447,36 +587,6 @@ class SpatialAverageAccessor:
                 )
 
         return lon_swap
-
-    def _set_equal_lon_bounds_to_domain(
-        self, domain_bounds: xr.DataArray, region_bounds: np.ndarray
-    ) -> np.ndarray:
-        """
-        Sets region longitude bounds that have equal lower and upper values to
-        the domain longitude bounds.
-
-        If the lower and upper values are equal, it means all longitude values
-        are being selected (e.g., (360, 360) == (0, 360)), which is equivalent
-        to the domain bounds.
-
-        Parameters
-        ----------
-        domain_bounds : xr.DataArray
-            The domain longitude bounds.
-        region_bounds : np.ndarray
-            The region longitude bounds.
-
-        Returns
-        -------
-        np.ndarray
-            The region longitude bounds using the domain longitude bounds.
-        """
-        r_bounds = region_bounds.copy()
-        if r_bounds[1] - r_bounds[0] == 0:
-            r_bounds[1] = np.max(domain_bounds)
-            r_bounds[0] = np.min(domain_bounds)
-
-        return r_bounds
 
     def _scale_domain_to_region(
         self, domain_bounds: xr.DataArray, region_bounds: np.ndarray
@@ -527,7 +637,8 @@ class SpatialAverageAccessor:
         # are given zero weight (or partial weight if the grid bounds overlap
         # with the region bounds).
         if r_bounds[1] >= r_bounds[0]:
-            # Case 1 (simple case): not wrapping around prime meridian.
+            # Case 1 (simple case): not wrapping around prime meridian (or
+            # latitude axis).
             # Adjustments for above / right of region.
             d_bounds[d_bounds[:, 0] > r_bounds[1], 0] = r_bounds[1]
             d_bounds[d_bounds[:, 1] > r_bounds[1], 1] = r_bounds[1]
@@ -565,9 +676,7 @@ class SpatialAverageAccessor:
 
         return d_bounds
 
-    def _combine_weights(
-        self, axis: List[SupportedAxes], axis_weights: AxisWeights
-    ) -> xr.DataArray:
+    def _combine_weights(self, axis_weights: AxisWeights) -> xr.DataArray:
         """Generically rescales axis weights for a given region.
 
         This method creates an n-dimensional weighting array by performing
@@ -576,8 +685,6 @@ class SpatialAverageAccessor:
 
         Parameters
         ----------
-        axis : List[SupportedAxes]
-            List of axes that should be weighted.
         axis_weights : AxisWeights
             Dictionary of axis weights, where key is axes and value is the
             corresponding DataArray of weights.
@@ -589,10 +696,7 @@ class SpatialAverageAccessor:
             ``weights`` are 1-D and correspond to the specified axes (``axis``)
             in the region.
         """
-        weights = {
-            axes: weights for axes, weights in axis_weights.items() if axes in axis
-        }
-        region_weights = reduce((lambda x, y: x * y), weights.values())
+        region_weights = reduce((lambda x, y: x * y), axis_weights.values())
         return region_weights
 
     def _validate_weights(
