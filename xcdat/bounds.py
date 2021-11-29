@@ -1,19 +1,19 @@
 """Bounds module for functions related to coordinate bounds."""
 import collections
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import cf_xarray as cfxr  # noqa: F401
 import numpy as np
 import xarray as xr
-from typing_extensions import Literal, get_args
+from typing_extensions import Literal
 
+from xcdat.axes import GENERIC_AXIS_MAP
 from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
 
-Axis = Literal["lat", "latitude", "lon", "longitude", "time"]
-#: Tuple of supported CF-compliant axes.
-SUPPORTED_AXES: Tuple[Axis, ...] = get_args(Axis)
+#: Tuple of supported CF-compliant axis names for bounds operations.
+BoundsAxis = Literal["lat", "latitude", "Y", "lon", "longitude", "X", "time", "T"]
 
 
 @xr.register_dataset_accessor("bounds")
@@ -50,9 +50,9 @@ class BoundsAccessor:
 
     @property
     def bounds(self) -> Dict[str, Optional[xr.DataArray]]:
-        """Returns a mapping of axes and coordinates keys to their bounds.
+        """Returns a mapping of axis and coordinates keys to their bounds.
 
-        The dictionary provides all valid CF compliant keys for axes and
+        The dictionary provides all valid CF compliant keys for axis and
         coordinates. For example, latitude will includes keys for "lat",
         "latitude", and "Y".
 
@@ -96,7 +96,9 @@ class BoundsAccessor:
         -------
         xr.Dataset
         """
-        axes = [axis for axis in [*self._dataset.coords] if axis in SUPPORTED_AXES]
+        axes = [
+            axis for axis in [*self._dataset.coords] if axis in GENERIC_AXIS_MAP.keys()
+        ]
 
         for axis in axes:
             try:
@@ -109,12 +111,12 @@ class BoundsAccessor:
 
         return self._dataset
 
-    def get_bounds(self, axis: Axis) -> xr.DataArray:
+    def get_bounds(self, axis: BoundsAxis) -> xr.DataArray:
         """Get bounds for axis coordinates.
 
         Parameters
         ----------
-        axis : Axis
+        axis : BoundsAxis
             The axis key.
 
         Returns
@@ -130,27 +132,28 @@ class BoundsAccessor:
         ValueError
             If bounds were not found. They must be added.
         """
-        if axis not in SUPPORTED_AXES:
+        if axis not in GENERIC_AXIS_MAP.keys():
             raise ValueError(
                 "Incorrect `axis` argument. Supported axes include: "
-                f"include: {', '.join(SUPPORTED_AXES)}."
+                f"include: {', '.join(GENERIC_AXIS_MAP.keys())}."
             )
 
         try:
+            axis = GENERIC_AXIS_MAP[axis]
             bounds = self._dataset.cf.get_bounds(axis)
         except KeyError:
             raise KeyError(f"{axis} bounds were not found, they must be added.")
 
         return bounds
 
-    def add_bounds(self, axis: Axis, width: float = 0.5) -> xr.Dataset:
+    def add_bounds(self, axis: BoundsAxis, width: float = 0.5) -> xr.Dataset:
         """Add bounds for axis coordinates using coordinate data points.
 
         If bounds already exist, they must be dropped first.
 
         Parameters
         ----------
-        axis : Axis
+        axis : BoundsAxis
             The axis key.
         width : float, optional
             Width of the bounds relative to the position of the nearest points,
@@ -176,12 +179,12 @@ class BoundsAccessor:
 
         return dataset
 
-    def _add_bounds(self, axis: Axis, width: float = 0.5) -> xr.Dataset:
+    def _add_bounds(self, axis: BoundsAxis, width: float = 0.5) -> xr.Dataset:
         """Add bounds for axis coordinates using coordinate data points.
 
         Parameters
         ----------
-        axis : Axis
+        axis : BoundsAxis
             The axis key.
         width : float, optional
             Width of the bounds relative to the position of the nearest points,
@@ -254,12 +257,12 @@ class BoundsAccessor:
 
         return dataset
 
-    def _get_coords(self, axis: Axis) -> xr.DataArray:
+    def _get_coords(self, axis: BoundsAxis) -> xr.DataArray:
         """Get the matching coordinates for an axis in the dataset.
 
         Parameters
         ----------
-        axis : Axis
+        axis : BoundsAxis
             The axis key.
 
         Returns

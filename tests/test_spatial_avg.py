@@ -962,3 +962,14 @@ class TestAverager:
         )
 
         assert result.identical(expected)
+
+
+class TestGetGenericAxisKeys:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_generic_keys(self):
+        result = self.ds.spatial._get_generic_axis_keys(["lat", "lon"])
+        expected = ["Y", "X"]
+        assert result == expected
