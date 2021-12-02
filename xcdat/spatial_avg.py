@@ -13,7 +13,7 @@ from xcdat.dataset import get_inferred_var
 
 #: Type alias for a dictionary of axes keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
-#: Type alias for supported axis strings for spatial averaging.
+#: Type alias for supported axis keys for spatial averaging.
 SpatialAxis = Literal["lat", "lon"]
 SPATIAL_AXES: Tuple[SpatialAxis, ...] = get_args(SpatialAxis)
 #: Type alias for a tuple of floats/ints for the regional selection bounds.
