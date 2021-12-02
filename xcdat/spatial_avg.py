@@ -332,23 +332,22 @@ class SpatialAverageAccessor:
         }
 
         axis_weights: AxisWeights = {}
-        for axis_key, bounds in axis_bounds.items():
-            if axis_key in axis_key:
-                d_bounds = bounds["domain"]
-                self._validate_domain_bounds(d_bounds)
+        for key in axis:
+            d_bounds = axis_bounds[key]["domain"]
+            self._validate_domain_bounds(d_bounds)
 
-                r_bounds = bounds["region"]
-                if r_bounds is not None:
-                    r_bounds = np.array(r_bounds, dtype="float")
+            r_bounds = axis_bounds[key]["region"]
+            if r_bounds is not None:
+                r_bounds = np.array(r_bounds, dtype="float")
 
-                if axis_key == "lon":
-                    weights = self._get_longitude_weights(d_bounds, r_bounds)
-                elif axis_key == "lat":
-                    weights = self._get_latitude_weights(d_bounds, r_bounds)
+            if key == "lon":
+                weights = self._get_longitude_weights(d_bounds, r_bounds)
+            elif key == "lat":
+                weights = self._get_latitude_weights(d_bounds, r_bounds)
 
-                weights.attrs = d_bounds.attrs
-                weights.name = axis_key + "_wts"
-                axis_weights[axis_key] = weights
+            weights.attrs = d_bounds.attrs
+            weights.name = key + "_wts"
+            axis_weights[key] = weights
 
         weights = self._combine_weights(axis_weights)
         return weights
@@ -786,7 +785,7 @@ class SpatialAverageAccessor:
             )
             return weighted_mean
 
-    def _get_generic_axis_keys(self, axis_keys: List[SpatialAxis]) -> List[GenericAxes]:
+    def _get_generic_axis_keys(self, axis: List[SpatialAxis]) -> List[GenericAxes]:
         """Converts supported axis keys to their generic CF representations.
 
         Since XCDAT's spatial averaging accepts the CF short version of axes
@@ -807,7 +806,7 @@ class SpatialAverageAccessor:
             List of axis dimension(s) to average over.
         """
         generic_axis_keys = []
-        for axis in axis_keys:
-            generic_axis_keys.append(GENERIC_AXIS_MAP[axis])
+        for key in axis:
+            generic_axis_keys.append(GENERIC_AXIS_MAP[key])
 
         return generic_axis_keys
