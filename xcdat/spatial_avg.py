@@ -13,7 +13,7 @@ from xcdat.dataset import get_inferred_var
 
 #: Type alias for a dictionary of axes keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
-#: Type alias of supported axes strings for spatial averaging.
+#: Type alias for supported axis strings for spatial averaging.
 SpatialAxis = Literal["lat", "lon"]
 SPATIAL_AXES: Tuple[SpatialAxis, ...] = get_args(SpatialAxis)
 #: Type alias for a tuple of floats/ints for the regional selection bounds.
@@ -56,7 +56,7 @@ class SpatialAverageAccessor:
             attempted with the Dataset's "xcdat_infer" attr and
             ``get_inferred_var()``, by default None.
         axis : Union[List[SpatialAxis], SpatialAxis]
-            List of axis dimensions or single axes dimension to average over.
+            List of axis dimensions or single axis dimension to average over.
             For example, ["lat", "lon"]  or "lat", by default ["lat", "lon"].
         weights : Union[Literal["generate"], xr.DataArray], optional
             If "generate", then weights are generated. Otherwise, pass a
@@ -163,7 +163,6 @@ class SpatialAverageAccessor:
             The data variable.
         axis : Union[List[SpatialAxis], SpatialAxis]
             List of axis dimensions or single axes dimension to average over.
-            For example, ["lat", "lon"]  or "lat".
 
         Returns
         -------
@@ -790,7 +789,7 @@ class SpatialAverageAccessor:
 
         Since XCDAT's spatial averaging accepts the CF short version of axes
         keys, attempting to index a Dataset/DataArray on the short key through
-        CF-xarray might fail in cases where the long key is used instead (e.g.,
+        cf_xarray might fail for cases where the long key is used instead (e.g.,
         "latitude" instead of "lat"). This method handles this edge case by
         converting the list of axis keys to their generic representations (e.g.,
         "Y" instead of "lat") for indexing operations.
