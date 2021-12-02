@@ -8,7 +8,7 @@ import xarray as xr
 from dask.array.core import Array
 from typing_extensions import Literal, TypedDict, get_args
 
-from xcdat.axes import GENERIC_AXIS_MAP, GenericAxes
+from xcdat.axis import GENERIC_AXIS_MAP, GenericAxis
 from xcdat.dataset import get_inferred_var
 
 #: Type alias for a dictionary of axes keys mapped to their bounds.
@@ -784,7 +784,7 @@ class SpatialAverageAccessor:
             )
             return weighted_mean
 
-    def _get_generic_axis_keys(self, axis: List[SpatialAxis]) -> List[GenericAxes]:
+    def _get_generic_axis_keys(self, axis: List[SpatialAxis]) -> List[GenericAxis]:
         """Converts supported axis keys to their generic CF representations.
 
         Since XCDAT's spatial averaging accepts the CF short version of axes
@@ -801,7 +801,7 @@ class SpatialAverageAccessor:
 
         Returns
         -------
-        List[GenericAxes]
+        List[GenericAxis]
             List of axis dimension(s) to average over.
         """
         generic_axis_keys = []

@@ -7,7 +7,7 @@ import numpy as np
 import xarray as xr
 from typing_extensions import Literal
 
-from xcdat.axes import GENERIC_AXIS_MAP
+from xcdat.axis import GENERIC_AXIS_MAP
 from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
