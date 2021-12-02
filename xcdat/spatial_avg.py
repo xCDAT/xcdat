@@ -275,11 +275,11 @@ class SpatialAverageAccessor:
         """
         Get area weights for specified axis keys and an optional target domain.
 
-        This method first determines the weights for individual axis based on
+        This method first determines the weights for an individual axis based on
         the difference between the upper and lower bound. For latitude the
-        weight is determined by the difference of sine(latitude). The individual
-        axis weights are then combined to form a DataArray of weights that can
-        be used to perform a weighted (spatial) average.
+        weight is determined by the difference of sine(latitude). All axis
+        weights are then combined to form a DataArray of weights that can be
+        used to perform a weighted (spatial) average.
 
         If ``lat_bounds`` or ``lon_bounds`` are supplied, then grid cells
         outside this selected regional domain are given zero weight. Grid cells
