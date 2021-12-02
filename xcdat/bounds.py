@@ -12,7 +12,7 @@ from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
 
-#: Tuple of supported CF-compliant axis names for bounds operations.
+#: Tuple of supported CF compliant axis keys for bounds operations.
 BoundsAxis = Literal["lat", "latitude", "Y", "lon", "longitude", "X", "time", "T"]
 
 
