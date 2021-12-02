@@ -40,7 +40,7 @@ class TestSpatialAvg:
         with pytest.raises(KeyError):
             self.ds.spatial.spatial_avg(
                 "not_a_data_var",
-                axis=["lat", "incorrect_axess"],
+                axis=["lat", "incorrect_axis"],
             )
 
     def test_weighted_spatial_average_for_lat_and_lon_region_for_an_inferred_data_var(
@@ -125,17 +125,17 @@ class TestValidateAxis:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_raises_error_if_axis_list_contains_unsupported_axes(self):
+    def test_raises_error_if_axis_list_contains_unsupported_axis(self):
         with pytest.raises(ValueError):
-            self.ds.spatial._validate_axis(self.ds.ts, axis=["lat", "incorrect_axes"])
+            self.ds.spatial._validate_axis(self.ds.ts, axis=["lat", "incorrect_axis"])
 
-    def test_raises_error_if_lat_axes_does_not_exist(self):
+    def test_raises_error_if_lat_axis_does_not_exist(self):
         ds = self.ds.copy()
         ds["ts"] = xr.DataArray(data=None, coords={"lon": ds.lon}, dims=["lon"])
         with pytest.raises(KeyError):
             ds.spatial._validate_axis(ds.ts, axis=["lat", "lon"])
 
-    def test_raises_error_if_lon_axes_does_not_exist(self):
+    def test_raises_error_if_lon_axis_does_not_exist(self):
         ds = self.ds.copy()
         ds["ts"] = xr.DataArray(data=None, coords={"lat": ds.lat}, dims=["lat"])
         with pytest.raises(KeyError):
@@ -247,7 +247,7 @@ class TestValidateWeights:
             )
 
 
-class TestSwapLonAxes:
+class TestSwapLonAxis:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -460,7 +460,7 @@ class TestGetLongitudeWeights:
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test_weights_for_region_in_lon_domain(self):
-        # Longitude axes orientation swaps from (-180, 180) to (0, 360).
+        # Longitude axis orientation swaps from (-180, 180) to (0, 360).
         result = self.ds.spatial._get_longitude_weights(
             domain_bounds=self.ds.lon_bnds.copy(),
             region_bounds=np.array([-170.0, -120.0]),
@@ -496,7 +496,7 @@ class TestGetLongitudeWeights:
         # Domain spans prime meridian.
         ds.lon_bnds.data[:] = np.array([[359, 1], [1, 90], [90, 180], [180, 359]])
 
-        # Longitude axes orientation swaps from (-180, 180) to (0, 360).
+        # Longitude axis orientation swaps from (-180, 180) to (0, 360).
         result = ds.spatial._get_longitude_weights(
             domain_bounds=ds.lon_bnds,
             region_bounds=np.array([-170.0, -120.0]),
@@ -911,7 +911,7 @@ class TestAverager:
 
         assert result.identical(expected)
 
-    def test_weighted_avg_over_lat_axes(self):
+    def test_weighted_avg_over_lat_axis(self):
         weights = xr.DataArray(
             name="lat_wts",
             data=np.array([1, 2, 3, 4]),
@@ -929,7 +929,7 @@ class TestAverager:
 
         assert result.identical(expected)
 
-    def test_weighted_avg_over_lon_axes(self):
+    def test_weighted_avg_over_lon_axis(self):
         weights = xr.DataArray(
             name="lon_wts",
             data=np.array([1, 2, 3, 4]),
@@ -947,7 +947,7 @@ class TestAverager:
 
         assert result.identical(expected)
 
-    def test_weighted_avg_over_lat_and_lon_axes(self):
+    def test_weighted_avg_over_lat_and_lon_axis(self):
         weights = xr.DataArray(
             data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
             coords={"lat": self.ds.lat, "lon": self.ds.lon},

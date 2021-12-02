@@ -11,7 +11,7 @@ from typing_extensions import Literal, TypedDict, get_args
 from xcdat.axis import GENERIC_AXIS_MAP, GenericAxis
 from xcdat.dataset import get_inferred_var
 
-#: Type alias for a dictionary of axes keys mapped to their bounds.
+#: Type alias for a dictionary of axis keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
 #: Type alias for supported axis keys for spatial averaging.
 SpatialAxis = Literal["lat", "lon"]
@@ -43,7 +43,7 @@ class SpatialAverageAccessor:
 
         - If a regional boundary is specified, check to ensure it is within the
           data variable's domain boundary.
-        - If axis weights are not provided, get axis weights for standard axes
+        - If axis weights are not provided, get axis weights for standard axis
           domains specified in ``axis``.
         - Adjust weights to conform to the specified regional boundary.
         - Compute spatial weighted average.
@@ -85,12 +85,6 @@ class SpatialAverageAccessor:
         ------
         KeyError
             If data variable does not exist in the Dataset.
-        KeyError
-            If data variable does not contain an "Y" axes (latitude dimension).
-        KeyError
-            If data variable does not contain an "X" axes (longitude dimension).
-        ValueError
-            If an incorrect axes is specified in ``axis``.
 
         Examples
         --------
@@ -162,19 +156,19 @@ class SpatialAverageAccessor:
         data_var : xr.DataArray
             The data variable.
         axis : Union[List[SpatialAxis], SpatialAxis]
-            List of axis dimensions or single axes dimension to average over.
+            List of axis dimensions or single axis dimension to average over.
 
         Returns
         -------
         List[SpatialAxis]
-            List of axis dimensions or single axes dimension to average over.
+            List of axis dimensions or single axis dimension to average over.
 
         Raises
         ------
         ValueError
-            If any value inside ``axis`` is not supported.
+            If any key in ``axis`` is not supported for spatial averaging.
         KeyError
-            If any value inside ``axis`` does not exist in the ``data_var``.
+            If any key in ``axis`` does not exist in the ``data_var``.
         """
         if isinstance(axis, str):
             axis = [axis]
@@ -279,9 +273,9 @@ class SpatialAverageAccessor:
         lon_bounds: Optional[RegionAxisBounds],
     ) -> xr.DataArray:
         """
-        Get area weights for specified axes and an optional target domain.
+        Get area weights for specified axis keys and an optional target domain.
 
-        This method first determines the weights for individual axes based on
+        This method first determines the weights for individual axis based on
         the difference between the upper and lower bound. For latitude the
         weight is determined by the difference of sine(latitude). The individual
         axis weights are then combined to form a DataArray of weights that can
@@ -385,7 +379,7 @@ class SpatialAverageAccessor:
         Returns
         -------
         xr.DataArray
-            The longitude axes weights.
+            The longitude axis weights.
         """
         p_meridian_index: Optional[np.array] = None
 
@@ -460,7 +454,7 @@ class SpatialAverageAccessor:
     def _align_longitude_to_360_axis(
         self, domain_bounds: xr.DataArray
     ) -> Tuple[xr.DataArray, np.array]:
-        """Handles a prime meridian cell to align longitude axes to (0, 360).
+        """Handles a prime meridian cell to align longitude axis to (0, 360).
 
         This method ensures the domain bounds are within 0 to 360 by handling
         the grid cell that encompasses the prime meridian (e.g., [359, 1]). In
@@ -672,21 +666,21 @@ class SpatialAverageAccessor:
         """Generically rescales axis weights for a given region.
 
         This method creates an n-dimensional weighting array by performing
-        matrix multiplication for a list of specified axes using a dictionary of
-        axis weights.
+        matrix multiplication for a list of specified axis keys using a
+        dictionary of axis weights.
 
         Parameters
         ----------
         axis_weights : AxisWeights
-            Dictionary of axis weights, where key is axes and value is the
+            Dictionary of axis weights, where key is axis and value is the
             corresponding DataArray of weights.
 
         Returns
         -------
         xr.DataArray
             A DataArray containing the region weights to use during averaging.
-            ``weights`` are 1-D and correspond to the specified axes (``axis``)
-            in the region.
+            ``weights`` are 1-D and correspond to the specified axis keys
+            (``axis``) in the region.
         """
         region_weights = reduce((lambda x, y: x * y), axis_weights.values())
         return region_weights
@@ -746,7 +740,7 @@ class SpatialAverageAccessor:
     ):
         """Perform a weighted average of a data variable.
 
-        This method assumes all specified axes in ``axis`` exists in the data
+        This method assumes all specified keys in ``axis`` exists in the data
         variable. Validation for this criteria is performed in
         ``_validate_weights()``.
 
