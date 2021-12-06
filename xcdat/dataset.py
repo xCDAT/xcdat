@@ -78,7 +78,7 @@ def open_dataset(
     if decode_times:
         cf_compliant_time: Optional[bool] = has_cf_compliant_time(path)
         if cf_compliant_time is False:
-            # XCDAT handles decoding decoding time values with non-CF units.
+            # XCDAT handles decoding time values with non-CF units.
             ds = xr.open_dataset(path, decode_times=False, **kwargs)
             ds = decode_non_cf_time(ds)
         else:
