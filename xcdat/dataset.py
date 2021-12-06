@@ -525,7 +525,7 @@ def _preprocess_non_cf_dataset(
     """Preprocessing for each non-CF compliant dataset in ``open_mfdataset()``.
 
     This function allows for a user specified preprocess function, in addition
-    to XCDAT defined preprocessing functions.
+    to XCDAT preprocessing functions.
 
     One call is performed to ``decode_non_cf_time()`` for decoding each
     dataset's time coordinates and time bounds (if they exist) with non-CF
