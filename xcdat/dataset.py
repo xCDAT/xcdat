@@ -105,7 +105,7 @@ def open_mfdataset(
 
     - Optional decoding of time coordinates with CF or non-CF compliant units if
       the Dataset has a time dimension
-    - Adds missing bounds for supported axis
+    - Add missing bounds for supported axis
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable, while retaining any bounds data variables
 
