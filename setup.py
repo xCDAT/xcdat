@@ -16,10 +16,11 @@ with open("HISTORY.rst") as history_file:
 install_requires: List[str] = [
     "cf_xarray",
     "dask",
+    "netcdf4",
     "numpy",
     "pandas",
-    "xarray",
     "typing_extensions",
+    "xarray",
 ]
 test_requires = ["pytest>=3"]
 
