@@ -16,10 +16,11 @@ with open("HISTORY.rst") as history_file:
 install_requires: List[str] = [
     "cf_xarray",
     "dask",
+    "netcdf4",
     "numpy",
     "pandas",
-    "xarray",
     "typing_extensions",
+    "xarray",
 ]
 test_requires = ["pytest>=3"]
 
@@ -36,6 +37,7 @@ setup(
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
     ],
     description="Xarray Extended with Climate Data Analysis Tools",
     install_requires=install_requires,
