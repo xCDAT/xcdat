@@ -238,6 +238,42 @@ class TestHasCFCompliantTime:
         # Check that False is returned when the dataset has non-cf_compliant time
         assert result is False
 
+    def test_no_time_axis(self):
+        # Generate dummy dataset with CF compliant time
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        # remove time axis
+        ds = ds.isel(time=0)
+        ds = ds.squeeze(drop=True)
+        ds = ds.reset_coords()
+        ds = ds.drop_vars("time")
+        ds.to_netcdf(self.file_path)
+
+        result = has_cf_compliant_time(self.file_path)
+
+        # Check that None is returned when there is no time axis
+        assert result is None
+
+    def test_glob_cf_compliant_time(self):
+        # Generate dummy datasets with CF compliant time
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        result = has_cf_compliant_time(f"{self.dir}/*.nc")
+
+        # Check that the wildcard path input is correctly evaluated
+        assert result is True
+
+    def test_list_cf_compliant_time(self):
+        # Generate dummy datasets with CF compliant time units
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        flist = [self.file_path, self.file_path, self.file_path]
+        result = has_cf_compliant_time(flist)
+
+        # Check that the list input is correctly evaluated
+        assert result is True
+
     def test_cf_compliant_time_with_string_path(self):
         # Generate dummy dataset with CF compliant time units
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
@@ -276,42 +312,6 @@ class TestHasCFCompliantTime:
         result = has_cf_compliant_time([[pathlib.Path(self.file_path)]])
 
         # Check that True is returned when the dataset has cf_compliant time
-        assert result is True
-
-    def test_no_time_axis(self):
-        # Generate dummy dataset with CF compliant time
-        ds = generate_dataset(cf_compliant=True, has_bounds=False)
-        # remove time axis
-        ds = ds.isel(time=0)
-        ds = ds.squeeze(drop=True)
-        ds = ds.reset_coords()
-        ds = ds.drop_vars("time")
-        ds.to_netcdf(self.file_path)
-
-        result = has_cf_compliant_time(self.file_path)
-
-        # Check that None is returned when there is no time axis
-        assert result is None
-
-    def test_glob_cf_compliant_time(self):
-        # Generate dummy datasets with CF compliant time
-        ds = generate_dataset(cf_compliant=True, has_bounds=False)
-        ds.to_netcdf(self.file_path)
-
-        result = has_cf_compliant_time(f"{self.dir}" + "/*.nc")
-
-        # Check that the wildcard path input is correctly evaluated
-        assert result is True
-
-    def test_list_cf_compliant_time(self):
-        # Generate dummy datasets with CF compliant time units
-        ds = generate_dataset(cf_compliant=True, has_bounds=False)
-        ds.to_netcdf(self.file_path)
-
-        flist = [self.file_path, self.file_path, self.file_path]
-        result = has_cf_compliant_time(flist)
-
-        # Check that the list input is correctly evaluated
         assert result is True
 
 

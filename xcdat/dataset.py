@@ -126,7 +126,8 @@ def open_mfdataset(
 
     Parameters
     ----------
-    path : Union[str, List[str], List[List[str]]]
+    path : Union[str, pathlib.Path, List[str], List[pathlib.Path], \
+         List[List[str]], List[List[pathlib.Path]]]
         Either a string glob in the form ``"path/to/my/files/*.nc"`` or an
         explicit list of files to open. Paths can be given as strings or as
         pathlib Paths. If concatenation along more than one dimension is desired,
@@ -227,14 +228,8 @@ def has_cf_compliant_time(
 
     Parameters
     ----------
-    path : Union[
-            str,
-            pathlib.Path,
-            List[str],
-            List[pathlib.Path],
-            List[List[str]],
-            List[List[pathlib.Path]],
-        ]
+    path : Union[str, pathlib.Path, List[str], List[pathlib.Path], \
+         List[List[str]], List[List[pathlib.Path]]]
         Either a file (``"file.nc"``), a string glob in the form
         ``"path/to/my/files/*.nc"``, or an explicit list of files to open.
         Paths can be given as strings or as pathlib Paths. If concatenation
@@ -255,10 +250,10 @@ def has_cf_compliant_time(
     compliance.
     """
     first_file: Optional[Union[pathlib.Path, str]] = None
-    if isinstance(path, str) or isinstance(path, pathlib.Path):
-        first_file = path
-    elif isinstance(path, str) and "*" in path:
+    if isinstance(path, str) and "*" in path:
         first_file = glob(path)[0]
+    elif isinstance(path, str) or isinstance(path, pathlib.Path):
+        first_file = path
     elif isinstance(path, list):
         if any(isinstance(sublist, list) for sublist in path):
             first_file = path[0][0]  # type: ignore
