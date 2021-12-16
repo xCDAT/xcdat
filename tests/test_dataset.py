@@ -1,4 +1,5 @@
 import logging
+import pathlib
 import warnings
 
 import numpy as np
@@ -237,12 +238,42 @@ class TestHasCFCompliantTime:
         # Check that False is returned when the dataset has non-cf_compliant time
         assert result is False
 
-    def test_cf_compliant_time(self):
+    def test_cf_compliant_time_with_string_path(self):
         # Generate dummy dataset with CF compliant time units
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
         result = has_cf_compliant_time(self.file_path)
+
+        # Check that True is returned when the dataset has cf_compliant time
+        assert result is True
+
+    def test_cf_compliant_time_with_pathlib_path(self):
+        # Generate dummy dataset with CF compliant time units
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        result = has_cf_compliant_time(pathlib.Path(self.file_path))
+
+        # Check that True is returned when the dataset has cf_compliant time
+        assert result is True
+
+    def test_cf_compliant_time_with_list_of_list_of_strings(self):
+        # Generate dummy dataset with CF compliant time units
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        result = has_cf_compliant_time([self.file_path])
+
+        # Check that True is returned when the dataset has cf_compliant time
+        assert result is True
+
+    def test_cf_compliant_time_with_list_of_list_of_pathlib_paths(self):
+        # Generate dummy dataset with CF compliant time units
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        result = has_cf_compliant_time([[pathlib.Path(self.file_path)]])
 
         # Check that True is returned when the dataset has cf_compliant time
         assert result is True

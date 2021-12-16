@@ -1,4 +1,5 @@
 """Dataset module for functions related to an xarray.Dataset."""
+import pathlib
 from functools import partial
 from glob import glob
 from typing import Any, Callable, Dict, Hashable, List, Optional, Tuple, Union
@@ -92,7 +93,14 @@ def open_dataset(
 
 
 def open_mfdataset(
-    paths: Union[str, List[str]],
+    paths: Union[
+        str,
+        pathlib.Path,
+        List[str],
+        List[pathlib.Path],
+        List[List[str]],
+        List[List[pathlib.Path]],
+    ],
     data_var: Optional[str] = None,
     preprocess: Optional[Callable] = None,
     decode_times: bool = True,
@@ -118,7 +126,7 @@ def open_mfdataset(
 
     Parameters
     ----------
-    path : Union[str, List[str]]
+    path : Union[str, List[str], List[List[str]]]
         Either a string glob in the form ``"path/to/my/files/*.nc"`` or an
         explicit list of files to open. Paths can be given as strings or as
         pathlib Paths. If concatenation along more than one dimension is desired,
@@ -199,18 +207,34 @@ def open_mfdataset(
     return ds
 
 
-def has_cf_compliant_time(path: Union[str, List[str]]) -> Optional[bool]:
+def has_cf_compliant_time(
+    path: Union[
+        str,
+        pathlib.Path,
+        List[str],
+        List[pathlib.Path],
+        List[List[str]],
+        List[List[pathlib.Path]],
+    ]
+) -> Optional[bool]:
     """Determine if a dataset has time coordinates with CF compliant units.
 
-    This function opens a dataset either from a single path or the first path
-    from a list of paths (for a multi-file dataset). If the dataset does not
-    contain a time dimension, None is returned. Otherwise, the units attribute
-    is extracted from the time coordinates to determine whether it is CF or
+    This function opens a single dataset either from a single string path, glob
+    string path, a list, or a list of lists. If the dataset does not contain a
+    time dimension, None is returned. Otherwise, the units attribute is
+    extracted from the time coordinates to determine whether it is CF or
     non-CF compliant.
 
     Parameters
     ----------
-    path : Union[str, List[str]]
+    path : Union[
+            str,
+            pathlib.Path,
+            List[str],
+            List[pathlib.Path],
+            List[List[str]],
+            List[List[pathlib.Path]],
+        ]
         Either a file (``"file.nc"``), a string glob in the form
         ``"path/to/my/files/*.nc"``, or an explicit list of files to open.
         Paths can be given as strings or as pathlib Paths. If concatenation
@@ -230,14 +254,16 @@ def has_cf_compliant_time(path: Union[str, List[str]]) -> Optional[bool]:
     performance because it is slower to combine all files then check for CF
     compliance.
     """
-    # FIXME: This doesn't handle pathlib paths or a list of lists
-    if type(path) == str:
-        if "*" in path:
-            first_file = glob(path)[0]
+    first_file: Optional[Union[pathlib.Path, str]] = None
+    if isinstance(path, str) or isinstance(path, pathlib.Path):
+        first_file = path
+    elif isinstance(path, str) and "*" in path:
+        first_file = glob(path)[0]
+    elif isinstance(path, list):
+        if any(isinstance(sublist, list) for sublist in path):
+            first_file = path[0][0]  # type: ignore
         else:
-            first_file = path
-    else:
-        first_file = path[0]
+            first_file = path[0]  # type: ignore
 
     ds = xr.open_dataset(first_file, decode_times=False)
     if ds.cf.dims.get("T") is None:
