@@ -220,11 +220,9 @@ def has_cf_compliant_time(
 ) -> Optional[bool]:
     """Determine if a dataset has time coordinates with CF compliant units.
 
-    This function opens a single dataset either from a single string path, glob
-    string path, a list, or a list of lists. If the dataset does not contain a
-    time dimension, None is returned. Otherwise, the units attribute is
-    extracted from the time coordinates to determine whether it is CF or
-    non-CF compliant.
+    If the dataset does not contain a time dimension, None is returned.
+    Otherwise, the units attribute is extracted from the time coordinates to
+    determine whether it is CF or non-CF compliant.
 
     Parameters
     ----------
