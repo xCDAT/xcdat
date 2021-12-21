@@ -16,7 +16,7 @@ To install XCDAT using Conda, run:
 
 .. code-block:: console
 
-    $ conda install xcdat
+    $ conda install -c conda-forge xcdat
 
 This is the preferred method to install XCDAT, as it will always install the most recent stable release.
 

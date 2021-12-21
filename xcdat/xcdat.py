@@ -4,9 +4,9 @@ from typing import Any, Dict, List, Optional, Union
 import xarray as xr
 from typing_extensions import Literal
 
-from xcdat.bounds import Axis, BoundsAccessor
+from xcdat.bounds import BoundsAccessor, BoundsAxis
 from xcdat.regridder.accessor import DatasetRegridderAccessor  # noqa: F401
-from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SupportedAxes
+from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SpatialAxis
 from xcdat.utils import is_documented_by
 
 
@@ -37,7 +37,7 @@ class XCDATAccessor:
     def spatial_avg(
         self,
         data_var: Optional[str] = None,
-        axis: Union[List[SupportedAxes], SupportedAxes] = ["lat", "lon"],
+        axis: Union[List[SpatialAxis], SpatialAxis] = ["lat", "lon"],
         weights: Union[Literal["generate"], xr.DataArray] = "generate",
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
@@ -68,11 +68,11 @@ class XCDATAccessor:
         return obj.add_missing_bounds()
 
     @is_documented_by(BoundsAccessor.get_bounds)
-    def get_bounds(self, axis: Axis) -> xr.DataArray:
+    def get_bounds(self, axis: BoundsAxis) -> xr.DataArray:
         obj = BoundsAccessor(self._dataset)
         return obj.get_bounds(axis)
 
     @is_documented_by(BoundsAccessor.add_bounds)
-    def add_bounds(self, axis: Axis, width: float = 0.5) -> xr.Dataset:
+    def add_bounds(self, axis: BoundsAxis, width: float = 0.5) -> xr.Dataset:
         obj = BoundsAccessor(self._dataset)
         return obj.add_bounds(axis, width)

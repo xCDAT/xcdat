@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+    - name: Usage question
+      url: https://github.com/XCDAT/xcdat/discussions
+      about: |
+          Ask questions and discuss with other community members here.
+          If you have a question like "How do I perform geospatial averaging?" then
+          please include a self-contained reproducible example if possible.
