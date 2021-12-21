@@ -1,0 +1,15 @@
+# Conda xcdat CI/CD environment (used in GH Actions)
+name: xcdat_ci
+channels:
+    - conda-forge
+    - defaults
+dependencies:
+    # Base
+    # ==================
+    - python
+    - pip
+    # Testing
+    # ==================
+    - pytest=6.2.5
+    - pytest-cov=3.0.0
+prefix: /opt/miniconda3/envs/xcdat_ci

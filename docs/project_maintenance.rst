@@ -41,4 +41,4 @@ This workflow is triggered by Git ``pull_request`` and ``push`` (merging PRs) ev
 
 Jobs:
     1. Run ``pre-commit`` for formatting, linting, and type checking
-    2. Build conda development environment and run test suite
+    2. Build conda CI/CD environment with different Python versions, install package, and run test suite
