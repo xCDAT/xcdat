@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 import xarray as xr
-from xarray.tests import requires_dask
 
+from tests import requires_dask
 from tests.fixtures import generate_dataset
 from xcdat.spatial_avg import SpatialAverageAccessor
 
