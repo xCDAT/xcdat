@@ -69,7 +69,7 @@ class TestAccessor:
         mock_data = mock.MagicMock()
 
         with mock.patch.dict(accessor.REGRID_TOOLS, {"test": mock_regridder}):
-            output = self.ac.regrid(mock_data, "test", "conservative")
+            output = self.ac.regrid(mock_data, "test")
 
         assert output == "output data"
 
@@ -79,7 +79,7 @@ class TestAccessor:
         with pytest.raises(
             ValueError, match=r"Tool 'test' does not exist, valid choices"
         ):
-            self.ac.regrid(mock.MagicMock(), "test", "conservative")
+            self.ac.regrid(mock.MagicMock(), "test")
 
 
 class TestBase:

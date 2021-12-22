@@ -28,7 +28,7 @@ class TestXCDATAccessor:
 
         out_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
-        result = ds.xcdat.regrid(out_grid, "xesmf", "bilinear", data_var="ts")
+        result = ds.xcdat.regrid(out_grid, "xesmf", method="bilinear")
 
         assert result.ts.shape == (12, 45, 72)
 
