@@ -366,11 +366,7 @@ class TestDecodeNonCFTimeUnits:
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        [
-                            "2000-02-01",
-                            "2000-03-01",
-                            "2000-04-01",
-                        ],
+                        ["2000-02-01", "2000-03-01", "2000-04-01"],
                         dtype="datetime64",
                     ),
                     dims=["time"],
@@ -414,11 +410,7 @@ class TestDecodeNonCFTimeUnits:
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        [
-                            "2000-02-15",
-                            "2000-03-15",
-                            "2000-04-15",
-                        ],
+                        ["2000-02-15", "2000-03-15", "2000-04-15"],
                         dtype="datetime64",
                     ),
                     dims=["time"],
@@ -462,11 +454,7 @@ class TestDecodeNonCFTimeUnits:
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        [
-                            "2000-01-31",
-                            "2000-02-29",
-                            "2000-03-31",
-                        ],
+                        ["2000-01-31", "2000-02-29", "2000-03-31"],
                         dtype="datetime64",
                     ),
                     dims=["time"],
@@ -510,11 +498,7 @@ class TestDecodeNonCFTimeUnits:
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        [
-                            "2000-03-29",
-                            "2000-04-29",
-                            "2000-05-29",
-                        ],
+                        ["2000-03-29", "2000-04-29", "2000-05-29"],
                         dtype="datetime64",
                     ),
                     dims=["time"],
@@ -558,11 +542,7 @@ class TestDecodeNonCFTimeUnits:
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        [
-                            "2001-06-01",
-                            "2002-06-01",
-                            "2003-06-01",
-                        ],
+                        ["2001-06-01", "2002-06-01", "2003-06-01"],
                         dtype="datetime64",
                     ),
                     dims=["time"],
@@ -764,9 +744,7 @@ class TestPreProcessNonCFDataset:
         expected["time"] = xr.DataArray(
             name="time",
             data=np.array(
-                [
-                    "2000-01-01",
-                ],
+                ["2000-01-01"],
                 dtype="datetime64",
             ),
             dims=["time"],
@@ -774,9 +752,7 @@ class TestPreProcessNonCFDataset:
         expected["time_bnds"] = xr.DataArray(
             name="time_bnds",
             data=np.array(
-                [
-                    ["1999-12-01", "2000-01-01"],
-                ],
+                [["1999-12-01", "2000-01-01"]],
                 dtype="datetime64",
             ),
             dims=["time", "bnds"],
