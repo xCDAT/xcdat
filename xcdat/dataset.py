@@ -190,8 +190,8 @@ def open_mfdataset(
     """
     if decode_times:
         cf_compliant_time: Optional[bool] = has_cf_compliant_time(paths)
-        # XCDAT handles decoding decoding time values with non-CF units using
-        # the preprocess kwarg.
+        # XCDAT handles decoding time values with non-CF units using the
+        # preprocess kwarg.
         if cf_compliant_time is False:
             decode_times = False
             preprocess = partial(_preprocess_non_cf_dataset, callable=preprocess)
@@ -300,13 +300,13 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     CF calendar types with or without leap years when adding the offsets to the
     reference date.
 
-    DateOffset is used instead of timedelta64 because timedelta64 does
-    not respect calendar arithmetic. One downside of DateOffset (unlike
-    timedelta64) is that there is currently no simple way of vectorizing the
-    addition of DateOffset objects to Timestamp/datetime64 objects. However, the
-    performance of element-wise iteration should be sufficient for datasets
-    that have "months" and "years" time units since the size of the time
-    coordinates isn't expected to be large in comparison to "days" or "hours".
+    DateOffset is used instead of timedelta64 because timedelta64 does not
+    respect calendar arithmetic. One downside of DateOffset (unlike timedelta64)
+    is that there is currently no simple way of vectorizing the addition of
+    DateOffset objects to Timestamp/datetime64 objects. However, the performance
+    of element-wise iteration should be sufficient for datasets that have
+    "months" and "years" time units since the number of time coordinates should
+    be small compared to "days" or "hours".
 
     References
     -----
@@ -399,7 +399,7 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
 
 
 def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Dataset:
-    """Infer the data variable(s) or keep a specific one in the Dataset.
+    """Infer or explicitly keep a specific data variable in the Dataset.
 
     If ``data_var`` is None, then this function checks the number of
     regular (non-bounds) data variables in the Dataset. If there is a single
@@ -590,7 +590,7 @@ def _split_time_units_attr(units_attr: str) -> Tuple[str, str]:
     Returns
     -------
     Tuple[str, str]
-        The units ("months") and the reference date ("1800-01-01").
+        The units (e.g, "months") and the reference date (e.g., "1800-01-01").
 
     Raises
     ------
