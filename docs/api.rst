@@ -11,8 +11,9 @@ Top-level API
 
     dataset.open_dataset
     dataset.open_mfdataset
+    dataset.has_cf_compliant_time
+    dataset.decode_non_cf_time
     dataset.infer_or_keep_var
-    dataset.decode_time_units
     dataset.get_inferred_var
 
 .. currentmodule:: xarray

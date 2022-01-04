@@ -32,18 +32,20 @@ time_cf = xr.DataArray(
     ],
     dims=["time"],
     attrs={
+        "axis": "T",
         "long_name": "time",
         "standard_name": "time",
-        "axis": "T",
     },
 )
 time_non_cf = xr.DataArray(
     data=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11],
     dims=["time"],
     attrs={
+        "units": "months since 2000-01-01",
+        "calendar": "standard",
+        "axis": "T",
         "long_name": "time",
         "standard_name": "time",
-        "axis": "T",
     },
 )
 
@@ -72,18 +74,18 @@ time_bnds = xr.DataArray(
 time_bnds_non_cf = xr.DataArray(
     name="time_bnds",
     data=[
-        [datetime(1999, 12, 16, 12), datetime(2000, 1, 16, 12)],
-        [datetime(2000, 1, 16, 12), datetime(2000, 2, 15, 12)],
-        [datetime(2000, 2, 15, 12), datetime(2000, 3, 16, 12)],
-        [datetime(2000, 3, 16, 12), datetime(2000, 4, 16)],
-        [datetime(2000, 4, 16), datetime(2000, 5, 16, 12)],
-        [datetime(2000, 5, 16, 12), datetime(2000, 6, 16)],
-        [datetime(2000, 6, 16), datetime(2000, 7, 16, 12)],
-        [datetime(2000, 7, 16, 12), datetime(2000, 8, 16, 12)],
-        [datetime(2000, 8, 16, 12), datetime(2000, 9, 16)],
-        [datetime(2000, 9, 16), datetime(2000, 10, 16, 12)],
-        [datetime(2000, 10, 16, 12), datetime(2000, 11, 16)],
-        [datetime(2000, 11, 16), datetime(2000, 12, 16)],
+        [-1, 0],
+        [0, 1],
+        [1, 2],
+        [2, 3],
+        [3, 4],
+        [4, 5],
+        [5, 6],
+        [6, 7],
+        [7, 8],
+        [8, 9],
+        [9, 10],
+        [10, 11],
     ],
     coords={"time": time_non_cf},
     dims=["time", "bnds"],
@@ -172,19 +174,18 @@ def generate_dataset(cf_compliant: bool, has_bounds: bool) -> xr.Dataset:
         )
 
         if cf_compliant:
-            ds = ds.assign({"time_bnds": time_bnds.copy()})
-            ds = ds.assign_coords({"time": time_cf.copy()})
+            ds.coords["time"] = time_cf.copy()
+            ds["time_bnds"] = time_bnds.copy()
         elif not cf_compliant:
-            ds = ds.assign({"time_bnds": time_bnds_non_cf.copy()})
-            ds = ds.assign_coords({"time": time_non_cf.copy()})
-            ds["time"] = ds.time.assign_attrs(units="months since 2000-01-01")
+            ds.coords["time"] = time_non_cf.copy()
+            ds["time_bnds"] = time_bnds_non_cf.copy()
 
         # If the "bounds" attribute is included in an existing DataArray and
         # added to a new Dataset, it will get dropped. Therefore, it needs to be
         # assigned to the DataArrays after they are added to Dataset.
-        ds["lat"] = ds.lat.assign_attrs(bounds="lat_bnds")
-        ds["lon"] = ds.lon.assign_attrs(bounds="lon_bnds")
-        ds["time"] = ds.time.assign_attrs(bounds="time_bnds")
+        ds["lat"].attrs["bounds"] = "lat_bnds"
+        ds["lon"].attrs["bounds"] = "lon_bnds"
+        ds["time"].attrs["bounds"] = "time_bnds"
 
     elif not has_bounds:
         ds = xr.Dataset(
@@ -193,9 +194,8 @@ def generate_dataset(cf_compliant: bool, has_bounds: bool) -> xr.Dataset:
         )
 
         if cf_compliant:
-            ds = ds.assign_coords({"time": time_cf.copy()})
+            ds.coords["time"] = time_cf.copy()
         elif not cf_compliant:
-            ds = ds.assign_coords({"time": time_non_cf.copy()})
-            ds["time"] = ds.time.assign_attrs(units="months since 2000-01-01")
+            ds.coords["time"] = time_non_cf.copy()
 
     return ds

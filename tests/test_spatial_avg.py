@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
+from tests import requires_dask
 from tests.fixtures import generate_dataset
 from xcdat.spatial_avg import SpatialAverageAccessor
 
@@ -100,6 +101,7 @@ class TestSpatialAvg:
 
         assert result.identical(expected)
 
+    @requires_dask
     def test_chunked_weighted_spatial_average_for_lat_region(self):
         ds = self.ds.copy().chunk(2)
 
@@ -262,6 +264,7 @@ class TestSwapLonAxis:
         with pytest.raises(ValueError):
             self.ds.spatial._swap_lon_axis(domain, to=9000)
 
+    @requires_dask
     def test_swap_chunked_domain_dataarray_from_180_to_360(self):
         domain = xr.DataArray(
             name="lon_bnds",
@@ -280,6 +283,7 @@ class TestSwapLonAxis:
 
         assert result.identical(expected)
 
+    @requires_dask
     def test_swap_chunked_domain_dataarray_from_360_to_180(self):
         domain = xr.DataArray(
             name="lon_bnds",
@@ -707,6 +711,7 @@ class TestScaleDimToRegion:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
+    @requires_dask
     def test_scales_chunked_lat_bounds_when_not_wrapping_around_prime_meridian(self):
         domain_bounds = xr.DataArray(
             name="lat_bnds",
@@ -729,6 +734,7 @@ class TestScaleDimToRegion:
 
         assert result.identical(expected)
 
+    @requires_dask
     def test_scales_chunked_lon_bounds_when_not_wrapping_around_prime_meridian(self):
         domain_bounds = xr.DataArray(
             name="lon_bnds",
@@ -895,6 +901,7 @@ class TestAverager:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
+    @requires_dask
     def test_chunked_weighted_avg_over_lat_and_lon_axes(self):
         ds = self.ds.copy().chunk(2)
 
