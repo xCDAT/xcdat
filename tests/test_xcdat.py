@@ -25,12 +25,13 @@ class TestXCDATAccessor:
 
     def test_regrid(self):
         ds = self.ds.copy()
+        ds.attrs['xcdat_infer'] = 'ts'
 
         out_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
         result = ds.xcdat.regrid(out_grid, "xesmf", method="bilinear")
 
-        assert result.ts.shape == (12, 45, 72)
+        assert result.shape == (12, 45, 72)
 
     def test_weighted_spatial_average_for_lat_and_lon_region(self):
         ds = self.ds_with_bnds.copy()

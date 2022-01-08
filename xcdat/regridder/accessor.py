@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import xarray as xr
 
@@ -21,6 +21,7 @@ class DatasetRegridderAccessor:
         self,
         dst_grid: xr.Dataset,
         tool: str,
+        data_var: Optional[str] = None,
         **options: Any,
     ) -> xr.Dataset:
         """
@@ -77,4 +78,4 @@ class DatasetRegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices {list(REGRID_TOOLS)}"
             )
 
-        return regridder.regrid(self._ds)
+        return regridder.regrid(self._ds, data_var=data_var)

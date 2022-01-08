@@ -73,7 +73,7 @@ class TestAccessor:
 
         assert output == "output data"
 
-        mock_regridder.return_value.regrid.assert_called_with(self.data)
+        mock_regridder.return_value.regrid.assert_called_with(self.data, data_var=None)
 
     def test_invalid_tool(self):
         with pytest.raises(

@@ -1,6 +1,8 @@
-from typing import Tuple, List
+from typing import List, Optional, Tuple
+
 import numpy as np
 import xarray as xr
+
 from xcdat.dataset import get_inferred_var
 from xcdat.regridder.base import BaseRegridder
 
@@ -126,12 +128,19 @@ class Regrid2Regridder(BaseRegridder):
 
         self.lon_mapping, self.lon_weights = map_longitude(src_lon, self.dst_lon)
 
-    def regrid(self, ds: xr.Dataset) -> xr.Dataset:
-        # need to handle case when variable is not inferred
-        data_var = get_inferred_var(ds)
+    def regrid(self, ds: xr.Dataset, data_var: Optional[str] = None) -> xr.Dataset:
+        if data_var is None:
+            da_data_var = get_inferred_var(ds)
+        else:
+            da_data_var = ds.get(data_var, None)
+
+            if da_data_var is None:
+                raise KeyError(
+                    f"The data variable '{data_var}' does not exist in the dataset."
+                )
 
         output_shape = (
-            data_var.cf["time"].shape[0],
+            da_data_var.cf["time"].shape[0],
             len(self.lat_mapping),
             len(self.lon_mapping),
         )
@@ -151,20 +160,20 @@ class Regrid2Regridder(BaseRegridder):
                 weight = weight_dot.sum()
 
                 # handle case when order might be time, lon, lat?
-                data = data_var[:, lat, lon]
+                data = da_data_var[:, lat, lon]
 
                 out_data[:, ilat, ilon] = (
                     np.multiply(data, weight_dot).sum(axis=1).sum(axis=1) / weight
                 )
 
         coords = {
-            'time': data_var['time'],
-            'lat': (self.dst_lat[:, 0] + self.dst_lat[:, 1]) / 2,
-            'lon': (self.dst_lon[:, 0] + self.dst_lon[:, 1]) / 2,
+            "time": da_data_var["time"],
+            "lat": (self.dst_lat[:, 0] + self.dst_lat[:, 1]) / 2,
+            "lon": (self.dst_lon[:, 0] + self.dst_lon[:, 1]) / 2,
         }
 
-        out_da = xr.DataArray(out_data, coords=coords, name=data_var.name)
+        out_da = xr.DataArray(out_data, coords=coords, name=da_data_var.name)
 
-        out_ds = xr.Dataset({data_var.name: out_da})
+        out_ds = xr.Dataset({da_data_var.name: out_da})
 
         return out_ds
