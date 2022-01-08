@@ -1,10 +1,11 @@
-from typing import Any, Optional
+from typing import Any
 
 import xarray as xr
 
-from xcdat.regridder import xesmf
+from xcdat.regridder import regrid2, xesmf
 
 REGRID_TOOLS = {
+    "regrid2": regrid2.Regrid2Regridder,
     "xesmf": xesmf.XESMFRegridder,
 }
 
