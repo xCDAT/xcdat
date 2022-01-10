@@ -15,8 +15,8 @@ To workaround this data quality issue and proceed with opening the files, pass t
 1. ``compat="override"``: skip comparing and pick variable from first dataset
 2. ``join="override"``:  if indexes are of same size, rewrite indexes to be those of the first object with that dimension. Indexes for the same dimension must have the same size in all objects.
 
-   - ``join`` is set to `"outer_join"` by default, which might not be desired.
+   - ``join`` is set to `"outer"` by default, which might not be desired.
 
-``xcdat.open_mfdataset('path/to/files/*.nc', compat="override", join="override")``
+``xcdat.open_mfdataset("path/to/files/*.nc", compat="override", join="override")``
 
 More information here: https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html#xarray-open-mfdataset
