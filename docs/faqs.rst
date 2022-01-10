@@ -5,7 +5,7 @@ Frequently Asked Questions
 How do I open files that have conflicting values for a data variable(s)?
 ------------------------------------------------------------------------
 In xarray, the default setting for checking compatibility across files is ``compat='no_conflicts'``.
-If conflicting values exist for a data variable between the files, xarray raises ``MergeError: conflicting values for variable <DATA VAR NAME> on objects to be combined. You can skip this check by specifying compat="override".``
+If conflicting values for a data variable between the files exists, xarray raises ``MergeError: conflicting values for variable <DATA VAR NAME> on objects to be combined. You can skip this check by specifying compat="override".``
 
 Let's say you try opening two files using ``xcdat.open_mfdataset()`` and the aforementioned ``MergeError`` appears for the ``lat_bnds`` data var.
 You perform a floating point comparison between both files for ``lat_bnds`` and find a very small floating point difference at specific coordinates.
