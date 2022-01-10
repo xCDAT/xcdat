@@ -21,6 +21,7 @@ install_requires: List[str] = [
     "pandas",
     "typing_extensions",
     "xarray",
+    "xesmf",
 ]
 test_requires = ["pytest>=3"]
 
