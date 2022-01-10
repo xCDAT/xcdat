@@ -25,7 +25,7 @@ class TestXCDATAccessor:
 
     def test_regrid(self):
         ds = self.ds.copy()
-        ds.attrs['xcdat_infer'] = 'ts'
+        ds.attrs["xcdat_infer"] = "ts"
 
         out_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
