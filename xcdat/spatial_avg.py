@@ -1,12 +1,21 @@
 """Averager module that contains functions related to geospatial averaging."""
 from functools import reduce
-from typing import Dict, Hashable, List, Optional, Tuple, Union
+from typing import (
+    Dict,
+    Hashable,
+    List,
+    Literal,
+    Optional,
+    Tuple,
+    TypedDict,
+    Union,
+    get_args,
+)
 
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
 from dask.array.core import Array
-from typing_extensions import Literal, TypedDict, get_args
 
 from xcdat.axis import GENERIC_AXIS_MAP, GenericAxis
 from xcdat.dataset import get_inferred_var

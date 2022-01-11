@@ -6,7 +6,7 @@ channels:
 dependencies:
     # Base
     # ==================
-    - python
+    - python>=3.8
     - pip
     # Testing
     # ==================

@@ -1,8 +1,7 @@
 """Main xcdat module."""
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Literal, Optional, Union
 
 import xarray as xr
-from typing_extensions import Literal
 
 from xcdat.bounds import BoundsAccessor, BoundsAxis
 from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SpatialAxis

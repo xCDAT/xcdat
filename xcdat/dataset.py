@@ -2,11 +2,10 @@
 import pathlib
 from functools import partial
 from glob import glob
-from typing import Any, Callable, Dict, Hashable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Hashable, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
 import xarray as xr
-from typing_extensions import Literal
 
 from xcdat import bounds  # noqa: F401
 from xcdat.logger import setup_custom_logger

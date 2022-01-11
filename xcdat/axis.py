@@ -1,8 +1,6 @@
 """Axis module for utilities related to axes."""
 
-from typing import Dict
-
-from typing_extensions import Literal
+from typing import Dict, Literal
 
 # Mapping of CF compliant long and short axis keys to their generic
 # representations. This map is useful for indexing a Dataset/DataArray on
