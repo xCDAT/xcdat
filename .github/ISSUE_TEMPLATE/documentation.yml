@@ -1,7 +1,7 @@
 name: Documentation Update
 description: Update XCDAT documentation
 title: "[DOC]: "
-labels: [Type: Documentation]
+labels: ["Type: Documentation"]
 assignees: []
 body:
     - type: textarea
