@@ -1,0 +1,15 @@
+name: Documentation Update
+description: Update XCDAT documentation
+title: "[DOC]: "
+labels: [Type: Documentation]
+assignees: []
+body:
+    - type: textarea
+      id: description
+      attributes:
+          label: Describe your documentation update
+          description: |
+              Concise description of why the documentation is being updated (e.g., missing content for new feature, typo, etc.
+              If this is related to an issue or PR, please mention it.
+      validations:
+          required: true
