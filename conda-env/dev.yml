@@ -13,7 +13,6 @@ dependencies:
     - netcdf4=1.5.8
     - numpy=1.21.4
     - pandas=1.3.4
-    - typing_extensions=4.0.1 # Required to make use of Python >=3.8 backported types
     - xarray=0.20.1
     # Quality Assurance
     # ==================
