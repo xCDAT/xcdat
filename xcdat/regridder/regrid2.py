@@ -7,10 +7,20 @@ from xcdat.dataset import get_inferred_var
 from xcdat.regridder.base import BaseRegridder
 
 
+def extract_bounds(bounds):
+    if bounds[0, 0] < bounds[0, 1]:
+        lower = bounds[:, 0]
+        upper = bounds[:, 1]
+    else:
+        lower = bounds[:, 1]
+        upper = bounds[:, 0]
+
+    return lower, upper
+
+
 def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    # determine when to swap -90:90 vs 90:-90
-    src_south, src_north = src[:, 0], src[:, 1]
-    dst_south, dst_north = dst[:, 1], dst[:, 0]
+    src_south, src_north = extract_bounds(src)
+    dst_south, dst_north = extract_bounds(dst)
 
     mapping = []
     weights = []
