@@ -395,10 +395,13 @@ class SpatialAverageAccessor:
             The longitude axis weights.
         """
         p_meridian_index: Optional[np.ndarray] = None
+        d_bounds = domain_bounds.copy()
 
         if region_bounds is not None:
-            d_bounds: xr.DataArray = self._swap_lon_axis(domain_bounds, to=360)  # type: ignore
-            r_bounds: np.ndarray = self._swap_lon_axis(region_bounds, to=360)  # type: ignore
+            d_bounds: xr.DataArray = self._swap_lon_axis(d_bounds, to=360)  # type: ignore
+            r_bounds: np.ndarray = self._swap_lon_axis(
+                region_bounds, to=360
+            )  # type:ignore
 
             is_region_circular = r_bounds[1] - r_bounds[0] == 0
             if is_region_circular:
