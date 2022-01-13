@@ -149,12 +149,12 @@ class SpatialAverageAccessor:
                 self._validate_region_bounds("lat", lat_bounds)
             if lon_bounds is not None:
                 self._validate_region_bounds("lon", lon_bounds)
-            var_weights = self._get_weights(axis, lat_bounds, lon_bounds)
+            dv_weights = self._get_weights(axis, lat_bounds, lon_bounds)
         elif isinstance(weights, xr.DataArray):
-            var_weights = weights
+            dv_weights = weights
 
-        self._validate_weights(dv, axis, var_weights)
-        dataset[dv.name] = self._averager(dv, axis, var_weights)
+        self._validate_weights(dv, axis, dv_weights)
+        dataset[dv.name] = self._averager(dv, axis, dv_weights)
         return dataset
 
     def _validate_axis(
