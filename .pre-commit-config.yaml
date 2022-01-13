@@ -34,3 +34,4 @@ repos:
       hooks:
           - id: mypy
             args: ["--config=setup.cfg"]
+            additional_dependencies: [dask, numpy, pandas, xarray]

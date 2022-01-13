@@ -26,7 +26,7 @@ AxisWeights = Dict[Hashable, xr.DataArray]
 SpatialAxis = Literal["lat", "lon"]
 SPATIAL_AXES: Tuple[SpatialAxis, ...] = get_args(SpatialAxis)
 #: Type alias for a tuple of floats/ints for the regional selection bounds.
-RegionAxisBounds = Tuple[Union[float, int], Union[float, int]]
+RegionAxisBounds = Tuple[float, float]
 
 
 @xr.register_dataset_accessor("spatial")
@@ -134,25 +134,27 @@ class SpatialAverageAccessor:
         dataset = self._dataset.copy()
 
         if data_var is None:
-            da_data_var = get_inferred_var(dataset)
+            dv = get_inferred_var(dataset)
         else:
-            da_data_var = dataset.get(data_var, None)
-            if da_data_var is None:
+            dv = dataset.get(data_var, None)
+            if dv is None:
                 raise KeyError(
                     f"The data variable '{data_var}' does not exist in the dataset."
                 )
 
-        axis = self._validate_axis(da_data_var, axis)
+        axis = self._validate_axis(dv, axis)
 
         if weights == "generate":
             if lat_bounds is not None:
                 self._validate_region_bounds("lat", lat_bounds)
             if lon_bounds is not None:
                 self._validate_region_bounds("lon", lon_bounds)
-            weights = self._get_weights(axis, lat_bounds, lon_bounds)
+            var_weights = self._get_weights(axis, lat_bounds, lon_bounds)
+        elif isinstance(weights, xr.DataArray):
+            var_weights = weights
 
-        self._validate_weights(da_data_var, axis, weights)
-        dataset[da_data_var.name] = self._averager(da_data_var, axis, weights)
+        self._validate_weights(dv, axis, var_weights)
+        dataset[dv.name] = self._averager(dv, axis, var_weights)
         return dataset
 
     def _validate_axis(
@@ -338,7 +340,9 @@ class SpatialAverageAccessor:
             d_bounds = axis_bounds[key]["domain"]
             self._validate_domain_bounds(d_bounds)
 
-            r_bounds = axis_bounds[key]["region"]
+            r_bounds: Union[Optional[RegionAxisBounds], np.ndarray] = axis_bounds[key][
+                "region"
+            ]
             if r_bounds is not None:
                 r_bounds = np.array(r_bounds, dtype="float")
 
@@ -355,7 +359,7 @@ class SpatialAverageAccessor:
         return weights
 
     def _get_longitude_weights(
-        self, domain_bounds: xr.DataArray, region_bounds: np.array
+        self, domain_bounds: xr.DataArray, region_bounds: Optional[np.ndarray]
     ) -> xr.DataArray:
         """Gets weights for the longitude axis.
 
@@ -382,7 +386,7 @@ class SpatialAverageAccessor:
         ----------
         domain_bounds : xr.DataArray
             The array of bounds for the latitude domain.
-        region_bounds : np.array
+        region_bounds : Optional[np.ndarray]
             The array of bounds for latitude regional selection.
 
         Returns
@@ -390,23 +394,23 @@ class SpatialAverageAccessor:
         xr.DataArray
             The longitude axis weights.
         """
-        p_meridian_index: Optional[np.array] = None
+        p_meridian_index: Optional[np.ndarray] = None
 
         if region_bounds is not None:
-            domain_bounds = self._swap_lon_axis(domain_bounds, to=360)
-            region_bounds = self._swap_lon_axis(region_bounds, to=360)
+            d_bounds: xr.DataArray = self._swap_lon_axis(domain_bounds, to=360)  # type: ignore
+            r_bounds: np.ndarray = self._swap_lon_axis(region_bounds, to=360)  # type: ignore
 
-            is_region_circular = region_bounds[1] - region_bounds[0] == 0
+            is_region_circular = r_bounds[1] - r_bounds[0] == 0
             if is_region_circular:
-                region_bounds = np.array([0.0, 360.0])
+                r_bounds = np.array([0.0, 360.0])
 
             (
-                domain_bounds,
+                d_bounds,
                 p_meridian_index,
-            ) = self._align_longitude_to_360_axis(domain_bounds)
-            domain_bounds = self._scale_domain_to_region(domain_bounds, region_bounds)
+            ) = self._align_longitude_to_360_axis(d_bounds)
+            d_bounds = self._scale_domain_to_region(d_bounds, r_bounds)
 
-        weights = self._calculate_weights(domain_bounds)
+        weights = self._calculate_weights(d_bounds)
         if p_meridian_index is not None:
             weights[p_meridian_index] = weights[p_meridian_index] + weights[-1]
             weights = weights[0:-1]
@@ -414,7 +418,7 @@ class SpatialAverageAccessor:
         return weights
 
     def _get_latitude_weights(
-        self, domain_bounds: xr.DataArray, region_bounds: xr.DataArray
+        self, domain_bounds: xr.DataArray, region_bounds: Optional[np.ndarray]
     ) -> xr.DataArray:
         """Gets weights for the latitude axis.
 
@@ -426,7 +430,7 @@ class SpatialAverageAccessor:
         ----------
         domain_bounds : xr.DataArray
             The array of bounds for the latitude domain.
-        region_bounds : np.array
+        region_bounds : Optional[np.ndarray]
             The array of bounds for latitude regional selection.
 
         Returns
@@ -437,9 +441,8 @@ class SpatialAverageAccessor:
         if region_bounds is not None:
             domain_bounds = self._scale_domain_to_region(domain_bounds, region_bounds)
 
-        domain_bounds = np.sin(np.radians(domain_bounds))
-        weights = self._calculate_weights(domain_bounds)
-
+        d_bounds = np.sin(np.radians(domain_bounds))
+        weights = self._calculate_weights(d_bounds)  # type: ignore
         return weights
 
     def _calculate_weights(self, domain_bounds: xr.DataArray):
@@ -462,7 +465,7 @@ class SpatialAverageAccessor:
 
     def _align_longitude_to_360_axis(
         self, domain_bounds: xr.DataArray
-    ) -> Tuple[xr.DataArray, np.array]:
+    ) -> Tuple[xr.DataArray, np.ndarray]:
         """Handles a prime meridian cell to align longitude axis to (0, 360).
 
         This method ensures the domain bounds are within 0 to 360 by handling
@@ -491,9 +494,9 @@ class SpatialAverageAccessor:
 
         Returns
         -------
-        Tuple[xr.DataArray, Optional[np.array]]
+        Tuple[xr.DataArray, Optional[np.ndarray]]
            A tuple, with the first element being the domain bounds DataArray,
-           and the second being an np.array with a single element representing
+           and the second being an np.ndarray with a single element representing
            the index of the prime meridian grid cell.
 
         Notes
@@ -509,7 +512,7 @@ class SpatialAverageAccessor:
 
         p_meridian_index = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
         if p_meridian_index.size == 0:
-            p_meridian_index = None
+            p_meridian_index = None  # type: ignore
         elif p_meridian_index.size > 1:
             raise ValueError("More than one grid cell spans prime meridian.")
         elif p_meridian_index.size == 1:
@@ -567,7 +570,7 @@ class SpatialAverageAccessor:
         # manipulations on the data. Otherwise, it raises `NotImplementedError
         # xarray can't set arrays with multiple array indices to dask yet`.
         if type(lon_swap.data) == Array:
-            lon_swap.load()
+            lon_swap.load()  # type: ignore
 
         # Must set keep_attrs=True or the xarray DataArray attrs will get
         # dropped. This has no affect on NumPy arrays.
