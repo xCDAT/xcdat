@@ -27,7 +27,7 @@ setup(
     author="XCDAT developers",
     python_requires=">=3.8",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache-2.0 License",
         "Natural Language :: English",

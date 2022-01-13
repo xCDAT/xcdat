@@ -10,6 +10,6 @@ dependencies:
     - pip
     # Testing
     # ==================
-    - pytest=6.2.5
-    - pytest-cov=3.0.0
+    - pytest
+    - pytest-cov
 prefix: /opt/miniconda3/envs/xcdat_ci
