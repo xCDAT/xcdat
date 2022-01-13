@@ -222,7 +222,7 @@ class BoundsAccessor:
 
         # Retrieve coordinate dimension to calculate the diffs between points.
         dim = da_coord.dims[0]
-        diffs = da_coord.diff(dim)
+        diffs = da_coord.diff(dim).values
 
         # Add beginning and end points to account for lower and upper bounds.
         diffs = np.insert(diffs, 0, diffs[0])
