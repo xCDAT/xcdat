@@ -19,7 +19,6 @@ install_requires: List[str] = [
     "netcdf4",
     "numpy",
     "pandas",
-    "typing_extensions",
     "xarray",
     "xesmf",
 ]
@@ -27,18 +26,16 @@ test_requires = ["pytest>=3"]
 
 setup(
     author="XCDAT developers",
-    python_requires=">=3.5",
+    python_requires=">=3.8",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache-2.0 License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
-        "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
     ],
     description="Xarray Extended with Climate Data Analysis Tools",
     install_requires=install_requires,

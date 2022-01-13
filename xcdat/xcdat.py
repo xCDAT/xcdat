@@ -1,8 +1,7 @@
 """Main xcdat module."""
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Literal, Optional, Union
 
 import xarray as xr
-from typing_extensions import Literal
 
 from xcdat.bounds import BoundsAccessor, BoundsAxis
 from xcdat.regridder.accessor import DatasetRegridderAccessor  # noqa: F401

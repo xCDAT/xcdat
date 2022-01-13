@@ -1,11 +1,10 @@
 """Bounds module for functions related to coordinate bounds."""
 import collections
-from typing import Dict, List, Optional
+from typing import Dict, List, Literal, Optional
 
 import cf_xarray as cfxr  # noqa: F401
 import numpy as np
 import xarray as xr
-from typing_extensions import Literal
 
 from xcdat.axis import GENERIC_AXIS_MAP
 from xcdat.logger import setup_custom_logger
@@ -223,7 +222,7 @@ class BoundsAccessor:
 
         # Retrieve coordinate dimension to calculate the diffs between points.
         dim = da_coord.dims[0]
-        diffs = da_coord.diff(dim)
+        diffs = da_coord.diff(dim).values
 
         # Add beginning and end points to account for lower and upper bounds.
         diffs = np.insert(diffs, 0, diffs[0])
