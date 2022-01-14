@@ -119,9 +119,7 @@ ESTIMATE_CONST = 0.25 * (1.0 - np.power(2.0 / np.pi, 2))
 def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[int, int, int]:
     # TODO create method for legendre polinomial
     # TODO figure out why this is different compared to numpy.polynomial.legendre, is this wrong?
-    zero_poly = np.cos(
-        bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST)
-    )
+    zero_poly = np.cos(bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST))
 
     for _ in range(10):
         second_poly = 1.0
@@ -171,7 +169,9 @@ def _bessel_zeros(mid: float, nlats: int):
     weights = np.zeros_like(bessel_zeros)
 
     for x in range(int(nlats / 2 + 1)):
-        zero_poly, first_poly, second_poly = _legendre_polinomial(bessel_zeros[x], nlats)
+        zero_poly, first_poly, second_poly = _legendre_polinomial(
+            bessel_zeros[x], nlats
+        )
 
         bessel_zeros[x] = zero_poly
 

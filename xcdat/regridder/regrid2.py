@@ -54,14 +54,17 @@ def pertub(value):
 def get_center_index(src_west, src_east, dst_west) -> Tuple[np.ndarray, np.ndarray]:
     west_most = np.minimum(dst_west[0], dst_west[-1])
 
-    center = pertub((west_most - src_west[-1]) / 360.)
+    center = pertub((west_most - src_west[-1]) / 360.0)
 
     if src_west[0] < src_west[-1]:
         center += 1
     else:
         center -= 1
 
-    return west_most, np.where(np.logical_and(src_west < center, src_east > center))[0][0] - 1
+    return (
+        west_most,
+        np.where(np.logical_and(src_west < center, src_east > center))[0][0] - 1,
+    )
 
 
 def shift_bounds(src_west, src_east, west_most, center_index):
@@ -102,7 +105,9 @@ def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
     west_most, center_index = get_center_index(src_west, src_east, dst_west)
 
-    new_src_west, new_src_east = shift_bounds(src_west, src_east, west_most, center_index)
+    new_src_west, new_src_east = shift_bounds(
+        src_west, src_east, west_most, center_index
+    )
 
     mapping = []
     weights = []
