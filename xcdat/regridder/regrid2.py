@@ -51,23 +51,23 @@ def pertub(value):
     return offset
 
 
-def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    src_west, src_east = src[:, 0], src[:, 1]
-    dst_west, dst_east = dst[:, 0], dst[:, 1]
-
+def get_center_index(src_west, src_east, dst_west) -> Tuple[np.ndarray, np.ndarray]:
     west_most = np.minimum(dst_west[0], dst_west[-1])
-    west_adjust = pertub((west_most - src_west[-1]) / 360.0)
+
+    center = pertub((west_most - src_west[-1]) / 360.)
 
     if src_west[0] < src_west[-1]:
-        test = west_adjust + 1
+        center += 1
     else:
-        test = west_adjust - 1
+        center -= 1
 
-    west_offset = np.where(np.logical_and(src_west < test, src_east > test))[0][0] - 1
+    return west_most, np.where(np.logical_and(src_west < center, src_east > center))[0][0] - 1
 
+
+def shift_bounds(src_west, src_east, west_most, center_index):
     src_length = len(src_west)
 
-    new_west_index = np.arange(src_length + 1) + west_offset
+    new_west_index = np.arange(src_length + 1) + center_index
 
     require_adjust = np.where(new_west_index >= src_length)
 
@@ -91,6 +91,19 @@ def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
             new_src_west[-1] += -360.0
             new_src_east[-1] += -360.0
 
+    return new_src_west, new_src_east
+
+
+def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
+    src_east, src_west = extract_bounds(src)
+    dst_east, dst_west = extract_bounds(dst)
+
+    src_length = len(src_west)
+
+    west_most, center_index = get_center_index(src_west, src_east, dst_west)
+
+    new_src_west, new_src_east = shift_bounds(src_west, src_east, west_most, center_index)
+
     mapping = []
     weights = []
 
@@ -105,7 +118,7 @@ def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
         weights.append(weight)
 
-        contrib += west_offset
+        contrib += center_index
 
         values_wrapped = contrib > src_length - 1
 
