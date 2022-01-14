@@ -112,6 +112,117 @@ BESSEL_LOOKUP = [
     156.2950342685,
 ]
 
+EPS = 1e-14
+ESTIMATE_CONST = 0.25 * (1.0 - np.power(2.0 / np.pi, 2))
+
+
+def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[int, int, int]:
+    # TODO create method for legendre polinomial
+    # TODO figure out why this is different compared to numpy.polynomial.legendre, is this wrong?
+    zero_poly = np.cos(
+        bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST)
+    )
+
+    for _ in range(10):
+        second_poly = 1.0
+        first_poly = zero_poly
+
+        for y in range(2, nlats + 1):
+            new_poly = (
+                (2.0 * y - 1.0) * zero_poly * first_poly - (y - 1.0) * second_poly
+            ) / y
+            second_poly = first_poly
+            first_poly = new_poly
+
+        first_poly = second_poly
+        poly_change = (nlats * (first_poly - zero_poly * new_poly)) / (
+            1.0 - zero_poly * zero_poly
+        )
+        poly_slope = new_poly / poly_change
+        zero_poly -= poly_slope
+        abs_poly_change = np.fabs(poly_slope)
+
+        if abs_poly_change <= EPS:
+            break
+
+    return zero_poly, first_poly, second_poly
+
+
+def _bessel_funcation_zeros(n: int):
+    values = np.zeros((n,))
+
+    lookup_n = min(n, 50)
+
+    values[:lookup_n] = BESSEL_LOOKUP[:lookup_n]
+
+    # interpolate remaining values
+    if n > 50:
+        for x in range(50, n):
+            values[x] = values[x - 1] + np.pi
+
+    return values
+
+
+def _bessel_zeros(mid: float, nlats: int):
+    bessel_zeros = _bessel_funcation_zeros(mid + 1)
+
+    bessel_zeros = np.pad(bessel_zeros, (0, nlats - len(bessel_zeros)))
+
+    weights = np.zeros_like(bessel_zeros)
+
+    for x in range(int(nlats / 2 + 1)):
+        zero_poly, first_poly, second_poly = _legendre_polinomial(bessel_zeros[x], nlats)
+
+        bessel_zeros[x] = zero_poly
+
+        weights[x] = (
+            (1.0 - zero_poly * zero_poly)
+            * 2.0
+            / ((nlats * first_poly) * (nlats * first_poly))
+        )
+
+    bessel_zeros[mid if nlats % 2 == 0 else mid + 1 :] = -1.0 * np.flip(
+        bessel_zeros[:mid]
+    )
+
+    weights[mid if nlats % 2 == 0 else mid + 1 :] = np.flip(weights[:mid])
+
+    if nlats % 2 != 0:
+        weights[mid + 1] = 0.0
+
+        mid_weight = 2.0 / np.power(nlats, 2)
+
+        for x in range(2, nlats + 1, 2):
+            mid_weight = (mid_weight * np.power(nlats, 2)) / np.power(x - 1, 2)
+
+            weights[mid + 1] = mid_weight
+
+    bessel_zeros = (180.0 / np.pi) * np.arcsin(bessel_zeros)
+
+    return bessel_zeros, weights
+
+
+def _create_gaussian_axis(nlats: int) -> Tuple[np.ndarray, np.ndarray]:
+    mid = int(np.floor(nlats / 2))
+
+    bessel_zeros, weights = _bessel_zeros(mid, nlats)
+
+    bnd_pts = np.zeros((nlats + 1,))
+    bnd_pts[0], bnd_pts[nlats] = 1.0, -1.0
+
+    for x in range(1, int(np.floor(nlats / 2)) + 1):
+        bnd_pts[x] = bnd_pts[x - 1] - weights[x - 1]
+
+    bnd_pts_mid = int(np.floor(nlats / 2))
+    bnd_pts[bnd_pts_mid:] = -1.0 * np.flip(bnd_pts[: bnd_pts_mid + 1])
+    bnd_pts = (180.0 / np.pi) * np.arcsin(bnd_pts)
+
+    bnds = np.zeros((bessel_zeros.shape[0], 2))
+    bnds[::, 0] = bnd_pts[:-1]
+    bnds[::, 1] = bnd_pts[1:]
+
+    return bessel_zeros, bnds
+
 
 def create_gaussian_grid(nlats: int) -> xr.Dataset:
     lats, bounds = _create_gaussian_axis(nlats)
@@ -141,105 +252,6 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
     )
 
     return grid
-
-
-def _create_gaussian_axis(nlats: int) -> Tuple[np.ndarray, np.ndarray]:
-    eps = 1e-14
-    mid = int(np.floor(nlats / 2))
-
-    bessel_zeros = _bessel_funcation_zeros(mid + 1)
-
-    bessel_zeros = np.pad(bessel_zeros, (0, nlats - len(bessel_zeros)))
-
-    weights = np.zeros_like(bessel_zeros)
-
-    estimate_const = 0.25 * (1.0 - np.power(2.0 / np.pi, 2))
-
-    for x in range(int(nlats / 2 + 1)):
-        # TODO create method for legendre polinomial
-        # TODO figure out why this is different compared to numpy.polynomial.legendre, is this wrong?
-        zero_poly = np.cos(
-            bessel_zeros[x] / np.sqrt(np.power(nlats + 0.5, 2) + estimate_const)
-        )
-
-        for _ in range(10):
-            second_poly = 1.0
-            first_poly = zero_poly
-
-            for y in range(2, nlats + 1):
-                new_poly = (
-                    (2.0 * y - 1.0) * zero_poly * first_poly - (y - 1.0) * second_poly
-                ) / y
-                second_poly = first_poly
-                first_poly = new_poly
-
-            first_poly = second_poly
-            poly_change = (nlats * (first_poly - zero_poly * new_poly)) / (
-                1.0 - zero_poly * zero_poly
-            )
-            poly_slope = new_poly / poly_change
-            zero_poly -= poly_slope
-            abs_poly_change = np.fabs(poly_slope)
-
-            if abs_poly_change <= eps:
-                break
-
-        bessel_zeros[x] = zero_poly
-
-        weights[x] = (
-            (1.0 - zero_poly * zero_poly)
-            * 2.0
-            / ((nlats * first_poly) * (nlats * first_poly))
-        )
-
-    bessel_zeros[mid if nlats % 2 == 0 else mid + 1 :] = -1.0 * np.flip(
-        bessel_zeros[:mid]
-    )
-
-    weights[mid if nlats % 2 == 0 else mid + 1 :] = np.flip(weights[:mid])
-
-    if nlats % 2 != 0:
-        weights[mid + 1] = 0.0
-
-        mid_weight = 2.0 / np.power(nlats, 2)
-
-        for x in range(2, nlats + 1, 2):
-            mid_weight = (mid_weight * np.power(nlats, 2)) / np.power(x - 1, 2)
-
-            weights[mid + 1] = mid_weight
-
-    bessel_zeros = (180.0 / np.pi) * np.arcsin(bessel_zeros)
-
-    bnd_pts = np.zeros((nlats + 1,))
-    bnd_pts[0], bnd_pts[nlats] = 1.0, -1.0
-
-    for x in range(1, int(np.floor(nlats / 2)) + 1):
-        bnd_pts[x] = bnd_pts[x - 1] - weights[x - 1]
-
-    bnd_pts_mid = int(np.floor(nlats / 2))
-    bnd_pts[bnd_pts_mid:] = -1.0 * np.flip(bnd_pts[: bnd_pts_mid + 1])
-    bnd_pts = (180.0 / np.pi) * np.arcsin(bnd_pts)
-
-    bnds = np.zeros((bessel_zeros.shape[0], 2))
-    bnds[::, 0] = bnd_pts[:-1]
-    bnds[::, 1] = bnd_pts[1:]
-
-    return bessel_zeros, bnds
-
-
-def _bessel_funcation_zeros(n: int):
-    values = np.zeros((n,))
-
-    lookup_n = min(n, 50)
-
-    values[:lookup_n] = BESSEL_LOOKUP[:lookup_n]
-
-    # interpolate remaining values
-    if n > 50:
-        for x in range(50, n):
-            values[x] = values[x - 1] + np.pi
-
-    return values
 
 
 def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
