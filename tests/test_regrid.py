@@ -1,10 +1,14 @@
+import sys
 from unittest import mock
 
 import numpy as np
 import pytest
+import xarray as xr
 
 from tests import fixtures
-from xcdat.regridder import accessor, base, grid, xesmf, regrid2
+from xcdat.regridder import accessor, base, grid, regrid2, xesmf
+
+np.set_printoptions(threshold=sys.maxsize, suppress=True)
 
 
 class TestRegrid2Regridder:
@@ -125,10 +129,105 @@ class TestGrid:
         assert new_grid.lon.shape == (64,)
 
     def test_global_mean_grid(self):
-        pass
+        new_grid = grid.create_gaussian_grid(32)
+
+        mean_grid = grid.create_global_mean_grid(new_grid)
+
+        assert mean_grid.cf["lat"].data == np.array(
+            [
+                0.0,
+            ]
+        )
+        assert mean_grid.cf["lon"].data == np.array(
+            [
+                177.1875,
+            ]
+        )
 
     def test_zonal_grid(self):
-        pass
+        new_grid = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    name="lat",
+                    data=np.array([-80, -40, 0, 40, 80]),
+                    dims=["lat"],
+                    attrs={
+                        "units": "degrees_north",
+                        "axis": "Y",
+                        "bounds": "lat_bnds",
+                    },
+                ),
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([-160, -80, 0, 80, 160]),
+                    dims=["lon"],
+                    attrs={
+                        "units": "degrees_east",
+                        "axis": "X",
+                        "bounds": "lon_bnds",
+                    },
+                ),
+            },
+            data_vars={
+                "lat_bnds": xr.DataArray(
+                    name="lat_bnds",
+                    data=np.array(
+                        [[-90, -60], [-60, -20], [-20, 20], [20, 60], [60, 90]]
+                    ),
+                    dims=["lat", "bnds"],
+                ),
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [[-180, -120], [-120, -40], [-40, 40], [40, 120], [120, 180]]
+                    ),
+                    dims=["lon", "bnds"],
+                ),
+            },
+        )
+
+        zonal_grid = grid.create_zonal_grid(new_grid)
+
+        expected_grid = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    name="lat",
+                    data=np.array([-80, -40, 0, 40, 80]),
+                    dims=["lat"],
+                    attrs={
+                        "units": "degrees_north",
+                        "axis": "Y",
+                        "bounds": "lat_bnds",
+                    },
+                ),
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([0.0]),
+                    dims=["lon"],
+                    attrs={
+                        "units": "degrees_east",
+                        "axis": "X",
+                        "bounds": "lon_bnds",
+                    },
+                ),
+            },
+            data_vars={
+                "lat_bnds": xr.DataArray(
+                    name="lat_bnds",
+                    data=np.array(
+                        [[-90, -60], [-60, -20], [-20, 20], [20, 60], [60, 90]]
+                    ),
+                    dims=["lat", "bnds"],
+                ),
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array([[-180, 180]]),
+                    dims=["lon", "bnds"],
+                ),
+            },
+        )
+
+        assert zonal_grid.identical(expected_grid)
 
 
 class TestAccessor:
