@@ -141,7 +141,7 @@ class TestAlignLonBoundsto360:
             dims=["lon", "bnds"],
         )
         with pytest.raises(ValueError):
-            _align_lon_bounds_to_360(domain_bounds, 0)
+            _align_lon_bounds_to_360(domain_bounds, np.array([0]))
 
     def test_raises_error_if_bounds_above_360(self):
         domain_bounds = xr.DataArray(
@@ -150,7 +150,7 @@ class TestAlignLonBoundsto360:
             dims=["lon", "bnds"],
         )
         with pytest.raises(ValueError):
-            _align_lon_bounds_to_360(domain_bounds, 0)
+            _align_lon_bounds_to_360(domain_bounds, np.array([0]))
 
     def test_extends_bounds_array_for_cell_spanning_prime_meridian(self):
         domain_bounds = xr.DataArray(
@@ -167,7 +167,7 @@ class TestAlignLonBoundsto360:
             dims=["lon", "bnds"],
         )
 
-        result_bounds = _align_lon_bounds_to_360(domain_bounds, 0)
+        result_bounds = _align_lon_bounds_to_360(domain_bounds, np.array([0]))
         expected_bounds = xr.DataArray(
             name="lon_bnds",
             coords={
@@ -199,7 +199,7 @@ class TestAlignLonBoundsto360:
             dims=["lon", "bnds"],
         )
 
-        result_bounds = _align_lon_bounds_to_360(domain_bounds, 0)
+        result_bounds = _align_lon_bounds_to_360(domain_bounds, np.array(0))
         dbdiff = np.sum(np.array(result_bounds[:, 1] - result_bounds[:, 0]))
         assert dbdiff == 360.0
 
