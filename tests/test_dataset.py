@@ -670,7 +670,7 @@ class TestInferOrKeepVar:
 
         assert result.identical(expected)
         assert (
-            "This dataset contains more than one regular data variable: ['ts', 'tas']. "
+            "This dataset contains more than one regular data variable: ['tas', 'ts']. "
             "If desired, pass the `data_var` kwarg to limit the dataset to a single data var."
         ) in caplog.text
 
