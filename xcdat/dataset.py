@@ -2,7 +2,7 @@
 import pathlib
 from functools import partial
 from glob import glob
-from typing import Any, Callable, Dict, Hashable, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
 import xarray as xr
@@ -445,7 +445,7 @@ def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Datase
 
     all_vars = ds.data_vars.keys()
     bounds_vars = ds.bounds.names
-    regular_vars: List[Hashable] = list(set(all_vars) ^ set(bounds_vars))
+    regular_vars = sorted(list(set(all_vars) ^ set(bounds_vars)))
 
     if len(regular_vars) == 0:
         logger.debug("This dataset only contains bounds data variables.")
