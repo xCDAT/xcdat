@@ -17,7 +17,12 @@ import numpy as np
 import xarray as xr
 from dask.array.core import Array
 
-from xcdat.axis import GENERIC_AXIS_MAP, GenericAxis
+from xcdat.axis import (
+    GENERIC_AXIS_MAP,
+    GenericAxis,
+    _align_lon_bounds_to_360,
+    _get_prime_meridian_index,
+)
 from xcdat.dataset import get_inferred_var
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
@@ -407,10 +412,10 @@ class SpatialAverageAccessor:
             if is_region_circular:
                 r_bounds = np.array([0.0, 360.0])
 
-            (
-                d_bounds,
-                p_meridian_index,
-            ) = self._align_longitude_to_360_axis(d_bounds)
+            p_meridian_index = _get_prime_meridian_index(d_bounds)
+            if p_meridian_index is not None:
+                d_bounds = _align_lon_bounds_to_360(d_bounds, p_meridian_index)
+
             d_bounds = self._scale_domain_to_region(d_bounds, r_bounds)
 
         weights = self._calculate_weights(d_bounds)
@@ -466,83 +471,6 @@ class SpatialAverageAccessor:
         """
         return np.abs(domain_bounds[:, 1] - domain_bounds[:, 0])
 
-    def _align_longitude_to_360_axis(
-        self, domain_bounds: xr.DataArray
-    ) -> Tuple[xr.DataArray, np.ndarray]:
-        """Handles a prime meridian cell to align longitude axis to (0, 360).
-
-        This method ensures the domain bounds are within 0 to 360 by handling
-        the grid cell that encompasses the prime meridian (e.g., [359, 1]). In
-        this case, calculating longitudinal weights is complicated because the
-        weights are determined by the difference of the bounds.
-
-        If this situation exists, the method will split this grid cell into
-        two parts (one east and west of the prime meridian). The original
-        grid cell will have domain bounds extending east of the prime meridian
-        and an extra set of bounds will be concatenated to ``domain_bounds``
-        corresponding to the domain bounds west of the prime meridian. For
-        instance, a grid cell spanning -1 to 1, will be broken into a cell
-        from 0 to 1 and 359 to 360 (or -1 to 0). The index of the original
-        prime meridian grid cell is returned as ``p_meridian_index`` along with
-        the updated ``domain_bounds``.
-
-        If no domain grid bounds span across the prime meridian, the original
-        ``domain_bounds`` are returned and `p_meridian_index` returns None.
-
-        Parameters
-        ----------
-        domain_bounds : xr.DataArray
-            The domain's bounds. The bounds should have values between 0 and
-            360.
-
-        Returns
-        -------
-        Tuple[xr.DataArray, Optional[np.ndarray]]
-           A tuple, with the first element being the domain bounds DataArray,
-           and the second being an np.ndarray with a single element representing
-           the index of the prime meridian grid cell.
-
-        Notes
-        -----
-        This method returns ``domain_bounds`` that are intended for calculating
-        spatial weights only.
-        """
-        if (domain_bounds.values.min() < 0) | (domain_bounds.values.max() > 360):
-            raise ValueError(
-                "Longitude bounds aren't inclusively between 0 and 360. "
-                "Use `_swap_lon_axis()` before calling `_align_longitude_to_360_axis()`."
-            )
-
-        p_meridian_index = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
-        if p_meridian_index.size == 0:
-            p_meridian_index = None  # type: ignore
-        elif p_meridian_index.size > 1:
-            raise ValueError("More than one grid cell spans prime meridian.")
-        elif p_meridian_index.size == 1:
-            # Example array: [[359, 1], [1, 90], [90, 180], [180, 359]]
-            # Reorient bound to span across zero (i.e., [359, 1] -> [-1, 1]).
-            # Result: [[-1, 1], [1, 90], [90, 180], [180, 359]]
-            domain_bounds[p_meridian_index, 0] = (
-                domain_bounds[p_meridian_index, 0] - 360.0
-            )
-            # Extend the array to nlon+1 by concatenating the grid cell that
-            # spans the prime meridian to the end.
-            # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [-1, 1]]
-            domain_bounds = xr.concat(
-                (domain_bounds, domain_bounds[p_meridian_index, :]), dim="lon"
-            )
-            # Add an equivalent bound that spans 360
-            # (i.e., [-1, 1] -> [359, 361]) to the end of the array.
-            # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [359, 361]]
-            repeat_bound = domain_bounds[p_meridian_index, :][0] + 360.0
-            domain_bounds[-1, :] = repeat_bound
-
-            # Update the lower-most min and upper-most max bounds to [0, 360].
-            # Result: [[0, 1], [1, 90], [90, 180], [180, 359], [359, 360]]
-            domain_bounds[p_meridian_index, 0], domain_bounds[-1, 1] = (0.0, 360.0)
-
-        return domain_bounds, p_meridian_index
-
     def _swap_lon_axis(
         self, lon: Union[xr.DataArray, np.ndarray], to: Literal[180, 360]
     ) -> Union[xr.DataArray, np.ndarray]:
@@ -553,8 +481,8 @@ class SpatialAverageAccessor:
         lon : Union[xr.DataArray, np.ndarray]
              Longitude values to convert.
         to : Literal[180, 360]
-            Axis orientation to convert to, either 180 (-180 to 180) or 360
-            (0 to 360).
+            Axis orientation to convert to, either 180 [-180, 180) or 360
+            [0, 360).
 
         Returns
         -------
@@ -564,7 +492,7 @@ class SpatialAverageAccessor:
         Notes
         -----
         This does not reorder the values in any way; it only converts the values
-        in-place between longitude conventions (-180 to 180) or (0 to 360).
+        in-place between longitude conventions [-180, 180) or [0, 360).
         """
         lon_swap = lon.copy()
 
