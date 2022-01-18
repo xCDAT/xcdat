@@ -144,7 +144,7 @@ class SpatialAverageAccessor:
 
         axis = self._validate_axis(dv, axis)
 
-        if weights == "generate":
+        if isinstance(weights, str) and weights == "generate":
             if lat_bounds is not None:
                 self._validate_region_bounds("lat", lat_bounds)
             if lon_bounds is not None:
@@ -737,7 +737,6 @@ class SpatialAverageAccessor:
 
         if "lat" in axis and lat_key not in weights.dims:
             raise KeyError(f"Check weights DataArray includes {lat_key} dimension.")
-
         if "lon" in axis and lon_key not in weights.dims:
             raise KeyError(f"Check weights DataArray includes {lon_key} dimension.")
 

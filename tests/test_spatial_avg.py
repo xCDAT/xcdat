@@ -44,9 +44,32 @@ class TestSpatialAvg:
                 axis=["lat", "incorrect_axis"],
             )
 
-    def test_weighted_spatial_average_for_lat_and_lon_region_for_an_inferred_data_var(
-        self,
-    ):
+    def test_spatial_average_for_lat_and_lon_region_using_custom_weights(self):
+        ds = self.ds.copy()
+
+        weights = xr.DataArray(
+            data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
+            coords={"lat": ds.lat, "lon": ds.lon},
+            dims=["lat", "lon"],
+        )
+        result = ds.spatial.spatial_avg(
+            axis=["lat", "lon"],
+            lat_bounds=(-5.0, 5),
+            lon_bounds=(-170, -120.1),
+            weights=weights,
+            data_var="ts",
+        )
+
+        expected = self.ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, 1.0, 1.0]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        assert result.identical(expected)
+
+    def test_spatial_average_for_lat_and_lon_region_for_an_inferred_data_var(self):
         ds = self.ds.copy()
         ds.attrs["xcdat_infer"] = "ts"
 
@@ -65,7 +88,7 @@ class TestSpatialAvg:
 
         assert result.identical(expected)
 
-    def test_weighted_spatial_average_for_lat_and_lon_region_for_explicit_data_var(
+    def test_spatial_average_for_lat_and_lon_region_for_explicit_data_var(
         self,
     ):
         ds = self.ds.copy()
@@ -82,7 +105,7 @@ class TestSpatialAvg:
 
         assert result.identical(expected)
 
-    def test_weighted_spatial_average_for_lat_region(self):
+    def test_spatial_average_for_lat_region(self):
         ds = self.ds.copy()
 
         # Specifying axis as a str instead of list of str.
@@ -102,7 +125,7 @@ class TestSpatialAvg:
         assert result.identical(expected)
 
     @requires_dask
-    def test_chunked_weighted_spatial_average_for_lat_region(self):
+    def test_chunked_spatial_average_for_lat_region(self):
         ds = self.ds.copy().chunk(2)
 
         # Specifying axis as a str instead of list of str.

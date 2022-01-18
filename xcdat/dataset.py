@@ -454,15 +454,12 @@ def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Datase
         if len(regular_vars) == 1:
             ds.attrs["xcdat_infer"] = regular_vars[0]
         elif len(regular_vars) > 1:
-            regular_vars_str = ", ".join(
-                f"'{var}'" for var in sorted(regular_vars)  # type:ignore
-            )
             logger.debug(
-                "This dataset contains more than one regular data variable "
-                f"({regular_vars_str}). If desired, pass the `data_var` kwarg to "
-                "reduce down to one regular data var."
+                "This dataset contains more than one regular data variable: "
+                f"{regular_vars}. If desired, pass the `data_var` kwarg to "
+                "limit the dataset to a single data var."
             )
-    if data_var is not None:
+    elif data_var is not None:
         if data_var not in all_vars:
             raise KeyError(
                 f"The data variable '{data_var}' does not exist in the dataset."
@@ -530,10 +527,6 @@ def get_inferred_var(dataset: xr.Dataset) -> xr.DataArray:
                 "'xcdat_infer' to a regular (non-bounds) data variable."
             )
 
-        logger.debug(
-            f"The data variable '{data_var.name}' was inferred from the Dataset attr "
-            "'xcdat_infer' for this operation."
-        )
         return data_var.copy()
 
 
