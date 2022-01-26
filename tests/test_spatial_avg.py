@@ -69,9 +69,7 @@ class TestSpatialAvg:
 
         assert result.identical(expected)
 
-    def test_spatial_average_for_lat_and_lon_region(
-        self,
-    ):
+    def test_spatial_average_for_lat_and_lon_region(self):
         ds = self.ds.copy()
         result = ds.spatial.spatial_avg(
             "ts", axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
