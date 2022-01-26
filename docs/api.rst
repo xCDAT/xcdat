@@ -14,8 +14,6 @@ Top-level API
     dataset.has_cf_compliant_time
     dataset.decode_non_cf_time
     dataset.swap_lon_axis
-    dataset.infer_or_keep_var
-    dataset.get_inferred_var
 
 .. currentmodule:: xarray
 
