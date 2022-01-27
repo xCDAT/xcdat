@@ -23,7 +23,6 @@ from xcdat.axis import (
     _align_lon_bounds_to_360,
     _get_prime_meridian_index,
 )
-from xcdat.dataset import get_inferred_var
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
@@ -43,7 +42,7 @@ class SpatialAverageAccessor:
 
     def spatial_avg(
         self,
-        data_var: Optional[str] = None,
+        data_var: str,
         axis: Union[List[SpatialAxis], SpatialAxis] = ["lat", "lon"],
         weights: Union[Literal["generate"], xr.DataArray] = "generate",
         lat_bounds: Optional[RegionAxisBounds] = None,
@@ -64,11 +63,9 @@ class SpatialAverageAccessor:
 
         Parameters
         ----------
-        data_var: Optional[str], optional
+        data_var: str
             The name of the data variable inside the dataset to spatially
-            average. If None, an inference to the desired data variable is
-            attempted with the Dataset's "xcdat_infer" attr and
-            ``get_inferred_var()``, by default None.
+            average.
         axis : Union[List[SpatialAxis], SpatialAxis]
             List of axis dimensions or single axis dimension to average over.
             For example, ["lat", "lon"]  or "lat", by default ["lat", "lon"].
@@ -137,15 +134,11 @@ class SpatialAverageAccessor:
         >>>     weights=weights)["tas"]
         """
         dataset = self._dataset.copy()
-
-        if data_var is None:
-            dv = get_inferred_var(dataset)
-        else:
-            dv = dataset.get(data_var, None)
-            if dv is None:
-                raise KeyError(
-                    f"The data variable '{data_var}' does not exist in the dataset."
-                )
+        dv = dataset.get(data_var, None)
+        if dv is None:
+            raise KeyError(
+                f"The data variable '{data_var}' does not exist in the dataset."
+            )
 
         axis = self._validate_axis(dv, axis)
 

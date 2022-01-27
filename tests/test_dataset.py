@@ -8,12 +8,11 @@ import xarray as xr
 
 from tests.fixtures import generate_dataset
 from xcdat.dataset import (
+    _keep_single_var,
     _preprocess_non_cf_dataset,
     _split_time_units_attr,
     decode_non_cf_time,
-    get_inferred_var,
     has_cf_compliant_time,
-    infer_or_keep_var,
     open_dataset,
     open_mfdataset,
 )
@@ -45,7 +44,6 @@ class TestOpenDataset:
 
         result = open_dataset(self.file_path, data_var="ts")
         expected = ds.copy()
-        expected.attrs["xcdat_infer"] = "ts"
         assert result.identical(expected)
 
     def test_non_cf_compliant_time_is_not_decoded(self):
@@ -54,8 +52,6 @@ class TestOpenDataset:
 
         result = open_dataset(self.file_path, decode_times=False)
         expected = generate_dataset(cf_compliant=False, has_bounds=True)
-        expected.attrs["xcdat_infer"] = "ts"
-
         assert result.identical(expected)
 
     def test_non_cf_compliant_time_is_decoded(self):
@@ -64,7 +60,6 @@ class TestOpenDataset:
 
         result = open_dataset(self.file_path, data_var="ts")
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected.attrs["xcdat_infer"] = "ts"
         expected.time.attrs["calendar"] = "standard"
         expected.time.attrs["units"] = "months since 2000-01-01"
         expected.time.encoding = {
@@ -89,7 +84,6 @@ class TestOpenDataset:
 
         result = open_dataset(self.file_path, data_var="ts")
         expected = ds.copy()
-        expected.attrs["xcdat_infer"] = "ts"
 
         assert result.identical(expected)
 
@@ -165,7 +159,6 @@ class TestOpenDataset:
                     attrs={"is_generated": "True"},
                 ),
             },
-            attrs={"xcdat_infer": "None"},
         )
         assert result.identical(expected)
 
@@ -189,7 +182,6 @@ class TestOpenMfDataset:
 
         result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected.attrs["xcdat_infer"] = "ts"
         expected.time.attrs["calendar"] = "standard"
         expected.time.attrs["units"] = "months since 2000-01-01"
 
@@ -214,7 +206,6 @@ class TestOpenMfDataset:
         result = open_mfdataset([self.file_path1, self.file_path2], decode_times=False)
 
         expected = ds1.merge(ds2)
-        expected.attrs["xcdat_infer"] = "None"
         assert result.identical(expected)
 
     def test_non_cf_compliant_time_is_decoded(self):
@@ -227,7 +218,6 @@ class TestOpenMfDataset:
 
         result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected.attrs["xcdat_infer"] = "ts"
         expected.time.attrs["units"] = "months since 2000-01-01"
         expected.time.attrs["calendar"] = "standard"
         expected.time.encoding = {
@@ -254,7 +244,6 @@ class TestOpenMfDataset:
             ds2.to_netcdf(self.file_path2)
 
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected.attrs["xcdat_infer"] = "ts"
         result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
         assert result.identical(expected)
 
@@ -333,7 +322,6 @@ class TestOpenMfDataset:
                     attrs={"is_generated": "True"},
                 ),
             },
-            attrs={"xcdat_infer": "None"},
         )
         assert result.identical(expected)
 
@@ -742,7 +730,7 @@ class TestDecodeNonCFTimeUnits:
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
 
-class TestInferOrKeepVar:
+class TestKeepSingleVar:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -756,25 +744,24 @@ class TestInferOrKeepVar:
         ds = self.ds.copy()
         ds = ds.drop_vars("ts")
 
-        infer_or_keep_var(ds, data_var=None)
+        _keep_single_var(ds, data_var=None)
         assert "This dataset only contains bounds data variables." in caplog.text
 
     def test_raises_error_if_specified_data_var_does_not_exist(self):
         ds = self.ds_mod.copy()
         with pytest.raises(KeyError):
-            infer_or_keep_var(ds, data_var="nonexistent")
+            _keep_single_var(ds, data_var="nonexistent")
 
     def test_raises_error_if_specified_data_var_is_a_bounds_var(self):
         ds = self.ds_mod.copy()
         with pytest.raises(KeyError):
-            infer_or_keep_var(ds, data_var="lat_bnds")
+            _keep_single_var(ds, data_var="lat_bnds")
 
     def test_returns_dataset_if_it_only_has_one_non_bounds_data_var(self):
         ds = self.ds.copy()
 
-        result = infer_or_keep_var(ds, data_var=None)
+        result = _keep_single_var(ds, data_var=None)
         expected = ds.copy()
-        expected.attrs["xcdat_infer"] = "ts"
 
         assert result.identical(expected)
 
@@ -784,9 +771,8 @@ class TestInferOrKeepVar:
         caplog.set_level(logging.DEBUG)
 
         ds = self.ds_mod.copy()
-        result = infer_or_keep_var(ds, data_var=None)
+        result = _keep_single_var(ds, data_var=None)
         expected = ds.copy()
-        expected.attrs["xcdat_infer"] = "None"
 
         assert result.identical(expected)
         assert (
@@ -794,53 +780,18 @@ class TestInferOrKeepVar:
             "If desired, pass the `data_var` kwarg to limit the dataset to a single data var."
         ) in caplog.text
 
-    def test_returns_dataset_with_specified_data_var_and_inference_attr(self):
-        result = infer_or_keep_var(self.ds_mod, data_var="ts")
+    def test_returns_dataset_with_specified_data_var(self):
+        result = _keep_single_var(self.ds_mod, data_var="ts")
         expected = self.ds.copy()
-        expected.attrs["xcdat_infer"] = "ts"
 
         assert result.identical(expected)
         assert not result.identical(self.ds_mod)
 
     def test_bounds_always_persist(self):
-        ds = infer_or_keep_var(self.ds_mod, data_var="ts")
+        ds = _keep_single_var(self.ds_mod, data_var="ts")
         assert ds.get("lat_bnds") is not None
         assert ds.get("lon_bnds") is not None
         assert ds.get("time_bnds") is not None
-
-
-class TestGetInferredVar:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
-
-    def test_raises_error_if_inference_attr_is_none(self):
-        with pytest.raises(KeyError):
-            get_inferred_var(self.ds)
-
-    def test_raises_error_if_inference_attr_is_set_to_nonexistent_data_var(self):
-        ds = self.ds.copy()
-        ds.attrs["xcdat_infer"] = "nonexistent_var"
-
-        with pytest.raises(KeyError):
-            get_inferred_var(ds)
-
-    def test_raises_error_if_inference_attr_is_set_to_bounds_var(self):
-        ds = self.ds.copy()
-        ds.attrs["xcdat_infer"] = "lat_bnds"
-
-        with pytest.raises(KeyError):
-            get_inferred_var(ds)
-
-    def test_returns_inferred_data_var(self):
-
-        ds = self.ds.copy()
-        ds.attrs["xcdat_infer"] = "ts"
-
-        result = get_inferred_var(ds)
-        expected = ds.ts
-
-        assert result.identical(expected)
 
 
 class TestPreProcessNonCFDataset:
