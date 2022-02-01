@@ -243,17 +243,17 @@ class TestAccessor:
         mock_data = mock.MagicMock()
 
         with mock.patch.dict(accessor.REGRID_TOOLS, {"test": mock_regridder}):
-            output = self.ac.regrid(mock_data, "test")
+            output = self.ac.regrid("ts", mock_data, "test")
 
         assert output == "output data"
 
-        mock_regridder.return_value.regrid.assert_called_with(self.data, data_var=None)
+        mock_regridder.return_value.regrid.assert_called_with("ts", self.data)
 
     def test_invalid_tool(self):
         with pytest.raises(
             ValueError, match=r"Tool 'test' does not exist, valid choices"
         ):
-            self.ac.regrid(mock.MagicMock(), "test")
+            self.ac.regrid("ts", mock.MagicMock(), "test")
 
 
 class TestBase:
@@ -262,7 +262,7 @@ class TestBase:
             def __init__(self, src_grid, dst_grid, **options):
                 super().__init__(src_grid, dst_grid, **options)
 
-            def regrid(self, ds):
+            def regrid(self, data_var, ds):
                 return ds
 
         regridder = NewRegridder(mock.MagicMock(), mock.MagicMock())
@@ -271,6 +271,6 @@ class TestBase:
 
         ds_in = mock.MagicMock()
 
-        ds_out = regridder.regrid(ds_in)
+        ds_out = regridder.regrid("ts", ds_in)
 
         assert ds_in == ds_out

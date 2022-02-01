@@ -3,7 +3,6 @@ from typing import List, Optional, Tuple
 import numpy as np
 import xarray as xr
 
-from xcdat.dataset import get_inferred_var
 from xcdat.regridder.base import BaseRegridder
 
 
@@ -156,16 +155,13 @@ class Regrid2Regridder(BaseRegridder):
 
         self.lon_mapping, self.lon_weights = map_longitude(src_lon, self.dst_lon)
 
-    def regrid(self, ds: xr.Dataset, data_var: Optional[str] = None) -> xr.Dataset:
-        if data_var is None:
-            da_data_var = get_inferred_var(ds)
-        else:
-            da_data_var = ds.get(data_var, None)
+    def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+        da_data_var = ds.get(data_var, None)
 
-            if da_data_var is None:
-                raise KeyError(
-                    f"The data variable '{data_var}' does not exist in the dataset."
-                )
+        if da_data_var is None:
+            raise KeyError(
+                f"The data variable '{data_var}' does not exist in the dataset."
+            )
 
         output_shape = (
             da_data_var.cf["time"].shape[0],

@@ -47,12 +47,13 @@ class XCDATAccessor:
     @is_documented_by(DatasetRegridderAccessor.regrid)
     def regrid(
         self,
+        data_var: str,
         dst_grid: xr.Dataset,
         tool: str,
         **options: Any,
     ) -> xr.Dataset:
         obj = DatasetRegridderAccessor(self._dataset)
-        return obj.regrid(dst_grid, tool, **options)
+        return obj.regrid(data_var, dst_grid, tool, **options)
 
     @property  # type: ignore
     @is_documented_by(BoundsAccessor.bounds)

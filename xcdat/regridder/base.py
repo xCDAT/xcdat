@@ -12,6 +12,6 @@ class BaseRegridder(abc.ABC):
 
     @abc.abstractmethod
     def regrid(
-        self, ds: xr.Dataset, data_var: Optional[str] = None
+        data_var: str, self, ds: xr.Dataset
     ) -> xr.Dataset:  # pragma: no cover
         pass

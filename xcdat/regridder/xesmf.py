@@ -3,7 +3,6 @@ from typing import Optional
 import xarray as xr
 import xesmf as xe
 
-from xcdat.dataset import get_inferred_var
 from xcdat.regridder.base import BaseRegridder
 
 VALID_METHODS = [
@@ -94,16 +93,13 @@ class XESMFRegridder(BaseRegridder):
             extrap_num_src_pnts=extrap_num_src_pnts,
         )
 
-    def regrid(self, ds: xr.Dataset, data_var: Optional[str] = None) -> xr.Dataset:
-        if data_var is None:
-            da_data_var = get_inferred_var(ds)
-        else:
-            da_data_var = ds.get(data_var, None)
+    def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+        da_data_var = ds.get(data_var, None) 
 
-            if da_data_var is None:
-                raise KeyError(
-                    f"The data variable '{data_var}' does not exist in the dataset."
-                )
+        if da_data_var is None:
+            raise KeyError(
+                f"The data variable '{data_var}' does not exist in the dataset."
+            )
 
         # TODO build dataset using returned DataArray
         return self._regridder(da_data_var)
