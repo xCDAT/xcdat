@@ -35,7 +35,7 @@ class XCDATAccessor:
     @is_documented_by(SpatialAverageAccessor.spatial_avg)
     def spatial_avg(
         self,
-        data_var: Optional[str] = None,
+        data_var: str,
         axis: Union[List[SpatialAxis], SpatialAxis] = ["lat", "lon"],
         weights: Union[Literal["generate"], xr.DataArray] = "generate",
         lat_bounds: Optional[RegionAxisBounds] = None,

@@ -2,12 +2,13 @@
 import pathlib
 from functools import partial
 from glob import glob
-from typing import Any, Callable, Dict, Hashable, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import pandas as pd
 import xarray as xr
 
 from xcdat import bounds  # noqa: F401
+from xcdat.axis import swap_lon_axis
 from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
@@ -20,6 +21,7 @@ def open_dataset(
     path: str,
     data_var: Optional[str] = None,
     decode_times: bool = True,
+    lon_orient: Optional[Tuple[float, float]] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
     """Wrapper for ``xarray.open_dataset()`` that applies common operations.
@@ -31,6 +33,8 @@ def open_dataset(
     - Add missing bounds for supported axis
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable, while retaining any bounds data variables
+    - Option to swap the longitude axis orientation and sort in ascending order
+      if the axis exists in the Dataset.
 
     Parameters
     ----------
@@ -42,6 +46,16 @@ def open_dataset(
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
         This keyword may not be supported by all the backends, by default True.
+    lon_orient: Optional[Tuple[float, float]], optional
+        The orientation to use for the Dataset's longitude axis (if it exists),
+        by default None.
+
+        Supported options:
+
+          * None:  use the current orientation (if the longitude axis exists)
+          * (-180, 180): represents [-180, 180) in math notation
+          * (0, 360): represents [0, 360) in math notation
+
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_dataset``. Refer to the
         [1]_ xarray docs for accepted keyword arguments.
@@ -86,8 +100,11 @@ def open_dataset(
     else:
         ds = xr.open_dataset(path, decode_times=False, **kwargs)
 
-    ds = infer_or_keep_var(ds, data_var)
+    ds = _keep_single_var(ds, data_var)
     ds = ds.bounds.add_missing_bounds()
+    if ds.cf.dims.get("X") is not None and lon_orient is not None:
+        ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
+
     return ds
 
 
@@ -103,6 +120,7 @@ def open_mfdataset(
     data_var: Optional[str] = None,
     preprocess: Optional[Callable] = None,
     decode_times: bool = True,
+    lon_orient: Optional[Tuple[float, float]] = None,
     data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
@@ -115,6 +133,8 @@ def open_mfdataset(
     - Add missing bounds for supported axis
     - Option to limit the Dataset to a single regular (non-bounds) data
       variable, while retaining any bounds data variables
+    - Option to swap the longitude axis orientation and sort in ascending order
+      if the axis exists in the Dataset.
 
     ``data_vars`` defaults to ``"minimal"``, which concatenates data variables
     in a manner where only data variables in which the dimension already appears
@@ -142,6 +162,16 @@ def open_mfdataset(
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
         This keyword may not be supported by all the backends, by default True.
+    lon_orient: Optional[Tuple[float, float]], optional
+        The orientation to use for the Dataset's longitude axis (if it exists),
+        by default None.
+
+        Supported options:
+
+          * None:  use the current orientation (if the longitude axis exists)
+          * (-180, 180): represents [-180, 180) in math notation
+          * (0, 360): represents [0, 360) in math notation
+
     data_vars: Union[Literal["minimal", "different", "all"], List[str]], optional
         These data variables will be concatenated together:
           * "minimal": Only data variables in which the dimension already
@@ -154,6 +184,7 @@ def open_mfdataset(
           * "all": All data variables will be concatenated.
           * list of str: The listed data variables will be concatenated, in
             addition to the "minimal" data variables.
+
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
         the [2]_ xarray docs for accepted keyword arguments.
@@ -202,8 +233,11 @@ def open_mfdataset(
         preprocess=preprocess,
         **kwargs,
     )
-    ds = infer_or_keep_var(ds, data_var)
+    ds = _keep_single_var(ds, data_var)
     ds = ds.bounds.add_missing_bounds()
+    if ds.cf.dims.get("X") is not None and lon_orient is not None:
+        ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
+
     return ds
 
 
@@ -397,27 +431,13 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     return dataset
 
 
-def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Dataset:
-    """Infer or explicitly keep a specific data variable in the Dataset.
-
-    If ``data_var`` is None, then this function checks the number of
-    regular (non-bounds) data variables in the Dataset. If there is a single
-    regular data var, then it will add an 'xcdat_infer' attr pointing to it in
-    the Dataset. XCDAT APIs can then call `get_inferred_var()` to get the data
-    var linked to the 'xcdat_infer' attr. If there are multiple regular data
-    variables, the 'xcdat_infer' attr is not set and the Dataset is returned
-    as is.
+def _keep_single_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Dataset:
+    """Keep a single data variable in the Dataset.
 
     If ``data_var`` is not None, then this function checks if the ``data_var``
     exists in the Dataset and if it is a regular data var. If those checks pass,
     it will subset the Dataset to retain that ``data_var`` and all bounds data
-    vars. An 'xcdat_infer' attr pointing to the ``data_var`` is also added
-    to the Dataset.
-
-    This utility function is useful for designing XCDAT APIs with an optional
-    ``data_var`` kwarg. If ``data_var`` is None, an inference to the desired
-    data var is performed with a call to this function. Otherwise, perform the
-    API operation explicitly on ``data_var``.
+    vars.
 
     Parameters
     ----------
@@ -439,30 +459,21 @@ def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Datase
         If the user specifies a bounds variable to keep.
     """
     ds = dataset.copy()
-    # Make sure the "xcdat_infer" attr is "None" because a Dataset may be
-    # written with this attr already set.
-    ds.attrs["xcdat_infer"] = "None"
-
     all_vars = ds.data_vars.keys()
     bounds_vars = ds.bounds.names
-    regular_vars: List[Hashable] = list(set(all_vars) ^ set(bounds_vars))
+    regular_vars = sorted(list(set(all_vars) ^ set(bounds_vars)))
 
     if len(regular_vars) == 0:
         logger.debug("This dataset only contains bounds data variables.")
 
     if data_var is None:
-        if len(regular_vars) == 1:
-            ds.attrs["xcdat_infer"] = regular_vars[0]
-        elif len(regular_vars) > 1:
-            regular_vars_str = ", ".join(
-                f"'{var}'" for var in sorted(regular_vars)  # type:ignore
-            )
+        if len(regular_vars) > 1:
             logger.debug(
-                "This dataset contains more than one regular data variable "
-                f"({regular_vars_str}). If desired, pass the `data_var` kwarg to "
-                "reduce down to one regular data var."
+                "This dataset contains more than one regular data variable: "
+                f"{regular_vars}. If desired, pass the `data_var` kwarg to "
+                "limit the dataset to a single data var."
             )
-    if data_var is not None:
+    elif data_var is not None:
         if data_var not in all_vars:
             raise KeyError(
                 f"The data variable '{data_var}' does not exist in the dataset."
@@ -471,70 +482,8 @@ def infer_or_keep_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Datase
             raise KeyError("Please specify a regular (non-bounds) data variable.")
 
         ds = dataset[[data_var] + bounds_vars]
-        ds.attrs["xcdat_infer"] = data_var
 
     return ds
-
-
-def get_inferred_var(dataset: xr.Dataset) -> xr.DataArray:
-    """Gets the inferred data variable that is tagged in the Dataset.
-
-    This function looks for the "xcdat_infer" attribute pointing
-    to the desired data var in the Dataset, which can be set through
-    ``xcdat.open_dataset()``, ``xcdat.open_mf_dataset()``, or manually.
-
-    This utility function is useful for designing XCDAT APIs with an optional
-    ``data_var`` kwarg. If ``data_var`` is None, an inference to the desired
-    data var is performed with a call to this function. Otherwise, perform the
-    API operation explicitly on ``data_var``.
-
-    Parameters
-    ----------
-    dataset : xr.Dataset
-        The Dataset.
-
-    Returns
-    -------
-    xr.DataArray
-        The inferred data variable.
-
-    Raises
-    ------
-    KeyError
-        If the 'xcdat_infer' attr is not set in the Dataset.
-    KeyError
-        If the 'xcdat_infer' attr points to a non-existent data var.
-    KeyError
-        If the 'xcdat_infer' attr points to a bounds data var.
-    """
-    inferred_var = dataset.attrs.get("xcdat_infer", None)
-    bounds_vars = dataset.bounds.names
-
-    if inferred_var is None:
-        raise KeyError(
-            "Dataset attr 'xcdat_infer' is not set so the desired data variable "
-            "cannot be inferred. You must pass the `data_var` kwarg to this operation."
-        )
-    else:
-        data_var = dataset.get(inferred_var, None)
-        if data_var is None:
-            raise KeyError(
-                "Dataset attr 'xcdat_infer' is set to non-existent data variable, "
-                f"'{inferred_var}'. Either pass the `data_var` kwarg to this operation, "
-                "or set 'xcdat_infer' to a regular (non-bounds) data variable."
-            )
-        if inferred_var in bounds_vars:
-            raise KeyError(
-                "Dataset attr `xcdat_infer` is set to the bounds data variable, "
-                f"'{inferred_var}'. Either pass the `data_var` kwarg, or set "
-                "'xcdat_infer' to a regular (non-bounds) data variable."
-            )
-
-        logger.debug(
-            f"The data variable '{data_var.name}' was inferred from the Dataset attr "
-            "'xcdat_infer' for this operation."
-        )
-        return data_var.copy()
 
 
 def _preprocess_non_cf_dataset(

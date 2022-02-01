@@ -44,19 +44,23 @@ class TestSpatialAvg:
                 axis=["lat", "incorrect_axis"],
             )
 
-    def test_weighted_spatial_average_for_lat_and_lon_region_for_an_inferred_data_var(
-        self,
-    ):
+    def test_spatial_average_for_lat_and_lon_region_using_custom_weights(self):
         ds = self.ds.copy()
-        ds.attrs["xcdat_infer"] = "ts"
 
-        # `data_var` kwarg is not specified, so an inference is attempted
+        weights = xr.DataArray(
+            data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
+            coords={"lat": ds.lat, "lon": ds.lon},
+            dims=["lat", "lon"],
+        )
         result = ds.spatial.spatial_avg(
-            axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+            axis=["lat", "lon"],
+            lat_bounds=(-5.0, 5),
+            lon_bounds=(-170, -120.1),
+            weights=weights,
+            data_var="ts",
         )
 
         expected = self.ds.copy()
-        expected.attrs["xcdat_infer"] = "ts"
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, 1.0, 1.0]),
             coords={"time": expected.time},
@@ -65,9 +69,7 @@ class TestSpatialAvg:
 
         assert result.identical(expected)
 
-    def test_weighted_spatial_average_for_lat_and_lon_region_for_explicit_data_var(
-        self,
-    ):
+    def test_spatial_average_for_lat_and_lon_region(self):
         ds = self.ds.copy()
         result = ds.spatial.spatial_avg(
             "ts", axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
@@ -82,7 +84,7 @@ class TestSpatialAvg:
 
         assert result.identical(expected)
 
-    def test_weighted_spatial_average_for_lat_region(self):
+    def test_spatial_average_for_lat_region(self):
         ds = self.ds.copy()
 
         # Specifying axis as a str instead of list of str.
@@ -102,7 +104,7 @@ class TestSpatialAvg:
         assert result.identical(expected)
 
     @requires_dask
-    def test_chunked_weighted_spatial_average_for_lat_region(self):
+    def test_chunked_spatial_average_for_lat_region(self):
         ds = self.ds.copy().chunk(2)
 
         # Specifying axis as a str instead of list of str.
@@ -590,91 +592,6 @@ class TestValidateDomainBounds:
         )
         with pytest.raises(ValueError):
             self.ds.spatial._validate_domain_bounds(domain_bounds)
-
-
-class TestAlignLongitudeto360Axis:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
-
-    def test_raises_error_if_bounds_below_0(self):
-        domain_bounds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array([[-1, 1], [1, 90], [90, 180], [180, 359]]),
-            dims=["lon", "bnds"],
-        )
-        with pytest.raises(ValueError):
-            self.ds.spatial._align_longitude_to_360_axis(domain_bounds)
-
-    def test_raises_error_if_bounds_above_360(self):
-        domain_bounds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array([[359, 361], [1, 90], [90, 180], [180, 359]]),
-            dims=["lon", "bnds"],
-        )
-        with pytest.raises(ValueError):
-            self.ds.spatial._align_longitude_to_360_axis(domain_bounds)
-
-    def test_raises_error_if_multiple_bounds_span_prime_meridian(self):
-        domain_bounds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array([[359, 1], [1, 90], [90, 180], [180, 2]]),
-            dims=["lon", "bnds"],
-        )
-        with pytest.raises(ValueError):
-            self.ds.spatial._align_longitude_to_360_axis(domain_bounds)
-
-    def test_extends_bounds_array_for_cell_spanning_prime_meridian(self):
-        domain_bounds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array([[359, 1], [1, 90], [90, 180], [180, 359]]),
-            dims=["lon", "bnds"],
-        )
-        expected_index = 0
-
-        expected_bounds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array([[0, 1], [1, 90], [90, 180], [180, 359], [359, 360]]),
-            dims=["lon", "bnds"],
-        )
-
-        result_bounds, result_index = self.ds.spatial._align_longitude_to_360_axis(
-            domain_bounds
-        )
-
-        assert (result_bounds.identical(expected_bounds)) & (
-            result_index == expected_index
-        )
-
-    def test_returns_original_array_if_no_cell_spans_prime_meridian(self):
-        domain_bounds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array([[0, 1], [1, 90], [90, 180], [180, 360]]),
-            dims=["lon", "bnds"],
-        )
-
-        result_bounds, result_index = self.ds.spatial._align_longitude_to_360_axis(
-            domain_bounds
-        )
-
-        assert result_bounds.identical(domain_bounds)
-        assert result_index is None
-
-    def test_retains_total_weight(self):
-        # construct array spanning 0 to 360
-        domain_bounds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array([[359, 1], [1, 90], [90, 180], [180, 359]]),
-            dims=["lon", "bnds"],
-        )
-
-        result_bounds, null = self.ds.spatial._align_longitude_to_360_axis(
-            domain_bounds
-        )
-
-        dbdiff = np.sum(np.array(result_bounds[:, 1] - result_bounds[:, 0]))
-
-        assert dbdiff == 360.0
 
 
 class TestCalculateWeights:
