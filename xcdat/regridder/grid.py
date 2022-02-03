@@ -62,7 +62,29 @@ ESTIMATE_CONST = 0.25 * (1.0 - np.power(2.0 / np.pi, 2))
 
 
 def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, float]:
-    # TODO create method for legendre polinomial
+    """Legendre_polynomials.
+
+    Calculates the third legendre polynomial.
+
+    Math is based on CDAT implementation in regrid2 module.
+
+    Related documents:
+        - https://en.wikipedia.org/wiki/Legendre_polynomials
+        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3291
+
+    Parameters
+    ----------
+    bessel_zero : int
+        Bessel zero used to calculate the third legendre polynomial.
+    nlats : int
+        Number of lats.
+
+    Returns
+    -------
+    Tuple[float, float, float]
+        First, second and third legendre polynomial.
+
+    """
     # TODO figure out why this is different compared to numpy.polynomial.legendre, is this wrong?
     zero_poly = np.cos(bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST))
 
@@ -91,7 +113,28 @@ def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, fl
     return zero_poly, first_poly, second_poly
 
 
-def _bessel_funcation_zeros(n: int):
+def _bessel_function_zeros(n: int) -> np.ndarray:
+    """Zeros of Bessel function.
+
+    Calculates `n` zeros of the Bessel function.
+
+    Math is based on CDAT implementation in regrid2 module.
+
+    Related documents:
+        - https://en.wikipedia.org/wiki/Bessel_function
+        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3387
+        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3251
+
+    Parameters
+    ----------
+    n : int
+        Number of zeros to calculate.
+
+    Returns
+    -------
+    np.ndarray
+        Array containing `n` zeros of the Bessel function.
+    """
     values = np.zeros(n)
 
     lookup_n = min(n, 50)
@@ -106,19 +149,40 @@ def _bessel_funcation_zeros(n: int):
     return values
 
 
-def _bessel_zeros(mid: int, nlats: int):
-    bessel_zeros = _bessel_funcation_zeros(mid + 1)
+def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
+    """ Gaussian axis.
 
-    bessel_zeros = np.pad(bessel_zeros, (0, nlats - len(bessel_zeros)))
+    Calculates the bounds and weights for a Guassian axis.
 
-    weights = np.zeros_like(bessel_zeros)
+    Math is based on CDAT implementation in regrid2 module.
+
+    Related documents:
+        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3310
+
+    Parameters
+    ----------
+    mid : int
+        mid
+    nlats : int
+        Number of latitude points to calculate.
+
+    Returns
+    -------
+    Tuple[np.ndarray, np.ndarray]
+        First `np.ndarray` contains the angels of the bounds and the second contains the weights.
+    """
+    points = _bessel_function_zeros(mid + 1)
+
+    points = np.pad(points, (0, nlats - len(points)))
+
+    weights = np.zeros_like(points)
 
     for x in range(int(nlats / 2 + 1)):
         zero_poly, first_poly, second_poly = _legendre_polinomial(
-            bessel_zeros[x], nlats
+            points[x], nlats
         )
 
-        bessel_zeros[x] = zero_poly
+        points[x] = zero_poly
 
         weights[x] = (
             (1.0 - zero_poly * zero_poly)
@@ -126,11 +190,11 @@ def _bessel_zeros(mid: int, nlats: int):
             / ((nlats * first_poly) * (nlats * first_poly))
         )
 
-    bessel_zeros[mid if nlats % 2 == 0 else mid + 1 :] = -1.0 * np.flip(
-        bessel_zeros[:mid]
+    points[mid if nlats % 2 == 0 else mid + 1:] = -1.0 * np.flip(
+        points[:mid]
     )
 
-    weights[mid if nlats % 2 == 0 else mid + 1 :] = np.flip(weights[:mid])
+    weights[mid if nlats % 2 == 0 else mid + 1:] = np.flip(weights[:mid])
 
     if nlats % 2 != 0:
         weights[mid + 1] = 0.0
@@ -142,31 +206,109 @@ def _bessel_zeros(mid: int, nlats: int):
 
             weights[mid + 1] = mid_weight
 
-    bessel_zeros = (180.0 / np.pi) * np.arcsin(bessel_zeros)
+    # bounds = (180.0 / np.pi) * np.arcsin(bessel_zeros)
 
-    return bessel_zeros, weights
+    return points, weights
 
 
-def _create_gaussian_axis(nlats: int) -> Tuple[np.ndarray, np.ndarray]:
+def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
+    """ Create Gaussian axis.
+
+    Creates a Gaussian axis of `nlats`.
+
+    Parameters
+    ----------
+    nlats : int
+        Number of latitude points.
+
+    Returns
+    -------
+    xr.DataArray
+        Containing the latitude bounds.
+
+    xr.DataArray
+        Containing the latitude axis.
+    """
     mid = int(np.floor(nlats / 2))
 
-    bessel_zeros, weights = _bessel_zeros(mid, nlats)
+    points, weights = _gaussian_axis(mid, nlats)
 
-    bnd_pts = np.zeros((nlats + 1,))
-    bnd_pts[0], bnd_pts[nlats] = 1.0, -1.0
+    bounds = np.zeros((nlats + 1))
+    bounds[0], bounds[-1] = 1.0, -1.0
 
-    for x in range(1, int(np.floor(nlats / 2)) + 1):
-        bnd_pts[x] = bnd_pts[x - 1] - weights[x - 1]
+    for i in range(1, mid):
+        bounds[i] = bounds[i - 1] - weights[i - 1]
+        bounds[nlats - i] = -bounds[i]
 
-    bnd_pts_mid = int(np.floor(nlats / 2))
-    bnd_pts[bnd_pts_mid + 1 :] = -1.0 * np.flip(bnd_pts[: nlats - bnd_pts_mid])
-    bnd_pts = (180.0 / np.pi) * np.arcsin(bnd_pts)
+    points_data = (180.0 / np.pi) * np.arcsin(points)
 
-    bnds = np.zeros((bessel_zeros.shape[0], 2))
-    bnds[::, 0] = bnd_pts[:-1]
-    bnds[::, 1] = bnd_pts[1:]
+    points_da = xr.DataArray(
+        name="lat",
+        data=points_data,
+        dims=["lat"],
+        attrs={
+            "units": "degrees_north",
+            "axis": "Y",
+        }
+    )
 
-    return bessel_zeros, bnds
+    bounds = (180.0 / np.pi) * np.arcsin(bounds)
+
+    bounds_data = np.zeros((points.shape[0], 2))
+    bounds_data[:, 0] = bounds[:-1]
+    bounds_data[:, 1] = bounds[1:]
+
+    bounds_da = xr.DataArray(
+        name="lat_bnds",
+        data=bounds_data,
+        dims=["lat", "bnds"],
+        coords={
+            "lat": points_da,
+        }
+    )
+
+    return bounds_da, points_da
+
+
+def create_gaussian_grid(nlats: int) -> xr.Dataset:
+    """
+    Creates a grid with Gaussian latitudes and uniform longitudes.
+
+    Parameters
+    ----------
+    nlats : int
+        Number of latitudes.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with new grid, containing Gaussian latitudes.
+
+    Examples
+    --------
+    Create grid with 32 latitudes:
+
+    >>> xcdat.regridder.grid.create_gaussian_grid(32)
+    """
+    lat_bounds, lat_points = _create_gaussian_axis(nlats)
+
+    grid = xr.Dataset(
+        {
+            "lat": lat_points,
+            "lon": xr.DataArray(
+                name="lon",
+                data=np.arange(0.0, 360.0, (360.0 / (2 * nlats))),
+                dims=["lon"],
+                attrs={
+                    "units": "degrees_east",
+                    "axis": "X",
+                },
+            ),
+            "lat_bnds": lat_bounds,
+        }
+    )
+
+    return grid
 
 
 def create_uniform_grid(
@@ -231,64 +373,6 @@ def create_uniform_grid(
     )
 
     grid = grid.bounds.add_missing_bounds()
-
-    return grid
-
-
-def create_gaussian_grid(nlats: int) -> xr.Dataset:
-    """
-    Creates a grid with Gaussian latitudes and uniform longitudes.
-
-    Parameters
-    ----------
-    nlats : int
-        Number of latitudes.
-
-    Returns
-    -------
-    xr.Dataset
-        Dataset with new grid, containing Gaussian latitudes.
-
-    Examples
-    --------
-    Create grid with 32 latitudes:
-
-    >>> xcdat.regridder.grid.create_gaussian_grid(32)
-    """
-    lats, bounds = _create_gaussian_axis(nlats)
-
-    grid = xr.Dataset(
-        coords={
-            "lat": xr.DataArray(
-                name="lat",
-                data=lats,
-                dims=["lat"],
-                attrs={
-                    "units": "degrees_north",
-                    "axis": "Y",
-                },
-            ),
-            "lon": xr.DataArray(
-                name="lon",
-                data=np.arange(0.0, 360.0, (360.0 / (2 * nlats))),
-                dims=["lon"],
-                attrs={
-                    "units": "degrees_east",
-                    "axis": "X",
-                },
-            ),
-        },
-    )
-
-    grid = grid.bounds.add_missing_bounds()
-
-    grid["lat_bnds"] = xr.DataArray(
-        name="lat_bnds",
-        data=bounds,
-        coords={"lat": grid.lat},
-        dims=["lat", "bnds"],
-        attrs={"is_generated": "True"},
-    )
 
     return grid
 

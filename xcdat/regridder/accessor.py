@@ -33,13 +33,12 @@ class DatasetRegridderAccessor:
 
         Parameters
         ----------
+        data_var: str
+            Name of the variable in the Dataset to regrid.
         dst_grid : xr.Dataset
             Dataset containing destination grid.
         tool : str
             Name of the regridding tool.
-        method : str
-            Method used for regridding, see specific regridder documentation
-            for supported methods.
         **options : Any
             These options are passed to the tool being used for regridding.
             See specific regridder documentation for available options.

@@ -5,6 +5,8 @@ import xarray as xr
 
 
 class BaseRegridder(abc.ABC):
+    """BaseRegridder."""
+
     def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset, **options: Any):
         self._src_grid = src_grid
         self._dst_grid = dst_grid

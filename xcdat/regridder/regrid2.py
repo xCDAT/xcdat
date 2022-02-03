@@ -7,6 +7,23 @@ from xcdat.regridder.base import BaseRegridder
 
 
 def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
+    """ Extract bounds.
+
+    Extract lower and upper bounds from an axis.
+
+    Parameters
+    ----------
+    bounds : xr.DataArray
+        Dataset containing axis with bounds.
+
+    Returns
+    -------
+    xr.DataArray
+        Contains the lower bounds for the axis.
+
+    xr.DataArray
+        Contains the upper bounds for the axis.
+    """
     if bounds[0, 0] < bounds[0, 1]:
         lower = bounds[:, 0]
         upper = bounds[:, 1]
@@ -18,6 +35,24 @@ def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
 
 
 def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
+    """ Map source to destination latitude.
+
+    Parameters
+    ----------
+    src : xr.DataArray
+        DataArray containing the source latitude axis.
+    dst : xr.DataArray
+        DataArray containing the destination latitude axis.
+
+    Returns
+    -------
+    List
+        Containing map of destination to source points.
+
+    List
+        Containing map of destination to source weights.
+
+    """
     src_south, src_north = extract_bounds(src)
     dst_south, dst_north = extract_bounds(dst)
 
@@ -42,6 +77,13 @@ def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
 
 def pertub(value):
+    """ Pertub a valu.
+
+    Parameters
+    ----------
+    value :
+        Value to pertub.
+    """
     if value >= 0.0:
         offset = np.ceil(value + 0.000001)
     else:
@@ -50,12 +92,36 @@ def pertub(value):
     return offset
 
 
+# vectorize version of pertub
 vpertub = np.vectorize(pertub)
 
 
 def align_axis(
     src_west: xr.DataArray, src_east: xr.DataArray, dst_west: xr.DataArray
 ) -> Tuple[xr.DataArray, xr.DataArray, int]:
+    """ Align source to destination axis.
+
+    Parameters
+    ----------
+    src_west : xr.DataArray
+        DataArray containing the western source bounds.
+    src_east : xr.DataArray
+        DataArray containing the eastern source bounds.
+    dst_west : xr.DataArray
+        DataArray containing the western destination bounds.
+
+    Returns
+    -------
+    Tuple[xr.DataArray, xr.DataArray, int]
+    xr.DataArray
+        Containing the shifted western source bounds.
+
+    xr.DataArray
+        Containing the shifted eastern source bounds.
+
+    int
+        Number of places shifted to align axis.
+    """
     west_most = np.minimum(dst_west[0], dst_west[-1])
 
     alignment_index = pertub((west_most - src_west[-1]) / 360.0).values
@@ -109,6 +175,24 @@ def align_axis(
 
 
 def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
+    """ Map source to destination longitude.
+
+    Parameters
+    ----------
+    src : xr.DataArray
+        DataArray containing source longitude axis.
+    dst : xr.DataArray
+        DataArray containing destination longitude axis.
+
+    Returns
+    -------
+    List
+        Contains mapping between axis.
+
+    List
+        Contains map of weights.
+
+    """
     src_west, src_east = extract_bounds(src)
     dst_west, dst_east = extract_bounds(dst)
 
