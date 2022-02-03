@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import numpy as np
 import xarray as xr
@@ -6,7 +6,7 @@ import xarray as xr
 from xcdat.regridder.base import BaseRegridder
 
 
-def extract_bounds(bounds):
+def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
     if bounds[0, 0] < bounds[0, 1]:
         lower = bounds[:, 0]
         upper = bounds[:, 1]
@@ -36,7 +36,7 @@ def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
         weight = np.sin(np.deg2rad(north_bounds)) - np.sin(np.deg2rad(south_bounds))
 
-        weights.append(weight)
+        weights.append(weight.values)
 
     return mapping, weights
 
@@ -50,83 +50,92 @@ def pertub(value):
     return offset
 
 
-def get_center_index(src_west, src_east, dst_west) -> Tuple[np.ndarray, np.ndarray]:
+vpertub = np.vectorize(pertub)
+
+
+def align_axis(
+    src_west: xr.DataArray, src_east: xr.DataArray, dst_west: xr.DataArray
+) -> Tuple[xr.DataArray, xr.DataArray, int]:
     west_most = np.minimum(dst_west[0], dst_west[-1])
 
-    center = pertub((west_most - src_west[-1]) / 360.0)
+    alignment_index = pertub((west_most - src_west[-1]) / 360.0).values
 
     if src_west[0] < src_west[-1]:
-        center += 1
+        alignment_index += 1
     else:
-        center -= 1
+        alignment_index -= 1
 
-    return (
-        west_most,
-        np.where(np.logical_and(src_west < center, src_east > center))[0][0] - 1,
+    src_alignment_index = np.where(
+        vpertub((west_most - src_west) / 360.0) != alignment_index
+    )[0][0]
+
+    if src_west[0] < src_west[-1]:
+        if west_most == src_west[src_alignment_index]:
+            shift = src_alignment_index
+        else:
+            shift = src_alignment_index - 1
+
+            if shift < 0:
+                shift = src_west.shape[0] - 1
+    else:
+        shift = src_alignment_index
+
+    src_length = src_west.shape[0]
+
+    shifted_indexes = np.arange(src_length + 1) + shift
+
+    wrapped = np.where(shifted_indexes > src_length - 1)
+
+    shifted_indexes[wrapped] -= src_length
+
+    shifted_src_west = src_west[shifted_indexes] + 360.0 * vpertub(
+        (west_most - src_west[shifted_indexes]) / 360.0
     )
 
-
-def shift_bounds(src_west, src_east, west_most, center_index):
-    src_length = len(src_west)
-
-    new_west_index = np.arange(src_length + 1) + center_index
-
-    require_adjust = np.where(new_west_index >= src_length)
-
-    new_west_index[require_adjust] -= src_length
-
-    vectorized_pertub = np.vectorize(pertub)
-
-    value_shift = 360.0 * vectorized_pertub(
-        (west_most - src_west[new_west_index]) / 360.0
+    shifted_src_east = src_east[shifted_indexes] + 360.0 * vpertub(
+        (west_most - src_west[shifted_indexes]) / 360.0
     )
-
-    new_src_west = src_west[new_west_index] + value_shift
-    new_src_east = src_east[new_west_index] + value_shift
 
     if src_west[-1] > src_west[0]:
-        if new_src_west[0] > west_most:
-            new_src_west[0] += -360.0
-            new_src_east[0] += -360.0
+        if shifted_src_west[0] > west_most:
+            shifted_src_west[0] += -360.0
+            shifted_src_east[0] += -360.0
     else:
-        if new_src_west[-1] > west_most:
-            new_src_west[-1] += -360.0
-            new_src_east[-1] += -360.0
+        if shifted_src_west[-1] > west_most:
+            shifted_src_west[-1] += -360.0
+            shifted_src_east[-1] += -360.0
 
-    return new_src_west, new_src_east
+    return shifted_src_west, shifted_src_east, shift
 
 
 def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    src_east, src_west = extract_bounds(src)
-    dst_east, dst_west = extract_bounds(dst)
+    src_west, src_east = extract_bounds(src)
+    dst_west, dst_east = extract_bounds(dst)
 
-    src_length = len(src_west)
-
-    west_most, center_index = get_center_index(src_west, src_east, dst_west)
-
-    new_src_west, new_src_east = shift_bounds(
-        src_west, src_east, west_most, center_index
-    )
+    shifted_src_west, shifted_src_east, shift = align_axis(src_west, src_east, dst_west)
 
     mapping = []
     weights = []
+    src_length = src_west.shape[0]
 
     for i in range(dst_west.shape[0]):
         contrib = np.where(
-            np.logical_and(new_src_west < dst_east[i], new_src_east > dst_west[i])
+            np.logical_and(
+                shifted_src_west < dst_east[i], shifted_src_east > dst_west[i]
+            )
         )[0]
 
-        weight = np.minimum(dst_east[i], new_src_east[contrib]) - np.maximum(
-            dst_west[i], new_src_west[contrib]
+        weight = np.minimum(dst_east[i], shifted_src_east[contrib]) - np.maximum(
+            dst_west[i], shifted_src_west[contrib]
         )
 
-        weights.append(weight)
+        weights.append(weight.values)
 
-        contrib += center_index
+        contrib += shift
 
-        values_wrapped = contrib > src_length - 1
+        wrapped = np.where(contrib > src_length - 1)
 
-        contrib[values_wrapped] -= src_length
+        contrib[wrapped] -= src_length
 
         mapping.append(contrib)
 
@@ -145,6 +154,9 @@ class Regrid2Regridder(BaseRegridder):
     """
 
     def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset):
+        self.src_grid = src_grid
+        self.dst_grid = dst_grid
+
         src_lat = src_grid.cf.get_bounds("lat")
         self.dst_lat = dst_grid.cf.get_bounds("lat")
 
@@ -156,48 +168,60 @@ class Regrid2Regridder(BaseRegridder):
         self.lon_mapping, self.lon_weights = map_longitude(src_lon, self.dst_lon)
 
     def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        da_data_var = ds.get(data_var, None)
+        input_data = ds.get(data_var, None)
 
-        if da_data_var is None:
+        if input_data is None:
             raise KeyError(
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        output_shape = (
-            da_data_var.cf["time"].shape[0],
-            len(self.lat_mapping),
-            len(self.lon_mapping),
-        )
+        output_shape = []
 
-        out_data = np.zeros(output_shape)
+        for x, y in input_data.sizes.items():
+            if "T" in input_data[x].cf.axes or "Z" in input_data[x].cf.axes:
+                output_shape.append(y)
+            else:
+                output_shape.append(ds.sizes[x])
 
-        for ilat, lat in enumerate(self.lat_mapping):
-            wtlat = self.lat_weights[ilat]
-            wtlat = wtlat.data.reshape(len(wtlat), 1)
+        output_data = np.zeros(output_shape)
 
-            for ilon, lon in enumerate(self.lon_mapping):
-                wtlon = self.lon_weights[ilon]
-                wtlon = wtlon.data.reshape(1, len(wtlon))
+        # TODO handle lat x lon, lon x lat and height
+        for lat_index, lat_map in enumerate(self.lat_mapping):
+            lat_weight = self.lat_weights[lat_index].reshape(lat_map.shape[0], 1)
 
-                weight_dot = np.dot(wtlat, wtlon)
+            for lon_index, lon_map in enumerate(self.lon_mapping):
+                lon_weight = self.lon_weights[lon_index].reshape(1, lon_map.shape[0])
 
-                weight = weight_dot.sum()
+                dot_weight = np.dot(lat_weight, lon_weight)
 
-                # handle case when order might be time, lon, lat?
-                data = da_data_var[:, lat, lon]
+                cell_weight = np.sum(dot_weight)
 
-                out_data[:, ilat, ilon] = (
-                    np.multiply(data, weight_dot).sum(axis=1).sum(axis=1) / weight
+                data = (
+                    np.multiply(input_data[:, lat_map, lon_map], dot_weight)
+                    .sum(axis=1)
+                    .sum(axis=1)
+                    / cell_weight
                 )
 
-        coords = {
-            "time": da_data_var["time"],
-            "lat": (self.dst_lat[:, 0] + self.dst_lat[:, 1]) / 2,
-            "lon": (self.dst_lon[:, 0] + self.dst_lon[:, 1]) / 2,
-        }
+                output_data[:, lat_index, lon_index] = data
 
-        out_da = xr.DataArray(out_data, coords=coords, name=da_data_var.name)
+        output_da = xr.DataArray(
+            output_data,
+            dims=["time", "lat", "lon"],
+            coords={
+                "time": ds["time"],
+                "lat": self.dst_grid["lat"],
+                "lon": self.dst_grid["lon"],
+            },
+        )
 
-        out_ds = xr.Dataset({da_data_var.name: out_da})
+        output_ds = xr.Dataset(
+            {
+                input_data.name: output_da,
+                "time_bnds": ds["time_bnds"],
+                "lat_bnds": self.dst_grid["lat_bnds"],
+                "lon_bnds": self.dst_grid["lon_bnds"],
+            }
+        )
 
-        return out_ds
+        return output_ds

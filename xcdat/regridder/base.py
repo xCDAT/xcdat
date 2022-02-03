@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Optional
+from typing import Any
 
 import xarray as xr
 
@@ -11,7 +11,5 @@ class BaseRegridder(abc.ABC):
         self._options = options
 
     @abc.abstractmethod
-    def regrid(
-        data_var: str, self, ds: xr.Dataset
-    ) -> xr.Dataset:  # pragma: no cover
+    def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:  # pragma: no cover
         pass

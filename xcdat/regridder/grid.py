@@ -159,7 +159,7 @@ def _create_gaussian_axis(nlats: int) -> Tuple[np.ndarray, np.ndarray]:
         bnd_pts[x] = bnd_pts[x - 1] - weights[x - 1]
 
     bnd_pts_mid = int(np.floor(nlats / 2))
-    bnd_pts[bnd_pts_mid:] = -1.0 * np.flip(bnd_pts[: bnd_pts_mid + 1])
+    bnd_pts[bnd_pts_mid + 1 :] = -1.0 * np.flip(bnd_pts[: nlats - bnd_pts_mid])
     bnd_pts = (180.0 / np.pi) * np.arcsin(bnd_pts)
 
     bnds = np.zeros((bessel_zeros.shape[0], 2))

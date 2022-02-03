@@ -1,5 +1,3 @@
-from typing import Optional
-
 import xarray as xr
 import xesmf as xe
 
@@ -94,7 +92,7 @@ class XESMFRegridder(BaseRegridder):
         )
 
     def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        da_data_var = ds.get(data_var, None) 
+        da_data_var = ds.get(data_var, None)
 
         if da_data_var is None:
             raise KeyError(
