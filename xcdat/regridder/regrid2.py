@@ -7,7 +7,7 @@ from xcdat.regridder.base import BaseRegridder
 
 
 def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
-    """ Extract bounds.
+    """Extract bounds.
 
     Extract lower and upper bounds from an axis.
 
@@ -35,7 +35,7 @@ def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
 
 
 def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    """ Map source to destination latitude.
+    """Map source to destination latitude.
 
     Parameters
     ----------
@@ -77,7 +77,7 @@ def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
 
 def pertub(value):
-    """ Pertub a valu.
+    """Pertub a valu.
 
     Parameters
     ----------
@@ -99,7 +99,7 @@ vpertub = np.vectorize(pertub)
 def align_axis(
     src_west: xr.DataArray, src_east: xr.DataArray, dst_west: xr.DataArray
 ) -> Tuple[xr.DataArray, xr.DataArray, int]:
-    """ Align source to destination axis.
+    """Align source to destination axis.
 
     Parameters
     ----------
@@ -175,7 +175,7 @@ def align_axis(
 
 
 def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    """ Map source to destination longitude.
+    """Map source to destination longitude.
 
     Parameters
     ----------

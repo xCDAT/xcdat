@@ -150,7 +150,7 @@ def _bessel_function_zeros(n: int) -> np.ndarray:
 
 
 def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
-    """ Gaussian axis.
+    """Gaussian axis.
 
     Calculates the bounds and weights for a Guassian axis.
 
@@ -178,9 +178,7 @@ def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
     weights = np.zeros_like(points)
 
     for x in range(int(nlats / 2 + 1)):
-        zero_poly, first_poly, second_poly = _legendre_polinomial(
-            points[x], nlats
-        )
+        zero_poly, first_poly, second_poly = _legendre_polinomial(points[x], nlats)
 
         points[x] = zero_poly
 
@@ -190,11 +188,9 @@ def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
             / ((nlats * first_poly) * (nlats * first_poly))
         )
 
-    points[mid if nlats % 2 == 0 else mid + 1:] = -1.0 * np.flip(
-        points[:mid]
-    )
+    points[mid if nlats % 2 == 0 else mid + 1 :] = -1.0 * np.flip(points[:mid])
 
-    weights[mid if nlats % 2 == 0 else mid + 1:] = np.flip(weights[:mid])
+    weights[mid if nlats % 2 == 0 else mid + 1 :] = np.flip(weights[:mid])
 
     if nlats % 2 != 0:
         weights[mid + 1] = 0.0
@@ -212,7 +208,7 @@ def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
-    """ Create Gaussian axis.
+    """Create Gaussian axis.
 
     Creates a Gaussian axis of `nlats`.
 
@@ -249,7 +245,7 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
         attrs={
             "units": "degrees_north",
             "axis": "Y",
-        }
+        },
     )
 
     bounds = (180.0 / np.pi) * np.arcsin(bounds)
@@ -264,7 +260,7 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
         dims=["lat", "bnds"],
         coords={
             "lat": points_da,
-        }
+        },
     )
 
     return bounds_da, points_da
