@@ -237,9 +237,8 @@ class Regrid2Regridder(BaseRegridder):
         Contains desintation grid coordinates.
     """
 
-    def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset):
-        self.src_grid = src_grid
-        self.dst_grid = dst_grid
+    def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset, **options):
+        super().__init__(src_grid, dst_grid, **options)
 
         src_lat = src_grid.cf.get_bounds("lat")
         self.dst_lat = dst_grid.cf.get_bounds("lat")
@@ -265,9 +264,9 @@ class Regrid2Regridder(BaseRegridder):
             if "T" in input_data[x].cf.axes or "Z" in input_data[x].cf.axes:
                 output_shape.append(y)
             else:
-                output_shape.append(ds.sizes[x])
+                output_shape.append(self._dst_grid[x].shape[0])
 
-        output_data = np.zeros(output_shape)
+        output_data = np.zeros(output_shape, dtype=np.float32)
 
         # TODO handle lat x lon, lon x lat and height
         for lat_index, lat_map in enumerate(self.lat_mapping):
@@ -294,8 +293,8 @@ class Regrid2Regridder(BaseRegridder):
             dims=["time", "lat", "lon"],
             coords={
                 "time": ds["time"],
-                "lat": self.dst_grid["lat"],
-                "lon": self.dst_grid["lon"],
+                "lat": self._dst_grid["lat"],
+                "lon": self._dst_grid["lon"],
             },
         )
 
@@ -303,8 +302,8 @@ class Regrid2Regridder(BaseRegridder):
             {
                 input_data.name: output_da,
                 "time_bnds": ds["time_bnds"],
-                "lat_bnds": self.dst_grid["lat_bnds"],
-                "lon_bnds": self.dst_grid["lon_bnds"],
+                "lat_bnds": self._dst_grid["lat_bnds"],
+                "lon_bnds": self._dst_grid["lon_bnds"],
             }
         )
 
