@@ -245,6 +245,7 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
         attrs={
             "units": "degrees_north",
             "axis": "Y",
+            "bounds": "lat_bnds",
         },
     )
 
@@ -286,25 +287,56 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
 
     >>> xcdat.regridder.grid.create_gaussian_grid(32)
     """
-    lat_bounds, lat_points = _create_gaussian_axis(nlats)
+    lat_bounds, lat_axis = _create_gaussian_axis(nlats)
+
+    lon_axis = create_uniform_axis(
+        0.0,
+        360.0,
+        (360.0 / (2.0 * nlats)),
+        "lon",
+        {"units": "degrees_east", "axis": "X"},
+    )
 
     grid = xr.Dataset(
         {
-            "lat": lat_points,
-            "lon": xr.DataArray(
-                name="lon",
-                data=np.arange(0.0, 360.0, (360.0 / (2 * nlats))),
-                dims=["lon"],
-                attrs={
-                    "units": "degrees_east",
-                    "axis": "X",
-                },
-            ),
-            "lat_bnds": lat_bounds,
+            "lat": lat_axis,
+            "lon": lon_axis,
         }
     )
 
+    grid = grid.bounds.add_missing_bounds()
+
+    grid["lat_bnds"] = lat_bounds
+
     return grid
+
+
+def create_uniform_axis(
+    start: float, stop: float, delta: float, name: str, attrs: dict
+) -> xr.DataArray:
+    """Create a uniform axis.
+
+    Parameters
+    ----------
+    start : float
+        Starting latitude point.
+    stop : float
+        Stoping latitude point.
+    delta : float
+        Distance between points.
+    name : str
+        Name of the axis.
+    attrs : dict
+        Axis attributes.
+
+    Returns
+    -------
+    xr.DataArray
+        Containing uniform axis.
+    """
+    return xr.DataArray(
+        name=name, data=np.arange(start, stop, delta), dims=[name], attrs=attrs
+    )
 
 
 def create_uniform_grid(
@@ -347,23 +379,19 @@ def create_uniform_grid(
     """
     grid = xr.Dataset(
         coords={
-            "lat": xr.DataArray(
-                name="lat",
-                data=np.arange(lat_start, lat_stop, lat_delta),
-                dims=["lat"],
-                attrs={
-                    "units": "degrees_north",
-                    "axis": "Y",
-                },
+            "lat": create_uniform_axis(
+                lat_start,
+                lat_stop,
+                lat_delta,
+                "lat",
+                {"units": "degrees_north", "axis": "Y"},
             ),
-            "lon": xr.DataArray(
-                name="lon",
-                data=np.arange(lon_start, lon_stop, lon_delta),
-                dims=["lon"],
-                attrs={
-                    "units": "degrees_east",
-                    "axis": "X",
-                },
+            "lon": create_uniform_axis(
+                lon_start,
+                lon_stop,
+                lon_delta,
+                "lon",
+                {"units": "degrees_east", "axis": "X"},
             ),
         },
     )
