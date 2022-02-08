@@ -71,7 +71,7 @@ def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
         weight = np.sin(np.deg2rad(north_bounds)) - np.sin(np.deg2rad(south_bounds))
 
-        weights.append(weight.values)
+        weights.append(weight.values.reshape(contrib.shape[0], 1))
 
     return mapping, weights
 
@@ -213,7 +213,7 @@ def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
             dst_west[i], shifted_src_west[contrib]
         )
 
-        weights.append(weight.values)
+        weights.append(weight.values.reshape(1, contrib.shape[0]))
 
         contrib += shift
 
@@ -251,39 +251,42 @@ class Regrid2Regridder(BaseRegridder):
         self.lon_mapping, self.lon_weights = map_longitude(src_lon, self.dst_lon)
 
     def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        input_data = ds.get(data_var, None)
+        input_data_var = ds.get(data_var, None)
 
-        if input_data is None:
+        if input_data_var is None:
             raise KeyError(
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
         output_shape = []
 
-        for x, y in input_data.sizes.items():
-            if "T" in input_data[x].cf.axes or "Z" in input_data[x].cf.axes:
+        for x, y in input_data_var.sizes.items():
+            if "T" in input_data_var[x].cf.axes or "Z" in input_data_var[x].cf.axes:
                 output_shape.append(y)
             else:
                 output_shape.append(self._dst_grid[x].shape[0])
+
+        input_data = input_data_var.values
 
         output_data = np.zeros(output_shape, dtype=np.float32)
 
         # TODO handle lat x lon, lon x lat and height
         for lat_index, lat_map in enumerate(self.lat_mapping):
-            lat_weight = self.lat_weights[lat_index].reshape(lat_map.shape[0], 1)
+            lat_weight = self.lat_weights[lat_index]
 
             for lon_index, lon_map in enumerate(self.lon_mapping):
-                lon_weight = self.lon_weights[lon_index].reshape(1, lon_map.shape[0])
+                lon_weight = self.lon_weights[lon_index]
 
                 dot_weight = np.dot(lat_weight, lon_weight)
 
                 cell_weight = np.sum(dot_weight)
 
+                segment = np.take(input_data, lat_map, axis=1)
+
+                segment = np.take(segment, lon_map, axis=2)
+
                 data = (
-                    np.multiply(input_data[:, lat_map, lon_map], dot_weight)
-                    .sum(axis=1)
-                    .sum(axis=1)
-                    / cell_weight
+                    np.multiply(segment, dot_weight).sum(axis=(1, 2)) / cell_weight
                 )
 
                 output_data[:, lat_index, lon_index] = data
@@ -300,7 +303,7 @@ class Regrid2Regridder(BaseRegridder):
 
         output_ds = xr.Dataset(
             {
-                input_data.name: output_da,
+                input_data_var.name: output_da,
                 "time_bnds": ds["time_bnds"],
                 "lat_bnds": self._dst_grid["lat_bnds"],
                 "lon_bnds": self._dst_grid["lon_bnds"],
