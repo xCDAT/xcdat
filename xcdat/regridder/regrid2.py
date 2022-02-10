@@ -285,9 +285,7 @@ class Regrid2Regridder(BaseRegridder):
 
                 segment = np.take(segment, lon_map, axis=2)
 
-                data = (
-                    np.multiply(segment, dot_weight).sum(axis=(1, 2)) / cell_weight
-                )
+                data = np.multiply(segment, dot_weight).sum(axis=(1, 2)) / cell_weight
 
                 output_data[:, lat_index, lon_index] = data
 
