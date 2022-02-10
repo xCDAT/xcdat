@@ -20,7 +20,6 @@ install_requires: List[str] = [
     "numpy",
     "pandas",
     "xarray",
-    "xesmf",
 ]
 test_requires = ["pytest>=3"]
 
