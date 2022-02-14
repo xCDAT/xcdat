@@ -417,13 +417,13 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
 
     """
     lat = grid.cf["lat"]
-    lat_bnd = grid.cf.get_bounds("lat")
+    lat_bnd = grid.bounds.get_bounds("lat")
 
     out_lat_data = np.array([(lat[0] + lat[-1]) / 2.0])
     out_lat_bnds = np.array([[lat_bnd[0, 0], lat_bnd[-1, 1]]])
 
     lon = grid.cf["lon"]
-    lon_bnd = grid.cf.get_bounds("lon")
+    lon_bnd = grid.bounds.get_bounds("lon")
 
     out_lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
     out_lon_bnds = np.array([[lon_bnd[0, 0], lon_bnd[-1, 1]]])
@@ -455,7 +455,7 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
                 coords={
                     "lat": lat_dataarray,
                 },
-                attrs=grid.cf.get_bounds("lat").attrs.copy(),
+                attrs=grid.bounds.get_bounds("lat").attrs.copy(),
             ),
             "lon_bnds": xr.DataArray(
                 name="lon_bnds",
@@ -464,7 +464,7 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
                 coords={
                     "lon": lon_dataarray,
                 },
-                attrs=grid.cf.get_bounds("lon").attrs.copy(),
+                attrs=grid.bounds.get_bounds("lon").attrs.copy(),
             ),
         },
     )
@@ -486,7 +486,7 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
 
     """
     lon = grid.cf["lon"]
-    lon_bnds = grid.cf.get_bounds("lon")
+    lon_bnds = grid.bounds.get_bounds("lon")
 
     out_lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
     out_lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
@@ -513,12 +513,12 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
         data_vars={
             "lat_bnds": xr.DataArray(
                 name="lat_bnds",
-                data=grid.cf.get_bounds("lat"),
+                data=grid.bounds.get_bounds("lat"),
                 dims=["lat", "bnds"],
                 coords={
                     "lat": lat_dataarray,
                 },
-                attrs=grid.cf.get_bounds("lat").attrs.copy(),
+                attrs=grid.bounds.get_bounds("lat").attrs.copy(),
             ),
             "lon_bnds": xr.DataArray(
                 name="lon_bnds",
@@ -527,7 +527,7 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
                 coords={
                     "lon": lon_dataarray,
                 },
-                attrs=grid.cf.get_bounds("lon").attrs.copy(),
+                attrs=grid.bounds.get_bounds("lon").attrs.copy(),
             ),
         },
     )

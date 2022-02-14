@@ -240,13 +240,13 @@ class Regrid2Regridder(BaseRegridder):
     def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset, **options):
         super().__init__(src_grid, dst_grid, **options)
 
-        src_lat = src_grid.cf.get_bounds("lat")
-        self.dst_lat = dst_grid.cf.get_bounds("lat")
+        src_lat = src_grid.bounds.get_bounds("lat")
+        self.dst_lat = dst_grid.bounds.get_bounds("lat")
 
         self.lat_mapping, self.lat_weights = map_latitude(src_lat, self.dst_lat)
 
-        src_lon = src_grid.cf.get_bounds("lon")
-        self.dst_lon = dst_grid.cf.get_bounds("lon")
+        src_lon = src_grid.bounds.get_bounds("lon")
+        self.dst_lon = dst_grid.bounds.get_bounds("lon")
 
         self.lon_mapping, self.lon_weights = map_longitude(src_lon, self.dst_lon)
 
@@ -339,11 +339,11 @@ class Regrid2Regridder(BaseRegridder):
             if cf_name in ["X", "Y"]:
                 coords[name] = self._dst_grid[name]
 
-                bounds = self._dst_grid.cf.get_bounds(cf_name)
+                bounds = self._dst_grid.bounds.get_bounds(cf_name)
             else:
                 coords[name] = input_data_var[name]
 
-                bounds = ds.cf.get_bounds(name)
+                bounds = ds.bounds.get_bounds(name)
 
             data_vars[bounds.name] = bounds
 
