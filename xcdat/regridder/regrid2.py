@@ -258,21 +258,55 @@ class Regrid2Regridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        output_shape = []
-
-        for x, y in input_data_var.sizes.items():
-            if "T" in input_data_var[x].cf.axes or "Z" in input_data_var[x].cf.axes:
-                output_shape.append(y)
-            else:
-                output_shape.append(self._dst_grid[x].shape[0])
-
         input_data = input_data_var.values
 
+        axes = {x: y[0] for x, y in input_data_var.cf.axes.items()}
+
+        invert_axes = {y: x for x, y in axes.items()}
+
+        ordered_names = list(input_data_var.sizes)
+
+        ordered_axes = sorted(
+            invert_axes.items(), key=lambda x: ordered_names.index(x[0])
+        )
+
+        ordered_sizes = {}
+
+        for x, y in ordered_axes:
+            if "T" == y or "Z" == y:
+                ordered_sizes[y] = input_data_var.sizes[x]
+            else:
+                ordered_sizes[y] = self._dst_grid.sizes[x]
+
+        ordered_cf_names = list(ordered_sizes)
+
+        output_shape = tuple(ordered_sizes.values())
+
         output_data = np.zeros(output_shape, dtype=np.float32)
+
+        extra_dims = [x for x in set(ordered_cf_names) - set(["X", "Y"])]
+
+        extra_dims_sizes = [ordered_sizes[x] for x in extra_dims]
+
+        base_dims = [x for x in set(extra_dims) ^ set(ordered_cf_names)]
+
+        base_dims_sizes = [ordered_sizes[x] for x in base_dims]
+
+        number_of_offsets = np.multiply.reduce(extra_dims_sizes)
+
+        offset = np.multiply.reduce(base_dims_sizes)
+
+        base_put_index = (np.arange(number_of_offsets) * offset).astype(np.int64)
+
+        input_lat_index, input_lon_index = ordered_cf_names.index(
+            "Y"
+        ), ordered_cf_names.index("X")
 
         # TODO handle lat x lon, lon x lat and height
         for lat_index, lat_map in enumerate(self.lat_mapping):
             lat_weight = self.lat_weights[lat_index]
+
+            input_lat_segment = np.take(input_data, lat_map, axis=input_lat_index)
 
             for lon_index, lon_map in enumerate(self.lon_mapping):
                 lon_weight = self.lon_weights[lon_index]
@@ -281,31 +315,46 @@ class Regrid2Regridder(BaseRegridder):
 
                 cell_weight = np.sum(dot_weight)
 
-                segment = np.take(input_data, lat_map, axis=1)
+                input_lon_segment = np.take(
+                    input_lat_segment, lon_map, axis=input_lon_index
+                )
 
-                segment = np.take(segment, lon_map, axis=2)
+                data = (
+                    np.multiply(input_lon_segment, dot_weight).sum(
+                        axis=(input_lat_index, input_lon_index)
+                    )
+                    / cell_weight
+                )
 
-                data = np.multiply(segment, dot_weight).sum(axis=(1, 2)) / cell_weight
+                put_index = base_put_index + (
+                    (lat_index * ordered_sizes["X"]) + lon_index
+                )
 
-                output_data[:, lat_index, lon_index] = data
+                np.put(output_data, put_index, data)
+
+        coords = {}
+        data_vars = {}
+
+        for cf_name, name in axes.items():
+            if cf_name in ["X", "Y"]:
+                coords[name] = self._dst_grid[name]
+
+                bounds = self._dst_grid.cf.get_bounds(cf_name)
+            else:
+                coords[name] = input_data_var[name]
+
+                bounds = ds.cf.get_bounds(name)
+
+            data_vars[bounds.name] = bounds
 
         output_da = xr.DataArray(
             output_data,
-            dims=["time", "lat", "lon"],
-            coords={
-                "time": ds["time"],
-                "lat": self._dst_grid["lat"],
-                "lon": self._dst_grid["lon"],
-            },
+            dims=[axes[x] for x in ordered_cf_names],
+            coords=coords,
         )
 
-        output_ds = xr.Dataset(
-            {
-                input_data_var.name: output_da,
-                "time_bnds": ds["time_bnds"],
-                "lat_bnds": self._dst_grid["lat_bnds"],
-                "lon_bnds": self._dst_grid["lon_bnds"],
-            }
-        )
+        data_vars[input_data_var.name] = output_da
+
+        output_ds = xr.Dataset(data_vars)
 
         return output_ds

@@ -34,28 +34,46 @@ def gen_uniform_axis(start, stop, step, name, axis):
 class TestRegrid2Regridder:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.coarse_lat_bnds = gen_uniform_axis(-90, 90.1, 30, "lat", "Y")
+        self.coarse_lat_bnds = gen_uniform_axis(-90, 90.1, 60, "lat", "Y")
 
-        self.fine_lat_bnds = gen_uniform_axis(-90, 90.1, 10, "lat", "Y")
+        self.fine_lat_bnds = gen_uniform_axis(-90, 90.1, 45, "lat", "Y")
 
-        self.reversed_lat_bnds = gen_uniform_axis(90, -90.1, -30, "lat", "Y")
+        self.reversed_lat_bnds = gen_uniform_axis(90, -90.1, -60, "lat", "Y")
 
-        self.coarse_lon_bnds = gen_uniform_axis(-0.5, 360, 90, "lon", "X")
+        self.coarse_lon_bnds = gen_uniform_axis(-0.5, 360, 180, "lon", "X")
 
-        self.fine_lon_bnds = gen_uniform_axis(-0.5, 360, 45, "lon", "X")
-
-        np.random.seed(1337)
+        self.fine_lon_bnds = gen_uniform_axis(-0.5, 360, 90, "lon", "X")
 
         time = pd.date_range("1970-01-01", periods=3)
-        time_bnds = np.vstack((time[:-1].to_numpy(), time[1:].to_numpy())).reshape(
+        self.time_bnds = np.vstack((time[:-1].to_numpy(), time[1:].to_numpy())).reshape(
             (2, 2)
         )
         time = time[:-1].to_pydatetime() + datetime.timedelta(hours=12)
 
-        self.input_ds = xr.Dataset(
+        self.coarse_2d_ds = xr.Dataset(
             {
                 "ts": xr.DataArray(
-                    np.random.random(
+                    np.ones(
+                        (
+                            self.coarse_lat_bnds.shape[0],
+                            self.coarse_lon_bnds.shape[0],
+                        )
+                    ),
+                    dims=["lat", "lon"],
+                    coords={
+                        "lat": self.coarse_lat_bnds["lat"],
+                        "lon": self.coarse_lon_bnds["lon"],
+                    },
+                ),
+                "lat_bnds": self.coarse_lat_bnds,
+                "lon_bnds": self.coarse_lon_bnds,
+            }
+        )
+
+        self.coarse_3d_ds = xr.Dataset(
+            {
+                "ts": xr.DataArray(
+                    np.ones(
                         (
                             2,
                             self.coarse_lat_bnds.shape[0],
@@ -69,26 +87,50 @@ class TestRegrid2Regridder:
                         "lon": self.coarse_lon_bnds["lon"],
                     },
                 ),
-                "time_bnds": (["time", "bnds"], time_bnds),
+                "time_bnds": (["time", "bnds"], self.time_bnds),
                 "lat_bnds": self.coarse_lat_bnds,
                 "lon_bnds": self.coarse_lon_bnds,
             }
         )
 
-        self.output_ds = xr.Dataset(
+        self.height_bnds = gen_uniform_axis(0.0, 40000.1, 20000.0, "height", "Z")
+
+        self.coarse_4d_ds = xr.Dataset(
             {
                 "ts": xr.DataArray(
-                    np.random.random(
-                        (2, self.fine_lat_bnds.shape[0], self.fine_lon_bnds.shape[0])
+                    np.ones(
+                        (
+                            2,
+                            2,
+                            self.coarse_lat_bnds.shape[0],
+                            self.coarse_lon_bnds.shape[0],
+                        )
                     ),
-                    dims=["time", "lat", "lon"],
+                    dims=["time", "height", "lat", "lon"],
                     coords={
                         "time": ("time", time, {"bounds": "time_bnds", "axis": "T"}),
+                        "height": self.height_bnds["height"],
+                        "lat": self.coarse_lat_bnds["lat"],
+                        "lon": self.coarse_lon_bnds["lon"],
+                    },
+                ),
+                "time_bnds": (["time", "bnds"], self.time_bnds),
+                "height_bnds": self.height_bnds,
+                "lat_bnds": self.coarse_lat_bnds,
+                "lon_bnds": self.coarse_lon_bnds,
+            }
+        )
+
+        self.fine_2d_ds = xr.Dataset(
+            {
+                "ts": xr.DataArray(
+                    np.ones((self.fine_lat_bnds.shape[0], self.fine_lon_bnds.shape[0])),
+                    dims=["lat", "lon"],
+                    coords={
                         "lat": self.fine_lat_bnds["lat"],
                         "lon": self.fine_lon_bnds["lon"],
                     },
                 ),
-                "time_bnds": (["time", "bnds"], time_bnds),
                 "lat_bnds": self.fine_lat_bnds,
                 "lon_bnds": self.fine_lon_bnds,
             }
@@ -130,403 +172,57 @@ class TestRegrid2Regridder:
         assert shift == 5
 
     def test_unknown_variable(self):
-        regridder = regrid2.Regrid2Regridder(self.input_ds, self.output_ds)
+        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
         with pytest.raises(KeyError):
-            regridder.regrid("unknown", self.output_ds)
+            regridder.regrid("unknown", self.coarse_2d_ds)
 
-    def test_regrid(self):
-        regridder = regrid2.Regrid2Regridder(self.input_ds, self.output_ds)
+    def test_regrid_2d(self):
+        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
-        output_data = regridder.regrid("ts", self.input_ds)
+        output_data = regridder.regrid("ts", self.coarse_2d_ds)
 
-        expected_output = [
-            [
-                [
-                    0.26202468,
-                    0.26202468,
-                    0.15868397,
-                    0.15868397,
-                    0.27812652,
-                    0.27812652,
-                    0.45931689,
-                    0.45931689,
-                ],
-                [
-                    0.26202468,
-                    0.26202468,
-                    0.15868397,
-                    0.15868397,
-                    0.27812652,
-                    0.27812652,
-                    0.45931689,
-                    0.45931689,
-                ],
-                [
-                    0.26202468,
-                    0.26202468,
-                    0.15868397,
-                    0.15868397,
-                    0.27812652,
-                    0.27812652,
-                    0.45931689,
-                    0.45931689,
-                ],
-                [
-                    0.32100054,
-                    0.32100054,
-                    0.51839282,
-                    0.51839282,
-                    0.26194293,
-                    0.26194293,
-                    0.97608528,
-                    0.97608528,
-                ],
-                [
-                    0.32100054,
-                    0.32100054,
-                    0.51839282,
-                    0.51839282,
-                    0.26194293,
-                    0.26194293,
-                    0.97608528,
-                    0.97608528,
-                ],
-                [
-                    0.32100054,
-                    0.32100054,
-                    0.51839282,
-                    0.51839282,
-                    0.26194293,
-                    0.26194293,
-                    0.97608528,
-                    0.97608528,
-                ],
-                [
-                    0.73281455,
-                    0.73281455,
-                    0.11527423,
-                    0.11527423,
-                    0.38627507,
-                    0.38627507,
-                    0.62850118,
-                    0.62850118,
-                ],
-                [
-                    0.73281455,
-                    0.73281455,
-                    0.11527423,
-                    0.11527423,
-                    0.38627507,
-                    0.38627507,
-                    0.62850118,
-                    0.62850118,
-                ],
-                [
-                    0.73281455,
-                    0.73281455,
-                    0.11527423,
-                    0.11527423,
-                    0.38627507,
-                    0.38627507,
-                    0.62850118,
-                    0.62850118,
-                ],
-                [
-                    0.12505793,
-                    0.12505793,
-                    0.98354861,
-                    0.98354861,
-                    0.44322487,
-                    0.44322487,
-                    0.78955834,
-                    0.78955834,
-                ],
-                [
-                    0.12505793,
-                    0.12505793,
-                    0.98354861,
-                    0.98354861,
-                    0.44322487,
-                    0.44322487,
-                    0.78955834,
-                    0.78955834,
-                ],
-                [
-                    0.12505793,
-                    0.12505793,
-                    0.98354861,
-                    0.98354861,
-                    0.44322487,
-                    0.44322487,
-                    0.78955834,
-                    0.78955834,
-                ],
-                [
-                    0.79411858,
-                    0.79411858,
-                    0.36126157,
-                    0.36126157,
-                    0.41610394,
-                    0.41610394,
-                    0.58425813,
-                    0.58425813,
-                ],
-                [
-                    0.79411858,
-                    0.79411858,
-                    0.36126157,
-                    0.36126157,
-                    0.41610394,
-                    0.41610394,
-                    0.58425813,
-                    0.58425813,
-                ],
-                [
-                    0.79411858,
-                    0.79411858,
-                    0.36126157,
-                    0.36126157,
-                    0.41610394,
-                    0.41610394,
-                    0.58425813,
-                    0.58425813,
-                ],
-                [
-                    0.76017177,
-                    0.76017177,
-                    0.18780841,
-                    0.18780841,
-                    0.28816715,
-                    0.28816715,
-                    0.67021886,
-                    0.67021886,
-                ],
-                [
-                    0.76017177,
-                    0.76017177,
-                    0.18780841,
-                    0.18780841,
-                    0.28816715,
-                    0.28816715,
-                    0.67021886,
-                    0.67021886,
-                ],
-                [
-                    0.76017177,
-                    0.76017177,
-                    0.18780841,
-                    0.18780841,
-                    0.28816715,
-                    0.28816715,
-                    0.67021886,
-                    0.67021886,
-                ],
-            ],
-            [
-                [
-                    0.49964826,
-                    0.49964826,
-                    0.17856868,
-                    0.17856868,
-                    0.4131413,
-                    0.4131413,
-                    0.19919524,
-                    0.19919524,
-                ],
-                [
-                    0.49964826,
-                    0.49964826,
-                    0.17856868,
-                    0.17856868,
-                    0.4131413,
-                    0.4131413,
-                    0.19919524,
-                    0.19919524,
-                ],
-                [
-                    0.49964826,
-                    0.49964826,
-                    0.17856868,
-                    0.17856868,
-                    0.4131413,
-                    0.4131413,
-                    0.19919524,
-                    0.19919524,
-                ],
-                [
-                    0.5316994,
-                    0.5316994,
-                    0.8323707,
-                    0.8323707,
-                    0.18525095,
-                    0.18525095,
-                    0.95735922,
-                    0.95735922,
-                ],
-                [
-                    0.5316994,
-                    0.5316994,
-                    0.8323707,
-                    0.8323707,
-                    0.18525095,
-                    0.18525095,
-                    0.95735922,
-                    0.95735922,
-                ],
-                [
-                    0.5316994,
-                    0.5316994,
-                    0.8323707,
-                    0.8323707,
-                    0.18525095,
-                    0.18525095,
-                    0.95735922,
-                    0.95735922,
-                ],
-                [
-                    0.42541467,
-                    0.42541467,
-                    0.50400704,
-                    0.50400704,
-                    0.51047095,
-                    0.51047095,
-                    0.01579145,
-                    0.01579145,
-                ],
-                [
-                    0.42541467,
-                    0.42541467,
-                    0.50400704,
-                    0.50400704,
-                    0.51047095,
-                    0.51047095,
-                    0.01579145,
-                    0.01579145,
-                ],
-                [
-                    0.42541467,
-                    0.42541467,
-                    0.50400704,
-                    0.50400704,
-                    0.51047095,
-                    0.51047095,
-                    0.01579145,
-                    0.01579145,
-                ],
-                [
-                    0.73169007,
-                    0.73169007,
-                    0.99330504,
-                    0.99330504,
-                    0.16287753,
-                    0.16287753,
-                    0.12663478,
-                    0.12663478,
-                ],
-                [
-                    0.73169007,
-                    0.73169007,
-                    0.99330504,
-                    0.99330504,
-                    0.16287753,
-                    0.16287753,
-                    0.12663478,
-                    0.12663478,
-                ],
-                [
-                    0.73169007,
-                    0.73169007,
-                    0.99330504,
-                    0.99330504,
-                    0.16287753,
-                    0.16287753,
-                    0.12663478,
-                    0.12663478,
-                ],
-                [
-                    0.37483418,
-                    0.37483418,
-                    0.69321944,
-                    0.69321944,
-                    0.00290103,
-                    0.00290103,
-                    0.36922906,
-                    0.36922906,
-                ],
-                [
-                    0.37483418,
-                    0.37483418,
-                    0.69321944,
-                    0.69321944,
-                    0.00290103,
-                    0.00290103,
-                    0.36922906,
-                    0.36922906,
-                ],
-                [
-                    0.37483418,
-                    0.37483418,
-                    0.69321944,
-                    0.69321944,
-                    0.00290103,
-                    0.00290103,
-                    0.36922906,
-                    0.36922906,
-                ],
-                [
-                    0.05867933,
-                    0.05867933,
-                    0.78933609,
-                    0.78933609,
-                    0.34976921,
-                    0.34976921,
-                    0.70252372,
-                    0.70252372,
-                ],
-                [
-                    0.05867933,
-                    0.05867933,
-                    0.78933609,
-                    0.78933609,
-                    0.34976921,
-                    0.34976921,
-                    0.70252372,
-                    0.70252372,
-                ],
-                [
-                    0.05867933,
-                    0.05867933,
-                    0.78933609,
-                    0.78933609,
-                    0.34976921,
-                    0.34976921,
-                    0.70252372,
-                    0.70252372,
-                ],
-            ],
-        ]
+        assert np.all(output_data.ts == 1)
 
-        np.testing.assert_allclose(output_data.ts, expected_output)
+    def test_regrid_fine_coarse_2d(self):
+        regridder = regrid2.Regrid2Regridder(self.fine_2d_ds, self.coarse_2d_ds)
+
+        output_data = regridder.regrid("ts", self.fine_2d_ds)
+
+        assert np.all(output_data.ts == 1)
+
+    def test_regrid_3d(self):
+        regridder = regrid2.Regrid2Regridder(self.coarse_3d_ds, self.fine_2d_ds)
+
+        output_data = regridder.regrid("ts", self.coarse_3d_ds)
+
+        assert np.all(output_data.ts == 1)
+
+    def test_regrid_4d(self):
+        regridder = regrid2.Regrid2Regridder(self.coarse_4d_ds, self.fine_2d_ds)
+
+        output_data = regridder.regrid("ts", self.coarse_4d_ds)
+
+        assert np.all(output_data.ts == 1)
 
     def test_map_longitude_coarse_to_fine(self):
         mapping, weights = regrid2.map_longitude(
             self.coarse_lon_bnds, self.fine_lon_bnds
         )
 
-        expected_mapping = [[0], [0], [1], [1], [2], [2], [3], [3]]
-        expected_weigths = np.array(
-            [
-                [45.0],
-                [45.0],
-                [45.0],
-                [45.0],
-                [45.0],
-                [45.0],
-                [45.0],
-                [45.0],
-            ]
-        ).reshape((8, 1, 1))
+        expected_mapping = [
+            [0],
+            [0],
+            [1],
+            [1],
+        ]
+
+        expected_weigths = [
+            [[90]],
+            [[90]],
+            [[90]],
+            [[90]],
+        ]
 
         np.testing.assert_allclose(mapping, expected_mapping)
         np.testing.assert_allclose(weights, expected_weigths)
@@ -536,10 +232,12 @@ class TestRegrid2Regridder:
             self.fine_lon_bnds, self.coarse_lon_bnds
         )
 
-        expected_mapping = [[0, 1], [2, 3], [4, 5], [6, 7]]
-        expected_weigths = np.array(
-            [[45.0, 45.0], [45.0, 45.0], [45.0, 45.0], [45.0, 45.0]]
-        ).reshape((4, 1, 2))
+        expected_mapping = [
+            [0, 1],
+            [2, 3],
+        ]
+
+        expected_weigths = [[[90, 90]], [[90, 90]]]
 
         np.testing.assert_allclose(mapping, expected_mapping)
         np.testing.assert_allclose(weights, expected_weigths)
@@ -550,50 +248,28 @@ class TestRegrid2Regridder:
         )
 
         expected_mapping = [
-            [0],
-            [0],
-            [0],
-            [1],
-            [1],
-            [1],
-            [2],
-            [2],
-            [2],
-            [3],
-            [3],
-            [3],
-            [4],
-            [4],
-            [4],
-            [5],
-            [5],
-            [5],
-        ]
-        expected_weigths = np.array(
             [
-                [0.01519224698779198],
-                [0.0451151322262997],
-                [0.07366721700146972],
-                [0.09998096066546058],
-                [0.12325683343243876],
-                [0.1427876096865393],
-                [0.15797985667433123],
-                [0.16837196565873838],
-                [0.17364817766693033],
-                [0.17364817766693033],
-                [0.16837196565873838],
-                [0.15797985667433123],
-                [0.1427876096865393],
-                [0.12325683343243876],
-                [0.09998096066546058],
-                [0.07366721700146972],
-                [0.0451151322262997],
-                [0.01519224698779198],
-            ]
-        ).reshape((18, 1, 1))
+                0,
+            ],
+            [0, 1],
+            [1, 2],
+            [
+                2,
+            ],
+        ]
 
-        np.testing.assert_allclose(mapping, expected_mapping)
-        np.testing.assert_allclose(weights, expected_weigths)
+        expected_weigths = [
+            [[0.29289322]],
+            [[0.20710678], [0.5]],
+            [[0.5], [0.20710678]],
+            [[0.29289322]],
+        ]
+
+        for x, y in zip(mapping, expected_mapping):
+            np.testing.assert_allclose(x, y)
+
+        for x2, y2 in zip(weights, expected_weigths):
+            np.testing.assert_allclose(x, y)
 
     def test_map_latitude_fine_to_coarse(self):
         mapping, weights = regrid2.map_latitude(
@@ -601,23 +277,16 @@ class TestRegrid2Regridder:
         )
 
         expected_mapping = [
-            [0, 1, 2],
-            [3, 4, 5],
-            [6, 7, 8],
-            [9, 10, 11],
-            [12, 13, 14],
-            [15, 16, 17],
+            [0, 1],
+            [1, 2],
+            [2, 3],
         ]
-        expected_weigths = np.array(
-            [
-                [0.01519224698779198, 0.0451151322262997, 0.07366721700146972],
-                [0.09998096066546058, 0.12325683343243876, 0.1427876096865393],
-                [0.15797985667433123, 0.16837196565873838, 0.17364817766693033],
-                [0.17364817766693033, 0.16837196565873838, 0.15797985667433123],
-                [0.1427876096865393, 0.12325683343243876, 0.09998096066546058],
-                [0.07366721700146972, 0.0451151322262997, 0.01519224698779198],
-            ]
-        ).reshape((6, 3, 1))
+
+        expected_weigths = [
+            [[0.29289322], [0.20710678]],
+            [[0.5], [0.5]],
+            [[0.20710678], [0.29289322]],
+        ]
 
         np.testing.assert_allclose(mapping, expected_mapping)
         np.testing.assert_allclose(weights, expected_weigths)
@@ -625,19 +294,19 @@ class TestRegrid2Regridder:
     def test_extract_bounds(self):
         south, north = regrid2.extract_bounds(self.coarse_lat_bnds)
 
-        assert south.shape == (6,)
+        assert south.shape == (3,)
         assert south[0], south[-1] == (-90, 60)
 
-        assert north.shape == (6,)
+        assert north.shape == (3,)
         assert north[0], north[-1] == (60, 90)
 
     def test_reversed_extract_bounds(self):
         south, north = regrid2.extract_bounds(self.reversed_lat_bnds)
 
-        assert south.shape == (6,)
+        assert south.shape == (3,)
         assert south[0], south[-1] == (-90, 60)
 
-        assert north.shape == (6,)
+        assert north.shape == (3,)
         assert north[0], north[-1] == (60, 90)
 
 
