@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List, Tuple
 
 import numpy as np
 import xarray as xr
@@ -250,57 +250,44 @@ class Regrid2Regridder(BaseRegridder):
 
         self.lon_mapping, self.lon_weights = map_longitude(src_lon, self.dst_lon)
 
-    def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        input_data_var = ds.get(data_var, None)
+    def _base_put_indexes(self, axis_sizes: Dict) -> np.ndarray:
+        extra_dims = set(axis_sizes) - set(["X", "Y"])
 
-        if input_data_var is None:
-            raise KeyError(
-                f"The data variable '{data_var}' does not exist in the dataset."
-            )
+        number_of_offsets = np.multiply.reduce([axis_sizes[x] for x in extra_dims])
 
-        input_data = input_data_var.values
-
-        axes = {x: y[0] for x, y in input_data_var.cf.axes.items()}
-
-        invert_axes = {y: x for x, y in axes.items()}
-
-        ordered_names = list(input_data_var.sizes)
-
-        ordered_axes = sorted(
-            invert_axes.items(), key=lambda x: ordered_names.index(x[0])
+        offset = np.multiply.reduce(
+            [axis_sizes[x] for x in extra_dims ^ set(axis_sizes)]
         )
 
-        ordered_sizes = {}
+        return (np.arange(number_of_offsets) * offset).astype(np.int64)
 
-        for x, y in ordered_axes:
-            if "T" == y or "Z" == y:
-                ordered_sizes[y] = input_data_var.sizes[x]
+    def _output_axis_sizes(self, da: xr.DataArray) -> Dict:
+        output_sizes = {}
+
+        axis_name_map = {y[0]: x for x, y in da.cf.axes.items()}
+
+        for standard_name in da.sizes.keys():
+            axis_name = axis_name_map[standard_name]
+
+            if standard_name in self._dst_grid:
+                output_sizes[axis_name] = self._dst_grid.sizes[standard_name]
             else:
-                ordered_sizes[y] = self._dst_grid.sizes[x]
+                output_sizes[axis_name] = da.sizes[standard_name]
 
-        ordered_cf_names = list(ordered_sizes)
+        return output_sizes
 
-        output_shape = tuple(ordered_sizes.values())
+    def _regrid(
+        self, input_data: np.ndarray, axis_sizes: Dict, ordered_axis_names: List
+    ) -> np.ndarray:
+        input_lat_index = ordered_axis_names.index("Y")
+
+        input_lon_index = ordered_axis_names.index("X")
+
+        output_shape = [axis_sizes[x] for x in ordered_axis_names]
 
         output_data = np.zeros(output_shape, dtype=np.float32)
 
-        extra_dims = [x for x in set(ordered_cf_names) - set(["X", "Y"])]
-
-        extra_dims_sizes = [ordered_sizes[x] for x in extra_dims]
-
-        base_dims = [x for x in set(extra_dims) ^ set(ordered_cf_names)]
-
-        base_dims_sizes = [ordered_sizes[x] for x in base_dims]
-
-        number_of_offsets = np.multiply.reduce(extra_dims_sizes)
-
-        offset = np.multiply.reduce(base_dims_sizes)
-
-        base_put_index = (np.arange(number_of_offsets) * offset).astype(np.int64)
-
-        input_lat_index, input_lon_index = ordered_cf_names.index(
-            "Y"
-        ), ordered_cf_names.index("X")
+        base_put_index = self._base_put_indexes(axis_sizes)
 
         # TODO handle lat x lon, lon x lat and height
         for lat_index, lat_map in enumerate(self.lat_mapping):
@@ -326,35 +313,68 @@ class Regrid2Regridder(BaseRegridder):
                     / cell_weight
                 )
 
-                put_index = base_put_index + (
-                    (lat_index * ordered_sizes["X"]) + lon_index
-                )
+                put_index = base_put_index + ((lat_index * axis_sizes["X"]) + lon_index)
 
                 np.put(output_data, put_index, data)
+
+        return output_data
+
+    def _create_output_dataset(
+        self,
+        input_ds: xr.Dataset,
+        data_var: str,
+        output_data: np.ndarray,
+        axis_variable_name_map: Dict,
+        ordered_axis_names: List,
+    ) -> xr.Dataset:
+        variable_axis_name_map = {y: x for x, y in axis_variable_name_map.items()}
 
         coords = {}
         data_vars = {}
 
-        for cf_name, name in axes.items():
-            if cf_name in ["X", "Y"]:
-                coords[name] = self._dst_grid[name]
+        for variable_name, axis_name in variable_axis_name_map.items():
+            if axis_name in ["X", "Y"]:
+                coords[variable_name] = self._dst_grid[variable_name].copy()
 
-                bounds = self._dst_grid.bounds.get_bounds(cf_name)
+                bounds = self._dst_grid.bounds.get_bounds(variable_name)
             else:
-                coords[name] = input_data_var[name]
+                coords[variable_name] = input_ds[variable_name].copy()
 
-                bounds = ds.bounds.get_bounds(name)
+                bounds = input_ds.bounds.get_bounds(variable_name)
 
-            data_vars[bounds.name] = bounds
+            data_vars[bounds.name] = bounds.copy()
 
         output_da = xr.DataArray(
             output_data,
-            dims=[axes[x] for x in ordered_cf_names],
+            dims=[axis_variable_name_map[x] for x in ordered_axis_names],
             coords=coords,
         )
 
-        data_vars[input_data_var.name] = output_da
+        data_vars[data_var] = output_da
 
-        output_ds = xr.Dataset(data_vars)
+        return xr.Dataset(data_vars)
+
+    def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+        input_data_var = ds.get(data_var, None)
+
+        if input_data_var is None:
+            raise KeyError(
+                f"The data variable '{data_var}' does not exist in the dataset."
+            )
+
+        # operate on pure numpy
+        input_data = input_data_var.values
+
+        axis_variable_name_map = {x: y[0] for x, y in input_data_var.cf.axes.items()}
+
+        output_axis_sizes = self._output_axis_sizes(input_data_var)
+
+        ordered_axis_names = list(output_axis_sizes)
+
+        output_data = self._regrid(input_data, output_axis_sizes, ordered_axis_names)
+
+        output_ds = self._create_output_dataset(
+            ds, data_var, output_data, axis_variable_name_map, ordered_axis_names
+        )
 
         return output_ds
