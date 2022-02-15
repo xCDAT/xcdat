@@ -482,8 +482,8 @@ class TestAccessor:
 
         mock_data = mock.MagicMock()
 
-        with mock.patch.dict(accessor.REGRID_TOOLS, {"test": mock_regridder}):
-            output = self.ac.regrid("ts", mock_data, "test")
+        with mock.patch.dict(accessor.REGRID_TOOLS, {"regrid2": mock_regridder}):
+            output = self.ac.regrid("ts", mock_data, "regrid2")
 
         assert output == "output data"
 
@@ -493,7 +493,7 @@ class TestAccessor:
         with pytest.raises(
             ValueError, match=r"Tool 'test' does not exist, valid choices"
         ):
-            self.ac.regrid("ts", mock.MagicMock(), "test")
+            self.ac.regrid("ts", mock.MagicMock(), "test")  # type: ignore
 
 
 class TestBase:

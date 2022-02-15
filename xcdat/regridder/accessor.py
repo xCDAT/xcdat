@@ -1,12 +1,14 @@
-from typing import Any
+from typing import Any, Literal
 
 import xarray as xr
 
 from xcdat.regridder import regrid2, xesmf
 
+RegridTool = Literal["xesmf", "regrid2"]
+
 REGRID_TOOLS = {
-    "regrid2": regrid2.Regrid2Regridder,
     "xesmf": xesmf.XESMFRegridder,
+    "regrid2": regrid2.Regrid2Regridder,
 }
 
 
@@ -21,7 +23,7 @@ class DatasetRegridderAccessor:
         self,
         data_var: str,
         dst_grid: xr.Dataset,
-        tool: str,
+        tool: RegridTool,
         **options: Any,
     ) -> xr.Dataset:
         """

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Literal, Optional, Union
 import xarray as xr
 
 from xcdat.bounds import BoundsAccessor, BoundsAxis
-from xcdat.regridder.accessor import DatasetRegridderAccessor  # noqa: F401
+from xcdat.regridder.accessor import DatasetRegridderAccessor, RegridTool  # noqa: F401
 from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SpatialAxis
 from xcdat.utils import is_documented_by
 
@@ -49,7 +49,7 @@ class XCDATAccessor:
         self,
         data_var: str,
         dst_grid: xr.Dataset,
-        tool: str,
+        tool: RegridTool,
         **options: Any,
     ) -> xr.Dataset:
         obj = DatasetRegridderAccessor(self._dataset)
