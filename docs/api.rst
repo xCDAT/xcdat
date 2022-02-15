@@ -44,6 +44,7 @@ Methods
     Dataset.xcdat.get_bounds
     Dataset.xcdat.add_missing_bounds
     Dataset.xcdat.spatial_avg
+    Dataset.xcdat.regrid
 
 
 Dataset (individual accessors)
@@ -73,3 +74,4 @@ Methods
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
     Dataset.spatial.spatial_avg
+    Dataset.regridder.regrid

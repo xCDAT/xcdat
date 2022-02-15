@@ -30,6 +30,7 @@ class DatasetRegridderAccessor:
         Supported tools:
 
         - xESMF (https://pangeo-xesmf.readthedocs.io/en/latest/)
+        - Regrid2
 
         Parameters
         ----------
@@ -46,6 +47,7 @@ class DatasetRegridderAccessor:
         Returns
         -------
         xr.Dataset
+            With the ``data_var`` variable on the grid defined in ``dst_grid``.
 
         Raises
         ------
@@ -57,6 +59,7 @@ class DatasetRegridderAccessor:
         Import:
 
         >>> import xcdat
+        >>> from xcdat.regridder import grid
 
         Open a dataset and limit to a single variable:
 
@@ -66,9 +69,13 @@ class DatasetRegridderAccessor:
 
         >>> out_grid = xcdat.regridder.grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
-        Regrid variable in dataset:
+        Regrid variable using "xesmf".
 
-        >>> ds.regridder.regrid(out_grid, tool="xesmf", method="bilinear")
+        >>> ds.regridder.regrid("tas", out_grid, tool="xesmf", method="bilinear")
+
+        Regrid variable using "regrid2".
+
+        >>> ds.regridder.regrid("tas", out_grid, tool="regrid2")
         """
         try:
             regridder = REGRID_TOOLS[tool](self._ds, dst_grid, **options)

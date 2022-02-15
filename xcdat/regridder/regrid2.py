@@ -7,7 +7,8 @@ from xcdat.regridder.base import BaseRegridder
 
 
 def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
-    """Extract bounds.
+    """
+    Extract bounds.
 
     Extract lower and upper bounds from an axis.
 
@@ -35,22 +36,23 @@ def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
 
 
 def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    """Map source to destination latitude.
+    """
+    Map source to destination latitude.
 
     Parameters
     ----------
     src : xr.DataArray
-        DataArray containing the source latitude axis.
+        DataArray containing the source latitude bounds.
     dst : xr.DataArray
-        DataArray containing the destination latitude axis.
+        DataArray containing the destination latitude bounds.
 
     Returns
     -------
     List
-        Containing map of destination to source points.
+        Of cell mappings.
 
     List
-        Containing map of destination to source weights.
+        Of cell weights.
 
     """
     src_south, src_north = extract_bounds(src)
@@ -77,7 +79,8 @@ def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
 
 def pertub(value):
-    """Pertub a valu.
+    """
+    Pertub a value.
 
     Parameters
     ----------
@@ -99,7 +102,8 @@ vpertub = np.vectorize(pertub)
 def align_axis(
     src_west: xr.DataArray, src_east: xr.DataArray, dst_west: xr.DataArray
 ) -> Tuple[xr.DataArray, xr.DataArray, int]:
-    """Align source to destination axis.
+    """
+    Aligns a longitudinal source axis to the destination axis.
 
     Parameters
     ----------
@@ -112,7 +116,6 @@ def align_axis(
 
     Returns
     -------
-    Tuple[xr.DataArray, xr.DataArray, int]
     xr.DataArray
         Containing the shifted western source bounds.
 
@@ -175,23 +178,23 @@ def align_axis(
 
 
 def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    """Map source to destination longitude.
+    """
+    Map source to destination longitude.
 
     Parameters
     ----------
     src : xr.DataArray
-        DataArray containing source longitude axis.
+        DataArray containing source longitude bounds.
     dst : xr.DataArray
-        DataArray containing destination longitude axis.
+        DataArray containing destination longitude bounds.
 
     Returns
     -------
     List
-        Contains mapping between axis.
+        Of cell mappings.
 
     List
-        Contains map of weights.
-
+        Of cell weights.
     """
     src_west, src_east = extract_bounds(src)
     dst_west, dst_east = extract_bounds(dst)
@@ -227,17 +230,22 @@ def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
 
 class Regrid2Regridder(BaseRegridder):
-    """Regrid2 regridder class.
-
-    Parameters
-    ----------
-    src_grid : xr.Dataset
-        Contains source grid coordinates.
-    dst_grid : xr.Dataset
-        Contains desintation grid coordinates.
-    """
-
     def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset, **options):
+        """
+        Class to generate mapping and apply regridding between source and destination
+        grid.
+
+        Supported options: None
+
+        Parameters
+        ----------
+        src_grid : xr.Dataset
+            Dataset containing the source grid.
+        dst_grid : xr.Dataset
+            Dataset containing the destination grid.
+        options :
+            Dictionary with extra parameters for the regridder.
+        """
         super().__init__(src_grid, dst_grid, **options)
 
         src_lat = src_grid.bounds.get_bounds("lat")
@@ -251,6 +259,26 @@ class Regrid2Regridder(BaseRegridder):
         self.lon_mapping, self.lon_weights = map_longitude(src_lon, self.dst_lon)
 
     def _base_put_indexes(self, axis_sizes: Dict) -> np.ndarray:
+        """
+        Calculates the base indexes to place cell (0, 0).
+
+        Example:
+        For a 3D array (time, lat, lon) with the shape (2, 2, 2) the offsets to
+        place cell (0, 0) in each time step would be [0, 4].
+
+        For a 4D array (time, plev, lat, lon) with shape (2, 2, 2, 2) the offsets
+        to place cell (0, 0) in each time step would be [0, 4, 8, 16].
+
+        Parameters
+        ----------
+        axis_sizes : Dict
+            Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
+
+        Returns
+        -------
+        np.ndarray
+            Array containing the base indexes to be used in np.put operations.
+        """
         extra_dims = set(axis_sizes) - set(["X", "Y"])
 
         number_of_offsets = np.multiply.reduce([axis_sizes[x] for x in extra_dims])
@@ -262,6 +290,20 @@ class Regrid2Regridder(BaseRegridder):
         return (np.arange(number_of_offsets) * offset).astype(np.int64)
 
     def _output_axis_sizes(self, da: xr.DataArray) -> Dict:
+        """
+        Maps axes to output array sizes.
+
+        Parameters
+        ----------
+        da : xr.DataArray
+            Data array containing variable to be regridded.
+
+        Returns
+        -------
+        Dict
+            Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
+
+        """
         output_sizes = {}
 
         axis_name_map = {y[0]: x for x, y in da.cf.axes.items()}
@@ -279,6 +321,23 @@ class Regrid2Regridder(BaseRegridder):
     def _regrid(
         self, input_data: np.ndarray, axis_sizes: Dict, ordered_axis_names: List
     ) -> np.ndarray:
+        """
+        Applies regridding to input data.
+
+        Parameters
+        ----------
+        input_data : np.ndarray
+            Input multi-dimensional array on source grid.
+        axis_sizes : Dict
+            Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
+        ordered_axis_names : List
+            List of axis name in order of dimenions of ``input_data``.
+
+        Returns
+        -------
+        np.ndarray
+            Multi-dimensional array on destination grid.
+        """
         input_lat_index = ordered_axis_names.index("Y")
 
         input_lon_index = ordered_axis_names.index("X")
@@ -289,7 +348,6 @@ class Regrid2Regridder(BaseRegridder):
 
         base_put_index = self._base_put_indexes(axis_sizes)
 
-        # TODO handle lat x lon, lon x lat and height
         for lat_index, lat_map in enumerate(self.lat_mapping):
             lat_weight = self.lat_weights[lat_index]
 
@@ -313,6 +371,7 @@ class Regrid2Regridder(BaseRegridder):
                     / cell_weight
                 )
 
+                # This only handles lat by lon and not lon by lat
                 put_index = base_put_index + ((lat_index * axis_sizes["X"]) + lon_index)
 
                 np.put(output_data, put_index, data)
@@ -327,11 +386,33 @@ class Regrid2Regridder(BaseRegridder):
         axis_variable_name_map: Dict,
         ordered_axis_names: List,
     ) -> xr.Dataset:
+        """
+        Creates the output Dataset containing the new variable on the destination grid.
+
+        Parameters
+        ----------
+        input_ds : xr.Dataset
+            Input dataset containing coordinates and bounds for unmodified axes.
+        data_var : str
+            The name of the regridded variable.
+        output_data : np.ndarray
+            Output data array.
+        axis_variable_name_map : Dict
+            Map of axis name e.g. ("X", "Y", etc) to variable name e.g. ("lon", "lat", etc).
+        ordered_axis_names : List
+            List of axis names in the order observed for ``output_data``.
+
+        Returns
+        -------
+        xr.Dataset
+            Dataset containing the variable on the destination grid.
+        """
         variable_axis_name_map = {y: x for x, y in axis_variable_name_map.items()}
 
         coords = {}
         data_vars = {}
 
+        # Grab coords and bounds from appropiate dataset.
         for variable_name, axis_name in variable_axis_name_map.items():
             if axis_name in ["X", "Y"]:
                 coords[variable_name] = self._dst_grid[variable_name].copy()
@@ -355,6 +436,43 @@ class Regrid2Regridder(BaseRegridder):
         return xr.Dataset(data_vars)
 
     def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+        """
+        Regrid data between rectilinear grids.
+
+        Precalculated mapping and weights for the source to destination grid
+        are applied to the selected variable in the Dataset.
+
+        Parameters
+        ----------
+        data_var : str
+            The name of the data variable inside the dataset to regrid.
+        ds : xr.Dataset
+            The dataset containing ``data_var``.
+
+        Returns
+        -------
+        xr.Dataset
+            Dataset with variable on the destination grid.
+
+        Raises
+        ------
+        KeyError
+            If data variable does not exist in the Dataset.
+
+        Examples
+        --------
+        Import:
+
+        >>> from xcdat.regridder import regrid2
+
+        Create regridder:
+
+        >>> regridder = regrid2.Regrid2Regridder(input_grid, output_grid)
+
+        Regrid variable:
+
+        >>> regridder.regrid("ts", input_ds)
+        """
         input_data_var = ds.get(data_var, None)
 
         if input_data_var is None:
