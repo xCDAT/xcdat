@@ -86,10 +86,6 @@ jobs:
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
               name: Install xcdat
               run: |
-                  # need to install xesmf via Conda, the PyPi package has a dependency on esmpy 
-                  # that cannot be resolved as it does not exist on PyPi.
-                  conda install -y -c conda-forge xesmf
-
                   python -m pip install .
 
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
