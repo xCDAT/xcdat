@@ -67,9 +67,9 @@ class XESMFRegridder(BaseRegridder):
         extrap_method: str = None,
         extrap_dist_exponent: float = None,
         extrap_num_src_pnts: int = None,
+        **options
     ):
-        self._src_grid = src_grid
-        self._dst_grid = dst_grid
+        super().__init__(src_grid, dst_grid, **options)
 
         if method not in VALID_METHODS:
             raise ValueError(
@@ -92,12 +92,29 @@ class XESMFRegridder(BaseRegridder):
         )
 
     def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        da_data_var = ds.get(data_var, None)
+        input_data_var = ds.get(data_var, None)
 
-        if da_data_var is None:
+        if input_data_var is None:
             raise KeyError(
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        # TODO build dataset using returned DataArray
-        return self._regridder(da_data_var)
+        output_da = self._regridder(input_data_var, keep_attrs=True)
+
+        data_vars = {}
+
+        for axes, variable_names in output_da.cf.axes.items():
+            variable_name = variable_names[0]
+
+            if axes in ("X", "Y"):
+                bounds = self._dst_grid.bounds.get_bounds(variable_name)
+            else:
+                bounds = ds.bounds.get_bounds(variable_name)
+
+            data_vars[bounds.name] = bounds.copy()
+
+        data_vars[data_var] = output_da
+
+        output_ds = xr.Dataset(data_vars)
+
+        return output_ds

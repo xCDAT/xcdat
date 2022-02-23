@@ -317,6 +317,17 @@ class TestXESMFRegridder:
         self.ds = fixtures.generate_dataset(True, True)
         self.new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
+    def test_regrid(self):
+        ds = self.ds.copy()
+
+        regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear")
+
+        output = regridder.regrid("ts", ds)
+
+        assert isinstance(output, xr.Dataset)
+
+        assert output.ts.shape == (12, 45, 72)
+
     def test_no_variable(self):
         ds = self.ds.copy()
 
