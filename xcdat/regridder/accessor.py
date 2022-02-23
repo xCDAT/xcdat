@@ -63,13 +63,13 @@ class DatasetRegridderAccessor:
         >>> import xcdat
         >>> from xcdat.regridder import grid
 
-        Open a dataset and limit to a single variable:
+        Open a dataset:
 
-        >>> ds = xcdat.open_dataset("path/to/file.nc", var="tas")
+        >>> ds = xcdat.open_dataset("path/to/file.nc")
 
         Create destination grid:
 
-        >>> out_grid = xcdat.regridder.grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
+        >>> out_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
         Regrid variable using "xesmf".
 
