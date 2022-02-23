@@ -23,7 +23,7 @@ class DatasetRegridderAccessor:
         self,
         data_var: str,
         dst_grid: xr.Dataset,
-        tool: RegridTool,
+        tool: RegridTool = "xesmf",
         **options: Any,
     ) -> xr.Dataset:
         """
