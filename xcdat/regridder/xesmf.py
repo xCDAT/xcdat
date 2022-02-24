@@ -67,7 +67,7 @@ class XESMFRegridder(BaseRegridder):
         extrap_method: str = None,
         extrap_dist_exponent: float = None,
         extrap_num_src_pnts: int = None,
-        **options
+        **options,
     ):
         super().__init__(src_grid, dst_grid, **options)
 
