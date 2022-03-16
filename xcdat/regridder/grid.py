@@ -232,7 +232,7 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
     bounds = np.zeros((nlats + 1))
     bounds[0], bounds[-1] = 1.0, -1.0
 
-    for i in range(1, mid):
+    for i in range(1, mid + 1):
         bounds[i] = bounds[i - 1] - weights[i - 1]
         bounds[nlats - i] = -bounds[i]
 
