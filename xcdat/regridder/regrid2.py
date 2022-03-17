@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import xarray as xr
@@ -319,7 +319,11 @@ class Regrid2Regridder(BaseRegridder):
         return output_sizes
 
     def _regrid(
-        self, input_data: np.ndarray, axis_sizes: Dict, ordered_axis_names: List
+        self,
+        input_data: np.ndarray,
+        axis_sizes: Dict,
+        ordered_axis_names: List,
+        mask: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """
         Applies regridding to input data.
@@ -332,6 +336,8 @@ class Regrid2Regridder(BaseRegridder):
             Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
         ordered_axis_names : List
             List of axis name in order of dimenions of ``input_data``.
+        mask:
+            Multi-dimensional used for masking.
 
         Returns
         -------
@@ -348,10 +354,20 @@ class Regrid2Regridder(BaseRegridder):
 
         base_put_index = self._base_put_indexes(axis_sizes)
 
+        mask_lat_index = 0
+        mask_lon_index = 1
+
+        if mask is None:
+            input_shape = input_data.shape
+
+            mask = np.ones((input_shape[input_lat_index], input_shape[input_lon_index]))
+
         for lat_index, lat_map in enumerate(self.lat_mapping):
             lat_weight = self.lat_weights[lat_index]
 
             input_lat_segment = np.take(input_data, lat_map, axis=input_lat_index)
+
+            mask_lat_segment = np.take(mask, lat_map, axis=mask_lat_index)
 
             for lon_index, lon_map in enumerate(self.lon_mapping):
                 lon_weight = self.lon_weights[lon_index]
@@ -363,6 +379,13 @@ class Regrid2Regridder(BaseRegridder):
                 input_lon_segment = np.take(
                     input_lat_segment, lon_map, axis=input_lon_index
                 )
+
+                mask_lon_segment = np.take(
+                    mask_lat_segment, lon_map, axis=mask_lon_index
+                )
+
+                # apply mask
+                input_lon_segment = np.multiply(input_lon_segment, mask_lon_segment)
 
                 data = (
                     np.multiply(input_lon_segment, dot_weight).sum(
@@ -489,7 +512,11 @@ class Regrid2Regridder(BaseRegridder):
 
         ordered_axis_names = list(output_axis_sizes)
 
-        output_data = self._regrid(input_data, output_axis_sizes, ordered_axis_names)
+        mask = ds.get("mask", None)
+
+        output_data = self._regrid(
+            input_data, output_axis_sizes, ordered_axis_names, mask=mask
+        )
 
         output_ds = self._create_output_dataset(
             ds, data_var, output_data, axis_variable_name_map, ordered_axis_names

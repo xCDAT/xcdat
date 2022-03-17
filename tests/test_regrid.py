@@ -177,6 +177,27 @@ class TestRegrid2Regridder:
         with pytest.raises(KeyError):
             regridder.regrid("unknown", self.coarse_2d_ds)
 
+    def test_regrid_mask(self):
+        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
+
+        mask = np.array([[0, 0], [1, 1], [0, 0]])
+
+        self.coarse_2d_ds["mask"] = (("lat", "lon"), mask)
+
+        output_data = regridder.regrid("ts", self.coarse_2d_ds)
+
+        expected_output = np.array(
+            [
+                [0.0, 0.0, 0.0, 0.0],
+                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
+                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
+                [0.0, 0.0, 0.0, 0.0],
+            ],
+            dtype=np.float32,
+        )
+
+        assert np.all(output_data.ts.values == expected_output)
+
     def test_regrid_2d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
