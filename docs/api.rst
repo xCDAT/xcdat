@@ -14,6 +14,7 @@ Top-level API
     dataset.has_cf_compliant_time
     dataset.decode_non_cf_time
     dataset.swap_lon_axis
+    utils.compare_datasets
 
 .. currentmodule:: xarray
 
