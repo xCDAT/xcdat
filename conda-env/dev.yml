@@ -29,6 +29,7 @@ dependencies:
     - pytest-cov=3.0.0
     # Developer Tools
     # ==================
+    - matplotlib=3.5.1
     - jupyterlab=3.2.7
     - tbump=6.7.0
     # Documentation

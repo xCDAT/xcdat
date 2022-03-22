@@ -50,7 +50,7 @@ jobs:
                 shell: bash -l {0}
         strategy:
             matrix:
-                python-version: ["3.8", "3.9"]
+                python-version: ["3.8", "3.9", "3.10"]
         steps:
             - id: skip_check
               uses: fkirc/skip-duplicate-actions@master
