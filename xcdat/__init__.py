@@ -8,6 +8,7 @@ from xcdat.dataset import (  # noqa: F401
     open_mfdataset,
 )
 from xcdat.spatial_avg import SpatialAverageAccessor  # noqa: F401
+from xcdat.utils import compare_datasets  # noqa: F401
 from xcdat.xcdat import XCDATAccessor  # noqa: F401
 
 __version__ = "0.1.0"
