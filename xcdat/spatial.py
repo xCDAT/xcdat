@@ -27,7 +27,7 @@ from xcdat.dataset import get_data_var
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
-#: Type alias for supported axis keys for spatial averaging.
+#: Type alias for supported spatial axis keys.
 SpatialAxis = Literal["lat", "lon"]
 SPATIAL_AXES: Tuple[SpatialAxis, ...] = get_args(SpatialAxis)
 #: Type alias for a tuple of floats/ints for the regional selection bounds.
@@ -35,8 +35,8 @@ RegionAxisBounds = Tuple[float, float]
 
 
 @xr.register_dataset_accessor("spatial")
-class SpatialAverageAccessor:
-    """A class to represent the SpatialAverageAccessor."""
+class SpatialAccessor:
+    """A class to represent the SpatialAccessor."""
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
@@ -100,7 +100,7 @@ class SpatialAverageAccessor:
 
         Examples
         --------
-        Import spatial averaging functionality:
+        Import spatial accessor:
 
         >>> import xcdat
 
@@ -108,7 +108,7 @@ class SpatialAverageAccessor:
 
         >>> ds = xcdat.open_dataset("path/to/file.nc", var="tas")
 
-        Access spatial averaging method:
+        Call spatial averaging method:
 
         >>> # First option
         >>> ds.spatial.spatial_avg(...)

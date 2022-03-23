@@ -4,17 +4,17 @@ import xarray as xr
 
 from tests import requires_dask
 from tests.fixtures import generate_dataset
-from xcdat.spatial_avg import SpatialAverageAccessor
+from xcdat.spatial import SpatialAccessor
 
 
-class TestSpatialAverageAcccessor:
+class TestSpatialAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test__init__(self):
         ds = self.ds.copy()
-        obj = SpatialAverageAccessor(ds)
+        obj = SpatialAccessor(ds)
 
         assert obj._dataset.identical(ds)
 

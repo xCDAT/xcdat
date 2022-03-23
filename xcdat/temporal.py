@@ -207,11 +207,11 @@ class TemporalAccessor:
 
         Examples
         --------
-        Import temporal averaging functionality:
+        Import temporal accessor:
 
         >>> import xcdat
 
-        Access temporal averaging method:
+        Call temporal averaging method:
 
         >>> # First option
         >>> ds.temporal.temporal_avg(...)
