@@ -102,7 +102,7 @@ class TestBoundsAccessor:
         assert ds.lat_bnds.is_generated
 
 
-class TestTemporalAverageAccessor:
+class TestTemporalAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)

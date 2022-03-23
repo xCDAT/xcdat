@@ -7,13 +7,13 @@ import xarray as xr
 from xarray.tests import requires_dask
 
 from tests.fixtures import generate_dataset
-from xcdat.temporal_avg import TemporalAverageAccessor
+from xcdat.temporal import TemporalAccessor
 
 
-class TestTemporalAverageAccessor:
+class TestTemporalAccessor:
     def test__init__(self):
         ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
-        obj = TemporalAverageAccessor(ds)
+        obj = TemporalAccessor(ds)
         assert obj._dataset.identical(ds)
 
     def test_decorator(self):

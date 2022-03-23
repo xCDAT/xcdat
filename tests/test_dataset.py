@@ -218,7 +218,6 @@ class TestOpenDataset:
 
     def test_centers_time(self):
         ds = generate_dataset(cf_compliant=True, has_bounds=True)
-        ds.to_netcdf(self.file_path)
 
         uncentered_time = np.array(
             [
@@ -241,12 +240,18 @@ class TestOpenDataset:
             dtype="datetime64[ns]",
         )
         ds.time.data[:] = uncentered_time
-
-        # Set object attrs required to test the method.
-        ds.temporal._time_bounds = ds.time_bnds.copy()
+        ds.time.encoding = {
+            "source": None,
+            "dtype": np.dtype(np.int64),
+            "original_shape": ds.time.data.shape,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+            "_FillValue": False,
+        }
+        ds.to_netcdf(self.file_path)
 
         # Compare result of the method against the expected.
-        result = ds.temporal.center_times(ds)
+        result = open_dataset(self.file_path, data_var="ts", center_times=True)
         expected = ds.copy()
         expected_time_data = np.array(
             [
@@ -284,14 +289,32 @@ class TestOpenDataset:
                 )
             }
         )
+        expected.time.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": True,
+            "chunksizes": None,
+            "original_shape": (15,),
+            "dtype": np.dtype("int64"),
+            "_FillValue": 0,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+        }
+
         # Update time bounds with centered time coordinates.
         time_bounds = ds.time_bnds.copy()
         time_bounds["time"] = expected.time
         expected["time_bnds"] = time_bounds
 
         # Compare result of the function against the expected.
-        result = open_dataset(self.file_path, data_var="ts", center_times=True)
         assert result.identical(expected)
+
+        # Delete source key because the path of the file can change for each
+        # time run.
+        del result.time.encoding["source"]
+        assert result.time.encoding == expected.time.encoding
 
 
 class TestOpenMfDataset:
@@ -529,6 +552,14 @@ class TestOpenMfDataset:
             dtype="datetime64[ns]",
         )
         ds1.time.data[:] = uncentered_time
+        ds1.time.encoding = {
+            "source": None,
+            "dtype": np.dtype(np.int64),
+            "original_shape": ds1.time.data.shape,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+            "_FillValue": False,
+        }
         ds2 = ds1.copy()
         ds2 = ds2.rename_vars({"ts": "tas"})
 
@@ -536,6 +567,8 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         # Compare result of the method against the expected.
+        result = open_mfdataset([self.file_path1, self.file_path2], center_times=True)
+
         expected = ds1.merge(ds2)
         expected = expected.copy()
         expected_time_data = np.array(
@@ -574,14 +607,31 @@ class TestOpenMfDataset:
                 )
             }
         )
+        expected.time.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": True,
+            "chunksizes": None,
+            "original_shape": (15,),
+            "dtype": np.dtype("int64"),
+            "_FillValue": 0,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+        }
         # Update time bounds with centered time coordinates.
         time_bounds = expected.time_bnds.copy()
         time_bounds["time"] = expected.time
         expected["time_bnds"] = time_bounds
 
         # Compare result of the function against the expected.
-        result = open_mfdataset([self.file_path1, self.file_path2], center_times=True)
         assert result.identical(expected)
+
+        # Delete source key because the path of the file can change for each
+        # time run.
+        del result.time.encoding["source"]
+        assert result.time.encoding == expected.time.encoding
 
 
 class TestHasCFCompliantTime:

@@ -1,4 +1,4 @@
-"""Module containing temporal averaging functions."""
+"""Module containing temporal functions."""
 from itertools import chain
 from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
 
@@ -85,14 +85,14 @@ MONTH_INT_TO_STR: Dict[int, str] = {
 
 
 @xr.register_dataset_accessor("temporal")
-class TemporalAverageAccessor:
+class TemporalAccessor:
     def __init__(self, dataset: xr.Dataset):
         try:
             dataset.cf["T"]
         except KeyError:
             raise KeyError(
                 "This dataset does not have a time dimension, which is required for "
-                "using the methods in the TemporalAverageAccessor class."
+                "using the methods in the TemporalAccessor class."
             )
 
         self._dataset: xr.Dataset = dataset
