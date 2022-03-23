@@ -910,8 +910,18 @@ class TemporalAccessor:
         .. [4] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
         with xr.set_options(keep_attrs=True):
-            time_lengths = self._time_bounds[:, 1] - self._time_bounds[:, 0]
+            time_lengths: xr.DataArray = (
+                self._time_bounds[:, 1] - self._time_bounds[:, 0]
+            )
 
+        # Must be convert dtype from timedelta64[ns] to float64, specifically
+        # when chunking DataArrays using Dask. Otherwise, the numpy warning
+        # below is thrown: `DeprecationWarning: The `dtype` and `signature`
+        # arguments to ufuncs only select the general DType and not details such
+        # as the byte order or time unit (with rare exceptions see release
+        # notes). To avoid this warning please use the scalar types
+        # `np.float64`, or string notation.`
+        time_lengths = time_lengths.astype(np.float64)
         time_grouped = self._groupby_multiindex(time_lengths)
         weights: xr.DataArray = time_grouped / time_grouped.sum()  # type: ignore
 
