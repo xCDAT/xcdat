@@ -14,12 +14,14 @@ Top-level API
     dataset.has_cf_compliant_time
     dataset.decode_non_cf_time
     dataset.swap_lon_axis
+    dataset.get_data_var
     utils.compare_datasets
 
 .. currentmodule:: xarray
 
-Dataset (``xcdat`` accessor)
-----------------------------
+
+Dataset
+------------------------------
 
 .. _dsattr_1:
 
@@ -30,38 +32,9 @@ Attributes
    :toctree: generated/
    :template: autosummary/accessor_attribute.rst
 
-    Dataset.xcdat.bounds
-
-.. _dsmeth_1:
-
-Methods
-~~~~~~~
-
-.. autosummary::
-   :toctree: generated/
-   :template: autosummary/accessor_method.rst
-
-    Dataset.xcdat.add_bounds
-    Dataset.xcdat.get_bounds
-    Dataset.xcdat.add_missing_bounds
-    Dataset.xcdat.spatial_avg
-
-
-Dataset (individual accessors)
--------------------------------
-
-.. _dsattr_2:
-
-Attributes
-~~~~~~~~~~
-
-.. autosummary::
-   :toctree: generated/
-   :template: autosummary/accessor_attribute.rst
-
     Dataset.bounds.bounds
 
-.. _dsmeth_2:
+.. _dsmeth_1:
 
 Methods
 ~~~~~~~
@@ -74,3 +47,37 @@ Methods
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
     Dataset.spatial.spatial_avg
+    Dataset.temporal.temporal_avg
+    Dataset.temporal.departures
+    Dataset.temporal.center_times
+
+Dataset (``xcdat`` accessor)
+----------------------------
+
+.. _dsattr_2:
+
+Attributes
+~~~~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_attribute.rst
+
+    Dataset.xcdat.bounds
+
+.. _dsmeth_2:
+
+Methods
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+   :template: autosummary/accessor_method.rst
+
+    Dataset.xcdat.add_bounds
+    Dataset.xcdat.get_bounds
+    Dataset.xcdat.add_missing_bounds
+    Dataset.xcdat.spatial_avg
+    Dataset.xcdat.temporal_avg
+    Dataset.xcdat.departures
+    Dataset.xcdat.center_times

@@ -59,10 +59,64 @@ class TestOpenDataset:
         ds.to_netcdf(self.file_path)
 
         result = open_dataset(self.file_path, data_var="ts")
+
+        # Generate an expected dataset with decoded non-CF compliant time units.
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected.time.attrs["calendar"] = "standard"
-        expected.time.attrs["units"] = "months since 2000-01-01"
+        expected_time_data = np.array(
+            [
+                "2000-01-01T00:00:00.000000000",
+                "2000-02-01T00:00:00.000000000",
+                "2000-03-01T00:00:00.000000000",
+                "2000-04-01T00:00:00.000000000",
+                "2000-05-01T00:00:00.000000000",
+                "2000-06-01T00:00:00.000000000",
+                "2000-07-01T00:00:00.000000000",
+                "2000-08-01T00:00:00.000000000",
+                "2000-09-01T00:00:00.000000000",
+                "2000-10-01T00:00:00.000000000",
+                "2000-11-01T00:00:00.000000000",
+                "2000-12-01T00:00:00.000000000",
+                "2001-01-01T00:00:00.000000000",
+                "2001-02-01T00:00:00.000000000",
+                "2001-03-01T00:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        expected["time"] = xr.DataArray(
+            name="time",
+            data=expected_time_data,
+            dims="time",
+            attrs={
+                "units": "months since 2000-01-01",
+                "calendar": "standard",
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected.time_bnds.data[:] = np.array(
+            [
+                ["1999-12-16T12:00:00.000000000", "2000-01-16T12:00:00.000000000"],
+                ["2000-01-16T12:00:00.000000000", "2000-02-15T12:00:00.000000000"],
+                ["2000-02-15T12:00:00.000000000", "2000-03-16T12:00:00.000000000"],
+                ["2000-03-16T12:00:00.000000000", "2000-04-16T00:00:00.000000000"],
+                ["2000-04-16T00:00:00.000000000", "2000-05-16T12:00:00.000000000"],
+                ["2000-05-16T12:00:00.000000000", "2000-06-16T00:00:00.000000000"],
+                ["2000-06-16T00:00:00.000000000", "2000-07-16T12:00:00.000000000"],
+                ["2000-07-16T12:00:00.000000000", "2000-08-16T12:00:00.000000000"],
+                ["2000-08-16T12:00:00.000000000", "2000-09-16T00:00:00.000000000"],
+                ["2000-09-16T00:00:00.000000000", "2000-10-16T12:00:00.000000000"],
+                ["2000-10-16T12:00:00.000000000", "2000-11-16T00:00:00.000000000"],
+                ["2000-11-16T00:00:00.000000000", "2000-12-16T12:00:00.000000000"],
+                ["2000-12-16T12:00:00.000000000", "2001-01-16T12:00:00.000000000"],
+                ["2001-01-16T12:00:00.000000000", "2001-02-15T00:00:00.000000000"],
+                ["2001-02-15T00:00:00.000000000", "2001-03-15T00:00:00.000000000"],
+            ],
+            dtype="datetime64[ns]",
+        )
         expected.time.encoding = {
+            # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
             "dtype": np.dtype(np.int64),
             "original_shape": expected.time.data.shape,
@@ -162,6 +216,106 @@ class TestOpenDataset:
         )
         assert result.identical(expected)
 
+    def test_centers_time(self):
+        ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+        uncentered_time = np.array(
+            [
+                "2000-01-31T12:00:00.000000000",
+                "2000-02-29T12:00:00.000000000",
+                "2000-03-31T12:00:00.000000000",
+                "2000-04-30T00:00:00.000000000",
+                "2000-05-31T12:00:00.000000000",
+                "2000-06-30T00:00:00.000000000",
+                "2000-07-31T12:00:00.000000000",
+                "2000-08-31T12:00:00.000000000",
+                "2000-09-30T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-30T00:00:00.000000000",
+                "2000-12-31T12:00:00.000000000",
+                "2001-01-31T12:00:00.000000000",
+                "2001-02-28T00:00:00.000000000",
+                "2001-12-31T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        ds.time.data[:] = uncentered_time
+        ds.time.encoding = {
+            "source": None,
+            "dtype": np.dtype(np.int64),
+            "original_shape": ds.time.data.shape,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+            "_FillValue": False,
+        }
+        ds.to_netcdf(self.file_path)
+
+        # Compare result of the method against the expected.
+        result = open_dataset(self.file_path, data_var="ts", center_times=True)
+        expected = ds.copy()
+        expected_time_data = np.array(
+            [
+                "2000-01-16T12:00:00.000000000",
+                "2000-02-15T12:00:00.000000000",
+                "2000-03-16T12:00:00.000000000",
+                "2000-04-16T00:00:00.000000000",
+                "2000-05-16T12:00:00.000000000",
+                "2000-06-16T00:00:00.000000000",
+                "2000-07-16T12:00:00.000000000",
+                "2000-08-16T12:00:00.000000000",
+                "2000-09-16T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-16T00:00:00.000000000",
+                "2000-12-16T12:00:00.000000000",
+                "2001-01-16T12:00:00.000000000",
+                "2001-02-15T00:00:00.000000000",
+                "2001-12-16T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        expected = expected.assign_coords(
+            {
+                "time": xr.DataArray(
+                    name="time",
+                    data=expected_time_data,
+                    coords={"time": expected_time_data},
+                    dims="time",
+                    attrs={
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "axis": "T",
+                        "bounds": "time_bnds",
+                    },
+                )
+            }
+        )
+        expected.time.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": True,
+            "chunksizes": None,
+            "original_shape": (15,),
+            "dtype": np.dtype("int64"),
+            "_FillValue": 0,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+        }
+
+        # Update time bounds with centered time coordinates.
+        time_bounds = ds.time_bnds.copy()
+        time_bounds["time"] = expected.time
+        expected["time_bnds"] = time_bounds
+
+        # Compare result of the function against the expected.
+        assert result.identical(expected)
+
+        # Delete source key because the path of the file can change for each
+        # time run.
+        del result.time.encoding["source"]
+        assert result.time.encoding == expected.time.encoding
+
 
 class TestOpenMfDataset:
     @pytest.fixture(autouse=True)
@@ -173,28 +327,22 @@ class TestOpenMfDataset:
         self.file_path2 = f"{dir}/file2.nc"
 
     def test_only_keeps_specified_var(self):
-        # Generate two dummy datasets with non-CF compliant time units.
-        ds1 = generate_dataset(cf_compliant=False, has_bounds=False)
-        ds1.to_netcdf(self.file_path1)
-        ds2 = generate_dataset(cf_compliant=False, has_bounds=False)
+        ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds2 = generate_dataset(cf_compliant=True, has_bounds=True)
         ds2 = ds2.rename_vars({"ts": "tas"})
-        ds2.to_netcdf(self.file_path2)
+
+        # Suppress UserWarning regarding missing time.encoding "units" because
+        # it is not relevant to this test.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds1.to_netcdf(self.file_path1)
+            ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
+
+        # Generate an expected dataset with decoded non-CF compliant time units.
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected.time.attrs["calendar"] = "standard"
-        expected.time.attrs["units"] = "months since 2000-01-01"
-
-        expected.time.encoding = {
-            "source": result.time.encoding["source"],
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
-            "units": "months since 2000-01-01",
-            "calendar": "standard",
-        }
-
         assert result.identical(expected)
-        assert result.time.encoding == expected.time.encoding
 
     def test_non_cf_compliant_time_is_not_decoded(self):
         ds1 = generate_dataset(cf_compliant=False, has_bounds=True)
@@ -217,10 +365,65 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
+
+        # Generate an expected dataset, which is a combination of both datasets
+        # with decoded time units and coordinate bounds.
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected.time.attrs["units"] = "months since 2000-01-01"
-        expected.time.attrs["calendar"] = "standard"
+        expected_time_data = np.array(
+            [
+                "2000-01-01T00:00:00.000000000",
+                "2000-02-01T00:00:00.000000000",
+                "2000-03-01T00:00:00.000000000",
+                "2000-04-01T00:00:00.000000000",
+                "2000-05-01T00:00:00.000000000",
+                "2000-06-01T00:00:00.000000000",
+                "2000-07-01T00:00:00.000000000",
+                "2000-08-01T00:00:00.000000000",
+                "2000-09-01T00:00:00.000000000",
+                "2000-10-01T00:00:00.000000000",
+                "2000-11-01T00:00:00.000000000",
+                "2000-12-01T00:00:00.000000000",
+                "2001-01-01T00:00:00.000000000",
+                "2001-02-01T00:00:00.000000000",
+                "2001-03-01T00:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        expected["time"] = xr.DataArray(
+            name="time",
+            data=expected_time_data,
+            dims="time",
+            attrs={
+                "units": "months since 2000-01-01",
+                "calendar": "standard",
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected.time_bnds.data[:] = np.array(
+            [
+                ["1999-12-16T12:00:00.000000000", "2000-01-16T12:00:00.000000000"],
+                ["2000-01-16T12:00:00.000000000", "2000-02-15T12:00:00.000000000"],
+                ["2000-02-15T12:00:00.000000000", "2000-03-16T12:00:00.000000000"],
+                ["2000-03-16T12:00:00.000000000", "2000-04-16T00:00:00.000000000"],
+                ["2000-04-16T00:00:00.000000000", "2000-05-16T12:00:00.000000000"],
+                ["2000-05-16T12:00:00.000000000", "2000-06-16T00:00:00.000000000"],
+                ["2000-06-16T00:00:00.000000000", "2000-07-16T12:00:00.000000000"],
+                ["2000-07-16T12:00:00.000000000", "2000-08-16T12:00:00.000000000"],
+                ["2000-08-16T12:00:00.000000000", "2000-09-16T00:00:00.000000000"],
+                ["2000-09-16T00:00:00.000000000", "2000-10-16T12:00:00.000000000"],
+                ["2000-10-16T12:00:00.000000000", "2000-11-16T00:00:00.000000000"],
+                ["2000-11-16T00:00:00.000000000", "2000-12-16T12:00:00.000000000"],
+                ["2000-12-16T12:00:00.000000000", "2001-01-16T12:00:00.000000000"],
+                ["2001-01-16T12:00:00.000000000", "2001-02-15T00:00:00.000000000"],
+                ["2001-02-15T00:00:00.000000000", "2001-03-15T00:00:00.000000000"],
+            ],
+            dtype="datetime64[ns]",
+        )
         expected.time.encoding = {
+            # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
             "dtype": np.dtype(np.int64),
             "original_shape": expected.time.data.shape,
@@ -249,7 +452,6 @@ class TestOpenMfDataset:
 
     def test_generates_lat_and_lon_bounds_if_they_dont_exist(self):
         ds1 = generate_dataset(cf_compliant=True, has_bounds=False)
-        ds1.to_netcdf(self.file_path1)
         ds2 = generate_dataset(cf_compliant=True, has_bounds=False)
         ds2 = ds2.rename_vars({"ts": "tas"})
 
@@ -324,6 +526,112 @@ class TestOpenMfDataset:
             },
         )
         assert result.identical(expected)
+
+    def test_centers_time(self):
+        ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
+
+        # Make the time coordinates uncentered.
+        uncentered_time = np.array(
+            [
+                "2000-01-31T12:00:00.000000000",
+                "2000-02-29T12:00:00.000000000",
+                "2000-03-31T12:00:00.000000000",
+                "2000-04-30T00:00:00.000000000",
+                "2000-05-31T12:00:00.000000000",
+                "2000-06-30T00:00:00.000000000",
+                "2000-07-31T12:00:00.000000000",
+                "2000-08-31T12:00:00.000000000",
+                "2000-09-30T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-30T00:00:00.000000000",
+                "2000-12-31T12:00:00.000000000",
+                "2001-01-31T12:00:00.000000000",
+                "2001-02-28T00:00:00.000000000",
+                "2001-12-31T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        ds1.time.data[:] = uncentered_time
+        ds1.time.encoding = {
+            "source": None,
+            "dtype": np.dtype(np.int64),
+            "original_shape": ds1.time.data.shape,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+            "_FillValue": False,
+        }
+        ds2 = ds1.copy()
+        ds2 = ds2.rename_vars({"ts": "tas"})
+
+        ds1.to_netcdf(self.file_path1)
+        ds2.to_netcdf(self.file_path2)
+
+        # Compare result of the method against the expected.
+        result = open_mfdataset([self.file_path1, self.file_path2], center_times=True)
+
+        expected = ds1.merge(ds2)
+        expected = expected.copy()
+        expected_time_data = np.array(
+            [
+                "2000-01-16T12:00:00.000000000",
+                "2000-02-15T12:00:00.000000000",
+                "2000-03-16T12:00:00.000000000",
+                "2000-04-16T00:00:00.000000000",
+                "2000-05-16T12:00:00.000000000",
+                "2000-06-16T00:00:00.000000000",
+                "2000-07-16T12:00:00.000000000",
+                "2000-08-16T12:00:00.000000000",
+                "2000-09-16T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-16T00:00:00.000000000",
+                "2000-12-16T12:00:00.000000000",
+                "2001-01-16T12:00:00.000000000",
+                "2001-02-15T00:00:00.000000000",
+                "2001-12-16T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        expected = expected.assign_coords(
+            {
+                "time": xr.DataArray(
+                    name="time",
+                    data=expected_time_data,
+                    coords={"time": expected_time_data},
+                    dims="time",
+                    attrs={
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "axis": "T",
+                        "bounds": "time_bnds",
+                    },
+                )
+            }
+        )
+        expected.time.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": True,
+            "chunksizes": None,
+            "original_shape": (15,),
+            "dtype": np.dtype("int64"),
+            "_FillValue": 0,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+        }
+        # Update time bounds with centered time coordinates.
+        time_bounds = expected.time_bnds.copy()
+        time_bounds["time"] = expected.time
+        expected["time_bnds"] = time_bounds
+
+        # Compare result of the function against the expected.
+        assert result.identical(expected)
+
+        # Delete source key because the path of the file can change for each
+        # time run.
+        del result.time.encoding["source"]
+        assert result.time.encoding == expected.time.encoding
 
 
 class TestHasCFCompliantTime:

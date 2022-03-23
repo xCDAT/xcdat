@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 import xarray as xr
 
-from tests.fixtures import generate_dataset, lat_bnds, lon_bnds, time_bnds
+from tests.fixtures import generate_dataset, lat_bnds, lon_bnds
 from xcdat.bounds import BoundsAccessor
 
 
@@ -140,15 +140,44 @@ class TestAddBounds:
 
         ds = ds.bounds._add_bounds("lat")
         assert ds.lat_bnds.equals(lat_bnds)
-        assert ds.lat_bnds.is_generated
+        assert ds.lat_bnds.is_generated == "True"
 
         ds = ds.bounds._add_bounds("lon")
         assert ds.lon_bnds.equals(lon_bnds)
-        assert ds.lon_bnds.is_generated
+        assert ds.lon_bnds.is_generated == "True"
 
         ds = ds.bounds._add_bounds("time")
-        assert ds.time_bnds.equals(time_bnds)
-        assert ds.time_bnds.is_generated
+        # NOTE: The algorithm for generating time bounds doesn't extend the
+        # upper bound into the next month.
+        expected_time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T12:00:00.000000000", "2000-01-31T12:00:00.000000000"],
+                    ["2000-01-31T12:00:00.000000000", "2000-03-01T12:00:00.000000000"],
+                    ["2000-03-01T12:00:00.000000000", "2000-03-31T18:00:00.000000000"],
+                    ["2000-03-31T18:00:00.000000000", "2000-05-01T06:00:00.000000000"],
+                    ["2000-05-01T06:00:00.000000000", "2000-05-31T18:00:00.000000000"],
+                    ["2000-05-31T18:00:00.000000000", "2000-07-01T06:00:00.000000000"],
+                    ["2000-07-01T06:00:00.000000000", "2000-08-01T00:00:00.000000000"],
+                    ["2000-08-01T00:00:00.000000000", "2000-08-31T18:00:00.000000000"],
+                    ["2000-08-31T18:00:00.000000000", "2000-10-01T06:00:00.000000000"],
+                    ["2000-10-01T06:00:00.000000000", "2000-10-31T18:00:00.000000000"],
+                    ["2000-10-31T18:00:00.000000000", "2000-12-01T06:00:00.000000000"],
+                    ["2000-12-01T06:00:00.000000000", "2001-01-01T00:00:00.000000000"],
+                    ["2001-01-01T00:00:00.000000000", "2001-01-31T06:00:00.000000000"],
+                    ["2001-01-31T06:00:00.000000000", "2001-07-17T06:00:00.000000000"],
+                    ["2001-07-17T06:00:00.000000000", "2002-05-17T18:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": ds.time},
+            dims=["time", "bnds"],
+            attrs=ds.time_bnds.attrs,
+        )
+
+        assert ds.time_bnds.equals(expected_time_bnds)
+        assert ds.time_bnds.is_generated == "True"
 
 
 class TestGetCoord:
