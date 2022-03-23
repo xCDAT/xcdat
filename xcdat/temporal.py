@@ -444,13 +444,16 @@ class TemporalAccessor:
             The Dataset with centered time coordinates.
         """
         ds = dataset.copy()
-        time: xr.DataArray = ds.cf["T"].copy()
-        time_bounds = self._time_bounds.copy()
 
+        if hasattr(self, "_time_bounds") is False:
+            self._time_bounds = ds.bounds.get_bounds("time")
+
+        time_bounds = self._time_bounds.copy()
         lower_bounds, upper_bounds = (time_bounds[:, 0].data, time_bounds[:, 1].data)
         bounds_diffs: np.timedelta64 = (upper_bounds - lower_bounds) / 2
         bounds_mids: np.ndarray = lower_bounds + bounds_diffs
 
+        time: xr.DataArray = ds.cf["T"].copy()
         time_centered = xr.DataArray(
             name=time.name,
             data=bounds_mids,

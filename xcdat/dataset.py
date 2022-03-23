@@ -108,7 +108,6 @@ def open_dataset(
     ds = _keep_single_var(ds, data_var)
 
     if ds.cf.dims.get("T") is not None and center_times:
-        ds.temporal._time_bounds = ds.bounds.get_bounds("time")
         ds = ds.temporal.center_times(ds)
 
     ds = ds.bounds.add_missing_bounds()
@@ -251,7 +250,6 @@ def open_mfdataset(
     ds = _keep_single_var(ds, data_var)
 
     if ds.cf.dims.get("T") is not None and center_times:
-        ds.temporal._time_bounds = ds.bounds.get_bounds("time")
         ds = ds.temporal.center_times(ds)
 
     ds = ds.bounds.add_missing_bounds()

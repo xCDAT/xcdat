@@ -71,7 +71,6 @@ class XCDATAccessor:
     @is_documented_by(TemporalAccessor.center_times)
     def center_times(self):
         obj = TemporalAccessor(self._dataset)
-        obj._time_bounds = self.get_bounds("T")
         return obj.center_times(self._dataset)
 
     @property  # type: ignore
