@@ -4,7 +4,7 @@ from typing import Dict, List, Literal, Optional, Union
 import xarray as xr
 
 from xcdat.bounds import BoundsAccessor, BoundsAxis
-from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SpatialAxis
+from xcdat.spatial import RegionAxisBounds, SpatialAccessor, SpatialAxis
 from xcdat.temporal import Frequency, Mode, SeasonConfig, TemporalAccessor
 from xcdat.utils import is_documented_by
 
@@ -32,7 +32,7 @@ class XCDATAccessor:
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
-    @is_documented_by(SpatialAverageAccessor.spatial_avg)
+    @is_documented_by(SpatialAccessor.spatial_avg)
     def spatial_avg(
         self,
         data_var: str,
@@ -41,7 +41,7 @@ class XCDATAccessor:
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
     ) -> xr.Dataset:
-        obj = SpatialAverageAccessor(self._dataset)
+        obj = SpatialAccessor(self._dataset)
         return obj.spatial_avg(data_var, axis, weights, lat_bounds, lon_bounds)
 
     @is_documented_by(TemporalAccessor.temporal_avg)
