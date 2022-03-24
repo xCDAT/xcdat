@@ -165,8 +165,8 @@ Documentation
 -  Visit the docs here:
    https://xcdat.readthedocs.io/en/latest/index.html
 
-CI/CD
-~~~~~
+DevOps
+~~~~~~
 
 -  100% code coverage (https://app.codecov.io/gh/XCDAT/xcdat)
 -  GH Actions for CI/CD build (https://github.com/XCDAT/xcdat/actions)
