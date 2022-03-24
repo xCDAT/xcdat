@@ -2,7 +2,125 @@
 History
 =======
 
-v0.1.0 (7 October, 2021)
+v0.2.0 (24 March 2022)
+------------------------
+
+What's Changed
+--------------
+
+New Features
+~~~~~~~~~~~~
+
+-  Add support for spatial averaging parallelism via Dask by @pochedls
+   in https://github.com/XCDAT/xcdat/pull/132
+-  Refactor spatial averaging with more robust handling of longitude
+   spanning prime meridian by @pochedls in
+   https://github.com/XCDAT/xcdat/pull/152
+-  Update xcdat.open_mfdataset time decoding logic by @pochedls in
+   https://github.com/XCDAT/xcdat/pull/161
+-  Add function to swap dataset longitude axis orientation by
+   @tomvothecoder in https://github.com/XCDAT/xcdat/pull/145
+-  Add utility functions by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/205
+-  Add temporal utilities and averaging functionalities by
+   @tomvothecoder in https://github.com/XCDAT/xcdat/pull/107
+
+Bug Fixes
+~~~~~~~~~
+
+-  Add exception for coords of len <= 1 or multidimensional coords in
+   ``fill_missing_bounds()`` by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/141
+-  Update ``open_mfdataset()`` to avoid data vars dim concatenation by
+   @tomvothecoder in https://github.com/XCDAT/xcdat/pull/143
+-  Fix indexing on axis keys using generic map (related to spatial
+   averaging) by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/172
+
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+-  Rename accessor classes and methods for API consistency by
+   @tomvothecoder in https://github.com/XCDAT/xcdat/pull/142
+-  Rename ``fill_missing_bounds()`` to ``add_missing_bounds()`` by
+   @tomvothecoder in https://github.com/XCDAT/xcdat/pull/157
+-  Remove data variable inference API by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/196
+-  Rename spatial file and class by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/207
+
+Documentation
+~~~~~~~~~~~~~
+
+-  update README by @chengzhuzhang in
+   https://github.com/XCDAT/xcdat/pull/127
+-  Update readme by @lee1043 in https://github.com/XCDAT/xcdat/pull/129
+-  Update ``HISTORY.rst`` and fix docstrings by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/139
+-  Update ``README.rst`` content and add logo by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/153
+-  Update API Reference docs to list all APIs by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/155
+-  Add ``config.yml`` for issue templates with link to discussions by
+   @tomvothecoder in https://github.com/XCDAT/xcdat/pull/176
+-  Add FAQs page to docs by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/181
+-  Fix syntax of code examples from PR #181 by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/182
+-  Replace markdown issue templates with GitHub yml forms by
+   @tomvothecoder in https://github.com/XCDAT/xcdat/pull/186
+-  Update ``README.rst``, ``index.rst``, and ``project_maintenance.rst``
+   by @tomvothecoder in https://github.com/XCDAT/xcdat/pull/211
+
+Deprecations
+~~~~~~~~~~~~
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+-  Update logger levels to debug by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/148
+-  Update and remove logger debug messages by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/193
+
+DevOps
+~~~~~~
+
+-  Add ``requires_dask`` decorator for tests by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/177
+-  Update dependencies in ``setup.py`` and ``dev.yml`` by @tomvothecoder
+   in https://github.com/XCDAT/xcdat/pull/174
+-  Add matrix testing and ci specific conda env by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/178
+-  Suppress xarray warning in test suite by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/179
+-  Drop support for Python 3.7 by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/187
+-  Update conda env dependencies by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/189
+-  Add deps to ``pre-commit`` ``mypy`` and fix issues by @tomvothecoder
+   in https://github.com/XCDAT/xcdat/pull/191
+-  Add ``matplotlib`` to dev env, update ``ci.yml`` and add Python 3.10
+   to build workflow by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/203
+-  Replace conda with mamba in rtd build by @tomvothecoder in
+   https://github.com/XCDAT/xcdat/pull/209
+
+New Contributors
+----------------
+
+-  @chengzhuzhang made their first contribution in
+   https://github.com/XCDAT/xcdat/pull/127
+-  @lee1043 made their first contribution in
+   https://github.com/XCDAT/xcdat/pull/129
+-  @pochedls made their first contribution in
+   https://github.com/XCDAT/xcdat/pull/132
+
+**Full Changelog**:
+https://github.com/XCDAT/xcdat/compare/v0.1.0...v0.2.0
+
+
+v0.1.0 (7 October 2021)
 ------------------------
 
 New Features
