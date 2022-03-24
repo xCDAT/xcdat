@@ -5,9 +5,6 @@ History
 v0.2.0 (24 March 2022)
 ------------------------
 
-What's Changed
---------------
-
 New Features
 ~~~~~~~~~~~~
 
@@ -107,7 +104,7 @@ DevOps
    https://github.com/XCDAT/xcdat/pull/209
 
 New Contributors
-----------------
+~~~~~~~~~~~~~~~~
 
 -  @chengzhuzhang made their first contribution in
    https://github.com/XCDAT/xcdat/pull/127
