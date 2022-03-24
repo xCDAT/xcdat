@@ -116,7 +116,6 @@ New Contributors
 **Full Changelog**:
 https://github.com/XCDAT/xcdat/compare/v0.1.0...v0.2.0
 
-
 v0.1.0 (7 October 2021)
 ------------------------
 
