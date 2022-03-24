@@ -10,4 +10,7 @@ Development Lead
 Contributors
 ------------
 
+* Jason Boutte
 * Stephen Po-Chedley
+* Jill Chengzhu Zhang
+* Jiwoo Lee
