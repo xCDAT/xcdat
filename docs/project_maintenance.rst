@@ -14,23 +14,25 @@ Releasing a New Version
 
   ::
 
-      # Prepend "v" to <version>
       # For release candidates, append "rc" to <version>
-      git checkout -b v<version>
-      git push --set-upstream origin v<version>
+      git checkout -b <version>
+      git push --set-upstream origin <version>
 
-3. Bump version using tbump.
+3. Add updates to ``HISTORY.rst`` and commit.
+
+4. Bump version using tbump.
 
   ::
 
-      # Exclude "v" and <version> should match step 2
+      # <version> should match step 2
       # --no-tag is required since tagging is handled in step 5.
       tbump <version> --no-tag
 
-4. Add updates to ``HISTORY.rst``
 5. Create a pull request to the main repo and merge it.
 6. Create a GitHub release.
 7. Open a PR to the xcdat conda-forge feedstock with the latest changes.
+
+   - https://github.com/conda-forge/xcdat-feedstock
 
 Continuous Integration / Continuous Delivery (CI/CD)
 -----------------------------------------------------

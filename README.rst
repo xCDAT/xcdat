@@ -40,9 +40,8 @@
 .. |Checked with mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
    :target: http://mypy-lang.org/
 
-
-XCDAT is a Python library built on `xarray`_ for climate data analysis on structured grids.
-It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library with a focus on long-term maintainability and extensibility.
+XCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
+It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library.
 
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
@@ -50,21 +49,29 @@ It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_
 Planned Features
 -----------------
 
-XCDAT will provide climate domain specific features and utilities that are helpful for general xarray usage.
+XCDAT aims to provide utilities for general xarray usage and climate domain specific features.
 
 These features include:
 
-- Support for metadata that is CF compliant, E3SM non-CF compliant, and common
+- Support for CF compliant, E3SM non-CF compliant, and common metadata
+
+- Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` to apply common operations
+
+  - Generate bounds for all supported axes if they don't exist
+  - Optional decoding of CF (via ``xarray``) and non-CF time units (via ``xcdat``)
+  - Optional centering of time coordinate using time bounds
+  - Optional conversion of longitudinal axes orientation
+
 - Robust handling of coordinates and its associated bounds
 
   - Name-agnostic retrieval of CF compliant coordinates and bounds using ``cf_xarray``
-  - Generating a specific or all bounds for supported axes if they don't exist
+  - Generating bounds for an axis or axes if they don't exist
   - Ability to operate on both [0, 360) and [-180, 180) longitudinal axis orientations
 
-- Temporal averaging (weighted or unweighted)
+- Temporal averaging
 
-  - Time series averaging and calculation of climatologies and anomalies
-  - Use of time bounds for calculating weights
+  - Calculate time series averages, climatologies, and departures
+  - Weighted or unweighted
   - Optional centering of time coordinates using time bounds
 
 - Geospatial weighted averaging over rectilinear grid
@@ -75,24 +82,20 @@ These features include:
 
   - Operate on rectilinear and cuvilinear grids
 
-- Wrappers for opening datasets to apply common operations
+- Parallelism of XCDAT features using Dask
 
-  - Generate bounds for all supported axes if they don't exist
-  - Decoding of CF and non-CF time units
-  - Optional centering of time coordinate using time bounds
-  - Optional conversion of longitudinal axes orientation
+Feature Criteria
+~~~~~~~~~~~~~~~~
 
-- Support for parallelism of XCDAT features using Dask
-
-Criteria
-~~~~~~~~
-
-The features of this library must meet a set of criteria before being considered for implementation.
+Features must meet the following criteria before being considered for implementation:
 
 1. Climate domain functionality and/or general ``xarray`` utility isn't provided natively with ``xarray``
-2. No existing xarray-based packages implement the feature, or the implementation doesn't meet the XCDAT team's defined requirements
-3. Feature can be relatively simple to implement and not overly-flexible
-4. Feature is often reused
+2. No other existing and actively developed xarray-based packages implement the feature
+
+   - For example, ``cf_xarray`` already handles interpretation of CF convention attributes on xarray objects
+
+3. Must be generally reusable and not specific to a single use case
+4. Must be relatively simple and lightweight to implement and use
 
 Acknowledgement
 ---------------

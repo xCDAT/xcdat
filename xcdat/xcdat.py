@@ -5,7 +5,8 @@ import xarray as xr
 
 from xcdat.bounds import BoundsAccessor, BoundsAxis
 from xcdat.regridder.accessor import DatasetRegridderAccessor, RegridTool  # noqa: F401
-from xcdat.spatial_avg import RegionAxisBounds, SpatialAverageAccessor, SpatialAxis
+from xcdat.spatial import RegionAxisBounds, SpatialAccessor, SpatialAxis
+from xcdat.temporal import Frequency, Mode, SeasonConfig, TemporalAccessor
 from xcdat.utils import is_documented_by
 
 
@@ -32,18 +33,6 @@ class XCDATAccessor:
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
-    @is_documented_by(SpatialAverageAccessor.spatial_avg)
-    def spatial_avg(
-        self,
-        data_var: str,
-        axis: Union[List[SpatialAxis], SpatialAxis] = ["lat", "lon"],
-        weights: Union[Literal["generate"], xr.DataArray] = "generate",
-        lat_bounds: Optional[RegionAxisBounds] = None,
-        lon_bounds: Optional[RegionAxisBounds] = None,
-    ) -> xr.Dataset:
-        obj = SpatialAverageAccessor(self._dataset)
-        return obj.spatial_avg(data_var, axis, weights, lat_bounds, lon_bounds)
-
     @is_documented_by(DatasetRegridderAccessor.regrid)
     def regrid(
         self,
@@ -54,6 +43,47 @@ class XCDATAccessor:
     ) -> xr.Dataset:
         obj = DatasetRegridderAccessor(self._dataset)
         return obj.regrid(data_var, dst_grid, tool, **options)
+
+    @is_documented_by(SpatialAccessor.spatial_avg)
+    def spatial_avg(
+        self,
+        data_var: str,
+        axis: Union[List[SpatialAxis], SpatialAxis] = ["lat", "lon"],
+        weights: Union[Literal["generate"], xr.DataArray] = "generate",
+        lat_bounds: Optional[RegionAxisBounds] = None,
+        lon_bounds: Optional[RegionAxisBounds] = None,
+    ) -> xr.Dataset:
+        obj = SpatialAccessor(self._dataset)
+        return obj.spatial_avg(data_var, axis, weights, lat_bounds, lon_bounds)
+
+    @is_documented_by(TemporalAccessor.temporal_avg)
+    def temporal_avg(
+        self,
+        data_var: str,
+        mode: Mode,
+        freq: Frequency,
+        weighted: bool = True,
+        center_times: bool = False,
+        season_config: SeasonConfig = {
+            "dec_mode": "DJF",
+            "drop_incomplete_djf": False,
+            "custom_seasons": None,
+        },
+    ) -> xr.Dataset:
+        obj = TemporalAccessor(self._dataset)
+        return obj.temporal_avg(
+            data_var, mode, freq, weighted, center_times, season_config
+        )
+
+    @is_documented_by(TemporalAccessor.departures)
+    def departures(self, data_var: str) -> xr.Dataset:
+        obj = TemporalAccessor(self._dataset)
+        return obj.departures(data_var)
+
+    @is_documented_by(TemporalAccessor.center_times)
+    def center_times(self):
+        obj = TemporalAccessor(self._dataset)
+        return obj.center_times(self._dataset)
 
     @property  # type: ignore
     @is_documented_by(BoundsAccessor.bounds)

@@ -1,4 +1,6 @@
 import numpy as np
+import pandas as pd
+import pytest
 import xarray as xr
 
 from tests.fixtures import generate_dataset, lat_bnds
@@ -7,9 +9,9 @@ from xcdat.xcdat import XCDATAccessor
 
 
 class TestXCDATAccessor:
-    # NOTE: We don't have to test this class in-depth because its methods
-    # are abstracted public methods from other classes, which already has more
-    # comprehensive testing.
+    # NOTE: We don't have to perform in-depth testing of XCDATAccessor methods.
+    # These methods are already tested in other classes.
+    @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
         self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -32,6 +34,13 @@ class TestXCDATAccessor:
 
         assert result.ts.shape == (12, 45, 72)
 
+
+class TestSpatialAvgAccessor:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
+
     def test_weighted_spatial_average_for_lat_and_lon_region(self):
         ds = self.ds_with_bnds.copy()
 
@@ -53,6 +62,13 @@ class TestXCDATAccessor:
         )
 
         assert result.identical(expected)
+
+
+class TestBoundsAccessor:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test_bounds_property_returns_expected(self):
         ds = self.ds_with_bnds.copy()
@@ -94,3 +110,136 @@ class TestXCDATAccessor:
 
         assert ds.lat_bnds.equals(lat_bnds)
         assert ds.lat_bnds.is_generated
+
+
+class TestTemporalAccessor:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_weighted_annual_avg(self):
+        ds = self.ds.copy()
+
+        result = ds.xcdat.temporal_avg("ts", "time_series", "year")
+        expected = ds.copy()
+        expected["ts_original"] = ds.ts.copy()
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((2, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "year": pd.MultiIndex.from_tuples(
+                    [(2000,), (2001,)],
+                ),
+            },
+            dims=["year", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "year",
+                "groupby": "year",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        # For some reason, there is a floating point difference between both
+        # for ts so we have to use floating point comparison
+        xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
+
+    def test_weighted_seasonal_departure_with_DJF(self):
+        # Create a post-climatology dataset.
+        ds = self.ds.copy()
+        # Drop incomplete DJF seasons
+        ds = ds.isel(time=slice(2, -1))
+        ds["ts_original"] = ds.ts.copy()
+        ds["ts"] = xr.DataArray(
+            data=np.ones((4, 4, 4)),
+            coords={
+                "lat": ds.lat,
+                "lon": ds.lon,
+                "season": pd.MultiIndex.from_arrays([["JJA", "MAM", "SON", "DJF"]]),
+            },
+            dims=["season", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "groupby": "season",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "False",
+            },
+        )
+
+        # Run climatology on the post-climatology dataset.
+        result = ds.xcdat.departures("ts")
+
+        # Create an expected post-departure dataset.
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.zeros((12, 4, 4)),
+            coords={
+                "lat": ds.lat,
+                "lon": ds.lon,
+                "time": ds.time,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "groupby": "season",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "False",
+            },
+        )
+        assert result.identical(expected)
+
+    def test_gets_time_as_the_midpoint_between_time_bounds(self):
+        ds = self.ds.copy()
+
+        # Compare result of the method against the expected.
+        result = ds.xcdat.center_times()
+        expected = ds.copy()
+        expected_time_data = np.array(
+            [
+                "2000-01-16T12:00:00.000000000",
+                "2000-02-15T12:00:00.000000000",
+                "2000-03-16T12:00:00.000000000",
+                "2000-04-16T00:00:00.000000000",
+                "2000-05-16T12:00:00.000000000",
+                "2000-06-16T00:00:00.000000000",
+                "2000-07-16T12:00:00.000000000",
+                "2000-08-16T12:00:00.000000000",
+                "2000-09-16T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-16T00:00:00.000000000",
+                "2000-12-16T12:00:00.000000000",
+                "2001-01-16T12:00:00.000000000",
+                "2001-02-15T00:00:00.000000000",
+                "2001-12-16T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        expected["time"] = xr.DataArray(
+            name="time",
+            data=expected_time_data,
+            coords={"time": expected_time_data},
+            dims="time",
+            attrs={
+                "long_name": "time",
+                "standard_name": "time",
+                "axis": "T",
+                "bounds": "time_bnds",
+            },
+        )
+        expected_time_bounds = ds.time_bnds.copy()
+        expected_time_bounds.time.data[:] = expected_time_data
+
+        assert result.identical(expected)

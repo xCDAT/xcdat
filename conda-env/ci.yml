@@ -8,6 +8,12 @@ dependencies:
     # ==================
     - python>=3.8
     - pip
+    - cf_xarray
+    - dask
+    - netcdf4
+    - numpy
+    - pandas
+    - xarray
     # Testing
     # ==================
     - pytest

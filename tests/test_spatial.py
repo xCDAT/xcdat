@@ -4,17 +4,17 @@ import xarray as xr
 
 from tests import requires_dask
 from tests.fixtures import generate_dataset
-from xcdat.spatial_avg import SpatialAverageAccessor
+from xcdat.spatial import SpatialAccessor
 
 
-class TestSpatialAverageAcccessor:
+class TestSpatialAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test__init__(self):
         ds = self.ds.copy()
-        obj = SpatialAverageAccessor(ds)
+        obj = SpatialAccessor(ds)
 
         assert obj._dataset.identical(ds)
 
@@ -830,7 +830,7 @@ class TestAverager:
 
         result = ds.spatial._averager(ds.ts, axis=["lat", "lon"], weights=weights)
         expected = xr.DataArray(
-            name="ts", data=np.ones(12), coords={"time": ds.time}, dims=["time"]
+            name="ts", data=np.ones(15), coords={"time": ds.time}, dims=["time"]
         )
 
         assert result.identical(expected)
@@ -846,7 +846,7 @@ class TestAverager:
         result = self.ds.spatial._averager(self.ds.ts, axis=["lat"], weights=weights)
         expected = xr.DataArray(
             name="ts",
-            data=np.ones((12, 4)),
+            data=np.ones((15, 4)),
             coords={"time": self.ds.time, "lon": self.ds.lon},
             dims=["time", "lon"],
         )
@@ -864,7 +864,7 @@ class TestAverager:
         result = self.ds.spatial._averager(self.ds.ts, axis=["lon"], weights=weights)
         expected = xr.DataArray(
             name="ts",
-            data=np.ones((12, 4)),
+            data=np.ones((15, 4)),
             coords={"time": self.ds.time, "lat": self.ds.lat},
             dims=["time", "lat"],
         )
@@ -882,7 +882,7 @@ class TestAverager:
             self.ds.ts, axis=["lat", "lon"], weights=weights
         )
         expected = xr.DataArray(
-            name="ts", data=np.ones(12), coords={"time": self.ds.time}, dims=["time"]
+            name="ts", data=np.ones(15), coords={"time": self.ds.time}, dims=["time"]
         )
 
         assert result.identical(expected)
