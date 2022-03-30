@@ -347,7 +347,7 @@ class TestXESMFRegridder:
 
         assert isinstance(output, xr.Dataset)
 
-        assert output.ts.shape == (12, 45, 72)
+        assert output.ts.shape == (15, 45, 72)
 
     def test_no_variable(self):
         ds = self.ds.copy()

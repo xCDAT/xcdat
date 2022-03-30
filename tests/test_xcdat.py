@@ -32,7 +32,7 @@ class TestXCDATAccessor:
 
         result = ds.xcdat.regrid("ts", out_grid, "xesmf", method="bilinear")
 
-        assert result.ts.shape == (12, 45, 72)
+        assert result.ts.shape == (15, 45, 72)
 
 
 class TestSpatialAvgAccessor:
