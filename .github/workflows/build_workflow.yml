@@ -16,7 +16,7 @@ env:
 jobs:
     pre-commit-hooks:
         runs-on: ubuntu-latest
-        timeout-minutes: 2
+        timeout-minutes: 3
         steps:
             - id: skip_check
               uses: fkirc/skip-duplicate-actions@master
