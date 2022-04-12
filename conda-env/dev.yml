@@ -9,11 +9,13 @@ dependencies:
     - python=3.9.12
     - pip=22.0.4
     - cf_xarray=0.7.0
+    - cftime=1.6.0
     - dask=2022.3.0
     - netcdf4=1.5.8
     - numpy=1.22.3
     - pandas=1.4.1
     - xarray=2022.3.0
+    -
     # Quality Assurance
     # ==================
     # If versions are updated, also update 'rev' in `.pre-commit.config.yaml`

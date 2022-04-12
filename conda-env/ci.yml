@@ -9,6 +9,7 @@ dependencies:
     - python>=3.8
     - pip
     - cf_xarray
+    - cftime
     - dask
     - netcdf4
     - numpy

@@ -20,6 +20,7 @@ install_requires: List[str] = [
     "numpy",
     "pandas",
     "xarray",
+    "cftime",
 ]
 test_requires = ["pytest>=3"]
 
