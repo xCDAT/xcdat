@@ -46,7 +46,7 @@ Methods
     Dataset.bounds.add_bounds
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
-    Dataset.spatial.spatial_avg
+    Dataset.spatial.average
     Dataset.temporal.temporal_avg
     Dataset.temporal.departures
     Dataset.temporal.center_times
