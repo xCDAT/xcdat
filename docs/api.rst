@@ -3,8 +3,10 @@ API Reference
 
 .. currentmodule:: xcdat
 
-Top-level API
--------------
+Top-level API Functions
+-----------------------
+
+Below is a list of top-level API functions that are available in ``xcdat``.
 
 .. autosummary::
     :toctree: generated/
@@ -20,8 +22,20 @@ Top-level API
 .. currentmodule:: xarray
 
 
-Dataset
-------------------------------
+xarray.Dataset Accessors
+------------------------
+
+``xcdat`` accessors provide implicit namespaces for custom functionality that clearly identifies it as separate from built-in xarray methods.
+These accessors operate directly on  xarray objects, such as ``xarray.Dataset``.
+
+.. note::
+
+   Accessors are created once per DataArray and Dataset instance. New
+   instances, like those created from arithmetic operations or when accessing
+   a DataArray from a Dataset (ex. ``ds[var_name]``), will have new
+   accessors created.
+
+More information on accessors can be found here: https://docs.xarray.dev/en/stable/internals/extending-xarray.html#extending-xarray
 
 .. _dsattr_1:
 
