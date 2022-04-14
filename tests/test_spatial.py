@@ -25,7 +25,7 @@ class TestSpatialAccessor:
         assert obj._dataset.identical(ds)
 
 
-class TestSpatialAvg:
+class TestAverage:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -39,7 +39,7 @@ class TestSpatialAvg:
 
     def test_raises_error_if_data_var_not_in_dataset(self):
         with pytest.raises(KeyError):
-            self.ds.spatial.spatial_avg(
+            self.ds.spatial.average(
                 "not_a_data_var",
                 axis=["lat", "incorrect_axis"],
             )
@@ -52,7 +52,7 @@ class TestSpatialAvg:
             coords={"lat": ds.lat, "lon": ds.lon},
             dims=["lat", "lon"],
         )
-        result = ds.spatial.spatial_avg(
+        result = ds.spatial.average(
             axis=["lat", "lon"],
             lat_bounds=(-5.0, 5),
             lon_bounds=(-170, -120.1),
@@ -71,7 +71,7 @@ class TestSpatialAvg:
 
     def test_spatial_average_for_lat_and_lon_region(self):
         ds = self.ds.copy()
-        result = ds.spatial.spatial_avg(
+        result = ds.spatial.average(
             "ts", axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
@@ -88,7 +88,7 @@ class TestSpatialAvg:
         ds = self.ds.copy()
 
         # Specifying axis as a str instead of list of str.
-        result = ds.spatial.spatial_avg(
+        result = ds.spatial.average(
             "ts", axis="lat", lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
@@ -108,7 +108,7 @@ class TestSpatialAvg:
         ds = self.ds.copy().chunk(2)
 
         # Specifying axis as a str instead of list of str.
-        result = ds.spatial.spatial_avg(
+        result = ds.spatial.average(
             "ts", axis="lat", lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
