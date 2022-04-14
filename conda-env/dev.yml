@@ -15,7 +15,6 @@ dependencies:
     - numpy=1.22.3
     - pandas=1.4.1
     - xarray=2022.3.0
-    -
     # Quality Assurance
     # ==================
     # If versions are updated, also update 'rev' in `.pre-commit.config.yaml`
