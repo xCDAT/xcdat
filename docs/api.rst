@@ -22,8 +22,8 @@ Below is a list of top-level API functions that are available in ``xcdat``.
 .. currentmodule:: xarray
 
 
-xarray.Dataset Accessors
-------------------------
+``xarray.Dataset`` Accessors
+----------------------------
 
 ``xcdat`` accessors provide implicit namespaces for custom functionality that clearly identifies it as separate from built-in xarray methods.
 These accessors operate directly on  xarray objects, such as ``xarray.Dataset``.
