@@ -134,6 +134,209 @@ class TestClimatology:
         assert result.identical(expected)
 
 
+class TestDepartures:
+    # TODO: Update TestDepartures tests to use other numbers rather than 1's for
+    # better test reliability and accuracy. This may require subsetting.
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+
+        self.seasons = ["JJA", "MAM", "SON", "DJF"]
+
+    def test_weighted_seasonal_departures_with_DJF(self):
+        # Create a post-climatology dataset.
+        ds = self.ds.copy()
+        # Drop incomplete DJF seasons
+        ds = ds.isel(time=slice(2, -1))
+
+        # Compare result of the method against the expected.
+        result = ds.temporal.departures(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+        )
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.zeros((12, 4, 4)),
+            coords={
+                "lat": ds.lat,
+                "lon": ds.lon,
+                "time": ds.time,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "groupby": "season",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_unweighted_seasonal_departures_with_DJF(self):
+        # Create a post-climatology dataset.
+        ds = self.ds.copy()
+        # Drop incomplete DJF seasons
+        ds = ds.isel(time=slice(2, -1))
+
+        # Compare result of the method against the expected.
+        result = ds.temporal.departures(
+            "ts",
+            "season",
+            weighted=False,
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+        )
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.zeros((12, 4, 4)),
+            coords={
+                "lat": ds.lat,
+                "lon": ds.lon,
+                "time": ds.time,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "season",
+                "weighted": "False",
+                "center_times": "False",
+                "groupby": "season",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_unweighted_seasonal_departures_with_JFD(self):
+        # Create a post-climatology dataset.
+        ds = self.ds.copy()
+
+        # Compare result of the method against the expected.
+        result = ds.temporal.departures(
+            "ts",
+            "season",
+            weighted=False,
+            season_config={"dec_mode": "JFD"},
+        )
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.zeros((15, 4, 4)),
+            coords={
+                "lat": ds.lat,
+                "lon": ds.lon,
+                "time": ds.time,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "season",
+                "weighted": "False",
+                "center_times": "False",
+                "groupby": "season",
+                "dec_mode": "JFD",
+            },
+        )
+
+        assert result.identical(expected)
+
+
+class TestCenterTimes:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_raises_error_if_time_dimension_does_not_exist_in_dataset(self):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+
+        with pytest.raises(KeyError):
+            ds.temporal.center_times(ds)
+
+    def test_gets_time_as_the_midpoint_between_time_bounds(self):
+        ds = self.ds.copy()
+
+        # Make the time coordinates uncentered.
+        uncentered_time = np.array(
+            [
+                "2000-01-31T12:00:00.000000000",
+                "2000-02-29T12:00:00.000000000",
+                "2000-03-31T12:00:00.000000000",
+                "2000-04-30T00:00:00.000000000",
+                "2000-05-31T12:00:00.000000000",
+                "2000-06-30T00:00:00.000000000",
+                "2000-07-31T12:00:00.000000000",
+                "2000-08-31T12:00:00.000000000",
+                "2000-09-30T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-30T00:00:00.000000000",
+                "2000-12-31T12:00:00.000000000",
+                "2001-01-31T12:00:00.000000000",
+                "2001-02-28T00:00:00.000000000",
+                "2001-12-31T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        ds.time.data[:] = uncentered_time
+
+        # Set object attrs required to test the method.
+        ds.temporal._time_bounds = ds.time_bnds.copy()
+
+        # Compare result of the method against the expected.
+        expected = ds.copy()
+        expected_time_data = np.array(
+            [
+                "2000-01-16T12:00:00.000000000",
+                "2000-02-15T12:00:00.000000000",
+                "2000-03-16T12:00:00.000000000",
+                "2000-04-16T00:00:00.000000000",
+                "2000-05-16T12:00:00.000000000",
+                "2000-06-16T00:00:00.000000000",
+                "2000-07-16T12:00:00.000000000",
+                "2000-08-16T12:00:00.000000000",
+                "2000-09-16T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-16T00:00:00.000000000",
+                "2000-12-16T12:00:00.000000000",
+                "2001-01-16T12:00:00.000000000",
+                "2001-02-15T00:00:00.000000000",
+                "2001-12-16T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        expected = expected.assign_coords(
+            {
+                "time": xr.DataArray(
+                    name="time",
+                    data=expected_time_data,
+                    coords={"time": expected_time_data},
+                    dims="time",
+                    attrs={
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "axis": "T",
+                        "bounds": "time_bnds",
+                    },
+                )
+            }
+        )
+        # Update time bounds with centered time coordinates.
+        time_bounds = ds.time_bnds.copy()
+        time_bounds["time"] = expected.time
+        expected["time_bnds"] = time_bounds
+
+        # Compare result of the method against the expected.
+        result = ds.temporal.center_times(ds)
+        assert result.identical(expected)
+
+
 class TestTemporalAvg:
     # TODO: Update TestTimeSeries tests to use other numbers rather than 1's
     # for better test reliability and accuracy. This may require subsetting.
@@ -1355,175 +1558,6 @@ class TestTemporalAvg:
             assert result.identical(expected)
 
 
-class TestDepartures:
-    # TODO: Update TestDepartures tests to use other numbers rather than 1's for
-    # better test reliability and accuracy. This may require subsetting.
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
-
-        self.seasons = ["JJA", "MAM", "SON", "DJF"]
-
-    @pytest.mark.xfail
-    def test_weighted_seasonal_departure_with_DJF(self):
-        # Create a post-climatology dataset.
-        ds = self.ds.copy()
-        # Drop incomplete DJF seasons
-        ds = ds.isel(time=slice(2, -1))
-        ds["ts_original"] = ds.ts.copy()
-        ds["ts"] = xr.DataArray(
-            data=np.ones((4, 4, 4)),
-            coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
-                "season": pd.MultiIndex.from_arrays([self.seasons]),
-            },
-            dims=["season", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "climatology",
-                "freq": "season",
-                "weighted": "True",
-                "center_times": "False",
-                "groupby": "season",
-                "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
-            },
-        )
-
-        # Compare result of the method against the expected.
-        # Run climatology on the post-climatology dataset.
-        result = ds.temporal.departures("ts")
-        expected = ds.copy()
-        expected["ts"] = xr.DataArray(
-            data=np.zeros((12, 4, 4)),
-            coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
-                "time": ds.time,
-            },
-            dims=["time", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "departures",
-                "freq": "season",
-                "weighted": "True",
-                "center_times": "False",
-                "groupby": "season",
-                "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
-            },
-        )
-
-        assert result.identical(expected)
-
-    @pytest.mark.xfail
-    def test_unweighted_seasonal_departure_with_DJF(self):
-        # Create a post-climatology dataset.
-        ds = self.ds.copy()
-        # Drop incomplete DJF seasons
-        ds = ds.isel(time=slice(2, -1))
-        ds["ts_original"] = ds.ts.copy()
-        ds["ts"] = xr.DataArray(
-            data=np.ones((4, 4, 4)),
-            coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
-                "season": pd.MultiIndex.from_arrays([self.seasons]),
-            },
-            dims=["season", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "climatology",
-                "freq": "season",
-                "weighted": "False",
-                "center_times": "False",
-                "groupby": "season",
-                "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
-            },
-        )
-
-        # Compare result of the method against the expected.
-        # Run climatology on the post-climatology dataset.
-        result = ds.temporal.departures("ts")
-
-        # Create an expected post-departure dataset.
-        expected = ds.copy()
-        expected["ts"] = xr.DataArray(
-            data=np.zeros((12, 4, 4)),
-            coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
-                "time": ds.time,
-            },
-            dims=["time", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "departures",
-                "freq": "season",
-                "weighted": "False",
-                "center_times": "False",
-                "groupby": "season",
-                "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
-            },
-        )
-
-        assert result.identical(expected)
-
-    @pytest.mark.xfail
-    def test_unweighted_seasonal_departure_with_JFD(self):
-        # Create a post-climatology dataset.
-        ds = self.ds.copy()
-        ds["ts_original"] = ds.ts.copy()
-        ds["ts"] = xr.DataArray(
-            data=np.ones((4, 4, 4)),
-            coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
-                "season": pd.MultiIndex.from_arrays([self.seasons]),
-            },
-            dims=["season", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "climatology",
-                "freq": "season",
-                "weighted": "False",
-                "center_times": "False",
-                "groupby": "season",
-                "dec_mode": "JFD",
-            },
-        )
-
-        # Compare result of the method against the expected.
-        # Run climatology on the post-climatology dataset.
-        result = ds.temporal.departures("ts")
-
-        # Create an expected post-departure dataset.
-        expected = ds.copy()
-        expected["ts"] = xr.DataArray(
-            data=np.zeros((15, 4, 4)),
-            coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
-                "time": ds.time,
-            },
-            dims=["time", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "departures",
-                "freq": "season",
-                "weighted": "False",
-                "center_times": "False",
-                "groupby": "season",
-                "dec_mode": "JFD",
-            },
-        )
-
-        assert result.identical(expected)
-
-
 class TestSetObjAttrs:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1793,95 +1827,6 @@ class TestCustomSeasons:
         )
         expected = ["JanFebMar", "AprMayJunJul", "AugSepOctNovDec"]
         assert result == expected
-
-
-class TestCenterTimes:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
-
-    def test_raises_error_if_time_dimension_does_not_exist_in_dataset(self):
-        ds = self.ds.copy()
-        ds = ds.drop_dims("time")
-
-        with pytest.raises(KeyError):
-            ds.temporal.center_times(ds)
-
-    def test_gets_time_as_the_midpoint_between_time_bounds(self):
-        ds = self.ds.copy()
-
-        # Make the time coordinates uncentered.
-        uncentered_time = np.array(
-            [
-                "2000-01-31T12:00:00.000000000",
-                "2000-02-29T12:00:00.000000000",
-                "2000-03-31T12:00:00.000000000",
-                "2000-04-30T00:00:00.000000000",
-                "2000-05-31T12:00:00.000000000",
-                "2000-06-30T00:00:00.000000000",
-                "2000-07-31T12:00:00.000000000",
-                "2000-08-31T12:00:00.000000000",
-                "2000-09-30T00:00:00.000000000",
-                "2000-10-16T12:00:00.000000000",
-                "2000-11-30T00:00:00.000000000",
-                "2000-12-31T12:00:00.000000000",
-                "2001-01-31T12:00:00.000000000",
-                "2001-02-28T00:00:00.000000000",
-                "2001-12-31T12:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
-        ds.time.data[:] = uncentered_time
-
-        # Set object attrs required to test the method.
-        ds.temporal._time_bounds = ds.time_bnds.copy()
-
-        # Compare result of the method against the expected.
-        expected = ds.copy()
-        expected_time_data = np.array(
-            [
-                "2000-01-16T12:00:00.000000000",
-                "2000-02-15T12:00:00.000000000",
-                "2000-03-16T12:00:00.000000000",
-                "2000-04-16T00:00:00.000000000",
-                "2000-05-16T12:00:00.000000000",
-                "2000-06-16T00:00:00.000000000",
-                "2000-07-16T12:00:00.000000000",
-                "2000-08-16T12:00:00.000000000",
-                "2000-09-16T00:00:00.000000000",
-                "2000-10-16T12:00:00.000000000",
-                "2000-11-16T00:00:00.000000000",
-                "2000-12-16T12:00:00.000000000",
-                "2001-01-16T12:00:00.000000000",
-                "2001-02-15T00:00:00.000000000",
-                "2001-12-16T12:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
-        expected = expected.assign_coords(
-            {
-                "time": xr.DataArray(
-                    name="time",
-                    data=expected_time_data,
-                    coords={"time": expected_time_data},
-                    dims="time",
-                    attrs={
-                        "long_name": "time",
-                        "standard_name": "time",
-                        "axis": "T",
-                        "bounds": "time_bnds",
-                    },
-                )
-            }
-        )
-        # Update time bounds with centered time coordinates.
-        time_bounds = ds.time_bnds.copy()
-        time_bounds["time"] = expected.time
-        expected["time_bnds"] = time_bounds
-
-        # Compare result of the method against the expected.
-        result = ds.temporal.center_times(ds)
-        assert result.identical(expected)
 
 
 class TestAverager:

@@ -125,11 +125,11 @@ class TemporalAccessor:
         freq : Frequency
             The frequency of time to group by.
 
-            * "year": groups by year for the yearly average
-            * "season": groups by (year, season) for the seasonal average
-            * "month": groups by (year, month) for the monthly average
-            * "day": groups by (year, month, day) for the daily average
-            * "hour": groups by (year, month, day, hour) for the hourly average
+            * "year": groups by year for the yearly average.
+            * "season": groups by (year, season) for the seasonal average.
+            * "month": groups by (year, month) for the monthly average.
+            * "day": groups by (year, month, day) for the daily average.
+            * "hour": groups by (year, month, day, hour) for the hourly average.
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
@@ -199,11 +199,11 @@ class TemporalAccessor:
 
         >>> import xcdat
 
-        Call average method:
+        Call ``average()`` method:
 
-        >>> ds.temporal.climatology(...)
+        >>> ds.temporal.average(...)
 
-        Get average for a variable ("season" freq):
+        Get a data variable's seasonal averages:
 
         >>> ds_season = ds.temporal.average(
         >>>     "ts",
@@ -222,7 +222,7 @@ class TemporalAccessor:
         >>> )
         >>> ds_season_with_jfd.ts
 
-        Get average for a variable ("season" freq & custom seasons):
+        Get a data variable seasonal averages with custom seasons:
 
         >>> custom_seasons = [
         >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
@@ -238,7 +238,7 @@ class TemporalAccessor:
         >>>     season_config={"custom_seasons": custom_seasons}
         >>> )
 
-        Get the temporal averaging operation attributes:
+        Get the ``average()`` operation attributes:
 
         >>> ds_season_with_djf.ts.attrs
         {
@@ -277,9 +277,9 @@ class TemporalAccessor:
         freq : Frequency
             The frequency of time to group by.
 
-            * "season": groups by season for the seasonal cycle
-            * "month": groups by month for the annual cycle
-            * "day": groups by (month, day) for the daily cycle
+            * "season": groups by season for the seasonal cycle climatology.
+            * "month": groups by month for the annual cycle climatology.
+            * "day": groups by (month, day) for the daily cycle climatology.
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
@@ -349,15 +349,14 @@ class TemporalAccessor:
 
         >>> import xcdat
 
-        Call climatology method:
+        Call ``climatology()`` method:
 
         >>> ds.temporal.climatology(...)
 
-        Get seasonal climatology for a data variable ("season" freq):
+        Get a data variable's seasonal climatology:
 
-        >>> ds_season = ds.temporal.temporal_avg(
+        >>> ds_season = ds.temporal.climatology(
         >>>     "ts",
-        >>>     "climatology",
         >>>     "season",
         >>>     season_config={
         >>>         "dec_mode": "DJF",
@@ -366,15 +365,14 @@ class TemporalAccessor:
         >>> )
         >>> ds_season.ts
         >>>
-        >>> ds_season = ds.temporal.temporal_avg(
+        >>> ds_season = ds.temporal.climatology(
         >>>     "ts",
-        >>>     "climatology",
         >>>     "season",
         >>>     season_config={"dec_mode": "JFD"}
         >>> )
         >>> ds_season.ts
 
-        Get seasonal climatology for a data variable ("season" and custom):
+        Get a data variable's seasonal climatology with custom seasons:
 
         >>> custom_seasons = [
         >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
@@ -383,14 +381,13 @@ class TemporalAccessor:
         >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
         >>> ]
         >>>
-        >>> ds_season_custom = ds.temporal.temporal_avg(
+        >>> ds_season_custom = ds.temporal.climatology(
         >>>     "ts",
-        >>>     "climatology",
         >>>     "season",
         >>>     season_config={"custom_seasons": custom_seasons}
         >>> )
 
-        Get attributes for the climatology operation:
+        Get ``climatology()`` operation attributes:
 
         >>> ds_season_with_djf.ts.attrs
         {
@@ -411,7 +408,7 @@ class TemporalAccessor:
     def departures(
         self,
         data_var: str,
-        freq: Optional[Frequency] = None,
+        freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
         season_config: SeasonConfig = {
@@ -448,24 +445,9 @@ class TemporalAccessor:
         freq : Frequency
             The frequency of time to group by.
 
-            "time_series" frequencies:
-
-            * "year", "season", "month", "day", "hour"
-
-                * "year" groups by year for the yearly average
-                * "season" groups by (year, season) for the seasonal average
-                * "month" groups by (year, month) for the monthly average
-                * "day" groups by (year, month, day) for the daily average
-                * "hour" groups by (year, month, day, hour) for the hourly
-                  average
-
-            "climatology" frequencies:
-
-            * "season", "month", "day"
-
-                * "season" groups by season for the seasonal cycle
-                * "month" groups by month for the annual cycle
-                * "day" groups by (month, day) for the daily cycle
+            * "season": groups by season for the seasonal cycle departures.
+            * "month": groups by month for the annual cycle departures.
+            * "day": groups by (month, day) for the daily cycle departures.
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
@@ -532,18 +514,17 @@ class TemporalAccessor:
 
         Examples
         --------
-        Import temporal averaging functionality:
+        Import TemporalAccessor class:
 
         >>> import xcdat
 
-        Get departures for an annual cycle climatology:
+        Get a data variable's annual cycle departures:
 
-        >>> ds_climo = ds.temporal.temporal_avg("ts", "climatology", "month")
-        >>> ds_depart = ds_climo.temporal.departures("ts")
+        >>> ds_depart = ds_climo.temporal.departures("ts", "month")
 
-        Get the departures operation attributes:
+        Get the ``departures()`` operation attributes:
 
-        >>> ds_depart.ts_departures.attrs
+        >>> ds_depart.ts.attrs
         {
             'operation': 'departures',
             'frequency': 'season',
@@ -595,6 +576,10 @@ class TemporalAccessor:
             ds_departs = self._dataset.copy()
             ds_departs[data_var] = dv_obs_grouped - dv_climo
             ds_departs[data_var] = self._add_operation_attrs(ds_departs[data_var])
+
+            # Drop the grouped time coordinates from the final output since
+            # it is no longer needed.
+            ds_departs = ds_departs.drop_vars(self._time_grouped.name)
 
         return ds_departs
 
