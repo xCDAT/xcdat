@@ -2600,7 +2600,7 @@ class TestMapSeasonstoMidMonths:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_maps_predefined_seasons_to_middle_month(self):
+    def test_maps_predefined_seasons_to_middle_months(self):
         ds = self.ds.copy()
 
         ds.temporal._season_config = {"custom_seasons": None}
@@ -2610,7 +2610,7 @@ class TestMapSeasonstoMidMonths:
 
         assert result.equals(expected)
 
-    def test_maps_custom_seasons_with_odd_months_to_middle_month(self):
+    def test_maps_custom_seasons_with_odd_months_to_middle_months(self):
         ds = self.ds.copy()
         ds.temporal._season_config = {
             "custom_seasons": {
