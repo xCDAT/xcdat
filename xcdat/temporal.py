@@ -116,20 +116,20 @@ class TemporalAccessor:
             "custom_seasons": None,
         },
     ):
-        """Calculates the averages for a data variable.
+        """Calculates the time series averages for a data variable.
 
         Parameters
         ----------
         data_var: str
             The key of the data variable for calculating averages.
         freq : Frequency
-            The frequency of time to group by.
+            The time frequency to group by.
 
-            * "year": groups by year for the yearly average.
-            * "season": groups by (year, season) for the seasonal average.
-            * "month": groups by (year, month) for the monthly average.
-            * "day": groups by (year, month, day) for the daily average.
-            * "hour": groups by (year, month, day, hour) for the hourly average.
+            * "year": groups by year for yearly averages.
+            * "season": groups by (year, season) for seasonal averages.
+            * "month": groups by (year, month) for monthly averages.
+            * "day": groups by (year, month, day) for daily averages.
+            * "hour": groups by (year, month, day, hour) for hourly averages.
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
@@ -231,9 +231,8 @@ class TemporalAccessor:
         >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
         >>> ]
         >>>
-        >>> ds_season_custom = ds.temporal.temporal_avg(
+        >>> ds_season_custom = ds.temporal.average(
         >>>     "ts",
-        >>>     "climatology",
         >>>     "season",
         >>>     season_config={"custom_seasons": custom_seasons}
         >>> )
@@ -275,7 +274,7 @@ class TemporalAccessor:
         data_var: str
             The key of the data variable for calculating climatology.
         freq : Frequency
-            The frequency of time to group by.
+            The time frequency to group by.
 
             * "season": groups by season for the seasonal cycle climatology.
             * "month": groups by month for the annual cycle climatology.
@@ -792,7 +791,7 @@ class TemporalAccessor:
     def _form_seasons(
         self, custom_seasons: Union[List[str], List[List[str]]]
     ) -> List[str]:
-        """Forms custom seasons.
+        """Forms custom seasons from a nested list of months.
 
         This method concatenates the strings in each sublist to form a
         a flat list of custom season strings
@@ -813,9 +812,9 @@ class TemporalAccessor:
         ValueError
             If exactly 12 months are not passed in the list of custom seasons.
         ValueError
-            If duplicate months are found in the list of custom seasons.
+            If a duplicate month(s) were found in the list of custom seasons.
         ValueError
-            If a month string(s) are not supported.
+            If a month string(s) is not supported.
         """
         predefined_months = list(MONTH_INT_TO_STR.values())
         input_months = list(chain.from_iterable(custom_seasons))
@@ -1027,21 +1026,17 @@ class TemporalAccessor:
         df_new = df.copy()
 
         if self._freq == "season":
-            # The string representing a predefined season is mapped to the
-            # integer representing its middle month. This month is used to
-            # represent the season because datetime objects don't support
-            # storing seasons as strings. For example, for "DJF", the middle
-            # month "J" is mapped to the integer value 1. The value 1 is then
-            # used to represent "DJF" in the datetime object.
+            # datetime objects don't store seasons as strings, so the middle
+            # month is used to represent the season. For example, the middle
+            # month "J" is mapped to the integer value 1 to represent the "DJF"
+            # season in the datetime object.
+            # TODO:
             df_new["season"] = df_new.season.map(SEASON_TO_MONTH)
             df_new = df_new.rename(columns={"season": "month"})
 
-        # Some xarray datetime components might not be used during the grouping
-        # of time coordinates based on the grouping frequency. Therefore, the
-        # unused component values aren't stored as columns in the DataFrame.
-        # These missing columns are filled with default values before creating
-        # datetime objects, which require at least the "year", "month", and
-        # "day".
+        # Some time frequencies don't require all of the datetime components
+        # for grouping, so default values are used for creating the `datetime`
+        # objects (which require at least a year, month, and day).
         dt_components_defaults = {"year": 1, "month": 1, "day": 1, "hour": 0}
         for component, default_val in dt_components_defaults.items():
             if component not in df_new.columns:
@@ -1050,13 +1045,12 @@ class TemporalAccessor:
         if self._mode == "time_series":
             dates = pd.to_datetime(df_new).to_numpy()
         elif self._mode in ["climatology", "departures"]:
-            # For the "climatology" and "departures" modes, the "year" value
-            # is not considered when grouping the time coordinates. However,
-            # the year value is required when creating datetime objects
-            # so the default year value of 1 is used (same behavior as
-            # `cdutil.SEASONALCYCLE` and `cdutil.ANNUALCYCLE`). Year 1 is out
-            # of the Timestamp-valid range for pandas, so time coordinates must
-            # be stored as cftime.datetime instead of datetime.datetime.
+            # The "year" values are not considered when grouping the time
+            # coordinates for "climatology" and "departures", but are required
+            # for creating datetime objects. The fallback value of 1 is
+            # used as a placeholder for the year. However, year 1 is outside the
+            # Timestamp-valid range so `cftime.datetime` objects are used
+            # instead of `datetime.datetime`.
             # https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
             # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
             dates = np.array(
