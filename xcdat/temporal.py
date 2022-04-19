@@ -1009,7 +1009,7 @@ class TemporalAccessor:
             if dec_mode == "DJF":
                 df_new = self._shift_decembers(df_new)
         else:
-            df_new = self._maps_months_to_custom_seasons(df_new)
+            df_new = self._map_months_to_custom_seasons(df_new)
 
         df_new = self._drop_obsolete_columns(df_new)
         df_new = self._map_seasons_to_mid_months(df_new)
@@ -1063,7 +1063,7 @@ class TemporalAccessor:
 
         return dates
 
-    def _maps_months_to_custom_seasons(self, df: pd.DataFrame) -> pd.DataFrame:
+    def _map_months_to_custom_seasons(self, df: pd.DataFrame) -> pd.DataFrame:
         """Maps months to custom seasons.
 
         This method maps each integer value in the "month" column to its string
