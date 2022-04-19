@@ -65,9 +65,7 @@ def str_to_bool(attr: str) -> bool:
     number, list, or tuple.
 
     XCDAT methods store boolean attributes as strings. This function will
-    convert these string attributes back to a boolean. For example, True gets
-    stored as "True" in the attributes of the xarray object. When using these
-    string attributes, they must be converted back to a bool.
+    convert such attributes back to booleans.
 
     Parameters
     ----------

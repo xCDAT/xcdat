@@ -176,7 +176,6 @@ class TestDepartures:
         assert result.identical(expected)
 
     def test_unweighted_seasonal_departures_with_DJF(self):
-        # Create a post-climatology dataset.
         ds = self.ds.copy()
         # Drop incomplete DJF seasons
         ds = ds.isel(time=slice(2, -1))
@@ -211,7 +210,6 @@ class TestDepartures:
         assert result.identical(expected)
 
     def test_unweighted_seasonal_departures_with_JFD(self):
-        # Create a post-climatology dataset.
         ds = self.ds.copy()
 
         # Compare result of the method against the expected.
@@ -327,7 +325,6 @@ class TestCenterTimes:
         time_bounds["time"] = expected.time
         expected["time_bnds"] = time_bounds
 
-        # Compare result of the method against the expected.
         result = ds.temporal.center_times(ds)
         assert result.identical(expected)
 
@@ -511,7 +508,6 @@ class TestTemporalAvg:
             expected = ds.copy()
             # Drop the incomplete DJF seasons
             expected = expected.isel(time=slice(2, -1))
-
             expected = expected.drop_dims("time")
             time_new = xr.DataArray(
                 data=np.array(
@@ -2633,7 +2629,7 @@ class TestMapSeasonstoMidMonths:
 
         assert result.equals(expected)
 
-    def test_maps_custom_seasons_with_even_months_to_middle_month(self):
+    def test_maps_custom_seasons_with_even_months_to_middle_months(self):
         ds = self.ds.copy()
         ds.temporal._season_config = {
             "custom_seasons": {
