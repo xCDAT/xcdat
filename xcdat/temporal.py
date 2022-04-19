@@ -282,7 +282,7 @@ class TemporalAccessor:
         Parameters
         ----------
         data_var: str
-            The key of the data variable for calculating climatology.
+            The key of the data variable to calculate climatology for.
         freq : Frequency
             The time frequency to group by.
 
