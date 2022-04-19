@@ -54,9 +54,9 @@ DateTimeComponent = Literal["hour", "day", "month", "season", "year"]
 
 # A dictionary mapping temporal averaging mode and frequency to the xarray
 # datetime components used for grouping. Xarray datetime components are
-# extracted from the time coordinates of a data variable for grouping. The
-# "season" frequency involves additional processing that requires the "year"
-# and/or" month" components. These components are removed before grouping.
+# extracted from the time coordinates of a data variable. The "season" 
+# frequency involves additional processing that requires the "year" and/or
+# "month" components. These components are removed before grouping.
 DATETIME_COMPONENTS = {
     "time_series": {
         "year": ("year",),
@@ -93,8 +93,9 @@ MONTH_INT_TO_STR: Dict[int, str] = {
     12: "Dec",
 }
 
-# A dictionary mapping the season to the middle month. This dictionary is used
-# during the creation of datetime objects, which don't support season values.
+# A dictionary mapping pre-defined seasons to their middle month. This 
+# dictionary is used during the creation of datetime objects, which don't 
+# support season values.
 SEASON_TO_MONTH: Dict[str, int] = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
 
 
