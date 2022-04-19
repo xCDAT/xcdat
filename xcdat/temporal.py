@@ -132,7 +132,7 @@ class TemporalAccessor:
         Parameters
         ----------
         data_var: str
-            The key of the data variable for calculating averages.
+            The key of the data variable for calculating time series averages.
         freq : Frequency
             The time frequency to group by.
 
@@ -538,7 +538,6 @@ class TemporalAccessor:
         {
             'operation': 'departures',
             'frequency': 'season',
-            'groupby': 'season',
             'weighted': 'True',
             'center_times': 'False',
             'dec_mode': 'DJF',
