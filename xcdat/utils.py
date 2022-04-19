@@ -4,22 +4,6 @@ from typing import Dict, List
 import xarray as xr
 
 
-def is_documented_by(original):
-    """A decorator for reusing API docstrings.
-
-    Parameters
-    ----------
-    original
-        The original function or method source for the API docstring.
-    """
-
-    def wrapper(target):
-        target.__doc__ = original.__doc__
-        return target
-
-    return wrapper
-
-
 def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> Dict[str, List[str]]:
     """Compares the keys and values of two datasets.
 
