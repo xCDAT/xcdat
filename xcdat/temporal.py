@@ -1,6 +1,6 @@
 """Module containing temporal functions."""
 from itertools import chain
-from typing import Dict, List, Literal, Optional, TypedDict, Union, get_args
+from typing import Dict, List, Literal, Optional, TypedDict, get_args
 
 import cf_xarray  # noqa: F401
 import cftime
@@ -26,12 +26,22 @@ Frequency = Literal["hour", "day", "month", "season", "year"]
 FREQUENCIES = get_args(Frequency)
 
 # Configuration specific to the "season" frequency.
-SeasonConfig = TypedDict(
-    "SeasonConfig",
+SeasonConfigInput = TypedDict(
+    "SeasonConfigInput",
     {
         "dec_mode": Literal["DJF", "JFD"],
         "drop_incomplete_djf": bool,
-        "custom_seasons": Optional[List[str]],
+        "custom_seasons": Optional[List[List[str]]],
+    },
+    total=False,
+)
+
+SeasonConfigAttr = TypedDict(
+    "SeasonConfigAttr",
+    {
+        "dec_mode": Literal["DJF", "JFD"],
+        "drop_incomplete_djf": bool,
+        "custom_seasons": Optional[Dict[str, List[str]]],
     },
     total=False,
 )
@@ -110,7 +120,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfig = {
+        season_config: SeasonConfigInput = {
             "dec_mode": "DJF",
             "drop_incomplete_djf": False,
             "custom_seasons": None,
@@ -143,7 +153,7 @@ class TemporalAccessor:
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time coordinates,
             by default False.
-        season_config: SeasonConfig, optional
+        season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
@@ -261,7 +271,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfig = {
+        season_config: SeasonConfigInput = {
             "dec_mode": "DJF",
             "drop_incomplete_djf": False,
             "custom_seasons": None,
@@ -292,7 +302,7 @@ class TemporalAccessor:
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time coordinates,
             by default False.
-        season_config: SeasonConfig, optional
+        season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
@@ -410,7 +420,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfig = {
+        season_config: SeasonConfigInput = {
             "dec_mode": "DJF",
             "drop_incomplete_djf": False,
             "custom_seasons": None,
@@ -460,7 +470,7 @@ class TemporalAccessor:
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time coordinates,
             by default False.
-        season_config: SeasonConfig, optional
+        season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
@@ -586,9 +596,9 @@ class TemporalAccessor:
         """Centers the time coordinates using the midpoint between time bounds.
 
         Time coordinates can be recorded using different intervals, including
-        the beginning, middle, or end of the interval. By centering time
-        coordinates, it ensures any calculation using these values are performed
-        reliably, regardless of the recorded interval.
+        the beginning, middle, or end of the interval. Centering time
+        coordinates, ensures calculations using these values are performed
+        reliably regardless of the recorded interval.
 
         Parameters
         ----------
@@ -633,7 +643,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfig = {
+        season_config: SeasonConfigInput = {
             "dec_mode": "DJF",
             "drop_incomplete_djf": False,
             "custom_seasons": None,
@@ -674,7 +684,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool,
         center_times: bool,
-        season_config: SeasonConfig,
+        season_config: SeasonConfigInput,
     ):
         """Validates method arguments and sets them as object attributes.
 
@@ -690,7 +700,7 @@ class TemporalAccessor:
             If True, center time coordinates using the midpoint between of its
             upper and lower bounds. Otherwise, use the provided time
             coordinates, by default False.
-        season_config: SeasonConfig
+        season_config: SeasonConfigInput
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
@@ -734,7 +744,7 @@ class TemporalAccessor:
         dec_mode = season_config.get("dec_mode", "DJF")
         drop_incomplete_djf = season_config.get("drop_incomplete_djf", False)
 
-        self._season_config: SeasonConfig = {}
+        self._season_config: SeasonConfigAttr = {}
         if custom_seasons is None:
             if dec_mode not in ("DJF", "JFD"):
                 raise ValueError(
@@ -786,11 +796,10 @@ class TemporalAccessor:
                 continue
 
         ds_final = xr.merge((ds_time, ds_no_time))  # type: ignore
+
         return ds_final
 
-    def _form_seasons(
-        self, custom_seasons: Union[List[str], List[List[str]]]
-    ) -> List[str]:
+    def _form_seasons(self, custom_seasons: List[List[str]]) -> Dict[str, List[str]]:
         """Forms custom seasons from a nested list of months.
 
         This method concatenates the strings in each sublist to form a
@@ -804,8 +813,9 @@ class TemporalAccessor:
 
         Returns
         -------
-        List[str]
-           List of strings representing seasons.
+        Dict[str, List[str]]
+           A dictionary with the keys being the custom season and the
+           values being the corresponding list of months.
 
         Raises
         ------
@@ -835,7 +845,8 @@ class TemporalAccessor:
                     f"Supported months include: {predefined_months}."
                 )
 
-        c_seasons = ["".join(season) for season in custom_seasons]
+        c_seasons = {"".join(months): months for months in custom_seasons}
+
         return c_seasons
 
     def _averager(self, data_var: xr.DataArray) -> xr.DataArray:
@@ -956,7 +967,7 @@ class TemporalAccessor:
         if self._freq == "season":
             df = self._process_season_dataframe(df)
 
-        datetime_objs = self._convert_df_to_dt_objects(df)
+        datetime_objs = self._convert_df_to_dt(df)
 
         time_grouped = xr.DataArray(
             name="_".join(df.columns),
@@ -998,17 +1009,14 @@ class TemporalAccessor:
             if dec_mode == "DJF":
                 df_new = self._shift_decembers(df_new)
         else:
-            df_new = self._map_custom_seasons(df_new)
+            df_new = self._maps_months_to_custom_seasons(df_new)
 
         df_new = self._drop_obsolete_columns(df_new)
+        df_new = self._map_seasons_to_mid_months(df_new)
         return df_new
 
-    def _convert_df_to_dt_objects(self, df: pd.DataFrame) -> np.ndarray:
-        """
-        Converts a DataFrame of xarray datetime components into a numpy ndarray
-        of cftime.datetime or datetime.datetime objects.
-
-        # TODO: Handle custom seasons
+    def _convert_df_to_dt(self, df: pd.DataFrame) -> np.ndarray:
+        """Converts a DataFrame of datetime components to datetime objects.
 
         Parameters
         ----------
@@ -1024,15 +1032,6 @@ class TemporalAccessor:
         --------
         """
         df_new = df.copy()
-
-        if self._freq == "season":
-            # datetime objects don't store seasons as strings, so the middle
-            # month is used to represent the season. For example, the middle
-            # month "J" is mapped to the integer value 1 to represent the "DJF"
-            # season in the datetime object.
-            # TODO:
-            df_new["season"] = df_new.season.map(SEASON_TO_MONTH)
-            df_new = df_new.rename(columns={"season": "month"})
 
         # Some time frequencies don't require all of the datetime components
         # for grouping, so default values are used for creating the `datetime`
@@ -1064,15 +1063,13 @@ class TemporalAccessor:
 
         return dates
 
-    def _map_custom_seasons(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Maps months to custom seasons in the DataFrame of xarray datetime
-        components.
+    def _maps_months_to_custom_seasons(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Maps months to custom seasons.
 
         This method maps each integer value in the "month" column to its string
-        represention, which then maps to its respective custom season in the
-        "season" column. For example, 1 maps to "Jan", and "Jan" maps to the
-        custom "JanFebMar" season.
+        represention, which then maps to a custom season that is stored in the
+        "season" column. For example, 1 maps to "Jan" and "Jan" maps to the
+        "JanFebMar" custom season.
 
         Parameters
         ----------
@@ -1098,6 +1095,7 @@ class TemporalAccessor:
 
         df_new = df.copy()
         df_new["season"] = df_new["month"].map(seasons_map)
+
         return df_new
 
     def _shift_decembers(self, df_season: pd.DataFrame) -> pd.DataFrame:
@@ -1134,7 +1132,53 @@ class TemporalAccessor:
         >>>  (2001, "DJF", 1), (2001, "DJF", 2), (2001, "DJF", 12)]
         """
         df_season.loc[df_season["month"] == 12, "year"] = df_season["year"] + 1
+
         return df_season
+
+    def _map_seasons_to_mid_months(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Maps the season column values to the integer of its middle month.
+
+        DateTime objects don't support storing seasons as strings, so the middle
+        month is used to represent the season. For example, for the pre-defined
+        season "DJF", the middle month "J" is mapped to the integer value 1.
+
+        The middle month of a custom season is extracted using the ceiling of
+        the middle index from its list of months. For example, for the custom
+        season "FebMarAprMay" with the list of months ["Feb", "Mar", "Apr",
+        "May"], the index 3 is used to get the month "Apr". "Apr" is then mapped
+        to the integer value 4.
+
+        After mapping, the "season" column is renamed to "month".
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The dataframe of datetime components, including a "season" column.
+
+        Returns
+        -------
+        pd.DataFrame
+            The dataframe of datetime components, including a "month" column.
+        """
+        df_new = df.copy()
+        custom_seasons = self._season_config.get("custom_seasons")
+
+        if custom_seasons is None:
+            season_to_month = SEASON_TO_MONTH
+        else:
+            season_to_month = {}
+
+            for season, months in custom_seasons.items():
+                middle_str = months[len(months) // 2]
+                middle_int = [
+                    k for k, v in MONTH_INT_TO_STR.items() if v == middle_str
+                ][0]
+                season_to_month[season] = middle_int
+
+        df_new = df_new.rename(columns={"season": "month"})
+        df_new["month"] = df_new.month.map(season_to_month)
+
+        return df_new
 
     def _drop_obsolete_columns(self, df_season: pd.DataFrame) -> pd.DataFrame:
         """
@@ -1265,6 +1309,7 @@ class TemporalAccessor:
         dv = data_var.copy()
         dv.coords[self._time_grouped.name] = self._time_grouped
         dv_gb = dv.groupby(self._time_grouped.name)
+
         return dv_gb
 
     def _add_operation_attrs(self, data_var: xr.DataArray) -> xr.DataArray:
@@ -1289,7 +1334,6 @@ class TemporalAccessor:
                 "operation": "temporal_avg",
                 "mode": self._mode,
                 "freq": self._freq,
-                "groupby": self._time_grouped.name,
                 "weighted": str(self._weighted),
                 "center_times": str(self._center_times),
             }
@@ -1297,14 +1341,15 @@ class TemporalAccessor:
 
         if self._freq == "season":
             custom_seasons = self._season_config.get("custom_seasons")
-            dec_mode = self._season_config.get("dec_mode")
-            drop_incomplete_djf = self._season_config.get("drop_incomplete_djf")
 
             if custom_seasons is None:
+                dec_mode = self._season_config.get("dec_mode")
+                drop_incomplete_djf = self._season_config.get("drop_incomplete_djf")
+
                 data_var.attrs["dec_mode"] = dec_mode
                 if dec_mode == "DJF":
                     data_var.attrs["drop_incomplete_djf"] = str(drop_incomplete_djf)
             else:
-                data_var.attrs["custom_seasons"] = custom_seasons
+                data_var.attrs["custom_seasons"] = list(custom_seasons.keys())
 
         return data_var

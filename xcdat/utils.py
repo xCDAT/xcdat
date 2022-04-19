@@ -61,11 +61,13 @@ def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> Dict[str, List[str]]:
 def str_to_bool(attr: str) -> bool:
     """Converts bool string to bool.
 
-    netCDF4 files cannot store bools in Dataset/DataArray attributes. XCDAT
-    works around this by storing boolean operation metadata as strings.
-    For example, True gets stored as "True" in the attributes of the xarray
-    object. When using these string attributes, they must be converted back to a
-    bool.
+    netCDF files can only store attributes with a type of str, Number, ndarray,
+    number, list, or tuple.
+
+    XCDAT methods store boolean attributes as strings. This function will
+    convert these string attributes back to a boolean. For example, True gets
+    stored as "True" in the attributes of the xarray object. When using these
+    string attributes, they must be converted back to a bool.
 
     Parameters
     ----------

@@ -65,7 +65,6 @@ class TestAverage:
                 "operation": "temporal_avg",
                 "mode": "time_series",
                 "freq": "year",
-                "groupby": "year",
                 "weighted": "True",
                 "center_times": "False",
             },
@@ -123,7 +122,6 @@ class TestClimatology:
                 "operation": "temporal_avg",
                 "mode": "climatology",
                 "freq": "season",
-                "groupby": "season",
                 "weighted": "True",
                 "center_times": "False",
                 "dec_mode": "DJF",
@@ -170,7 +168,6 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "True",
                 "center_times": "False",
-                "groupby": "season",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -206,7 +203,6 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "False",
                 "center_times": "False",
-                "groupby": "season",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -240,7 +236,6 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "False",
                 "center_times": "False",
-                "groupby": "season",
                 "dec_mode": "JFD",
             },
         )
@@ -389,7 +384,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "year",
-                    "groupby": "year",
                     "weighted": "True",
                     "center_times": "False",
                 },
@@ -442,7 +436,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "year",
-                    "groupby": "year",
                     "weighted": "True",
                     "center_times": "False",
                 },
@@ -496,7 +489,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "year",
-                    "groupby": "year",
                     "weighted": "True",
                     "center_times": "True",
                 },
@@ -563,7 +555,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "season",
-                    "groupby": "year_season",
                     "weighted": "True",
                     "center_times": "False",
                     "dec_mode": "DJF",
@@ -632,7 +623,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "season",
-                    "groupby": "year_season",
                     "weighted": "True",
                     "center_times": "False",
                     "dec_mode": "DJF",
@@ -699,7 +689,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "season",
-                    "groupby": "year_season",
                     "weighted": "True",
                     "center_times": "False",
                     "dec_mode": "JFD",
@@ -708,7 +697,6 @@ class TestTemporalAvg:
 
             assert result.identical(expected)
 
-        @pytest.mark.xfail
         def test_weighted_custom_season_avg(self):
             ds = self.ds.copy()
 
@@ -725,30 +713,48 @@ class TestTemporalAvg:
                 season_config={"custom_seasons": custom_seasons},
             )
             expected = ds.copy()
-            expected["ts_original"] = ds.ts.copy()
+            expected = expected.drop_dims("time")
+            expected_time = xr.DataArray(
+                data=np.array(
+                    [
+                        "2000-02-01T00:00:00.000000000",
+                        "2000-05-01T00:00:00.000000000",
+                        "2000-08-01T00:00:00.000000000",
+                        "2000-11-01T00:00:00.000000000",
+                        "2001-02-01T00:00:00.000000000",
+                        "2001-11-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+                coords={
+                    "time": np.array(
+                        [
+                            "2000-02-01T00:00:00.000000000",
+                            "2000-05-01T00:00:00.000000000",
+                            "2000-08-01T00:00:00.000000000",
+                            "2000-11-01T00:00:00.000000000",
+                            "2001-02-01T00:00:00.000000000",
+                            "2001-11-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                },
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
+            )
             expected["ts"] = xr.DataArray(
                 name="ts",
                 data=np.ones((6, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "year_season": pd.MultiIndex.from_tuples(
-                        [
-                            (2000, "JanFebMar"),
-                            (2000, "AprMayJun"),
-                            (2000, "JulAugSep"),
-                            (2000, "OctNovDec"),
-                            (2001, "JanFebMar"),
-                            (2001, "OctNovDec"),
-                        ],
-                    ),
-                },
-                dims=["year_season", "lat", "lon"],
+                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+                dims=["time", "lat", "lon"],
                 attrs={
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "season",
-                    "groupby": "year_season",
                     "custom_seasons": [
                         "JanFebMar",
                         "AprMayJun",
@@ -832,7 +838,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "month",
-                    "groupby": "year_month",
                     "weighted": "True",
                     "center_times": "False",
                 },
@@ -910,7 +915,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "day",
-                    "groupby": "year_month_day",
                     "weighted": "True",
                     "center_times": "False",
                 },
@@ -956,7 +960,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "hour",
-                    "groupby": "year_month_day_hour",
                     "weighted": "True",
                     "center_times": "False",
                 },
@@ -1028,7 +1031,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "time_series",
                     "freq": "hour",
-                    "groupby": "year_month_day_hour",
                     "weighted": "True",
                     "center_times": "False",
                 },
@@ -1119,7 +1121,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "climatology",
                     "freq": "season",
-                    "groupby": "season",
                     "weighted": "True",
                     "center_times": "False",
                     "dec_mode": "DJF",
@@ -1176,7 +1177,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "climatology",
                     "freq": "season",
-                    "groupby": "season",
                     "weighted": "True",
                     "center_times": "False",
                     "dec_mode": "DJF",
@@ -1232,7 +1232,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "climatology",
                     "freq": "season",
-                    "groupby": "season",
                     "weighted": "True",
                     "center_times": "False",
                     "dec_mode": "JFD",
@@ -1241,7 +1240,6 @@ class TestTemporalAvg:
 
             assert result.identical(expected)
 
-        @pytest.mark.xfail
         def test_weighted_custom_seasonal_climatology(self):
             # FIXME: Fix this test
             ds = self.ds.copy()
@@ -1259,28 +1257,43 @@ class TestTemporalAvg:
                 season_config={"custom_seasons": custom_seasons},
             )
             expected = ds.copy()
-            expected["ts_original"] = ds.ts.copy()
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((4, 4, 4)),
+            expected = expected.drop_dims("time")
+            expected_time = xr.DataArray(
+                data=np.array(
+                    [
+                        cftime.datetime(1, 2, 1),
+                        cftime.datetime(1, 5, 1),
+                        cftime.datetime(1, 8, 1),
+                        cftime.datetime(1, 11, 1),
+                    ],
+                ),
                 coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "season": pd.MultiIndex.from_tuples(
+                    "time": np.array(
                         [
-                            ("JanFebMar",),
-                            ("AprMayJun",),
-                            ("JulAugSep",),
-                            ("OctNovDec",),
+                            cftime.datetime(1, 2, 1),
+                            cftime.datetime(1, 5, 1),
+                            cftime.datetime(1, 8, 1),
+                            cftime.datetime(1, 11, 1),
                         ],
                     ),
                 },
-                dims=["season", "lat", "lon"],
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
+            )
+
+            expected["ts"] = xr.DataArray(
+                name="ts",
+                data=np.ones((4, 4, 4)),
+                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+                dims=["time", "lat", "lon"],
                 attrs={
                     "operation": "temporal_avg",
                     "mode": "climatology",
                     "freq": "season",
-                    "groupby": "season",
                     "weighted": "True",
                     "center_times": "False",
                     "custom_seasons": [
@@ -1351,7 +1364,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "climatology",
                     "freq": "month",
-                    "groupby": "month",
                     "weighted": "True",
                     "center_times": "False",
                 },
@@ -1417,7 +1429,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "climatology",
                     "freq": "month",
-                    "groupby": "month",
                     "weighted": "False",
                     "center_times": "False",
                 },
@@ -1483,7 +1494,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "climatology",
                     "freq": "day",
-                    "groupby": "month_day",
                     "weighted": "True",
                     "center_times": "False",
                 },
@@ -1549,7 +1559,6 @@ class TestTemporalAvg:
                     "operation": "temporal_avg",
                     "mode": "climatology",
                     "freq": "day",
-                    "groupby": "month_day",
                     "weighted": "False",
                     "center_times": "False",
                 },
@@ -1701,9 +1710,7 @@ class TestSetObjAttrs:
         assert ds.temporal._freq == "season"
         assert ds.temporal._center_times
         assert ds.temporal._weighted
-        assert ds.temporal._season_config == {
-            "dec_mode": "JFD",
-        }
+        assert ds.temporal._season_config == {"dec_mode": "JFD"}
 
         ds.temporal._set_obj_attrs(
             "climatology",
@@ -1720,12 +1727,12 @@ class TestSetObjAttrs:
             },
         )
         assert ds.temporal._season_config == {
-            "custom_seasons": [
-                "JanFebMar",
-                "AprMayJun",
-                "JulAugSep",
-                "OctNovDec",
-            ],
+            "custom_seasons": {
+                "JanFebMar": ["Jan", "Feb", "Mar"],
+                "AprMayJun": ["Apr", "May", "Jun"],
+                "JulAugSep": ["Jul", "Aug", "Sep"],
+                "OctNovDec": ["Oct", "Nov", "Dec"],
+            }
         }
 
 
@@ -1748,9 +1755,7 @@ class TestCustomSeasons:
             "Dec",
         ]
 
-    def test_raises_error_if_month_str_not_supported(
-        self,
-    ):
+    def test_raises_error_if_month_str_not_supported(self):
         # Incorrect str "J".
         with pytest.raises(ValueError):
             self.ds.temporal._form_seasons(
@@ -1806,7 +1811,12 @@ class TestCustomSeasons:
                 ["Oct", "Nov", "Dec"],
             ]
         )
-        expected = ["JanFebMar", "AprMayJun", "JulAugSep", "OctNovDec"]
+        expected = {
+            "JanFebMar": ["Jan", "Feb", "Mar"],
+            "AprMayJun": ["Apr", "May", "Jun"],
+            "JulAugSep": ["Jul", "Aug", "Sep"],
+            "OctNovDec": ["Oct", "Nov", "Dec"],
+        }
         assert result == expected
 
         result = self.ds.temporal._form_seasons(
@@ -1815,7 +1825,10 @@ class TestCustomSeasons:
                 ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
             ]
         )
-        expected = ["JanFebMarAprMayJun", "JulAugSepOctNovDec"]
+        expected = {
+            "JanFebMarAprMayJun": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
+            "JulAugSepOctNovDec": ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+        }
         assert result == expected
 
         result = self.ds.temporal._form_seasons(
@@ -1825,7 +1838,11 @@ class TestCustomSeasons:
                 ["Aug", "Sep", "Oct", "Nov", "Dec"],
             ]
         )
-        expected = ["JanFebMar", "AprMayJunJul", "AugSepOctNovDec"]
+        expected = {
+            "JanFebMar": ["Jan", "Feb", "Mar"],
+            "AprMayJunJul": ["Apr", "May", "Jun", "Jul"],
+            "AugSepOctNovDec": ["Aug", "Sep", "Oct", "Nov", "Dec"],
+        }
         assert result == expected
 
 
@@ -2146,7 +2163,7 @@ class TestGroupTimeCoords:
         # Compare result of the method against the expected.
         result = ds.temporal._group_time_coords(ds.ts)
         expected = xr.DataArray(
-            name="year_season",
+            name="year_month",
             data=np.array(
                 [
                     "2000-01-01T00:00:00.000000000",
@@ -2190,7 +2207,7 @@ class TestGroupTimeCoords:
         # Compare result of the method against the expected.
         result = ds.temporal._group_time_coords(ds.ts)
         expected = xr.DataArray(
-            name="season",
+            name="month",
             data=np.array(
                 [
                     cftime.datetime(1, 1, 1),
@@ -2255,12 +2272,12 @@ class TestProcessSeasonDataFrame:
         # Set object attrs required to test the method.
         ds.temporal._mode = "time_series"
         ds.temporal._season_config = {
-            "custom_seasons": [
-                "JanFebMar",
-                "AprMayJun",
-                "JulAugSep",
-                "OctNovDec",
-            ]
+            "custom_seasons": {
+                "JanFebMar": ["Jan", "Feb", "Mar"],
+                "AprMayJun": ["Apr", "May", "Jun"],
+                "JulAugSep": ["Jul", "Aug", "Sep"],
+                "OctNovDec": ["Oct", "Nov", "Dec"],
+            }
         }
 
         # Compare result of the method against the expected.
@@ -2268,23 +2285,25 @@ class TestProcessSeasonDataFrame:
         expected = pd.DataFrame(
             data=np.array(
                 [
-                    (2000, "JanFebMar"),
-                    (2000, "JanFebMar"),
-                    (2000, "JanFebMar"),
-                    (2000, "AprMayJun"),
-                    (2000, "AprMayJun"),
-                    (2000, "AprMayJun"),
-                    (2000, "JulAugSep"),
-                    (2000, "JulAugSep"),
-                    (2000, "JulAugSep"),
-                    (2000, "OctNovDec"),
-                    (2000, "OctNovDec"),
-                    (2000, "OctNovDec"),
+                    (2000, 2),
+                    (2000, 2),
+                    (2000, 2),
+                    (2000, 5),
+                    (2000, 5),
+                    (2000, 5),
+                    (2000, 8),
+                    (2000, 8),
+                    (2000, 8),
+                    (2000, 11),
+                    (2000, 11),
+                    (2000, 11),
                 ],
                 dtype=object,
             ),
-            columns=["year", "season"],
+            columns=["year", "month"],
         )
+        expected["month"] = expected.month.astype("int64")
+
         assert result.equals(expected)
 
     def test_shifts_decembers_for_DJF_if_DJF_is_specified(self):
@@ -2302,34 +2321,73 @@ class TestProcessSeasonDataFrame:
         result = ds.temporal._process_season_dataframe(df)
         expected = pd.DataFrame(
             data=np.array(
-                [
-                    ("DJF"),
-                    ("DJF"),
-                    ("MAM"),
-                    ("MAM"),
-                    ("MAM"),
-                    ("JJA"),
-                    ("JJA"),
-                    ("JJA"),
-                    ("SON"),
-                    ("SON"),
-                    ("SON"),
-                    ("DJF"),
-                ],
-                dtype=object,
+                [1, 1, 4, 4, 4, 7, 7, 7, 10, 10, 10, 1],
+                dtype="int64",
             ),
-            columns=["season"],
+            columns=["month"],
         )
         assert result.equals(expected)
 
 
-class TestConvertDFtoDTObjects:
-    @pytest.mark.xfail
-    def test_placeholder(self):
-        assert 0
+class TestConvertDFtoDT:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_converts_dataframe_to_datetime_for_seasonal_time_series(self):
+        ds = self.ds.copy()
+        df = pd.DataFrame(
+            data=[(2000, 1), (2000, 4), (2000, 7)],
+            columns=["year", "month"],
+        )
+
+        ds.temporal._mode = "time_series"
+        result = ds.temporal._convert_df_to_dt(df)
+        expected = np.array(
+            [
+                "2000-01-01T00:00:00.000000000",
+                "2000-04-01T00:00:00.000000000",
+                "2000-07-01T00:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+
+        assert np.array_equal(result, expected)
+
+    def test_converts_dataframe_to_datetime_for_seasonal_climatology(self):
+        ds = self.ds.copy()
+        df = pd.DataFrame(data=[1, 4, 7], columns=["month"])
+
+        ds.temporal._mode = "climatology"
+        result = ds.temporal._convert_df_to_dt(df)
+        expected = np.array(
+            [
+                cftime.datetime(1, 1, 1, 0),
+                cftime.datetime(1, 4, 1, 0),
+                cftime.datetime(1, 7, 1, 0),
+            ]
+        )
+
+        assert np.array_equal(result, expected)
+
+    def test_converts_dataframe_to_datetime_for_seasonal_departures(self):
+        ds = self.ds.copy()
+        df = pd.DataFrame(data=[1, 4, 7], columns=["month"])
+
+        ds.temporal._mode = "departures"
+        result = ds.temporal._convert_df_to_dt(df)
+        expected = np.array(
+            [
+                cftime.datetime(1, 1, 1, 0),
+                cftime.datetime(1, 4, 1, 0),
+                cftime.datetime(1, 7, 1, 0),
+            ]
+        )
+
+        assert np.array_equal(result, expected)
 
 
-class TestMapCustomSeasons:
+class TestMapMonthsToCustomSeasons:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2359,7 +2417,7 @@ class TestMapCustomSeasons:
         )
 
         with pytest.raises(ValueError):
-            ds.temporal._map_custom_seasons(df)
+            ds.temporal._map_months_to_custom_seasons(df)
 
     def test_maps_three_month_custom_seasons(self):
         ds = self.ds.copy()
@@ -2398,7 +2456,7 @@ class TestMapCustomSeasons:
         )
 
         # Compare result of the method against the expected.
-        result = ds.temporal._map_custom_seasons(df)
+        result = ds.temporal._map_months_to_custom_seasons(df)
         expected = pd.DataFrame(
             data=np.array(
                 [
@@ -2456,7 +2514,7 @@ class TestMapCustomSeasons:
         )
 
         # Compare result of the method against the expected.
-        result = ds.temporal._map_custom_seasons(df)
+        result = ds.temporal._map_months_to_custom_seasons(df)
         expected = pd.DataFrame(
             data=np.array(
                 [
@@ -2517,7 +2575,7 @@ class TestMapCustomSeasons:
         )
 
         # Compare result of the method against the expected.
-        result = ds.temporal._map_custom_seasons(df)
+        result = ds.temporal._map_months_to_custom_seasons(df)
         expected = pd.DataFrame(
             data=np.array(
                 [
@@ -2538,6 +2596,57 @@ class TestMapCustomSeasons:
             ),
             columns=["year", "season", "month"],
         )
+        assert result.equals(expected)
+
+
+class TestMapSeasonstoMidMonths:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_maps_predefined_seasons_to_middle_month(self):
+        ds = self.ds.copy()
+
+        ds.temporal._season_config = {"custom_seasons": None}
+        df = pd.DataFrame({"season": ["DJF", "MAM", "JJA", "SON"]})
+        result = ds.temporal._map_seasons_to_mid_months(df)
+        expected = pd.DataFrame({"month": [1, 4, 7, 10]})
+
+        assert result.equals(expected)
+
+    def test_maps_custom_seasons_with_odd_months_to_middle_month(self):
+        ds = self.ds.copy()
+        ds.temporal._season_config = {
+            "custom_seasons": {
+                "FebMarApr": ["Feb", "Mar", "Apr"],
+                "MayJunJul": ["May", "Jun", "Jul"],
+                "AugSepOct": ["Aug", "Sep", "Oct"],
+                "NovDecJan": ["Nov", "Dec", "Jan"],
+            }
+        }
+
+        df = pd.DataFrame(
+            {"season": ["FebMarApr", "MayJunJul", "AugSepOct", "NovDecJan"]}
+        )
+        result = ds.temporal._map_seasons_to_mid_months(df)
+        expected = pd.DataFrame({"month": [3, 6, 9, 12]})
+
+        assert result.equals(expected)
+
+    def test_maps_custom_seasons_with_even_months_to_middle_month(self):
+        ds = self.ds.copy()
+        ds.temporal._season_config = {
+            "custom_seasons": {
+                "FebMarAprMay": ["Feb", "Mar", "Apr", "May"],
+                "JunJulAugSep": ["Jun", "Jul", "Aug", "Sep"],
+                "OctNovDecJan": ["Oct", "Nov", "Dec", "Jan"],
+            }
+        }
+
+        df = pd.DataFrame({"season": ["FebMarAprMay", "JunJulAugSep", "OctNovDecJan"]})
+        result = ds.temporal._map_seasons_to_mid_months(df)
+        expected = pd.DataFrame({"month": [4, 8, 12]})
+
         assert result.equals(expected)
 
 
@@ -3251,7 +3360,7 @@ class TestCalculateWeights:
             )
             assert np.allclose(result, expected, equal_nan=True)
 
-        def test_weighs_for_seasonal_averages_with_JFD(self):
+        def test_weights_for_seasonal_averages_with_JFD(self):
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
@@ -3316,7 +3425,6 @@ class TestCalculateWeights:
             )
             assert np.allclose(result, expected)
 
-        @pytest.mark.xfail
         def test_custom_season_time_series_weights(self):
             ds = self.ds.copy()
 
@@ -3326,35 +3434,45 @@ class TestCalculateWeights:
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal._season_config = {
-                "custom_seasons": [
-                    "JanFebMar",
-                    "AprMayJun",
-                    "JulAugSep",
-                    "OctNovDec",
-                ]
+                "custom_seasons": {
+                    "JanFebMar": ["Jan", "Feb", "Mar"],
+                    "AprMayJun": ["Apr", "May", "Jun"],
+                    "JulAugSep": ["Jul", "Aug", "Sep"],
+                    "OctNovDec": ["Oct", "Nov", "Dec"],
+                }
             }
 
-            ds.temporal._multiindex = pd.MultiIndex.from_tuples(
-                [
-                    (2000, "JanFebMar"),
-                    (2000, "JanFebMar"),
-                    (2000, "JanFebMar"),
-                    (2000, "AprMayJun"),
-                    (2000, "AprMayJun"),
-                    (2000, "AprMayJun"),
-                    (2000, "JulAugSep"),
-                    (2000, "JulAugSep"),
-                    (2000, "JulAugSep"),
-                    (2000, "OctNovDec"),
-                    (2000, "OctNovDec"),
-                    (2000, "OctNovDec"),
-                    (2001, "JanFebMar"),
-                    (2001, "JanFebMar"),
-                    (2002, "JanFebMar"),
-                ],
-                names=[(0, "year"), (1, "season")],
+            ds.temporal._time_grouped = xr.DataArray(
+                name="year_season",
+                data=np.array(
+                    [
+                        "2000-02-01T00:00:00.000000000",
+                        "2000-02-01T00:00:00.000000000",
+                        "2000-02-01T00:00:00.000000000",
+                        "2000-05-01T00:00:00.000000000",
+                        "2000-05-01T00:00:00.000000000",
+                        "2000-05-01T00:00:00.000000000",
+                        "2000-08-01T00:00:00.000000000",
+                        "2000-08-01T00:00:00.000000000",
+                        "2000-08-01T00:00:00.000000000",
+                        "2000-11-01T00:00:00.000000000",
+                        "2000-11-01T00:00:00.000000000",
+                        "2000-11-01T00:00:00.000000000",
+                        "2001-02-01T00:00:00.000000000",
+                        "2001-02-01T00:00:00.000000000",
+                        "2002-02-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+                coords={"time": ds.time},
+                dims=["time"],
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
             )
-            ds.temporal._multiindex_name = "year_season"
 
             # Compare result of the method against the expected.
             result = ds.temporal._get_weights(self.ds["ts"])
@@ -3627,7 +3745,6 @@ class TestAddOperationAttributes:
                 "operation": "temporal_avg",
                 "mode": ds.temporal._mode,
                 "freq": ds.temporal._freq,
-                "groupby": "year_season",
                 "weighted": "True",
                 "center_times": "True",
                 "dec_mode": "DJF",
@@ -3646,12 +3763,12 @@ class TestAddOperationAttributes:
         ds.temporal._weighted = True
         ds.temporal._center_times = True
         ds.temporal._season_config = {
-            "custom_seasons": [
-                "JanFebMar",
-                "AprMayJun",
-                "JulAugSep",
-                "OctNovDec",
-            ]
+            "custom_seasons": {
+                "JanFebMar": ["Jan", "Feb", "Mar"],
+                "AprMayJun": ["Apr", "May", "Jun"],
+                "JulAugSep": ["Jul", "Aug", "Sep"],
+                "OctNovDec": ["Oct", "Nov", "Dec"],
+            }
         }
         ds.temporal._time_grouped = xr.DataArray(
             name="year_season",
@@ -3692,7 +3809,6 @@ class TestAddOperationAttributes:
                 "operation": "temporal_avg",
                 "mode": ds.temporal._mode,
                 "freq": ds.temporal._freq,
-                "groupby": "year_season",
                 "weighted": "True",
                 "center_times": "True",
                 "custom_seasons": ["JanFebMar", "AprMayJun", "JulAugSep", "OctNovDec"],
