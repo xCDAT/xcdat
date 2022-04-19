@@ -15,6 +15,7 @@ with open("HISTORY.rst") as history_file:
 # https://packaging.python.org/discussions/install-requires-vs-requirements/#install-requires
 install_requires: List[str] = [
     "cf_xarray",
+    "cftime",
     "dask",
     "netcdf4",
     "numpy",
