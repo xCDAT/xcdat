@@ -80,7 +80,7 @@ class BoundsAccessor:
         Returns
         -------
         List[str]
-            A list of sorted bounds data variable names.
+            A list of sorted bounds data variable keys.
         """
         return sorted(
             list(
