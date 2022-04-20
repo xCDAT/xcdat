@@ -131,7 +131,11 @@ class TestOpenDataset:
         ds_mod = ds.copy()
         ds_mod["tas"] = ds_mod.ts.copy()
 
-        ds_mod.to_netcdf(self.file_path)
+        # Suppress UserWarning regarding missing time.encoding "units" because
+        # it is not relevant to this test.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            ds_mod.to_netcdf(self.file_path)
 
         result = open_dataset(self.file_path, data_var="ts")
         expected = ds.copy()

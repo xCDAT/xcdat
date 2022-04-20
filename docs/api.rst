@@ -46,7 +46,8 @@ Attributes
    :toctree: generated/
    :template: autosummary/accessor_attribute.rst
 
-    Dataset.bounds.bounds
+    Dataset.bounds.map
+    Dataset.bounds.keys
 
 .. _dsmeth_1:
 

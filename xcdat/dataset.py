@@ -502,7 +502,7 @@ def _keep_single_var(dataset: xr.Dataset, key: str) -> xr.Dataset:
         If specified key matches a bounds data variable.
     """
     all_vars = dataset.data_vars.keys()
-    bounds_vars = dataset.bounds.names
+    bounds_vars = dataset.bounds.keys
     non_bounds_vars = sorted(list(set(all_vars) ^ set(bounds_vars)))
 
     if len(non_bounds_vars) == 0:
