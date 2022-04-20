@@ -19,7 +19,7 @@ class TestBoundsAccessor:
     def test_decorator_call(self):
         assert self.ds.bounds._dataset.identical(self.ds)
 
-    def test_bounds_property_returns_map_of_axis_and_coordinate_keys_to_bounds_dataarray(
+    def test_map_property_returns_map_of_axis_and_coordinate_keys_to_bounds_dataarray(
         self,
     ):
         ds = self.ds_with_bnds.copy()

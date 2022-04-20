@@ -148,7 +148,7 @@ def open_mfdataset(
     data_vars: Union[Literal["minimal", "different", "all"], List[str]], optional
         These data variables will be concatenated together:
           * "minimal": Only data variables in which the dimension already
-            appears are included, default value.
+            appears are included, the default value.
           * "different": Data variables which are not equal (ignoring
             attributes) across all datasets are also concatenated (as well as
             all for which dimension already appears). Beware: this option may
