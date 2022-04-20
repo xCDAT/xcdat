@@ -773,7 +773,7 @@ class TestPostProcessDataset:
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds = ds.drop_dims("time")
 
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError):
             _postprocess_dataset(ds, center_times=True)
 
     def test_adds_missing_lat_and_lon_bounds(self):
@@ -859,7 +859,7 @@ class TestPostProcessDataset:
 
         ds = ds.drop_dims("lon")
 
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError):
             _postprocess_dataset(ds, lon_orient=(0, 360))
 
 
@@ -875,19 +875,19 @@ class TestKeepSingleVar:
         ds = self.ds.copy()
         ds = ds.drop_vars("ts")
 
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError):
             _keep_single_var(ds, key="ts")
 
     def test_raises_error_if_specified_data_var_does_not_exist(self):
         ds = self.ds_mod.copy()
 
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError):
             _keep_single_var(ds, key="nonexistent")
 
     def test_raises_error_if_specified_data_var_is_a_bounds_var(self):
         ds = self.ds_mod.copy()
 
-        with pytest.raises(KeyError):
+        with pytest.raises(ValueError):
             _keep_single_var(ds, key="lat_bnds")
 
     def test_returns_dataset_with_specified_data_var(self):

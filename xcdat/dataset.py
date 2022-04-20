@@ -469,9 +469,9 @@ def _postprocess_dataset(
 
     Raises
     ------
-    KeyError
+    ValueError
         If ``center_times==True`` but there are no time coordinates.
-    KeyError
+    ValueError
         If ``lon_orient is not None`` but there are no longitude coordinates.
     """
     if data_var is not None:
@@ -481,7 +481,7 @@ def _postprocess_dataset(
         if dataset.cf.dims.get("T") is not None:
             dataset = dataset.temporal.center_times(dataset)
         else:
-            raise KeyError("This dataset does not have a time coordinates to center.")
+            raise ValueError("This dataset does not have a time coordinates to center.")
 
     if add_bounds:
         dataset = dataset.bounds.add_missing_bounds()
@@ -490,7 +490,7 @@ def _postprocess_dataset(
         if dataset.cf.dims.get("X") is not None:
             dataset = swap_lon_axis(dataset, to=lon_orient, sort_ascending=True)
         else:
-            raise KeyError(
+            raise ValueError(
                 "This dataset does not have longitude coordinates to reorient."
             )
 
@@ -518,23 +518,25 @@ def _keep_single_var(dataset: xr.Dataset, key: str) -> xr.Dataset:
 
     Raises
     ------
-    KeyError
-        If the specified data variable is not found in the Dataset.
-    KeyError
-        If the user specifies a bounds variable to keep.
+    ValueError
+        If the dataset only contains bounds data variables.
+    ValueError
+        If specified key a does not exist in the dataset.
+    ValueError
+        If specified key matches a bounds data variable.
     """
     all_vars = dataset.data_vars.keys()
     bounds_vars = dataset.bounds.names
     non_bounds_vars = sorted(list(set(all_vars) ^ set(bounds_vars)))
 
     if len(non_bounds_vars) == 0:
-        raise KeyError("This dataset only contains bounds data variables.")
+        raise ValueError("This dataset only contains bounds data variables.")
 
     if key not in all_vars:
-        raise KeyError(f"The data variable '{key}' does not exist in the dataset.")
+        raise ValueError(f"The data variable '{key}' does not exist in the dataset.")
 
     if key in bounds_vars:
-        raise KeyError("Please specify a non-bounds data variable.")
+        raise ValueError("Please specify a non-bounds data variable.")
 
     return dataset[[key] + bounds_vars]
 
