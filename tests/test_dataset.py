@@ -244,7 +244,7 @@ class TestOpenMfDataset:
         assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
 
-    def test_only_keeps_specified_var(self):
+    def test_keeps_specified_var(self):
         ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
         ds2 = generate_dataset(cf_compliant=True, has_bounds=True)
         ds2 = ds2.rename_vars({"ts": "tas"})
