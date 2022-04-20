@@ -76,7 +76,7 @@ class BoundsAccessor:
         Returns
         -------
         List[str]
-            A list of sorted dounds data variable names.
+            A list of sorted bounds data variable names.
         """
         return sorted(
             list(
@@ -90,6 +90,10 @@ class BoundsAccessor:
 
     def add_missing_bounds(self) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
+
+        This function loops through the Dataset's axes and adds bounds for an
+        axis if it doesn't exist. Currently, the supported axes are T (time), X
+        (longitude), and Y (latitude).
 
         Returns
         -------
@@ -146,9 +150,7 @@ class BoundsAccessor:
         return bounds
 
     def add_bounds(self, axis: BoundsAxis, width: float = 0.5) -> xr.Dataset:
-        """Add bounds for axis coordinates using coordinate data points.
-
-        If bounds already exist, they must be dropped first.
+        """Add bounds for an axis using the midpoints of each coordinate point.
 
         Parameters
         ----------
@@ -179,7 +181,7 @@ class BoundsAccessor:
         return dataset
 
     def _add_bounds(self, axis: BoundsAxis, width: float = 0.5) -> xr.Dataset:
-        """Add bounds for axis coordinates using coordinate data points.
+        """Add bounds for an axis using the midpoints of each coordinate point.
 
         Parameters
         ----------

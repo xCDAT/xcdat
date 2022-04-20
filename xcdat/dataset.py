@@ -22,35 +22,30 @@ def open_dataset(
     data_var: Optional[str] = None,
     decode_times: bool = True,
     center_times: bool = False,
+    add_bounds: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
-    """Wrapper for ``xarray.open_dataset()`` that applies common operations.
-
-    Operations include:
-
-    - Optional decoding of time coordinates with CF or non-CF compliant units if
-      the Dataset has a time dimension
-    - Add missing bounds for supported axis
-    - Option to limit the Dataset to a single regular (non-bounds) data
-      variable, while retaining any bounds data variables
-    - Option to swap the longitude axis orientation and sort in ascending order
-      if the axis exists in the Dataset.
+    """Wraps ``xarray.open_dataset()`` with post-processing options.
 
     Parameters
     ----------
     path : str
         Path to Dataset.
     data_var: Optional[str], optional
-        The key of the data variable to keep in the Dataset, by default None.
-    decode_times: bool
+        The key of the non-bounds data variable to keep in the Dataset,
+        alongside any existing bounds data variables, by default None.
+    decode_times: bool, optional
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
         This keyword may not be supported by all the backends, by default True.
-    center_times: bool
-        If True, center time coordinates using the midpoint between of its
-        upper and lower bounds. Otherwise, use the provided time coordinates,
-        by default False.
+    center_times: bool, optional
+        If True, center time coordinates using the midpoint between its upper
+        and lower bounds. Otherwise, use the provided time coordinates, by
+        default False.
+    add_bounds: bool, optional
+        If True, add bounds for supported axes (T, X, Y) if they are missing in
+        the Dataset, by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -105,14 +100,7 @@ def open_dataset(
     else:
         ds = xr.open_dataset(path, decode_times=False, **kwargs)
 
-    ds = _keep_single_var(ds, data_var)
-
-    if ds.cf.dims.get("T") is not None and center_times:
-        ds = ds.temporal.center_times(ds)
-
-    ds = ds.bounds.add_missing_bounds()
-    if ds.cf.dims.get("X") is not None and lon_orient is not None:
-        ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
+    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
     return ds
 
@@ -127,31 +115,15 @@ def open_mfdataset(
         List[List[pathlib.Path]],
     ],
     data_var: Optional[str] = None,
-    preprocess: Optional[Callable] = None,
     decode_times: bool = True,
     center_times: bool = False,
+    add_bounds: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
     data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
+    preprocess: Optional[Callable] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
-    """Wrapper for ``xarray.open_mfdataset()`` that applies common operations.
-
-    Operations include:
-
-    - Optional decoding of time coordinates with CF or non-CF compliant units if
-      the Dataset has a time dimension
-    - Add missing bounds for supported axis
-    - Option to limit the Dataset to a single regular (non-bounds) data
-      variable, while retaining any bounds data variables
-    - Option to swap the longitude axis orientation and sort in ascending order
-      if the axis exists in the Dataset.
-
-    ``data_vars`` defaults to ``"minimal"``, which concatenates data variables
-    in a manner where only data variables in which the dimension already appears
-    are included. For example, the time dimension will not be concatenated to
-    the dimensions of non-time data variables such as "lat_bnds" or "lon_bnds".
-    `"minimal"` is required for some XCDAT functions, including spatial
-    averaging where a reduction is performed using the lat/lon bounds.
+    """Wraps ``xarray.open_mfdataset()`` with post-processing options.
 
     Parameters
     ----------
@@ -164,18 +136,17 @@ def open_mfdataset(
         for details). (A string glob will be expanded to a 1-dimensional list.)
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
-    preprocess : Optional[Callable], optional
-        If provided, call this function on each dataset prior to concatenation.
-        You can find the file-name from which each dataset was loaded in
-        ``ds.encoding["source"]``.
-    decode_times: bool
+    decode_times: bool, optional
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
         This keyword may not be supported by all the backends, by default True.
-    center_times: bool
-        If True, center time coordinates using the midpoint between of its
-        upper and lower bounds. Otherwise, use the provided time coordinates,
-        by default False.
+    center_times: bool, optional
+        If True, center time coordinates using the midpoint between its upper
+        and lower bounds. Otherwise, use the provided time coordinates, by
+        default False.
+    add_bounds: bool, optional
+        If True, add bounds for supported axes (T, X, Y) if they are missing in
+        the Dataset, by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -189,7 +160,7 @@ def open_mfdataset(
     data_vars: Union[Literal["minimal", "different", "all"], List[str]], optional
         These data variables will be concatenated together:
           * "minimal": Only data variables in which the dimension already
-            appears are included, default.
+            appears are included, default value.
           * "different": Data variables which are not equal (ignoring
             attributes) across all datasets are also concatenated (as well as
             all for which dimension already appears). Beware: this option may
@@ -199,6 +170,18 @@ def open_mfdataset(
           * list of str: The listed data variables will be concatenated, in
             addition to the "minimal" data variables.
 
+        The ``data_vars`` kwarg defaults to ``"minimal"``, which concatenates
+        data variables in a manner where only data variables in which the
+        dimension already appears are included. For example, the time dimension
+        will not be concatenated to the dimensions of non-time data variables
+        such as "lat_bnds" or "lon_bnds". `data_vars="minimal"` is required for
+        some XCDAT functions, including spatial averaging where a reduction is
+        performed using the lat/lon bounds.
+
+    preprocess : Optional[Callable], optional
+        If provided, call this function on each dataset prior to concatenation.
+        You can find the file-name from which each dataset was loaded in
+        ``ds.encoding["source"]``.
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
         the [2]_ xarray docs for accepted keyword arguments.
@@ -206,7 +189,7 @@ def open_mfdataset(
     Returns
     -------
     xr.Dataset
-        Dataset after applying operations.
+        The Dataset.
 
     Notes
     -----
@@ -247,14 +230,7 @@ def open_mfdataset(
         preprocess=preprocess,
         **kwargs,
     )
-    ds = _keep_single_var(ds, data_var)
-
-    if ds.cf.dims.get("T") is not None and center_times:
-        ds = ds.temporal.center_times(ds)
-
-    ds = ds.bounds.add_missing_bounds()
-    if ds.cf.dims.get("X") is not None and lon_orient is not None:
-        ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
+    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
     return ds
 
@@ -299,6 +275,7 @@ def has_cf_compliant_time(
     compliance.
     """
     first_file: Optional[Union[pathlib.Path, str]] = None
+
     if isinstance(path, str) and "*" in path:
         first_file = glob(path)[0]
     elif isinstance(path, str) or isinstance(path, pathlib.Path):
@@ -310,12 +287,14 @@ def has_cf_compliant_time(
             first_file = path[0]  # type: ignore
 
     ds = xr.open_dataset(first_file, decode_times=False)
+
     if ds.cf.dims.get("T") is None:
         return None
 
     time = ds.cf["T"]
     units = _split_time_units_attr(time.attrs.get("units"))[0]
     cf_compliant = units not in NON_CF_TIME_UNITS
+
     return cf_compliant
 
 
@@ -404,8 +383,10 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     {'source': None, 'dtype': dtype('int64'), 'original_shape': (3,), 'units':
     'years since 2000-01-01', 'calendar': 'noleap'}
     """
-    time = dataset.cf["T"]
-    time_bounds = dataset.get(time.attrs.get("bounds"), None)
+    ds = dataset.copy()
+
+    time = ds.cf["T"]
+    time_bounds = ds.get(time.attrs.get("bounds"), None)
     units_attr = time.attrs.get("units")
     units, ref_date = _split_time_units_attr(units_attr)
     ref_date = pd.to_datetime(ref_date)
@@ -419,13 +400,13 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
         attrs=time.attrs,
     )
     decoded_time.encoding = {
-        "source": dataset.encoding.get("source", "None"),
+        "source": ds.encoding.get("source", "None"),
         "dtype": time.dtype,
         "original_shape": time.shape,
         "units": units_attr,
         "calendar": time.attrs.get("calendar", "none"),
     }
-    dataset = dataset.assign_coords({time.name: decoded_time})
+    ds = ds.assign_coords({time.name: decoded_time})
 
     if time_bounds is not None:
         data_bounds = [
@@ -444,25 +425,91 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
         )
         decoded_time_bnds.coords[time.name] = decoded_time
         decoded_time_bnds.encoding = time_bounds.encoding
-        dataset = dataset.assign({time_bounds.name: decoded_time_bnds})
+        ds = ds.assign({time_bounds.name: decoded_time_bnds})
+
+    return ds
+
+
+def _postprocess_dataset(
+    dataset: xr.Dataset,
+    data_var: Optional[str] = None,
+    center_times: bool = False,
+    add_bounds: bool = False,
+    lon_orient: Optional[Tuple[float, float]] = None,
+) -> xr.Dataset:
+    """Post-processes a Dataset object.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        The dataset.
+    data_var: Optional[str], optional
+        The key of the data variable to keep in the Dataset, by default None.
+    center_times: bool, optional
+        If True, center time coordinates using the midpoint between its upper
+        and lower bounds. Otherwise, use the provided time coordinates, by
+        default False.
+    add_bounds: bool, optional
+        If True, add bounds for supported axes (T, X, Y) if they are missing in
+        the Dataset, by default False.
+    lon_orient: Optional[Tuple[float, float]], optional
+        The orientation to use for the Dataset's longitude axis (if it exists),
+        by default None.
+
+        Supported options:
+
+          * None:  use the current orientation (if the longitude axis exists)
+          * (-180, 180): represents [-180, 180) in math notation
+          * (0, 360): represents [0, 360) in math notation
+
+    Returns
+    -------
+    xr.Dataset
+        The Dataset.
+
+    Raises
+    ------
+    KeyError
+        If ``center_times==True`` but there are no time coordinates.
+    KeyError
+        If ``lon_orient is not None`` but there are no longitude coordinates.
+    """
+    if data_var is not None:
+        dataset = _keep_single_var(dataset, data_var)
+
+    if center_times:
+        if dataset.cf.dims.get("T") is not None:
+            dataset = dataset.temporal.center_times(dataset)
+        else:
+            raise KeyError("This dataset does not have a time coordinates to center.")
+
+    if add_bounds:
+        dataset = dataset.bounds.add_missing_bounds()
+
+    if lon_orient is not None:
+        if dataset.cf.dims.get("X") is not None:
+            dataset = swap_lon_axis(dataset, to=lon_orient, sort_ascending=True)
+        else:
+            raise KeyError(
+                "This dataset does not have longitude coordinates to reorient."
+            )
 
     return dataset
 
 
-def _keep_single_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Dataset:
-    """Keep a single data variable in the Dataset.
+def _keep_single_var(dataset: xr.Dataset, key: str) -> xr.Dataset:
+    """Keeps a single non-bounds data variable in the Dataset.
 
-    If ``data_var`` is not None, then this function checks if the ``data_var``
-    exists in the Dataset and if it is a regular data var. If those checks pass,
-    it will subset the Dataset to retain that ``data_var`` and all bounds data
-    vars.
+    This function checks if the ``data_var`` key exists in the Dataset and
+    if it is non-bounds. If those checks pass, it will subset the Dataset to
+    retain that non-bounds ``data_var`` and all bounds data vars.
 
     Parameters
     ----------
     dataset : xr.Dataset
         The Dataset.
-    data_var: Optional[str], optional
-        The key of the data variable to keep in the Dataset.
+    key: str
+        The key of the non-bounds data variable to keep in the Dataset.
 
     Returns
     -------
@@ -476,42 +523,30 @@ def _keep_single_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.Dataset
     KeyError
         If the user specifies a bounds variable to keep.
     """
-    ds = dataset.copy()
-    all_vars = ds.data_vars.keys()
-    bounds_vars = ds.bounds.names
-    regular_vars = sorted(list(set(all_vars) ^ set(bounds_vars)))
+    all_vars = dataset.data_vars.keys()
+    bounds_vars = dataset.bounds.names
+    non_bounds_vars = sorted(list(set(all_vars) ^ set(bounds_vars)))
 
-    if len(regular_vars) == 0:
-        logger.debug("This dataset only contains bounds data variables.")
+    if len(non_bounds_vars) == 0:
+        raise KeyError("This dataset only contains bounds data variables.")
 
-    if data_var is None:
-        if len(regular_vars) > 1:
-            logger.debug(
-                "This dataset contains more than one regular data variable: "
-                f"{regular_vars}. If desired, pass the `data_var` kwarg to "
-                "limit the dataset to a single data var."
-            )
-    elif data_var is not None:
-        if data_var not in all_vars:
-            raise KeyError(
-                f"The data variable '{data_var}' does not exist in the dataset."
-            )
-        if data_var in bounds_vars:
-            raise KeyError("Please specify a regular (non-bounds) data variable.")
+    if key not in all_vars:
+        raise KeyError(f"The data variable '{key}' does not exist in the dataset.")
 
-        ds = dataset[[data_var] + bounds_vars]
+    if key in bounds_vars:
+        raise KeyError("Please specify a non-bounds data variable.")
 
-    return ds
+    return dataset[[key] + bounds_vars]
 
 
-def get_data_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.DataArray:
+def get_data_var(dataset: xr.Dataset, key: str) -> xr.DataArray:
     """Get a data variable in the Dataset by key.
 
     Parameters
     ----------
     dataset : xr.Dataset
         The Dataset.
-    data_var : Optional[str]
+    key : str
         The data variable key.
 
     Returns
@@ -524,9 +559,11 @@ def get_data_var(dataset: xr.Dataset, data_var: Optional[str]) -> xr.DataArray:
     KeyError
         If the data variable does not exist in the Dataset.
     """
-    dv = dataset.get(data_var, None)
+    dv = dataset.get(key, None)
+
     if dv is None:
-        raise KeyError(f"The data variable '{data_var}' does not exist in the Dataset.")
+        raise KeyError(f"The data variable '{key}' does not exist in the Dataset.")
+
     return dv.copy()
 
 
@@ -565,9 +602,12 @@ def _preprocess_non_cf_dataset(
         The preprocessed Dataset.
     """
     ds_new = ds.copy()
+
     if callable:
         ds_new = callable(ds)
+
     ds_new = decode_non_cf_time(ds_new)
+
     return ds_new
 
 
@@ -589,4 +629,5 @@ def _split_time_units_attr(units_attr: str) -> Tuple[str, str]:
         raise KeyError("No 'units' attribute found for the dataset's time coordinates.")
 
     units, reference_date = units_attr.split(" since ")
+
     return units, reference_date

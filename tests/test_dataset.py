@@ -1,4 +1,3 @@
-import logging
 import pathlib
 import warnings
 
@@ -9,6 +8,7 @@ import xarray as xr
 from tests.fixtures import generate_dataset
 from xcdat.dataset import (
     _keep_single_var,
+    _postprocess_dataset,
     _preprocess_non_cf_dataset,
     _split_time_units_attr,
     decode_non_cf_time,
@@ -29,23 +29,6 @@ class TestOpenDataset:
         dir.mkdir()
         self.file_path = f"{dir}/file.nc"
 
-    def test_only_keeps_specified_var(self):
-        ds = generate_dataset(cf_compliant=True, has_bounds=True)
-
-        # Create a modified version of the Dataset with a new var
-        ds_mod = ds.copy()
-        ds_mod["tas"] = ds_mod.ts.copy()
-
-        # Suppress UserWarning regarding missing time.encoding "units" because
-        # it is not relevant to this test.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            ds_mod.to_netcdf(self.file_path)
-
-        result = open_dataset(self.file_path, data_var="ts")
-        expected = ds.copy()
-        assert result.identical(expected)
-
     def test_non_cf_compliant_time_is_not_decoded(self):
         ds = generate_dataset(cf_compliant=False, has_bounds=True)
         ds.to_netcdf(self.file_path)
@@ -58,7 +41,7 @@ class TestOpenDataset:
         ds = generate_dataset(cf_compliant=False, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = open_dataset(self.file_path, data_var="ts")
+        result = open_dataset(self.file_path, data_var="ts", add_bounds=True)
 
         # Generate an expected dataset with decoded non-CF compliant time units.
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -141,180 +124,19 @@ class TestOpenDataset:
 
         assert result.identical(expected)
 
-    def test_generates_lat_and_lon_bounds_if_they_dont_exist(self):
-        # Create expected dataset without bounds.
-        ds = generate_dataset(cf_compliant=True, has_bounds=False)
-
-        ds.to_netcdf(self.file_path)
-        ds.close()
-
-        data_vars = list(ds.data_vars.keys())
-        assert "lat_bnds" not in data_vars
-        assert "lon_bnds" not in data_vars
-
-        result = open_dataset(self.file_path, data_var="ts")
-        result_data_vars = list(result.data_vars.keys())
-        assert "lat_bnds" in result_data_vars
-        assert "lon_bnds" in result_data_vars
-
-    def test_swaps_from_180_to_360_and_sorts_with_prime_meridian_cell(self):
-        ds = xr.Dataset(
-            coords={
-                "lon": xr.DataArray(
-                    name="lon",
-                    data=np.array([-180, -1, 0, 1, 179]),
-                    dims=["lon"],
-                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                )
-            },
-            data_vars={
-                "lon_bnds": xr.DataArray(
-                    name="lon_bnds",
-                    data=np.array(
-                        [
-                            [-180.5, -1.5],
-                            [-1.5, -0.5],
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
-                        ]
-                    ),
-                    dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
-                ),
-            },
-        )
-        ds.to_netcdf(self.file_path)
-
-        result = open_dataset(self.file_path, lon_orient=(0, 360))
-        expected = xr.Dataset(
-            coords={
-                "lon": xr.DataArray(
-                    name="lon",
-                    data=np.array([0.0, 1.0, 179.0, 180.0, 359.0, 360.0]),
-                    dims=["lon"],
-                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                )
-            },
-            data_vars={
-                "lon_bnds": xr.DataArray(
-                    name="lon_bnds",
-                    data=np.array(
-                        [
-                            [0, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
-                            [179.5, 358.5],
-                            [358.5, 359.5],
-                            [359.5, 360],
-                        ]
-                    ),
-                    dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
-                ),
-            },
-        )
-        assert result.identical(expected)
-
-    def test_centers_time(self):
+    def test_keeps_specified_var(self):
         ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-        uncentered_time = np.array(
-            [
-                "2000-01-31T12:00:00.000000000",
-                "2000-02-29T12:00:00.000000000",
-                "2000-03-31T12:00:00.000000000",
-                "2000-04-30T00:00:00.000000000",
-                "2000-05-31T12:00:00.000000000",
-                "2000-06-30T00:00:00.000000000",
-                "2000-07-31T12:00:00.000000000",
-                "2000-08-31T12:00:00.000000000",
-                "2000-09-30T00:00:00.000000000",
-                "2000-10-16T12:00:00.000000000",
-                "2000-11-30T00:00:00.000000000",
-                "2000-12-31T12:00:00.000000000",
-                "2001-01-31T12:00:00.000000000",
-                "2001-02-28T00:00:00.000000000",
-                "2001-12-31T12:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
-        ds.time.data[:] = uncentered_time
-        ds.time.encoding = {
-            "source": None,
-            "dtype": np.dtype(np.int64),
-            "original_shape": ds.time.data.shape,
-            "units": "days since 2000-01-01",
-            "calendar": "standard",
-            "_FillValue": False,
-        }
-        ds.to_netcdf(self.file_path)
+        # Create a modified version of the Dataset with a new var
+        ds_mod = ds.copy()
+        ds_mod["tas"] = ds_mod.ts.copy()
 
-        # Compare result of the method against the expected.
-        result = open_dataset(self.file_path, data_var="ts", center_times=True)
+        ds_mod.to_netcdf(self.file_path)
+
+        result = open_dataset(self.file_path, data_var="ts")
         expected = ds.copy()
-        expected_time_data = np.array(
-            [
-                "2000-01-16T12:00:00.000000000",
-                "2000-02-15T12:00:00.000000000",
-                "2000-03-16T12:00:00.000000000",
-                "2000-04-16T00:00:00.000000000",
-                "2000-05-16T12:00:00.000000000",
-                "2000-06-16T00:00:00.000000000",
-                "2000-07-16T12:00:00.000000000",
-                "2000-08-16T12:00:00.000000000",
-                "2000-09-16T00:00:00.000000000",
-                "2000-10-16T12:00:00.000000000",
-                "2000-11-16T00:00:00.000000000",
-                "2000-12-16T12:00:00.000000000",
-                "2001-01-16T12:00:00.000000000",
-                "2001-02-15T00:00:00.000000000",
-                "2001-12-16T12:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
-        expected = expected.assign_coords(
-            {
-                "time": xr.DataArray(
-                    name="time",
-                    data=expected_time_data,
-                    coords={"time": expected_time_data},
-                    dims="time",
-                    attrs={
-                        "long_name": "time",
-                        "standard_name": "time",
-                        "axis": "T",
-                        "bounds": "time_bnds",
-                    },
-                )
-            }
-        )
-        expected.time.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": True,
-            "chunksizes": None,
-            "original_shape": (15,),
-            "dtype": np.dtype("int64"),
-            "_FillValue": 0,
-            "units": "days since 2000-01-01",
-            "calendar": "standard",
-        }
 
-        # Update time bounds with centered time coordinates.
-        time_bounds = ds.time_bnds.copy()
-        time_bounds["time"] = expected.time
-        expected["time_bnds"] = time_bounds
-
-        # Compare result of the function against the expected.
         assert result.identical(expected)
-
-        # Delete source key because the path of the file can change for each
-        # time run.
-        del result.time.encoding["source"]
-        assert result.time.encoding == expected.time.encoding
 
 
 class TestOpenMfDataset:
@@ -325,24 +147,6 @@ class TestOpenMfDataset:
         dir.mkdir()
         self.file_path1 = f"{dir}/file1.nc"
         self.file_path2 = f"{dir}/file2.nc"
-
-    def test_only_keeps_specified_var(self):
-        ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
-        ds2 = generate_dataset(cf_compliant=True, has_bounds=True)
-        ds2 = ds2.rename_vars({"ts": "tas"})
-
-        # Suppress UserWarning regarding missing time.encoding "units" because
-        # it is not relevant to this test.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            ds1.to_netcdf(self.file_path1)
-            ds2.to_netcdf(self.file_path2)
-
-        result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
-
-        # Generate an expected dataset with decoded non-CF compliant time units.
-        expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        assert result.identical(expected)
 
     def test_non_cf_compliant_time_is_not_decoded(self):
         ds1 = generate_dataset(cf_compliant=False, has_bounds=True)
@@ -364,7 +168,9 @@ class TestOpenMfDataset:
         ds1.to_netcdf(self.file_path1)
         ds2.to_netcdf(self.file_path2)
 
-        result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
+        result = open_mfdataset(
+            [self.file_path1, self.file_path2], data_var="ts", add_bounds=True
+        )
 
         # Generate an expected dataset, which is a combination of both datasets
         # with decoded time units and coordinate bounds.
@@ -434,7 +240,7 @@ class TestOpenMfDataset:
         assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
 
-    def test_preserves_lat_and_lon_bounds_if_they_exist(self):
+    def test_only_keeps_specified_var(self):
         ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
         ds2 = generate_dataset(cf_compliant=True, has_bounds=True)
         ds2 = ds2.rename_vars({"ts": "tas"})
@@ -446,192 +252,11 @@ class TestOpenMfDataset:
             ds1.to_netcdf(self.file_path1)
             ds2.to_netcdf(self.file_path2)
 
-        expected = generate_dataset(cf_compliant=True, has_bounds=True)
         result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
+
+        # Generate an expected dataset with decoded non-CF compliant time units.
+        expected = generate_dataset(cf_compliant=True, has_bounds=True)
         assert result.identical(expected)
-
-    def test_generates_lat_and_lon_bounds_if_they_dont_exist(self):
-        ds1 = generate_dataset(cf_compliant=True, has_bounds=False)
-        ds2 = generate_dataset(cf_compliant=True, has_bounds=False)
-        ds2 = ds2.rename_vars({"ts": "tas"})
-
-        ds1.to_netcdf(self.file_path1)
-        ds2.to_netcdf(self.file_path2)
-
-        data_vars1 = list(ds1.data_vars.keys())
-        data_vars2 = list(ds2.data_vars.keys())
-        assert "lat_bnds" not in data_vars1 + data_vars2
-        assert "lon_bnds" not in data_vars1 + data_vars2
-
-        result = open_dataset(self.file_path1, data_var="ts")
-        result_data_vars = list(result.data_vars.keys())
-        assert "lat_bnds" in result_data_vars
-        assert "lon_bnds" in result_data_vars
-
-    def test_swaps_from_180_to_360_and_sorts_with_prime_meridian_cell(self):
-        ds = xr.Dataset(
-            coords={
-                "lon": xr.DataArray(
-                    name="lon",
-                    data=np.array([-180, -1, 0, 1, 179]),
-                    dims=["lon"],
-                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                )
-            },
-            data_vars={
-                "lon_bnds": xr.DataArray(
-                    name="lon_bnds",
-                    data=np.array(
-                        [
-                            [-180.5, -1.5],
-                            [-1.5, -0.5],
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
-                        ]
-                    ),
-                    dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
-                ),
-            },
-        )
-        ds.to_netcdf(self.file_path1)
-
-        result = open_mfdataset([self.file_path1], lon_orient=(0, 360))
-        expected = xr.Dataset(
-            coords={
-                "lon": xr.DataArray(
-                    name="lon",
-                    data=np.array([0.0, 1.0, 179.0, 180.0, 359.0, 360.0]),
-                    dims=["lon"],
-                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                )
-            },
-            data_vars={
-                "lon_bnds": xr.DataArray(
-                    name="lon_bnds",
-                    data=np.array(
-                        [
-                            [0, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
-                            [179.5, 358.5],
-                            [358.5, 359.5],
-                            [359.5, 360],
-                        ]
-                    ),
-                    dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
-                ),
-            },
-        )
-        assert result.identical(expected)
-
-    def test_centers_time(self):
-        ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
-
-        # Make the time coordinates uncentered.
-        uncentered_time = np.array(
-            [
-                "2000-01-31T12:00:00.000000000",
-                "2000-02-29T12:00:00.000000000",
-                "2000-03-31T12:00:00.000000000",
-                "2000-04-30T00:00:00.000000000",
-                "2000-05-31T12:00:00.000000000",
-                "2000-06-30T00:00:00.000000000",
-                "2000-07-31T12:00:00.000000000",
-                "2000-08-31T12:00:00.000000000",
-                "2000-09-30T00:00:00.000000000",
-                "2000-10-16T12:00:00.000000000",
-                "2000-11-30T00:00:00.000000000",
-                "2000-12-31T12:00:00.000000000",
-                "2001-01-31T12:00:00.000000000",
-                "2001-02-28T00:00:00.000000000",
-                "2001-12-31T12:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
-        ds1.time.data[:] = uncentered_time
-        ds1.time.encoding = {
-            "source": None,
-            "dtype": np.dtype(np.int64),
-            "original_shape": ds1.time.data.shape,
-            "units": "days since 2000-01-01",
-            "calendar": "standard",
-            "_FillValue": False,
-        }
-        ds2 = ds1.copy()
-        ds2 = ds2.rename_vars({"ts": "tas"})
-
-        ds1.to_netcdf(self.file_path1)
-        ds2.to_netcdf(self.file_path2)
-
-        # Compare result of the method against the expected.
-        result = open_mfdataset([self.file_path1, self.file_path2], center_times=True)
-
-        expected = ds1.merge(ds2)
-        expected = expected.copy()
-        expected_time_data = np.array(
-            [
-                "2000-01-16T12:00:00.000000000",
-                "2000-02-15T12:00:00.000000000",
-                "2000-03-16T12:00:00.000000000",
-                "2000-04-16T00:00:00.000000000",
-                "2000-05-16T12:00:00.000000000",
-                "2000-06-16T00:00:00.000000000",
-                "2000-07-16T12:00:00.000000000",
-                "2000-08-16T12:00:00.000000000",
-                "2000-09-16T00:00:00.000000000",
-                "2000-10-16T12:00:00.000000000",
-                "2000-11-16T00:00:00.000000000",
-                "2000-12-16T12:00:00.000000000",
-                "2001-01-16T12:00:00.000000000",
-                "2001-02-15T00:00:00.000000000",
-                "2001-12-16T12:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
-        expected = expected.assign_coords(
-            {
-                "time": xr.DataArray(
-                    name="time",
-                    data=expected_time_data,
-                    coords={"time": expected_time_data},
-                    dims="time",
-                    attrs={
-                        "long_name": "time",
-                        "standard_name": "time",
-                        "axis": "T",
-                        "bounds": "time_bnds",
-                    },
-                )
-            }
-        )
-        expected.time.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": True,
-            "chunksizes": None,
-            "original_shape": (15,),
-            "dtype": np.dtype("int64"),
-            "_FillValue": 0,
-            "units": "days since 2000-01-01",
-            "calendar": "standard",
-        }
-        # Update time bounds with centered time coordinates.
-        time_bounds = expected.time_bnds.copy()
-        time_bounds["time"] = expected.time
-        expected["time_bnds"] = time_bounds
-
-        # Compare result of the function against the expected.
-        assert result.identical(expected)
-
-        # Delete source key because the path of the file can change for each
-        # time run.
-        del result.time.encoding["source"]
-        assert result.time.encoding == expected.time.encoding
 
 
 class TestHasCFCompliantTime:
@@ -1038,6 +663,206 @@ class TestDecodeNonCFTimeUnits:
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
 
+class TestPostProcessDataset:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_keeps_specified_var(self):
+        ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+        # Create a modified version of the Dataset with a new var
+        ds_mod = ds.copy()
+        ds_mod["tas"] = ds_mod.ts.copy()
+
+        result = _postprocess_dataset(ds, data_var="ts")
+        expected = ds.copy()
+        assert result.identical(expected)
+
+    def test_centers_time(self):
+        ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+        uncentered_time = np.array(
+            [
+                "2000-01-31T12:00:00.000000000",
+                "2000-02-29T12:00:00.000000000",
+                "2000-03-31T12:00:00.000000000",
+                "2000-04-30T00:00:00.000000000",
+                "2000-05-31T12:00:00.000000000",
+                "2000-06-30T00:00:00.000000000",
+                "2000-07-31T12:00:00.000000000",
+                "2000-08-31T12:00:00.000000000",
+                "2000-09-30T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-30T00:00:00.000000000",
+                "2000-12-31T12:00:00.000000000",
+                "2001-01-31T12:00:00.000000000",
+                "2001-02-28T00:00:00.000000000",
+                "2001-12-31T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        ds.time.data[:] = uncentered_time
+        ds.time.encoding = {
+            "source": None,
+            "dtype": np.dtype(np.int64),
+            "original_shape": ds.time.data.shape,
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+            "_FillValue": False,
+        }
+
+        # Compare result of the method against the expected.
+        result = _postprocess_dataset(ds, center_times=True)
+        expected = ds.copy()
+        expected_time_data = np.array(
+            [
+                "2000-01-16T12:00:00.000000000",
+                "2000-02-15T12:00:00.000000000",
+                "2000-03-16T12:00:00.000000000",
+                "2000-04-16T00:00:00.000000000",
+                "2000-05-16T12:00:00.000000000",
+                "2000-06-16T00:00:00.000000000",
+                "2000-07-16T12:00:00.000000000",
+                "2000-08-16T12:00:00.000000000",
+                "2000-09-16T00:00:00.000000000",
+                "2000-10-16T12:00:00.000000000",
+                "2000-11-16T00:00:00.000000000",
+                "2000-12-16T12:00:00.000000000",
+                "2001-01-16T12:00:00.000000000",
+                "2001-02-15T00:00:00.000000000",
+                "2001-12-16T12:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+        expected = expected.assign_coords(
+            {
+                "time": xr.DataArray(
+                    name="time",
+                    data=expected_time_data,
+                    coords={"time": expected_time_data},
+                    dims="time",
+                    attrs={
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "axis": "T",
+                        "bounds": "time_bnds",
+                    },
+                )
+            }
+        )
+        expected.time.encoding = {
+            "source": None,
+            "dtype": np.dtype("int64"),
+            "original_shape": (15,),
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+            "_FillValue": False,
+        }
+
+        # Update time bounds with centered time coordinates.
+        time_bounds = ds.time_bnds.copy()
+        time_bounds["time"] = expected.time
+        expected["time_bnds"] = time_bounds
+
+        # Compare result of the function against the expected.
+        assert result.identical(expected)
+        assert result.time.encoding == expected.time.encoding
+
+    def test_raises_error_if_dataset_has_no_time_coords_but_center_times_is_true(self):
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+        ds = ds.drop_dims("time")
+
+        with pytest.raises(KeyError):
+            _postprocess_dataset(ds, center_times=True)
+
+    def test_adds_missing_lat_and_lon_bounds(self):
+        # Create expected dataset without bounds.
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+
+        data_vars = list(ds.data_vars.keys())
+        assert "lat_bnds" not in data_vars
+        assert "lon_bnds" not in data_vars
+
+        result = _postprocess_dataset(ds, add_bounds=True)
+        result_data_vars = list(result.data_vars.keys())
+        assert "lat_bnds" in result_data_vars
+        assert "lon_bnds" in result_data_vars
+
+    def test_orients_longitude_bounds_from_180_to_360_and_sorts_with_prime_meridian_cell(
+        self,
+    ):
+        # Chunk the dataset to test method also works with Dask.
+        ds = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([-180, -1, 0, 1, 179]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                )
+            },
+            data_vars={
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [-180.5, -1.5],
+                            [-1.5, -0.5],
+                            [-0.5, 0.5],
+                            [0.5, 1.5],
+                            [1.5, 179.5],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"is_generated": "True"},
+                ),
+            },
+        ).chunk({"lon": 2})
+
+        result = _postprocess_dataset(
+            ds, data_var=None, center_times=False, add_bounds=True, lon_orient=(0, 360)
+        )
+        expected = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([0.0, 1.0, 179.0, 180.0, 359.0, 360.0]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                )
+            },
+            data_vars={
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [0, 0.5],
+                            [0.5, 1.5],
+                            [1.5, 179.5],
+                            [179.5, 358.5],
+                            [358.5, 359.5],
+                            [359.5, 360],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"is_generated": "True"},
+                ),
+            },
+        )
+        assert result.identical(expected)
+
+    def test_raises_error_if_dataset_has_no_longitude_coords_but_lon_orient_is_specified(
+        self,
+    ):
+        ds = generate_dataset(cf_compliant=True, has_bounds=False)
+
+        ds = ds.drop_dims("lon")
+
+        with pytest.raises(KeyError):
+            _postprocess_dataset(ds, lon_orient=(0, 360))
+
+
 class TestKeepSingleVar:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -1046,57 +871,34 @@ class TestKeepSingleVar:
         self.ds_mod = self.ds.copy()
         self.ds_mod["tas"] = self.ds_mod.ts.copy()
 
-    def tests_raises_logger_debug_if_only_bounds_data_variables_exist(self, caplog):
-        caplog.set_level(logging.DEBUG)
-
+    def tests_raises_error_if_only_bounds_data_variables_exist(self):
         ds = self.ds.copy()
         ds = ds.drop_vars("ts")
 
-        _keep_single_var(ds, data_var=None)
-        assert "This dataset only contains bounds data variables." in caplog.text
+        with pytest.raises(KeyError):
+            _keep_single_var(ds, key="ts")
 
     def test_raises_error_if_specified_data_var_does_not_exist(self):
         ds = self.ds_mod.copy()
+
         with pytest.raises(KeyError):
-            _keep_single_var(ds, data_var="nonexistent")
+            _keep_single_var(ds, key="nonexistent")
 
     def test_raises_error_if_specified_data_var_is_a_bounds_var(self):
         ds = self.ds_mod.copy()
+
         with pytest.raises(KeyError):
-            _keep_single_var(ds, data_var="lat_bnds")
-
-    def test_returns_dataset_if_it_only_has_one_non_bounds_data_var(self):
-        ds = self.ds.copy()
-
-        result = _keep_single_var(ds, data_var=None)
-        expected = ds.copy()
-
-        assert result.identical(expected)
-
-    def test_returns_dataset_if_it_contains_multiple_non_bounds_data_var_with_logger_msg(
-        self, caplog
-    ):
-        caplog.set_level(logging.DEBUG)
-
-        ds = self.ds_mod.copy()
-        result = _keep_single_var(ds, data_var=None)
-        expected = ds.copy()
-
-        assert result.identical(expected)
-        assert (
-            "This dataset contains more than one regular data variable: ['tas', 'ts']. "
-            "If desired, pass the `data_var` kwarg to limit the dataset to a single data var."
-        ) in caplog.text
+            _keep_single_var(ds, key="lat_bnds")
 
     def test_returns_dataset_with_specified_data_var(self):
-        result = _keep_single_var(self.ds_mod, data_var="ts")
+        result = _keep_single_var(self.ds_mod, key="ts")
         expected = self.ds.copy()
 
         assert result.identical(expected)
         assert not result.identical(self.ds_mod)
 
     def test_bounds_always_persist(self):
-        ds = _keep_single_var(self.ds_mod, data_var="ts")
+        ds = _keep_single_var(self.ds_mod, key="ts")
         assert ds.get("lat_bnds") is not None
         assert ds.get("lon_bnds") is not None
         assert ds.get("time_bnds") is not None
