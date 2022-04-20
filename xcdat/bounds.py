@@ -154,7 +154,7 @@ class BoundsAccessor:
         return bounds
 
     def add_bounds(self, axis: BoundsAxis, width: float = 0.5) -> xr.Dataset:
-        """Add bounds for an axis using the midpoints of each coordinate point.
+        """Add bounds for an axis using its coordinate points.
 
         Parameters
         ----------
