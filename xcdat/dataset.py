@@ -76,18 +76,6 @@ def open_dataset(
     ----------
 
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
-
-    Examples
-    --------
-    Import and call module:
-
-    >>> from xcdat.dataset import open_dataset
-    >>> ds = open_dataset("file_path")
-
-    Keep a single variable in the Dataset:
-
-    >>> from xcdat.dataset import open_dataset
-    >>> ds = open_dataset("file_path", data_var="tas")
     """
     if decode_times:
         cf_compliant_time: Optional[bool] = has_cf_compliant_time(path)
@@ -202,18 +190,6 @@ def open_mfdataset(
     ----------
 
     .. [2] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
-
-    Examples
-    --------
-    Import and call module:
-
-    >>> from xcdat.dataset import open_mfdataset
-    >>> ds = open_mfdataset(["file_path1", "file_path2"])
-
-    Keep a single variable in the Dataset:
-
-    >>> from xcdat.dataset import open_mfdataset
-    >>> ds = open_mfdataset(["file_path1", "file_path2"], data_var="tas")
     """
     if decode_times:
         cf_compliant_time: Optional[bool] = has_cf_compliant_time(paths)
