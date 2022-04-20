@@ -19,7 +19,9 @@ class TestBoundsAccessor:
     def test_decorator_call(self):
         assert self.ds.bounds._dataset.identical(self.ds)
 
-    def test_bounds_property_returns_map_of_coordinate_key_to_bounds_dataarray(self):
+    def test_map_property_returns_map_of_axis_and_coordinate_keys_to_bounds_dataarray(
+        self,
+    ):
         ds = self.ds_with_bnds.copy()
         expected = {
             "T": ds.time_bnds,
@@ -32,13 +34,13 @@ class TestBoundsAccessor:
             "time": ds.time_bnds,
         }
 
-        result = ds.bounds.bounds
+        result = ds.bounds.map
 
         for key in expected.keys():
             assert result[key].identical(expected[key])
 
-    def test_names_property_returns_a_list_of_sorted_bounds_names(self):
-        result = self.ds_with_bnds.bounds.names
+    def test_keys_property_returns_a_list_of_sorted_bounds_keys(self):
+        result = self.ds_with_bnds.bounds.keys
         expected = ["lat_bnds", "lon_bnds", "time_bnds"]
 
         assert result == expected

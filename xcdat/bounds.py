@@ -25,9 +25,13 @@ class BoundsAccessor:
 
     >>> from xcdat import bounds
 
-    Return dictionary of coordinate keys mapped to bounds DataArrays:
+    Return dictionary of axis and coordinate keys mapped to bounds:
 
-    >>> ds.bounds.bounds
+    >>> ds.bounds.map
+
+    Return list of keys for bounds data variables:
+
+    >>> ds.bounds.keys
 
     Add missing coordinate bounds for supported axes in the Dataset:
 
@@ -48,8 +52,8 @@ class BoundsAccessor:
         self._dataset: xr.Dataset = dataset
 
     @property
-    def bounds(self) -> Dict[str, Optional[xr.DataArray]]:
-        """Returns a mapping of axis and coordinates keys to their bounds.
+    def map(self) -> Dict[str, Optional[xr.DataArray]]:
+        """Returns a map of axis and coordinates keys to their bounds.
 
         The dictionary provides all valid CF compliant keys for axis and
         coordinates. For example, latitude will includes keys for "lat",
@@ -58,38 +62,42 @@ class BoundsAccessor:
         Returns
         -------
         Dict[str, Optional[xr.DataArray]]
-            Dictionary mapping coordinate keys to their bounds.
+            Dictionary mapping axis and coordinate keys to their bounds.
         """
         ds = self._dataset
 
         bounds: Dict[str, Optional[xr.DataArray]] = {}
-        for axis, bounds_name in ds.cf.bounds.items():
-            bound = ds.get(bounds_name[0], None)
+        for axis, bounds_keys in ds.cf.bounds.items():
+            bound = ds.get(bounds_keys[0], None)
             bounds[axis] = bound
 
         return collections.OrderedDict(sorted(bounds.items()))
 
     @property
-    def names(self) -> List[str]:
-        """Returns a list of names for the bounds data variables in the Dataset.
+    def keys(self) -> List[str]:
+        """Returns a list of keys for the bounds data variables in the Dataset.
 
         Returns
         -------
         List[str]
-            A list of sorted dounds data variable names.
+            A list of sorted bounds data variable keys.
         """
         return sorted(
             list(
                 {
-                    name
-                    for bound_names in self._dataset.cf.bounds.values()
-                    for name in bound_names
+                    key
+                    for bound_keys in self._dataset.cf.bounds.values()
+                    for key in bound_keys
                 }
             )
         )
 
     def add_missing_bounds(self) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
+
+        This function loops through the Dataset's axes and adds bounds for an
+        axis if it doesn't exist. Currently, the supported axes are T (time), X
+        (longitude), and Y (latitude).
 
         Returns
         -------
@@ -146,9 +154,7 @@ class BoundsAccessor:
         return bounds
 
     def add_bounds(self, axis: BoundsAxis, width: float = 0.5) -> xr.Dataset:
-        """Add bounds for axis coordinates using coordinate data points.
-
-        If bounds already exist, they must be dropped first.
+        """Add bounds for an axis using its coordinate points.
 
         Parameters
         ----------
@@ -179,7 +185,7 @@ class BoundsAccessor:
         return dataset
 
     def _add_bounds(self, axis: BoundsAxis, width: float = 0.5) -> xr.Dataset:
-        """Add bounds for axis coordinates using coordinate data points.
+        """Add bounds for an axis using its coordinate points.
 
         Parameters
         ----------
