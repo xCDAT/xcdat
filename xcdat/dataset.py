@@ -477,8 +477,8 @@ def _keep_single_var(dataset: xr.Dataset, key: str) -> xr.Dataset:
     """Keeps a single non-bounds data variable in the Dataset.
 
     This function checks if the ``data_var`` key exists in the Dataset and
-    if it is non-bounds. If those checks pass, it will subset the Dataset to
-    retain that non-bounds ``data_var`` and all bounds data vars.
+    it is not related to bounds. If those checks pass, it will subset the 
+    Dataset to retain that non-bounds ``data_var`` and all bounds data vars.
 
     Parameters
     ----------
@@ -497,9 +497,9 @@ def _keep_single_var(dataset: xr.Dataset, key: str) -> xr.Dataset:
     ValueError
         If the dataset only contains bounds data variables.
     ValueError
-        If specified key a does not exist in the dataset.
+        If the specified key does not exist in the dataset.
     ValueError
-        If specified key matches a bounds data variable.
+        If the specified key matches a bounds data variable.
     """
     all_vars = dataset.data_vars.keys()
     bounds_vars = dataset.bounds.keys
