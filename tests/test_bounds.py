@@ -39,7 +39,7 @@ class TestBoundsAccessor:
         for key in expected.keys():
             assert result[key].identical(expected[key])
 
-    def test_names_property_returns_a_list_of_sorted_bounds_keys(self):
+    def test_keys_property_returns_a_list_of_sorted_bounds_keys(self):
         result = self.ds_with_bnds.bounds.keys
         expected = ["lat_bnds", "lon_bnds", "time_bnds"]
 
