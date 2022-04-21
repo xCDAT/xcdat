@@ -11,6 +11,5 @@ from xcdat.regridder.accessor import DatasetRegridderAccessor  # noqa: F401
 from xcdat.spatial import SpatialAccessor  # noqa: F401
 from xcdat.temporal import TemporalAccessor  # noqa: F401
 from xcdat.utils import compare_datasets  # noqa: F401
-from xcdat.xcdat import XCDATAccessor  # noqa: F401
 
 __version__ = "0.2.0"

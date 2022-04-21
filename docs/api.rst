@@ -3,8 +3,10 @@ API Reference
 
 .. currentmodule:: xcdat
 
-Top-level API
--------------
+Top-level API Functions
+-----------------------
+
+Below is a list of top-level API functions that are available in ``xcdat``.
 
 .. autosummary::
     :toctree: generated/
@@ -20,8 +22,20 @@ Top-level API
 .. currentmodule:: xarray
 
 
-Dataset
-------------------------------
+``xarray.Dataset`` Accessors
+----------------------------
+
+``xcdat`` accessors provide implicit namespaces for custom functionality that clearly identifies it as separate from built-in xarray methods.
+These accessors operate directly on ``xarray.Dataset`` objects.
+
+.. note::
+
+   Accessors are created once per DataArray and Dataset instance. New
+   instances, like those created from arithmetic operations or when accessing
+   a DataArray from a Dataset (ex. ``ds[var_name]``), will have new
+   accessors created.
+
+More information on accessors can be found here: https://docs.xarray.dev/en/stable/internals/extending-xarray.html#extending-xarray
 
 .. _dsattr_1:
 
@@ -32,7 +46,8 @@ Attributes
    :toctree: generated/
    :template: autosummary/accessor_attribute.rst
 
-    Dataset.bounds.bounds
+    Dataset.bounds.map
+    Dataset.bounds.keys
 
 .. _dsmeth_1:
 
@@ -46,38 +61,8 @@ Methods
     Dataset.bounds.add_bounds
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
-    Dataset.spatial.spatial_avg
-    Dataset.temporal.temporal_avg
+    Dataset.spatial.average
+    Dataset.temporal.average
+    Dataset.temporal.climatology
     Dataset.temporal.departures
     Dataset.temporal.center_times
-
-Dataset (``xcdat`` accessor)
-----------------------------
-
-.. _dsattr_2:
-
-Attributes
-~~~~~~~~~~
-
-.. autosummary::
-   :toctree: generated/
-   :template: autosummary/accessor_attribute.rst
-
-    Dataset.xcdat.bounds
-
-.. _dsmeth_2:
-
-Methods
-~~~~~~~
-
-.. autosummary::
-   :toctree: generated/
-   :template: autosummary/accessor_method.rst
-
-    Dataset.xcdat.add_bounds
-    Dataset.xcdat.get_bounds
-    Dataset.xcdat.add_missing_bounds
-    Dataset.xcdat.spatial_avg
-    Dataset.xcdat.temporal_avg
-    Dataset.xcdat.departures
-    Dataset.xcdat.center_times
