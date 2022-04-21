@@ -508,6 +508,38 @@ class TestAccessor:
         self.data = mock.MagicMock()
         self.ac = accessor.DatasetRegridderAccessor(self.data)
 
+    def test_grid_missing_axis(self):
+        ds = fixtures.generate_dataset(True, True)
+
+        ds_no_lat = ds.drop_vars(["lat"])
+
+        with pytest.raises(KeyError):
+            ds_no_lat.regridder.grid
+
+        ds_no_lon = ds.drop_vars(["lon"])
+
+        with pytest.raises(KeyError):
+            ds_no_lon.regridder.grid
+
+    def test_grid(self):
+        ds_bounds = fixtures.generate_dataset(True, True)
+
+        grid = ds_bounds.regridder.grid
+
+        assert "lat" in grid
+        assert "lon" in grid
+        assert "lat_bnds" in grid
+        assert "lon_bnds" in grid
+
+        ds_no_bounds = fixtures.generate_dataset(True, False)
+
+        grid = ds_no_bounds.regridder.grid
+
+        assert "lat" in grid
+        assert "lon" in grid
+        assert "lat_bnds" in grid
+        assert "lon_bnds" in grid
+
     def test_valid_tool(self):
         mock_regridder = mock.MagicMock()
         mock_regridder.return_value.regrid.return_value = "output data"

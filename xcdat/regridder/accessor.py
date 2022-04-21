@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any, Literal, Tuple
 
 import xarray as xr
 
@@ -17,7 +17,58 @@ class DatasetRegridderAccessor:
     """xarray dataset accessor for access to regridding."""
 
     def __init__(self, ds: xr.Dataset):
-        self._ds = ds
+        self._ds: xr.Dataset = ds
+
+    def _get_axis_data(
+        self, name: str, standard_name: str
+    ) -> Tuple[xr.DataArray, xr.DataArray]:
+        try:
+            axis = self._ds.cf[name]
+        except KeyError:
+            raise KeyError(
+                f"{standard_name} axis could not be correctly identified in the Dataset"
+            )
+
+        try:
+            axis_bnds = self._ds.bounds.get_bounds(axis.name)
+        except KeyError:
+            axis_bnds = None
+
+        return axis, axis_bnds
+
+    @property
+    def grid(self) -> xr.Dataset:
+        """
+        Extracts grid information from a `xr.Dataset`.
+
+        Returns
+        -------
+        xr.Dataset
+            With data variables describing the grid.
+
+        Raises
+        ------
+        ValueError
+            If axis data variable is not correctly identified.
+        """
+        x, x_bnds = self._get_axis_data("X", "Longitude")
+
+        y, y_bnds = self._get_axis_data("Y", "Latitude")
+
+        with xr.set_options(keep_attrs=True):
+            coords = {x.name: x.copy(), y.name: y.copy()}
+
+            if x_bnds is not None:
+                coords[x_bnds.name] = x_bnds.copy()
+
+            if y_bnds is not None:
+                coords[y_bnds.name] = y_bnds.copy()
+
+        ds = xr.Dataset(coords, attrs=self._ds.attrs)
+
+        ds = ds.bounds.add_missing_bounds()
+
+        return ds
 
     def regrid(
         self,
