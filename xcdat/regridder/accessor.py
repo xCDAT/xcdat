@@ -1,4 +1,4 @@
-from typing import Any, Literal, Tuple
+from typing import Any, Dict, Literal, Tuple
 
 import xarray as xr
 
