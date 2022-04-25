@@ -75,10 +75,10 @@ class DatasetRegridderAccessor:
         data_var: str,
         dst_grid: xr.Dataset,
         tool: RegridTool = "xesmf",
-        **options: Any,
+        **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
-        Applys spatial regridding to variable for rectilinear and curvilinear grids.
+        Applies spatial regridding to variable for rectilinear and curvilinear grids.
 
         Supported tools:
 
@@ -93,7 +93,7 @@ class DatasetRegridderAccessor:
             Dataset containing destination grid.
         tool : str
             Name of the regridding tool.
-        **options : Any
+        **options : Dict[str, Any]
             These options are passed to the tool being used for regridding.
             See specific regridder documentation for available options.
 
@@ -122,11 +122,11 @@ class DatasetRegridderAccessor:
 
         >>> out_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
-        Regrid variable using "xesmf".
+        Regrid variable using "xesmf":
 
         >>> ds.regridder.regrid("tas", out_grid, tool="xesmf", method="bilinear")
 
-        Regrid variable using "regrid2".
+        Regrid variable using "regrid2":
 
         >>> ds.regridder.regrid("tas", out_grid, tool="regrid2")
         """

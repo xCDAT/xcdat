@@ -8,8 +8,6 @@ from xcdat.regridder.base import BaseRegridder
 
 def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
     """
-    Extract bounds.
-
     Extract lower and upper bounds from an axis.
 
     Parameters
@@ -19,11 +17,8 @@ def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
 
     Returns
     -------
-    xr.DataArray
-        Contains the lower bounds for the axis.
-
-    xr.DataArray
-        Contains the upper bounds for the axis.
+   Tuple[xr.DataArray, xr.DataArray]
+        A tuple containing the lower and upper bounds for the axis.
     """
     if bounds[0, 0] < bounds[0, 1]:
         lower = bounds[:, 0]
@@ -48,12 +43,8 @@ def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
     Returns
     -------
-    List
-        Of cell mappings.
-
-    List
-        Of cell weights.
-
+    Tuple[List, List]
+        A tuple of cell mappings and cell weights.
     """
     src_south, src_north = extract_bounds(src)
     dst_south, dst_north = extract_bounds(dst)
@@ -116,14 +107,9 @@ def align_axis(
 
     Returns
     -------
-    xr.DataArray
-        Containing the shifted western source bounds.
-
-    xr.DataArray
-        Containing the shifted eastern source bounds.
-
-    int
-        Number of places shifted to align axis.
+    Tuple[xr.DataArray, xr.DataArray, int]
+        A tuple containing the shifted western source bounds, the shifted eastern 
+        source bounds, and the number of places shifted to align axis.
     """
     west_most = np.minimum(dst_west[0], dst_west[-1])
 
@@ -190,11 +176,8 @@ def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
     Returns
     -------
-    List
-        Of cell mappings.
-
-    List
-        Of cell weights.
+    Tuple[List, List]
+        A tuple of cell mappings and cell weights.
     """
     src_west, src_east = extract_bounds(src)
     dst_west, dst_east = extract_bounds(dst)
@@ -230,7 +213,7 @@ def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
 
 class Regrid2Regridder(BaseRegridder):
-    def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset, **options):
+    def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset, **options: Dict[str, Any]):
         """
         Class to generate mapping and apply regridding between source and destination
         grid.
@@ -243,7 +226,7 @@ class Regrid2Regridder(BaseRegridder):
             Dataset containing the source grid.
         dst_grid : xr.Dataset
             Dataset containing the destination grid.
-        options :
+        options : Dict[str, Any]
             Dictionary with extra parameters for the regridder.
         """
         super().__init__(src_grid, dst_grid, **options)
@@ -289,7 +272,7 @@ class Regrid2Regridder(BaseRegridder):
 
         return (np.arange(number_of_offsets) * offset).astype(np.int64)
 
-    def _output_axis_sizes(self, da: xr.DataArray) -> Dict:
+    def _output_axis_sizes(self, da: xr.DataArray) -> Dict[str, int]:
         """
         Maps axes to output array sizes.
 
@@ -302,7 +285,6 @@ class Regrid2Regridder(BaseRegridder):
         -------
         Dict
             Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
-
         """
         output_sizes = {}
 
@@ -322,7 +304,7 @@ class Regrid2Regridder(BaseRegridder):
         self,
         input_data: np.ndarray,
         axis_sizes: Dict,
-        ordered_axis_names: List,
+        ordered_axis_names: List[str],
         mask: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """
@@ -334,10 +316,10 @@ class Regrid2Regridder(BaseRegridder):
             Input multi-dimensional array on source grid.
         axis_sizes : Dict
             Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
-        ordered_axis_names : List
+        ordered_axis_names : List[str]
             List of axis name in order of dimenions of ``input_data``.
-        mask:
-            Multi-dimensional used for masking.
+        mask: Optional[np.ndarray], optional
+            Multi-dimensional numpy array used for masking, defaults to None.
 
         Returns
         -------
@@ -407,7 +389,7 @@ class Regrid2Regridder(BaseRegridder):
         data_var: str,
         output_data: np.ndarray,
         axis_variable_name_map: Dict,
-        ordered_axis_names: List,
+        ordered_axis_names: List[str],
     ) -> xr.Dataset:
         """
         Creates the output Dataset containing the new variable on the destination grid.
@@ -422,7 +404,7 @@ class Regrid2Regridder(BaseRegridder):
             Output data array.
         axis_variable_name_map : Dict
             Map of axis name e.g. ("X", "Y", etc) to variable name e.g. ("lon", "lat", etc).
-        ordered_axis_names : List
+        ordered_axis_names : List[str]
             List of axis names in the order observed for ``output_data``.
 
         Returns
@@ -435,7 +417,7 @@ class Regrid2Regridder(BaseRegridder):
         coords = {}
         data_vars = {}
 
-        # Grab coords and bounds from appropiate dataset.
+        # Grab coords and bounds from appropriate dataset.
         for variable_name, axis_name in variable_axis_name_map.items():
             if axis_name in ["X", "Y"]:
                 coords[variable_name] = self._dst_grid[variable_name].copy()

@@ -83,7 +83,6 @@ def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, fl
     -------
     Tuple[float, float, float]
         First, second and third legendre polynomial.
-
     """
     # TODO figure out why this is different compared to numpy.polynomial.legendre, is this wrong?
     zero_poly = np.cos(bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST))
@@ -414,7 +413,6 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
     -------
     xr.Dataset
         A dataset containing the global mean grid.
-
     """
     lat = grid.cf["lat"]
     lat_bnd = grid.bounds.get_bounds("lat")
@@ -483,7 +481,6 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     -------
     xr.Dataset
         A dataset containing a zonal grid.
-
     """
     lon = grid.cf["lon"]
     lon_bnds = grid.bounds.get_bounds("lon")
