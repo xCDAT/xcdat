@@ -19,7 +19,6 @@ from dask.array.core import Array
 
 from xcdat.axis import (
     GENERIC_AXIS_MAP,
-    GenericAxis,
     _align_lon_bounds_to_360,
     _get_prime_meridian_index,
 )
@@ -28,7 +27,7 @@ from xcdat.dataset import get_data_var
 #: Type alias for a dictionary of axis keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
 #: Type alias for supported spatial axis keys.
-SpatialAxis = Literal["lat", "lon"]
+SpatialAxis = Literal["X", "Y"]
 SPATIAL_AXES: Tuple[SpatialAxis, ...] = get_args(SpatialAxis)
 #: Type alias for a tuple of floats/ints for the regional selection bounds.
 RegionAxisBounds = Tuple[float, float]
@@ -44,7 +43,7 @@ class SpatialAccessor:
     def average(
         self,
         data_var: str,
-        axis: Union[List[SpatialAxis], SpatialAxis] = ["lat", "lon"],
+        axis: List[SpatialAxis] = ["X", "Y"],
         weights: Union[Literal["generate"], xr.DataArray] = "generate",
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
@@ -67,9 +66,9 @@ class SpatialAccessor:
         data_var: str
             The name of the data variable inside the dataset to spatially
             average.
-        axis : Union[List[SpatialAxis], SpatialAxis]
-            List of axis dimensions or single axis dimension to average over.
-            For example, ["lat", "lon"]  or "lat", by default ["lat", "lon"].
+        axis : List[SpatialAxis]
+            List of axis dimensions to average over, by default ["X", "Y"].
+            Valid axis strings include "X" and "Y".
         weights : Union[Literal["generate"], xr.DataArray], optional
             If "generate", then weights are generated. Otherwise, pass a
             DataArray containing the regional weights used for weighted
@@ -104,30 +103,36 @@ class SpatialAccessor:
 
         >>> import xcdat
 
-        Open a dataset and limit to a single variable:
-
-        >>> ds = xcdat.open_dataset("path/to/file.nc", var="tas")
-
         Call spatial averaging method:
 
-        >>> # First option
         >>> ds.spatial.average(...)
-        >>> # Second option
-        >>> ds.xcdat.average(...)
+
+        Check the `axis` attribute is set on the desired coordinates:
+
+        >>> ds.lat.attrs["axis"]
+        >>> Y
+        >>>
+        >>> ds.lon.attrs["axis"]
+        >>> X
+
+        Set the `axis` attribute on desired coordinates (if it isn't set):
+
+        >>> ds.lat.attrs["axis"] = "Y"
+        >>> ds.lon.attrs["axis"] = "X"
 
         Get global average time series:
 
-        >>> ts_global = ds.spatial.average("tas", axis=["lat", "lon"])["tas"]
+        >>> ts_global = ds.spatial.average("tas", axis=["X", "Y"])["tas"]
 
         Get time series in Nino 3.4 domain:
 
-        >>> ts_n34 = ds.spatial.average("ts", axis=["lat", "lon"],
+        >>> ts_n34 = ds.spatial.average("ts", axis=["X", "Y"],
         >>>     lat_bounds=(-5, 5),
         >>>     lon_bounds=(-170, -120))["ts"]
 
         Get zonal mean time series:
 
-        >>> ts_zonal = ds.spatial.average("tas", axis=['lon'])["tas"]
+        >>> ts_zonal = ds.spatial.average("tas", axis=["X"])["tas"]
 
         Using custom weights for averaging:
 
@@ -138,18 +143,18 @@ class SpatialAccessor:
         >>>     dims=["lat", "lon"],
         >>> )
         >>>
-        >>> ts_global = ds.spatial.average("tas", axis=["lat","lon"],
+        >>> ts_global = ds.spatial.average("tas", axis=["X", "Y"],
         >>>     weights=weights)["tas"]
         """
         dataset = self._dataset.copy()
         dv = get_data_var(dataset, data_var)
-        axis = self._validate_axis(dv, axis)
+        axis = self._validate_axis_arg(dv, axis)
 
         if isinstance(weights, str) and weights == "generate":
             if lat_bounds is not None:
-                self._validate_region_bounds("lat", lat_bounds)
+                self._validate_region_bounds("Y", lat_bounds)
             if lon_bounds is not None:
-                self._validate_region_bounds("lon", lon_bounds)
+                self._validate_region_bounds("X", lon_bounds)
             dv_weights = self._get_weights(axis, lat_bounds, lon_bounds)
         elif isinstance(weights, xr.DataArray):
             dv_weights = weights
@@ -158,47 +163,48 @@ class SpatialAccessor:
         dataset[dv.name] = self._averager(dv, axis, dv_weights)
         return dataset
 
-    def _validate_axis(
-        self, data_var: xr.DataArray, axis: Union[List[SpatialAxis], SpatialAxis]
+    def _validate_axis_arg(
+        self, data_var: xr.DataArray, axis: List[SpatialAxis]
     ) -> List[SpatialAxis]:
-        """Validates if ``axis`` arg is supported and exists in the data var.
+        """
+        Validates that the ``axis`` dimension exists in the data variable.
 
         Parameters
         ----------
         data_var : xr.DataArray
             The data variable.
-        axis : Union[List[SpatialAxis], SpatialAxis]
-            List of axis dimensions or single axis dimension to average over.
+        axis : List[SpatialAxis]
+            List of axis dimensions to average over.
 
         Returns
         -------
         List[SpatialAxis]
-            List of axis dimensions or single axis dimension to average over.
+            List of axis dimensions to average over.
 
         Raises
         ------
         ValueError
-            If any key in ``axis`` is not supported for spatial averaging.
+            If a key in ``axis`` is not a supported value.
         KeyError
-            If any key in ``axis`` does not exist in the ``data_var``.
+            If the data variable does not have coordinates for the ``axis``
+            dimension, or the `axis` attribute(s) are not set.
         """
-        if isinstance(axis, str):
-            axis = [axis]
-
         for key in axis:
             if key not in SPATIAL_AXES:
                 raise ValueError(
-                    "Incorrect `axis` argument. Supported axes include: "
+                    "Incorrect `axis` argument value. Supported values include: "
                     f"{', '.join(SPATIAL_AXES)}."
                 )
 
-            generic_axis_key = GENERIC_AXIS_MAP[key]
+            generic_key = GENERIC_AXIS_MAP[key]
+
             try:
-                data_var.cf.axes[generic_axis_key]
+                data_var.cf.axes[generic_key]
             except KeyError:
                 raise KeyError(
-                    f"The data variable '{data_var.name}' is missing the '{axis}' "
-                    "dimension, which is required for spatial averaging."
+                    f"An '{generic_key}' axis dimension was not found in the data "
+                    f"variable. Make sure the data variable has '{generic_key}' axis "
+                    f"coordinates and its `axis` attribute is set to '{generic_key}'."
                 )
 
         return axis
@@ -244,7 +250,7 @@ class SpatialAccessor:
         TypeError
             If the ``bounds`` upper bound is not a float or integer.
         ValueError
-            If the ``axis`` is "lat" and the ``bounds`` lower value is larger
+            If the ``axis`` is "Y" and the ``bounds`` lower value is larger
             than the upper value.
         """
         if not isinstance(bounds, tuple):
@@ -269,12 +275,12 @@ class SpatialAccessor:
                 f"The regional {axis} upper bound is not a float or an integer."
             )
 
-        # For latitude, require that the upper bound be larger than the lower
-        # bound. Note that this does not apply to longitude (since it is
-        # a circular axis).
-        if axis == "lat" and lower >= upper:
+        # For the "Y" axis (latitude), require that the upper bound be larger
+        # than the lower bound. Note that this does not apply to the "X" axis
+        # (longitude) since it is circular.
+        if axis == "Y" and lower >= upper:
             raise ValueError(
-                f"The regional {axis} lower bound is greater than the upper. "
+                "The regional latitude lower bound is greater than the upper. "
                 "Pass a tuple with the format (lower, upper)."
             )
 
@@ -299,9 +305,8 @@ class SpatialAccessor:
 
         Parameters
         ----------
-        axis : Union[List[SpatialAxis], SpatialAxis]
-            List of axis dimensions or single axis dimension to average over.
-            For example, ["lat", "lon"]  or "lat".
+        axis : List[SpatialAxis]
+            List of axis dimensions to average over.
         lat_bounds : Optional[RegionAxisBounds]
             Tuple of latitude boundaries for regional selection.
         lon_bounds : Optional[RegionAxisBounds]
@@ -326,17 +331,18 @@ class SpatialAccessor:
             {"domain": xr.DataArray, "region": Optional[RegionAxisBounds]},
         )
         axis_bounds: Dict[SpatialAxis, Bounds] = {
-            "lat": {
-                "domain": self._dataset.bounds.get_bounds("lat").copy(),
-                "region": lat_bounds,
-            },
-            "lon": {
+            "X": {
                 "domain": self._dataset.bounds.get_bounds("lon").copy(),
                 "region": lon_bounds,
+            },
+            "Y": {
+                "domain": self._dataset.bounds.get_bounds("lat").copy(),
+                "region": lat_bounds,
             },
         }
 
         axis_weights: AxisWeights = {}
+
         for key in axis:
             d_bounds = axis_bounds[key]["domain"]
             self._validate_domain_bounds(d_bounds)
@@ -347,9 +353,9 @@ class SpatialAccessor:
             if r_bounds is not None:
                 r_bounds = np.array(r_bounds, dtype="float")
 
-            if key == "lon":
+            if key == "X":
                 weights = self._get_longitude_weights(d_bounds, r_bounds)
-            elif key == "lat":
+            elif key == "Y":
                 weights = self._get_latitude_weights(d_bounds, r_bounds)
 
             weights.attrs = d_bounds.attrs
@@ -357,6 +363,7 @@ class SpatialAccessor:
             axis_weights[key] = weights
 
         weights = self._combine_weights(axis_weights)
+
         return weights
 
     def _get_longitude_weights(
@@ -386,9 +393,9 @@ class SpatialAccessor:
         Parameters
         ----------
         domain_bounds : xr.DataArray
-            The array of bounds for the latitude domain.
+            The array of bounds for the longitude domain.
         region_bounds : Optional[np.ndarray]
-            The array of bounds for latitude regional selection.
+            The array of bounds for longitude regional selection.
 
         Returns
         -------
@@ -655,14 +662,22 @@ class SpatialAccessor:
             If the axis dimension sizes between ``weights`` and ``data_var``
             are misaligned.
         """
-        # Check that the supplied weights include lat and lon dimensions.
-        lat_key = data_var.cf.axes["Y"][0]
-        lon_key = data_var.cf.axes["X"][0]
+        # Check that the supplied weights include x and y dimensions.
+        x_key = data_var.cf.axes["X"][0]
+        y_key = data_var.cf.axes["Y"][0]
 
-        if "lat" in axis and lat_key not in weights.dims:
-            raise KeyError(f"Check weights DataArray includes {lat_key} dimension.")
-        if "lon" in axis and lon_key not in weights.dims:
-            raise KeyError(f"Check weights DataArray includes {lon_key} dimension.")
+        if "X" in axis and x_key not in weights.dims:
+            raise KeyError(
+                "The weights DataArray either does not include an X axis, "
+                "or the X axis coordinates does not have the 'axis' attribute "
+                "set to 'X'."
+            )
+        if "Y" in axis and y_key not in weights.dims:
+            raise KeyError(
+                "The weights DataArray either does not include an Y axis, "
+                "or the Y axis coordinates does not have the 'axis' attribute "
+                "set to 'Y'."
+            )
 
         # Check the weight dim sizes equal data var dim sizes.
         dim_sizes = {key: data_var.sizes[key] for key in weights.sizes.keys()}
@@ -692,8 +707,7 @@ class SpatialAccessor:
         data_var : xr.DataArray
             Data variable inside a Dataset.
         axis : List[SpatialAxis]
-            List of axis dimensions or single axis dimension to average over.
-            For example, ["lat", "lon"]  or "lat".
+            List of axis dimensions to average over.
         weights : xr.DataArray
             A DataArray containing the region area weights for averaging.
             ``weights`` must include the same spatial axis dimensions and have
@@ -710,34 +724,8 @@ class SpatialAccessor:
         Missing values are replaced with 0 using ``weights.fillna(0)``.
         """
         weights = weights.fillna(0)
+
         with xr.set_options(keep_attrs=True):
-            weighted_mean = data_var.cf.weighted(weights).mean(
-                self._get_generic_axis_keys(axis)
-            )
-            return weighted_mean
+            weighted_mean = data_var.cf.weighted(weights).mean(axis)
 
-    def _get_generic_axis_keys(self, axis: List[SpatialAxis]) -> List[GenericAxis]:
-        """Converts supported axis keys to their generic CF representations.
-
-        Since xCDAT's spatial averaging accepts the CF short version of axes
-        keys, attempting to index a Dataset/DataArray on the short key through
-        cf_xarray might fail for cases where the long key is used instead (e.g.,
-        "latitude" instead of "lat"). This method handles this edge case by
-        converting the list of axis keys to their generic representations (e.g.,
-        "Y" instead of "lat") for indexing operations.
-
-        Parameters
-        ----------
-        axis_keys : List[SpatialAxis]
-            List of axis dimension(s) to average over.
-
-        Returns
-        -------
-        List[GenericAxis]
-            List of axis dimension(s) to average over.
-        """
-        generic_axis_keys = []
-        for key in axis:
-            generic_axis_keys.append(GENERIC_AXIS_MAP[key])
-
-        return generic_axis_keys
+        return weighted_mean
