@@ -234,14 +234,14 @@ class Regrid2Regridder(BaseRegridder):
         super().__init__(src_grid, dst_grid, **options)
 
         src_lat = src_grid.bounds.get_bounds("lat")
-        self.dst_lat = dst_grid.bounds.get_bounds("lat")
+        self._dst_lat = dst_grid.bounds.get_bounds("lat")
 
-        self.lat_mapping, self.lat_weights = map_latitude(src_lat, self.dst_lat)
+        self._lat_mapping, self._lat_weights = map_latitude(src_lat, self._dst_lat)
 
         src_lon = src_grid.bounds.get_bounds("lon")
-        self.dst_lon = dst_grid.bounds.get_bounds("lon")
+        self._dst_lon = dst_grid.bounds.get_bounds("lon")
 
-        self.lon_mapping, self.lon_weights = map_longitude(src_lon, self.dst_lon)
+        self._lon_mapping, self._lon_weights = map_longitude(src_lon, self._dst_lon)
 
     def _base_put_indexes(self, axis_sizes: Dict[str, int]) -> np.ndarray:
         """
@@ -346,15 +346,15 @@ class Regrid2Regridder(BaseRegridder):
 
             mask = np.ones((input_shape[input_lat_index], input_shape[input_lon_index]))
 
-        for lat_index, lat_map in enumerate(self.lat_mapping):
-            lat_weight = self.lat_weights[lat_index]
+        for lat_index, lat_map in enumerate(self._lat_mapping):
+            lat_weight = self._lat_weights[lat_index]
 
             input_lat_segment = np.take(input_data, lat_map, axis=input_lat_index)
 
             mask_lat_segment = np.take(mask, lat_map, axis=mask_lat_index)
 
-            for lon_index, lon_map in enumerate(self.lon_mapping):
-                lon_weight = self.lon_weights[lon_index]
+            for lon_index, lon_map in enumerate(self._lon_mapping):
+                lon_weight = self._lon_weights[lon_index]
 
                 dot_weight = np.dot(lat_weight, lon_weight)
 
