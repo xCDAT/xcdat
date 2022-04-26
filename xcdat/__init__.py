@@ -7,7 +7,7 @@ from xcdat.dataset import (  # noqa: F401
     open_dataset,
     open_mfdataset,
 )
-from xcdat.regridder.accessor import DatasetRegridderAccessor  # noqa: F401
+from xcdat.regridder.accessor import RegridderAccessor  # noqa: F401
 from xcdat.spatial import SpatialAccessor  # noqa: F401
 from xcdat.temporal import TemporalAccessor  # noqa: F401
 from xcdat.utils import compare_datasets  # noqa: F401

@@ -506,7 +506,7 @@ class TestAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.data = mock.MagicMock()
-        self.ac = accessor.DatasetRegridderAccessor(self.data)
+        self.ac = accessor.RegridderAccessor(self.data)
 
     def test_grid_missing_axis(self):
         ds = fixtures.generate_dataset(True, True)

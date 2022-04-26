@@ -13,7 +13,7 @@ REGRID_TOOLS = {
 
 
 @xr.register_dataset_accessor(name="regridder")
-class DatasetRegridderAccessor:
+class RegridderAccessor:
     """xarray dataset accessor for access to regridding."""
 
     def __init__(self, ds: xr.Dataset):
