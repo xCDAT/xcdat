@@ -41,7 +41,7 @@ class TestOpenDataset:
         ds = generate_dataset(cf_compliant=False, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = open_dataset(self.file_path, data_var="ts", add_bounds=True)
+        result = open_dataset(self.file_path, data_var="ts")
 
         # Generate an expected dataset with decoded non-CF compliant time units.
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -173,7 +173,8 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset(
-            [self.file_path1, self.file_path2], data_var="ts", add_bounds=True
+            [self.file_path1, self.file_path2],
+            data_var="ts",
         )
 
         # Generate an expected dataset, which is a combination of both datasets

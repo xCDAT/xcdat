@@ -22,7 +22,7 @@ def open_dataset(
     data_var: Optional[str] = None,
     decode_times: bool = True,
     center_times: bool = False,
-    add_bounds: bool = False,
+    add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
@@ -44,8 +44,9 @@ def open_dataset(
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
     add_bounds: bool, optional
-        If True, add bounds for supported axes (T, X, Y) if they are missing in
-        the Dataset, by default False.
+        If True, add bounds for supported axes (X, Y, T) if they are missing in
+        the Dataset, by default True. Bounds are required for many xCDAT
+        features.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -105,7 +106,7 @@ def open_mfdataset(
     data_var: Optional[str] = None,
     decode_times: bool = True,
     center_times: bool = False,
-    add_bounds: bool = False,
+    add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
     data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
     preprocess: Optional[Callable] = None,
@@ -133,8 +134,9 @@ def open_mfdataset(
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
     add_bounds: bool, optional
-        If True, add bounds for supported axes (T, X, Y) if they are missing in
-        the Dataset, by default False.
+        If True, add bounds for supported axes (X, Y, T) if they are missing in
+        the Dataset, by default True. Bounds are required for many xCDAT
+        features.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -426,7 +428,7 @@ def _postprocess_dataset(
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
     add_bounds: bool, optional
-        If True, add bounds for supported axes (T, X, Y) if they are missing in
+        If True, add bounds for supported axes (X, Y, T) if they are missing in
         the Dataset, by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
