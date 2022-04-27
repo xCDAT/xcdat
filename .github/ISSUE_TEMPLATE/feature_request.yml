@@ -5,7 +5,7 @@ labels: ["Type: Enhancement"]
 assignees: []
 body:
     - type: checkboxes
-      id: Feature Criteria
+      id: Feature Request Criteria
       attributes:
       label: First, please make sure your feature request meets the following criteria.
       options:

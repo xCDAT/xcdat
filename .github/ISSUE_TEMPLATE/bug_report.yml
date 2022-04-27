@@ -5,7 +5,7 @@ labels: ["Type: Bug"]
 assignees: []
 body:
     - type: checkboxes
-      id: Bug Criteria
+      id: Bug Report Criteria
       attributes:
       label: First, please make sure your bug report meets the following criteria.
       options:
