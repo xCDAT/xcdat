@@ -55,7 +55,7 @@ Features must meet the following criteria before being considered for implementa
 
    - For example, ``cf_xarray`` already handles interpretation of CF convention attributes on xarray objects
 
-3. Feature is not specific to limited use cases (e.g., data quality issues)
+3. Feature is not limited to specific use cases (e.g., data quality issues)
 4. Feature is generally reusable
 5. Feature is relatively simple and lightweight to implement and use
 
