@@ -5,8 +5,9 @@ labels: ["Type: Enhancement"]
 assignees: []
 body:
     - type: checkboxes
-      id: Feature Request Criteria
+      id: feature-request-criteria
       attributes:
+        label: Feature Request Criteria
         label: First, please make sure your feature request meets the following criteria.
         options:
           - label: Feature is not implemented by ``xarray``
