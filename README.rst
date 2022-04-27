@@ -90,7 +90,7 @@ Feature Criteria
 Features must meet the following criteria before being considered for implementation:
 
 1. Feature is not implemented by ``xarray``
-2. Feature is not implemented in other actively developed xarray-based packages
+2. Feature is not implemented in another actively developed xarray-based package
 
    - For example, ``cf_xarray`` already handles interpretation of CF convention attributes on xarray objects
 
