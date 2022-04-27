@@ -11,9 +11,9 @@ body:
         description: First, please make sure your bug report meets the following criteria.
         options:
           - label: Bug is not related to data quality issue(s) beyond the scope of xCDAT
+            required: true
           - label: Bug is not related to core xarray APIs (please open an issue in the xarray repo if it is)
-      validations:
-        required: true
+            required: true
 
     - type: textarea
       id: what-happened

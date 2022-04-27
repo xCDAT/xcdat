@@ -11,12 +11,15 @@ body:
         label: First, please make sure your feature request meets the following criteria.
         options:
           - label: Feature is not implemented by ``xarray``
+            required: true
           - label: Feature is not implemented by another actively developed xarray-based package
+            required: true
           - label: Feature is not limited to specific use cases (e.g., data quality issues)
+            required: true
           - label: Feature is generally reusable
+            required: true
           - label: Feature is relatively simple and lightweight to implement and use
-      validations:
-        required: true
+            required: true
 
     - type: textarea
       id: description
