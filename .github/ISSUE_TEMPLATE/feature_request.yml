@@ -8,7 +8,7 @@ body:
       id: feature-request-criteria
       attributes:
         label: Feature Request Criteria
-        label: First, please make sure your feature request meets the following criteria.
+        Description: First, please make sure your feature request meets the following criteria.
         options:
           - label: Feature is not implemented by ``xarray``
             required: true
