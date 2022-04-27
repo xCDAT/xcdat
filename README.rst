@@ -89,13 +89,14 @@ Feature Criteria
 
 Features must meet the following criteria before being considered for implementation:
 
-1. Climate domain functionality and/or general ``xarray`` utility isn't provided natively with ``xarray``
-2. No other existing and actively developed xarray-based packages implement the feature
+1. Is not implemented or can be handled natively by ``xarray``
+2. Is not implemented in other actively developed xarray-based packages
 
    - For example, ``cf_xarray`` already handles interpretation of CF convention attributes on xarray objects
 
-3. Must be generally reusable and not specific to a single use case
-4. Must be relatively simple and lightweight to implement and use
+3. Is not specific to limited use cases (e.g., data quality issues)
+4. Is generally reusable
+5. Is relatively simple and lightweight to implement and use
 
 Acknowledgement
 ---------------

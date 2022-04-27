@@ -1,8 +1,14 @@
 blank_issues_enabled: false
 contact_links:
-    - name: Usage question
+    - name: Usage question (xarray)
+      url: https://github.com/pydata/xarray/discussions
+      about: |
+          Ask questions and discuss with other xarray community members here.
+          If you have a question like "How do I concatenate a list of datasets?" then
+          please include a self-contained reproducible example if possible.
+    - name: Usage question (xCDAT)
       url: https://github.com/xCDAT/xcdat/discussions
       about: |
-          Ask questions and discuss with other community members here.
+          Ask questions and discuss with other xCDAT community members here.
           If you have a question like "How do I perform geospatial averaging?" then
           please include a self-contained reproducible example if possible.
