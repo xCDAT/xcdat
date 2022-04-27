@@ -4,6 +4,16 @@ title: "[Bug]: "
 labels: ["Type: Bug"]
 assignees: []
 body:
+    - type: checkboxes
+      id: Bug Report Criteria
+      attributes:
+      label: First, please make sure your bug report meets the following criteria.
+      options:
+        - label: Bug is not related to data quality issue(s) beyond the scope of xCDAT
+        - label: Bug is not related to core xarray APIs (please open an issue in the xarray repo if it is)
+      validations:
+        required: true
+
     - type: textarea
       id: what-happened
       attributes:
