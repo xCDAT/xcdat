@@ -7,13 +7,13 @@ body:
     - type: checkboxes
       id: Feature Request Criteria
       attributes:
-      label: First, please make sure your feature request meets the following criteria.
-      options:
-        - label: Feature is not implemented by ``xarray``
-        - label: Feature is not implemented by another actively developed xarray-based package
-        - label: Feature is not limited to specific use cases (e.g., data quality issues)
-        - label: Feature is generally reusable
-        - label: Feature is relatively simple and lightweight to implement and use
+        label: First, please make sure your feature request meets the following criteria.
+        options:
+          - label: Feature is not implemented by ``xarray``
+          - label: Feature is not implemented by another actively developed xarray-based package
+          - label: Feature is not limited to specific use cases (e.g., data quality issues)
+          - label: Feature is generally reusable
+          - label: Feature is relatively simple and lightweight to implement and use
       validations:
         required: true
 
