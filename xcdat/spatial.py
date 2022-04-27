@@ -719,7 +719,7 @@ class SpatialAccessor:
     def _get_generic_axis_keys(self, axis: List[SpatialAxis]) -> List[GenericAxis]:
         """Converts supported axis keys to their generic CF representations.
 
-        Since XCDAT's spatial averaging accepts the CF short version of axes
+        Since xCDAT's spatial averaging accepts the CF short version of axes
         keys, attempting to index a Dataset/DataArray on the short key through
         cf_xarray might fail for cases where the long key is used instead (e.g.,
         "latitude" instead of "lat"). This method handles this edge case by

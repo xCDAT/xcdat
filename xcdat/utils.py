@@ -64,7 +64,7 @@ def str_to_bool(attr: str) -> bool:
     netCDF files can only store attributes with a type of str, Number, ndarray,
     number, list, or tuple.
 
-    XCDAT methods store boolean attributes as strings. This function will
+    xCDAT methods store boolean attributes as strings. This function will
     convert such attributes back to booleans.
 
     Parameters

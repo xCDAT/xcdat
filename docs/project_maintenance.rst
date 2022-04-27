@@ -37,7 +37,7 @@ Releasing a New Version
 Continuous Integration / Continuous Delivery (CI/CD)
 -----------------------------------------------------
 
-This project uses `GitHub Actions <https://github.com/XCDAT/xcdat/actions>`_ to run the CI/CD build workflow.
+This project uses `GitHub Actions <https://github.com/xCDAT/xcdat/actions>`_ to run the CI/CD build workflow.
 
 This workflow is triggered by Git ``pull_request`` and ``push`` (merging PRs) events to the the main repo's ``main`` branch.
 
