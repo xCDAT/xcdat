@@ -1,7 +1,7 @@
 .. raw:: html
 
    <p align="center">
-      <img src="./docs/_static/xcdat_logo.png" alt="XCDAT logo"/>
+      <img src="./docs/_static/xcdat_logo.png" alt="xCDAT logo"/>
    </p>
 
 .. container::
@@ -25,12 +25,12 @@
    :target: https://anaconda.org/conda-forge/xcdat
 .. |platforms| image:: https://img.shields.io/conda/pn/conda-forge/xcdat.svg
    :target: https://anaconda.org/conda-forge/xcdat
-.. |CI/CD Build Workflow| image:: https://github.com/XCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
-   :target: https://github.com/XCDAT/xcdat/actions/workflows/build_workflow.yml
+.. |CI/CD Build Workflow| image:: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
+   :target: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml
 .. |docs| image:: https://readthedocs.org/projects/xcdat/badge/?version=latest
    :target: https://xcdat.readthedocs.io/en/latest/?badge=latest
-.. |Codecov| image:: https://codecov.io/gh/XCDAT/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
-   :target: https://codecov.io/gh/XCDAT/xcdat
+.. |Codecov| image:: https://codecov.io/gh/xCDAT/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
+   :target: https://codecov.io/gh/xCDAT/xcdat
 .. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
    :target: https://github.com/pre-commit/pre-commit
 .. |Code style: black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
@@ -40,7 +40,7 @@
 .. |Checked with mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
    :target: http://mypy-lang.org/
 
-XCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
+xCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
 It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library.
 
 .. _xarray: https://github.com/pydata/xarray
@@ -49,7 +49,7 @@ It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_
 Planned Features
 -----------------
 
-XCDAT aims to provide utilities for general xarray usage and climate domain specific features.
+xCDAT aims to provide utilities for general xarray usage and climate domain specific features.
 
 These features include:
 
@@ -82,7 +82,7 @@ These features include:
 
   - Operate on rectilinear and cuvilinear grids
 
-- Parallelism of XCDAT features using Dask
+- Parallelism of xCDAT features using Dask
 
 Feature Criteria
 ~~~~~~~~~~~~~~~~

@@ -12,13 +12,13 @@ Installation
 Stable release
 ==============
 
-To install XCDAT using Conda, run:
+To install xCDAT using Conda, run:
 
 .. code-block:: console
 
     $ conda install -c conda-forge xcdat
 
-This is the preferred method to install XCDAT, as it will always install the most recent stable release.
+This is the preferred method to install xCDAT, as it will always install the most recent stable release.
 
 If you don't have Conda installed, follow the `Miniconda installation guide`_.
 
@@ -27,19 +27,19 @@ If you don't have Conda installed, follow the `Miniconda installation guide`_.
 From sources
 ============
 
-The sources for XCDAT can be downloaded from the `Github repo`_.
+The sources for xCDAT can be downloaded from the `Github repo`_.
 
 You can either clone the public repository:
 
 .. code-block:: console
 
-    $ git clone git://github.com/XCDAT/xcdat
+    $ git clone git://github.com/xCDAT/xcdat
 
 Or download the `tarball`_:
 
 .. code-block:: console
 
-    $ curl -OJL https://github.com/XCDAT/xcdat/tarball/master
+    $ curl -OJL https://github.com/xCDAT/xcdat/tarball/master
 
 Once you have a copy of the source, you can install it with:
 
@@ -48,5 +48,5 @@ Once you have a copy of the source, you can install it with:
     $ python setup.py install
 
 
-.. _Github repo: https://github.com/XCDAT/xcdat
-.. _tarball: https://github.com/XCDAT/xcdat/tarball/master
+.. _Github repo: https://github.com/xCDAT/xcdat
+.. _tarball: https://github.com/xCDAT/xcdat/tarball/master

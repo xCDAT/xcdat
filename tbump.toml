@@ -1,5 +1,5 @@
 # Uncomment this if your project is hosted on GitHub:
-github_url = "https://github.com/XCDAT/xcdat"
+github_url = "https://github.com/xCDAT/xcdat"
 
 [version]
 current = "0.2.0"

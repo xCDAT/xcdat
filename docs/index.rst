@@ -1,7 +1,7 @@
-XCDAT: Xarray Extended with Climate Data Analysis Tools
+xCDAT: Xarray Extended with Climate Data Analysis Tools
 =======================================================
 
-XCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
+xCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
 It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library.
 
 .. _xarray: https://github.com/pydata/xarray
@@ -10,7 +10,7 @@ It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_
 Planned Features
 -----------------
 
-XCDAT aims to provide utilities for general xarray usage and climate domain specific features.
+xCDAT aims to provide utilities for general xarray usage and climate domain specific features.
 
 These features include:
 
@@ -43,7 +43,7 @@ These features include:
 
   - Operate on rectilinear and cuvilinear grids
 
-- Parallelism of XCDAT features using Dask
+- Parallelism of xCDAT features using Dask
 
 Feature Criteria
 ~~~~~~~~~~~~~~~~
@@ -100,4 +100,4 @@ See `LICENSE <LICENSE>`_ for details
    Project Maintenance <project_maintenance>
    What’s New <history>
    Team <authors>
-   GitHub Repository <https://github.com/XCDAT/xcdat>
+   GitHub Repository <https://github.com/xCDAT/xcdat>
