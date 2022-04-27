@@ -89,14 +89,14 @@ Feature Criteria
 
 Features must meet the following criteria before being considered for implementation:
 
-1. Is not implemented or can be handled natively by ``xarray``
-2. Is not implemented in other actively developed xarray-based packages
+1. Feature is not implemented natively by ``xarray``
+2. Feature is not implemented in other actively developed xarray-based packages
 
    - For example, ``cf_xarray`` already handles interpretation of CF convention attributes on xarray objects
 
-3. Is not specific to limited use cases (e.g., data quality issues)
-4. Is generally reusable
-5. Is relatively simple and lightweight to implement and use
+3. Feature is not specific to limited use cases (e.g., data quality issues)
+4. Feature is generally reusable
+5. Feature is relatively simple and lightweight to implement and use
 
 Acknowledgement
 ---------------
