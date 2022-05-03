@@ -168,7 +168,7 @@ class SpatialAccessor:
 
     def _validate_axis_arg(self, axis: List[SpatialAxis]):
         """
-        Validates that the ``axis`` dimension exists in the dataset.
+        Validates that the ``axis`` dimension(s) exists in the dataset.
 
         Parameters
         ----------
