@@ -194,9 +194,9 @@ class SpatialAccessor:
                 self._dataset.cf.axes[key]
             except KeyError:
                 raise KeyError(
-                    f"A '{key}' axis dimension was not found in the data "
-                    f"variable. Make sure the data variable has '{key}' axis "
-                    f"coordinates and its 'axis' attribute is set to '{key}'."
+                    f"A '{key}' axis dimension was not found in the dataset. Make sure "
+                    f"the dataset has '{key}' axis coordinates and the coordinates' "
+                    f"'axis' attribute is set to '{key}'."
                 )
 
     def _validate_domain_bounds(self, domain_bounds: xr.DataArray):
