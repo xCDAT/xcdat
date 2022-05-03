@@ -106,8 +106,9 @@ class TemporalAccessor:
             dataset.cf["T"]
         except KeyError:
             raise KeyError(
-                "This dataset does not have a time dimension, which is required for "
-                "using the methods in the TemporalAccessor class."
+                "A 'T' axis dimension was not found in the dataset. Make sure the "
+                "dataset has time axis coordinates and its 'axis' attribute is set to "
+                "'T'."
             )
 
         self._dataset: xr.Dataset = dataset
@@ -209,6 +210,15 @@ class TemporalAccessor:
         Import TemporalAccessor class:
 
         >>> import xcdat
+
+        Check the 'axis' attribute is set on the time coordinates:
+
+        >>> ds.time.attrs["axis"]
+        >>> T
+
+        Set the 'axis' attribute for the time coordinates if it isn't:
+
+        >>> ds.time.attrs["axis"] = "T"
 
         Call ``average()`` method:
 

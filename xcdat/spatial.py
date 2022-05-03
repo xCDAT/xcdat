@@ -17,11 +17,7 @@ import numpy as np
 import xarray as xr
 from dask.array.core import Array
 
-from xcdat.axis import (
-    GENERIC_AXIS_MAP,
-    _align_lon_bounds_to_360,
-    _get_prime_meridian_index,
-)
+from xcdat.axis import _align_lon_bounds_to_360, _get_prime_meridian_index
 from xcdat.dataset import get_data_var
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
@@ -49,7 +45,7 @@ class SpatialAccessor:
         lon_bounds: Optional[RegionAxisBounds] = None,
     ) -> xr.Dataset:
         """
-        Calculate the spatial average for a rectilinear grid over a (optional)
+        Calculates the spatial average for a rectilinear grid over an optionally
         specified regional domain.
 
         Operations include:
@@ -60,6 +56,13 @@ class SpatialAccessor:
           domains specified in ``axis``.
         - Adjust weights to conform to the specified regional boundary.
         - Compute spatial weighted average.
+
+        This method requires that the dataset's coordinates have the 'axis'
+        attribute set to the keys in ``axis``. For example, the latitude
+        coordinates should have its 'axis' attribute set to 'Y' (which is also
+        CF-compliant). This 'axis' attribute is used to retrieve the related
+        coordinates via `cf_xarray`. Refer to this method's examples for more
+        information.
 
         Parameters
         ----------
@@ -103,11 +106,7 @@ class SpatialAccessor:
 
         >>> import xcdat
 
-        Call spatial averaging method:
-
-        >>> ds.spatial.average(...)
-
-        Check the `axis` attribute is set on the desired coordinates:
+        Check the 'axis' attribute is set on the required coordinates:
 
         >>> ds.lat.attrs["axis"]
         >>> Y
@@ -115,10 +114,14 @@ class SpatialAccessor:
         >>> ds.lon.attrs["axis"]
         >>> X
 
-        Set the `axis` attribute on desired coordinates (if it isn't set):
+        Set the 'axis' attribute for the required coordinates if it isn't:
 
         >>> ds.lat.attrs["axis"] = "Y"
         >>> ds.lon.attrs["axis"] = "X"
+
+        Call spatial averaging method:
+
+        >>> ds.spatial.average(...)
 
         Get global average time series:
 
@@ -148,7 +151,7 @@ class SpatialAccessor:
         """
         dataset = self._dataset.copy()
         dv = get_data_var(dataset, data_var)
-        axis = self._validate_axis_arg(dv, axis)
+        self._validate_axis_arg(axis)
 
         if isinstance(weights, str) and weights == "generate":
             if lat_bounds is not None:
@@ -163,22 +166,13 @@ class SpatialAccessor:
         dataset[dv.name] = self._averager(dv, axis, dv_weights)
         return dataset
 
-    def _validate_axis_arg(
-        self, data_var: xr.DataArray, axis: List[SpatialAxis]
-    ) -> List[SpatialAxis]:
+    def _validate_axis_arg(self, axis: List[SpatialAxis]):
         """
-        Validates that the ``axis`` dimension exists in the data variable.
+        Validates that the ``axis`` dimension exists in the dataset.
 
         Parameters
         ----------
-        data_var : xr.DataArray
-            The data variable.
         axis : List[SpatialAxis]
-            List of axis dimensions to average over.
-
-        Returns
-        -------
-        List[SpatialAxis]
             List of axis dimensions to average over.
 
         Raises
@@ -186,8 +180,8 @@ class SpatialAccessor:
         ValueError
             If a key in ``axis`` is not a supported value.
         KeyError
-            If the data variable does not have coordinates for the ``axis``
-            dimension, or the `axis` attribute(s) are not set.
+            If the dataset does not have coordinates for the ``axis`` dimension,
+            or the `axis` attribute is not set for those coordinates.
         """
         for key in axis:
             if key not in SPATIAL_AXES:
@@ -196,18 +190,14 @@ class SpatialAccessor:
                     f"{', '.join(SPATIAL_AXES)}."
                 )
 
-            generic_key = GENERIC_AXIS_MAP[key]
-
             try:
-                data_var.cf.axes[generic_key]
+                self._dataset.cf.axes[key]
             except KeyError:
                 raise KeyError(
-                    f"An '{generic_key}' axis dimension was not found in the data "
-                    f"variable. Make sure the data variable has '{generic_key}' axis "
-                    f"coordinates and its `axis` attribute is set to '{generic_key}'."
+                    f"A '{key}' axis dimension was not found in the data "
+                    f"variable. Make sure the data variable has '{key}' axis "
+                    f"coordinates and its 'axis' attribute is set to '{key}'."
                 )
-
-        return axis
 
     def _validate_domain_bounds(self, domain_bounds: xr.DataArray):
         """Validates the ``domain_bounds`` arg based on a set of criteria.

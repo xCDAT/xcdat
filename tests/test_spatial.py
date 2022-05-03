@@ -131,25 +131,19 @@ class TestValidateAxisArg:
 
     def test_raises_error_if_axis_list_contains_unsupported_axis(self):
         with pytest.raises(ValueError):
-            self.ds.spatial._validate_axis_arg(self.ds.ts, axis=["Y", "incorrect_axis"])
+            self.ds.spatial._validate_axis_arg(axis=["Y", "incorrect_axis"])
 
     def test_raises_error_if_lat_axis_does_not_exist(self):
         ds = self.ds.copy()
-        ds["ts"] = xr.DataArray(data=None, coords={"lon": ds.lon}, dims=["lon"])
+        ds.lat.attrs["axis"] = None
         with pytest.raises(KeyError):
-            ds.spatial._validate_axis_arg(ds.ts, axis=["X", "Y"])
+            ds.spatial._validate_axis_arg(axis=["X", "Y"])
 
     def test_raises_error_if_lon_axis_does_not_exist(self):
         ds = self.ds.copy()
-        ds["ts"] = xr.DataArray(data=None, coords={"lat": ds.lat}, dims=["lat"])
+        ds.lon.attrs["axis"] = None
         with pytest.raises(KeyError):
-            ds.spatial._validate_axis_arg(ds.ts, axis=["X", "Y"])
-
-    def test_returns_list_of_str_if_axis_is_a_single_supported_str_input(self):
-        result = self.ds.spatial._validate_axis_arg(self.ds.ts, axis=["Y"])
-        expected = ["Y"]
-
-        assert result == expected
+            ds.spatial._validate_axis_arg(axis=["X", "Y"])
 
 
 class TestValidateRegionBounds:
