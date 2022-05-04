@@ -10,7 +10,7 @@ import xarray as xr
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
-from xcdat.dataset import get_data_var
+from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
 from xcdat.utils import str_to_bool
 
@@ -101,6 +101,8 @@ SEASON_TO_MONTH: Dict[str, int] = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
 
 @xr.register_dataset_accessor("temporal")
 class TemporalAccessor:
+    """A class to represent the TemporalAccessor."""
+
     def __init__(self, dataset: xr.Dataset):
         try:
             dataset.cf["T"]
@@ -575,7 +577,7 @@ class TemporalAccessor:
 
         # Get the observation data and group it using the time coordinate
         # groups.
-        dv_obs = get_data_var(ds, data_var)
+        dv_obs = _get_data_var(ds, data_var)
         self._time_grouped = self._group_time_coords(ds.cf["T"])
         dv_obs_grouped = self._groupby_freq(dv_obs)
 
@@ -675,7 +677,7 @@ class TemporalAccessor:
 
         # Group the time coordinates and average the data variable using them.
         self._time_grouped = self._group_time_coords(ds.cf["T"])
-        dv = get_data_var(ds, data_var)
+        dv = _get_data_var(ds, data_var)
         dv = self._averager(dv)
 
         # The dataset's original "time" dimension becomes obsolete after

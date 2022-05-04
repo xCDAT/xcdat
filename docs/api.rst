@@ -1,43 +1,73 @@
 API Reference
 =============
 
+Overview
+--------
+
+Most public ``xcdat`` functions and methods operate on ``xarray.Dataset`` objects, rather than ``xarray.DataArray`` objects.
+
+``xcdat`` follows this design pattern because major functions and methods require coordinate variable bounds, which can only be stored on ``Dataset`` objects.
+Refer to this `issue`_ for more information.
+
+.. _issue: https://github.com/pydata/xarray/issues/1475
+
 .. currentmodule:: xcdat
+
 
 Top-level API Functions
 -----------------------
 
-Below is a list of top-level API functions that are available in ``xcdat``.
+Below is a list of top-level API functions available in ``xcdat``.
 
 .. autosummary::
     :toctree: generated/
 
+    axis.swap_lon_axis
     dataset.open_dataset
     dataset.open_mfdataset
-    dataset.has_cf_compliant_time
     dataset.decode_non_cf_time
-    dataset.swap_lon_axis
-    dataset.get_data_var
     utils.compare_datasets
 
 .. currentmodule:: xarray
 
 
-``xarray.Dataset`` Accessors
-----------------------------
+Accessors (``xarray.Dataset``)
+------------------------------
 
-``xcdat`` accessors provide implicit namespaces for custom functionality that clearly identifies it as separate from built-in xarray methods.
-These accessors operate directly on ``xarray.Dataset`` objects.
+``xcdat`` provides ``Dataset`` accessors, which are implicit namespaces for custom functionality that clearly identifies it as separate from built-in xarray methods.
+
+.. figure:: _static/accessor_api.svg
+   :alt: Accessor API Diagram
+
+How to use ``xcdat`` accessors
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First, import the package:
+
+.. code-block:: python
+
+    >>> from xcdat
+
+Then open up a dataset as ``Dataset`` object:
+
+.. code-block:: python
+
+    >>> ds = xcdat.open_dataset("path/to/file", data_var="ts")
+
+
+Chain the accessor to the object to use the underlying accessor attributes and methods:
+
+.. code-block:: python
+
+    >>> ds = ds.spatial.average("ts", axis=["X", "Y"])
+    >>> ds = ds.temporal.average("ts", freq="month", weighted=True)
+    >>> ds_bounds_keys = ds.bounds.keys
 
 .. note::
 
-   Accessors are created once per DataArray and Dataset instance. New
-   instances, like those created from arithmetic operations or when accessing
-   a DataArray from a Dataset (ex. ``ds[var_name]``), will have new
-   accessors created.
+   Accessors are created once per Dataset instance. New instances, like those
+   created from arithmetic operations will have new accessors created.
 
-More information on accessors can be found here: https://docs.xarray.dev/en/stable/internals/extending-xarray.html#extending-xarray
-
-.. _dsattr_1:
 
 Attributes
 ~~~~~~~~~~
@@ -49,7 +79,8 @@ Attributes
     Dataset.bounds.map
     Dataset.bounds.keys
 
-.. _dsmeth_1:
+.. _dsattr_1:
+
 
 Methods
 ~~~~~~~
@@ -66,3 +97,5 @@ Methods
     Dataset.temporal.climatology
     Dataset.temporal.departures
     Dataset.temporal.center_times
+
+.. _dsmeth_1:

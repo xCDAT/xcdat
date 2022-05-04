@@ -18,7 +18,7 @@ import xarray as xr
 from dask.array.core import Array
 
 from xcdat.axis import _align_lon_bounds_to_360, _get_prime_meridian_index
-from xcdat.dataset import get_data_var
+from xcdat.dataset import _get_data_var
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
@@ -150,7 +150,7 @@ class SpatialAccessor:
         >>>     weights=weights)["tas"]
         """
         dataset = self._dataset.copy()
-        dv = get_data_var(dataset, data_var)
+        dv = _get_data_var(dataset, data_var)
         self._validate_axis_arg(axis)
 
         if isinstance(weights, str) and weights == "generate":
