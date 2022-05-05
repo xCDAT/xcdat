@@ -5,8 +5,14 @@ Frequently Asked Questions
 Data Wrangling
 --------------
 
-Some datasets might have quality issues, such as non-CF compliant attributes and inconsistent values.
-As a result, ``xarray`` and ``xcdat`` not being able to open these datasets using the default settings.
+Some datasets might have data quality issues such as inconsistent floating point values between files or non-CF compliant attributes.
+If data quality issues are present, `xarray`` and ``xcdat`` might not be able to open the datasets.
+
+You might be able to workaround data quality issues by:
+1. Configuring ``open_dataset()`` or ``open_mfdataset()`` keyword arguments based on your needs.
+2. Writing a custom `preprocess()` function to feed into ``open_mfdataset()``, which preprocesses each dataset file individually before joining them into a single Dataset object.
+
+``xcdat`` aims to be generalized library, so we don't intend on implementing functionality to fix poor data for limited use cases.
 
 How do I open datasets that have data and/or coordinate variables with conflicting values?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

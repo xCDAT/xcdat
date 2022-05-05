@@ -49,7 +49,7 @@ It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_
 Planned Features
 -----------------
 
-xCDAT's purpose is to provide climate domain specific features with xarray.
+The goal of xCDAT is to provide climate domain specific features and general utilities with xarray.
 
 Initial features include:
 
@@ -94,7 +94,7 @@ Things we keep in mind:
 Feature Criteria
 ~~~~~~~~~~~~~~~~
 
-Feature must meet the following criteria before they are considered for implementation:
+Features must meet the following criteria before they are considered for implementation:
 
 1. Feature is not implemented by ``xarray``
 2. Feature is not implemented in another actively developed xarray-based package
