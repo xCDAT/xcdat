@@ -50,7 +50,7 @@ First, import the package:
 
     >>> from xcdat
 
-Then open up a dataset as ``Dataset`` object:
+Then open up a dataset file as a ``Dataset`` object:
 
 .. code-block:: python
 
