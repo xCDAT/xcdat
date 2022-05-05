@@ -9,6 +9,7 @@ Some datasets might have data quality issues such as inconsistent floating point
 If data quality issues are present, ``xarray`` and ``xcdat`` might not be able to open the datasets.
 
 To open up datasets that have data quality issues, you can try:
+
 1. Configuring ``open_dataset()`` or ``open_mfdataset()`` keyword arguments based on your needs.
 2. Writing a custom `preprocess()` function to feed into ``open_mfdataset()``, which preprocesses each dataset file individually before joining them into a single Dataset object.
 
