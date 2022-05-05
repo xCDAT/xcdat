@@ -32,6 +32,7 @@ What are accessors?
 ~~~~~~~~~~~~~~~~~~~
 
 ``xcdat`` provides ``Dataset`` accessors, which are implicit namespaces for custom functionality that clearly identifies it as separate from built-in xarray methods.
+``xcdat`` implements accessors to extend xarray with custom functionality because it is the officially recommended and most common practice (over sub-classing).
 
 In the example below, custom spatial functionality is exposed by chaining the ``spatial`` accessor attribute to the ``Dataset`` object.
 This chaining enables access to the underlying spatial ``average()`` method.
@@ -39,7 +40,6 @@ This chaining enables access to the underlying spatial ``average()`` method.
 .. figure:: _static/accessor_api.svg
    :alt: Accessor API Diagram
 
-``xcdat`` implements accessors to extend xarray with custom functionality because it is the officially recommended and most common practice (over sub-classing).
 
 How do I use ``xcdat`` accessors?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
