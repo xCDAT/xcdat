@@ -31,7 +31,30 @@ RegionAxisBounds = Tuple[float, float]
 
 @xr.register_dataset_accessor("spatial")
 class SpatialAccessor:
-    """A class to represent the SpatialAccessor."""
+    """
+    An accessor class that provides spatial attributes and methods on xarray
+    Datasets through the ``.spatial`` attribute.
+
+    Examples
+    --------
+
+    Import SpatialAccessor class:
+
+    >>> import xcdat  # or from xcdat import spatial
+
+    Use SpatialAccessor class:
+
+    >>> ds = xcdat.open_dataset("/path/to/file")
+    >>>
+    >>> ds.spatial.<attribute>
+    >>> ds.spatial.<method>
+    >>> ds.spatial.<property>
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        A Dataset object.
+    """
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
@@ -102,9 +125,6 @@ class SpatialAccessor:
 
         Examples
         --------
-        Import SpatialAccessor class:
-
-        >>> import xcdat
 
         Check the 'axis' attribute is set on the required coordinates:
 

@@ -101,7 +101,30 @@ SEASON_TO_MONTH: Dict[str, int] = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
 
 @xr.register_dataset_accessor("temporal")
 class TemporalAccessor:
-    """A class to represent the TemporalAccessor."""
+    """
+    An accessor class that provides temporal attributes and methods on xarray
+    Datasets through the ``.temporal`` attribute.
+
+    Examples
+    --------
+
+    Import TemporalAccessor class:
+
+    >>> import xcdat  # or from xcdat import temporal
+
+    Use TemporalAccessor class:
+
+    >>> ds = xcdat.open_dataset("/path/to/file")
+    >>>
+    >>> ds.temporal.<attribute>
+    >>> ds.temporal.<method>
+    >>> ds.temporal.<property>
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        A Dataset object.
+    """
 
     def __init__(self, dataset: xr.Dataset):
         try:
@@ -209,9 +232,6 @@ class TemporalAccessor:
 
         Examples
         --------
-        Import TemporalAccessor class:
-
-        >>> import xcdat
 
         Check the 'axis' attribute is set on the time coordinates:
 
@@ -991,12 +1011,11 @@ class TemporalAccessor:
         return time_grouped
 
     def _process_season_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Processes a DataFrame of xarray datetime components for the "season"
-        frequency.
+        """Processes a DataFrame of datetime components for the season frequency.
 
         Processing includes:
-        * Mapping custom seasons (if applicable).
+
+        * Mapping custom seasons to each time coordinate if they are used.
         * If season with December is "DJF", shift Decembers over to the next
           year so DJF groups are correctly formed.
         * Drop obsolete columns after processing is done.

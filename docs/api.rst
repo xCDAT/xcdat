@@ -4,15 +4,12 @@ API Reference
 Overview
 --------
 
-Most public ``xcdat`` functions and methods operate on ``xarray.Dataset`` objects, rather than ``xarray.DataArray`` objects.
-
-``xcdat`` follows this design pattern because major functions and methods require coordinate variable bounds, which can only be stored on ``Dataset`` objects.
-Refer to this `issue`_ for more information.
+Most public ``xcdat`` APIs operate on ``xarray.Dataset`` objects. ``xcdat`` follows this design pattern because coordinate variable bounds are often required to perform robust calculations.
+Currently, coordinate variable bounds can only be stored on ``Dataset`` objects and not ``DataArray`` objects. Refer to this `issue`_ for more information.
 
 .. _issue: https://github.com/pydata/xarray/issues/1475
 
 .. currentmodule:: xcdat
-
 
 Top-level API Functions
 -----------------------
@@ -28,19 +25,26 @@ Below is a list of top-level API functions available in ``xcdat``.
     dataset.decode_non_cf_time
     utils.compare_datasets
 
-.. currentmodule:: xarray
 
 
-Accessors (``xarray.Dataset``)
-------------------------------
+Accessors
+---------
+
+What are accessors?
+~~~~~~~~~~~~~~~~~~~
 
 ``xcdat`` provides ``Dataset`` accessors, which are implicit namespaces for custom functionality that clearly identifies it as separate from built-in xarray methods.
+
+In the example below, custom spatial functionality is exposed by chaining the ``spatial`` accessor attribute to the ``Dataset`` object.
+This chaining enables access to the underlying spatial ``average()`` method.
 
 .. figure:: _static/accessor_api.svg
    :alt: Accessor API Diagram
 
-How to use ``xcdat`` accessors
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``xcdat`` implements accessors to extend xarray with custom functionality because it is the officially recommended and most common practice (over sub-classing).
+
+How do I use ``xcdat`` accessors?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First, import the package:
 
@@ -55,19 +59,28 @@ Then open up a dataset as ``Dataset`` object:
     >>> ds = xcdat.open_dataset("path/to/file", data_var="ts")
 
 
-Chain the accessor to the object to use the underlying accessor attributes and methods:
+Now chain the accessor attribute to the ``Dataset`` to expose the accessor class attributes, methods, or properties:
 
 .. code-block:: python
 
     >>> ds = ds.spatial.average("ts", axis=["X", "Y"])
-    >>> ds = ds.temporal.average("ts", freq="month", weighted=True)
-    >>> ds_bounds_keys = ds.bounds.keys
 
 .. note::
 
    Accessors are created once per Dataset instance. New instances, like those
    created from arithmetic operations will have new accessors created.
 
+Classes
+~~~~~~~
+
+.. autosummary::
+   :toctree: generated/
+
+    xcdat.bounds.BoundsAccessor
+    xcdat.spatial.SpatialAccessor
+    xcdat.temporal.TemporalAccessor
+
+.. currentmodule:: xarray
 
 Attributes
 ~~~~~~~~~~
@@ -80,7 +93,6 @@ Attributes
     Dataset.bounds.keys
 
 .. _dsattr_1:
-
 
 Methods
 ~~~~~~~
