@@ -25,8 +25,6 @@ Below is a list of top-level API functions available in ``xcdat``.
     dataset.decode_non_cf_time
     utils.compare_datasets
 
-
-
 Accessors
 ---------
 
