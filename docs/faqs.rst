@@ -6,7 +6,7 @@ Data Wrangling
 --------------
 
 Some datasets might have data quality issues such as inconsistent floating point values between files or non-CF compliant attributes.
-If data quality issues are present, `xarray`` and ``xcdat`` might not be able to open the datasets.
+If data quality issues are present, ``xarray`` and ``xcdat`` might not be able to open the datasets.
 
 To open up datasets that have data quality issues, you can try:
 1. Configuring ``open_dataset()`` or ``open_mfdataset()`` keyword arguments based on your needs.
