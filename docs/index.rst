@@ -20,7 +20,7 @@ Initial features include:
 
 - Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` with post-processing options
 
-  - Generate bounds for axes supported by xcdat if they don't exist in the Dataset
+  - Generate bounds for axes supported by ``xcdat`` if they don't exist in the Dataset
   - Optional decoding non-CF time units, in addition to CF time units (already supported in ``xarray``)
   - Optional centering of time coordinate using time bounds
   - Optional conversion of longitudinal axis orientation between [0, 360) and [-180, 180)
@@ -110,4 +110,10 @@ See `LICENSE <LICENSE>`_ for details
    Project Maintenance <project_maintenance>
    What’s New <history>
    Team <authors>
-   GitHub Repository <https://github.com/xCDAT/xcdat>
+
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+   :caption: Community
+
+   GitHub Discussions <https://github.com/xCDAT/xcdat/discussions>
