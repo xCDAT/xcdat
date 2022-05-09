@@ -73,12 +73,12 @@ Initial features include:
 
 - Geospatial weighted averaging
 
-  - Supports rectilinear grid
+  - Support rectilinear grid
   - Optional specification of regional domain
 
 - Horizontal and vertical structured regridding
 
-  - Supports rectilinear and cuvilinear grids
+  - Support rectilinear and cuvilinear grids
 
 Things we keep in mind:
 

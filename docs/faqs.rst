@@ -15,7 +15,6 @@ A few workarounds include:
 1. Configuring ``open_dataset()`` or ``open_mfdataset()`` keyword arguments based on your needs.
 2. Writing a custom ``preprocess()`` function to feed into ``open_mfdataset()``. This function preprocesses each dataset file individually before joining them into a single Dataset object.
 
-
 How do I open a multifile dataset with values that conflict?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In ``xarray``, the default setting for checking compatibility across a multifile dataset is ``compat='no_conflicts'``.
