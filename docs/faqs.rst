@@ -5,25 +5,24 @@ Frequently Asked Questions
 Data Wrangling
 --------------
 
-Some datasets might have data quality issues such as inconsistent floating point values between files or non-CF compliant attributes.
-If data quality issues are present, ``xarray`` and ``xcdat`` might not be able to open the datasets.
+``xcdat`` aims to implement generalized functionality. This means that functionality intended to handle data quality issues is out of scope, especially for limited cases.
 
-To open up datasets that have data quality issues, you can try:
+If data quality issues are present, ``xarray`` and ``xcdat`` might not be able to open the datasets.
+Examples of data quality issues include conflicting floating point values between files or non-CF compliant attributes.
+
+A few workarounds include:
 
 1. Configuring ``open_dataset()`` or ``open_mfdataset()`` keyword arguments based on your needs.
-2. Writing a custom `preprocess()` function to feed into ``open_mfdataset()``, which preprocesses each dataset file individually before joining them into a single Dataset object.
+2. Writing a custom ``preprocess()`` function to feed into ``open_mfdataset()``. This function preprocesses each dataset file individually before joining them into a single Dataset object.
 
-``xcdat`` aims to be generalized library, so we don't intend on implementing functionality to fix poor data for limited use cases.
 
-How do I open datasets that have data and/or coordinate variables with conflicting values?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-In ``xarray``, the default setting for checking compatibility across files is ``compat='no_conflicts'``.
-If conflicting values for a data variable exists between the files, xarray raises ``MergeError: conflicting values for variable <DATA VAR NAME> on objects to be combined. You can skip this check by specifying compat="override".``
+How do I open a multifile dataset with values that conflict?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+In ``xarray``, the default setting for checking compatibility across a multifile dataset is ``compat='no_conflicts'``.
+If conflicting values exists between files, xarray raises ``MergeError: conflicting values for variable <VARIABLE NAME> on objects to be combined. You can skip this check by specifying compat="override".``
 
-Let's say you try opening two files using ``xcdat.open_mfdataset()`` and the aforementioned ``MergeError`` appears for the ``lat_bnds`` data var.
-You perform floating point comparison for ``lat_bnds`` and find a very small difference at specific coordinates.
-
-To workaround this data quality issue and proceed with opening the files, pass these keyword arguments:
+If you still intend on working with these datasets and recognize the source of the issue (e.g., minor floating point diffs), follow the instructions below.
+**Please understand the potential implications before proceeding!**
 
 .. code-block:: python
 
