@@ -7,12 +7,12 @@ import xarray as xr
 
 from tests.fixtures import generate_dataset
 from xcdat.dataset import (
+    _has_cf_compliant_time,
     _keep_single_var,
     _postprocess_dataset,
     _preprocess_non_cf_dataset,
     _split_time_units_attr,
     decode_non_cf_time,
-    has_cf_compliant_time,
     open_dataset,
     open_mfdataset,
 )
@@ -279,7 +279,7 @@ class TestHasCFCompliantTime:
         ds = generate_dataset(cf_compliant=False, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = has_cf_compliant_time(self.file_path)
+        result = _has_cf_compliant_time(self.file_path)
 
         # Check that False is returned when the dataset has non-cf_compliant time
         assert result is False
@@ -294,7 +294,7 @@ class TestHasCFCompliantTime:
         ds = ds.drop_vars("time")
         ds.to_netcdf(self.file_path)
 
-        result = has_cf_compliant_time(self.file_path)
+        result = _has_cf_compliant_time(self.file_path)
 
         # Check that None is returned when there is no time axis
         assert result is None
@@ -304,7 +304,7 @@ class TestHasCFCompliantTime:
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = has_cf_compliant_time(f"{self.dir}/*.nc")
+        result = _has_cf_compliant_time(f"{self.dir}/*.nc")
 
         # Check that the wildcard path input is correctly evaluated
         assert result is True
@@ -315,7 +315,7 @@ class TestHasCFCompliantTime:
         ds.to_netcdf(self.file_path)
 
         flist = [self.file_path, self.file_path, self.file_path]
-        result = has_cf_compliant_time(flist)
+        result = _has_cf_compliant_time(flist)
 
         # Check that the list input is correctly evaluated
         assert result is True
@@ -325,7 +325,7 @@ class TestHasCFCompliantTime:
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = has_cf_compliant_time(self.file_path)
+        result = _has_cf_compliant_time(self.file_path)
 
         # Check that True is returned when the dataset has cf_compliant time
         assert result is True
@@ -335,7 +335,7 @@ class TestHasCFCompliantTime:
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = has_cf_compliant_time(pathlib.Path(self.file_path))
+        result = _has_cf_compliant_time(pathlib.Path(self.file_path))
 
         # Check that True is returned when the dataset has cf_compliant time
         assert result is True
@@ -345,7 +345,7 @@ class TestHasCFCompliantTime:
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = has_cf_compliant_time([self.file_path])
+        result = _has_cf_compliant_time([self.file_path])
 
         # Check that True is returned when the dataset has cf_compliant time
         assert result is True
@@ -355,7 +355,7 @@ class TestHasCFCompliantTime:
         ds = generate_dataset(cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = has_cf_compliant_time([[pathlib.Path(self.file_path)]])
+        result = _has_cf_compliant_time([[pathlib.Path(self.file_path)]])
 
         # Check that True is returned when the dataset has cf_compliant time
         assert result is True
