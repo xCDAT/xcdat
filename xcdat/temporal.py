@@ -66,7 +66,10 @@ DATETIME_COMPONENTS: Dict[
 ] = {
     "mean": {
         "year": ("year",),
+        "season": ("season",),
         "month": ("month",),
+        "day": ("day",),
+        "hour": ("hour",),
     },
     "time_series": {
         "year": ("year",),
@@ -160,15 +163,15 @@ class TemporalAccessor:
         # The weights for time coordinates, which are based on a chosen frequency.
         self._weights: Optional[xr.DataArray] = None
 
-    def mean(
-        self, data_var: str, freq: Literal["year", "month"], center_times: bool = False
-    ):
-        """Returns weighted means along the time dimension.
+    def mean(self, data_var: str, freq: Frequency, center_times: bool = False):
+        """
+        Returns weighted means for a data variable with the time dimension
+        removed.
 
         This method is particularly useful for yearly or monthly time series
-        data, where the number of days per year or month can vary based
-        on the calendar type (e.g., leap year). Use xarray's native ``.mean()``
-        method for other frequencies.
+        data, where the number of days per month can vary based on the calendar
+        type (e.g., leap year). For other frequencies or unweighted means, use
+        xarray's native ``.mean()`` method directly.
 
         Weights are calculated by first determining the length of time for
         each coordinate point using the difference of its upper and lower
@@ -180,9 +183,15 @@ class TemporalAccessor:
         ----------
         data_var: str
             The key of the data variable for calculating means
-        freq : Literal["year", "month"]
-            The time frequency for calculating weights, either "year" or
-            "month".
+        freq : Frequency
+            The time frequency for calculating weights.
+
+            * "year": groups by year
+            * "season": groups by season
+            * "month": groups by month
+            * "day": groups by day
+            * "hour": groups by hour
+
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time
@@ -191,15 +200,16 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset with the weighted means of a data variable.
+            Dataset with weighted mean applied to the data variable with the
+            time dimension removed.
 
         Examples
         --------
 
         Get weighted means for a monthly time series data variable:
 
-        >>> ds_season = ds.temporal.average("ts", "month", center_times=False)
-        >>> ds_season.ts
+        >>> ds_month = ds.temporal.mean("ts", freq="month", center_times=False)
+        >>> ds_month.ts
         """
         return self._temporal_avg(data_var, "mean", freq, True, center_times)
 
@@ -924,8 +934,8 @@ class TemporalAccessor:
         The difference between this method and ``_grouped_average()`` is that
         this one does not group by a frequency. It simply calculates weights
         using the frequency (consisting of a single datetime component) and
-        applies it to the data variable. Then it calculates the mean along the
-        time dimension.
+        applies it to the data variable, then it averages along the time
+        dimension.
 
         Parameters
         ----------

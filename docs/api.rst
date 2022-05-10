@@ -106,6 +106,7 @@ Methods
     Dataset.temporal.average
     Dataset.temporal.climatology
     Dataset.temporal.departures
+    Dataset.temporal.mean
     Dataset.temporal.center_times
 
 .. _dsmeth_1:

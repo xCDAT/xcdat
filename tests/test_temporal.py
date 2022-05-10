@@ -75,6 +75,19 @@ class TestMean:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
+    def test_weighted_seasonal_means(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.mean("ts", freq="season")
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([[1.211326, 1.298328], [1.163043, 1.247253]]),
+            coords={"lat": expected.lat, "lon": expected.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result.ts, expected.ts)
+
     def test_weighted_monthly_means(self):
         ds = self.ds.copy()
 
@@ -82,6 +95,32 @@ class TestMean:
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
             data=np.array([[1.209064, 1.291667], [1.166667, 1.25]]),
+            coords={"lat": expected.lat, "lon": expected.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result.ts, expected.ts)
+
+    def test_weighted_daily_means(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.mean("ts", freq="day")
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([[1.40977444, 1.23308271], [1.07518797, 1.11278195]]),
+            coords={"lat": expected.lat, "lon": expected.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result.ts, expected.ts)
+
+    def test_weighted_hourly_means(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.mean("ts", freq="hour")
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([[1.24837662, 1.30194805], [1.2027027, 1.30405405]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
         )
