@@ -7,7 +7,7 @@ import pytest
 import xarray as xr
 from xarray.tests import requires_dask
 
-from tests.fixtures import generate_dataset
+from tests.fixtures import generate_dataset, time_bnds, time_cf
 from xcdat.temporal import TemporalAccessor
 
 
@@ -23,9 +23,84 @@ class TestTemporalAccessor:
         assert obj._dataset.identical(ds)
 
 
-class TestAverage:
+class TestMean:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90, 90], "lon": [0, 385.125], "time": time_cf},
+        )
+        self.ds.time.attrs["bounds"] = "time_bnds"
+
+        self.ds["ts"] = xr.DataArray(
+            data=np.array(
+                [
+                    # DJF
+                    [[1, 1], [1, 1]],
+                    [[2, 1], [1, 1]],
+                    # MAM
+                    [[1, 2], [1, 1]],
+                    [[1, 1], [1, 1]],
+                    [[1, 1], [1, 1]],
+                    # JJA
+                    [[1, 1], [3, 1]],
+                    [[1, 1], [1, 1]],
+                    [[1, 1], [1, 1]],
+                    # SON
+                    [[1, 1], [1, 4]],
+                    [[1, 1], [1, 1]],
+                    [[1, 1], [1, 1]],
+                    # DJF
+                    [[5, 1], [1, 1]],
+                    # DJF
+                    [[1, 6], [1, 1]],
+                    [[1, 1], [1, 1]],
+                    [[1, 1], [1, 1]],
+                ]
+            ),
+            coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
+            dims=["time", "lat", "lon"],
+        )
+
+    def test_weighted_yearly_means(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.mean("ts", freq="year")
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([[1.20901639, 1.90346084], [1.08196721, 1.12295082]]),
+            coords={"lat": expected.lat, "lon": expected.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result.ts, expected.ts)
+
+    def test_weighted_monthly_means(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.mean("ts", freq="month")
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([[1.209064, 1.291667], [1.166667, 1.25]]),
+            coords={"lat": expected.lat, "lon": expected.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result.ts, expected.ts)
+
+
+# TODO: Update TestTimeSeries tests to use other numbers rather than 1's
+# for better test reliability and accuracy. This may require subsetting.
+class TestTimeSeries:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        # FIXME: Update test this so that it is accurate, rather than 1's
+        # for averages
+        # May involve subsetting
+        self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+
     def test_weighted_annual_avg(self):
-        ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds = self.ds.copy()
 
         result = ds.temporal.average("ts", "year")
         expected = ds.copy()
@@ -56,8 +131,8 @@ class TestAverage:
             name="ts",
             data=np.ones((2, 4, 4)),
             coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
                 "time": time_new,
             },
             dims=["time", "lat", "lon"],
@@ -75,16 +150,686 @@ class TestAverage:
         xr.testing.assert_allclose(result, expected)
         assert result.ts.attrs == expected.ts.attrs
 
+    @requires_dask
+    def test_weighted_annual_avg_with_chunking(self):
+        ds = self.ds.copy().chunk({"time": 2})
+
+        result = ds.temporal.average("ts", "year")
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        time_new = xr.DataArray(
+            data=np.array(
+                ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-01-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                )
+            },
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((2, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "time": time_new,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "year",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        # For some reason, there is a very small floating point difference
+        # between both for ts so we have to use floating point comparison
+        xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
+
+    def test_weighted_annual_avg_with_centering_time(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.average("ts", "year", center_times=True)
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        time_new = xr.DataArray(
+            data=np.array(
+                ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-01-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                )
+            },
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((2, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "time": time_new,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "year",
+                "weighted": "True",
+                "center_times": "True",
+            },
+        )
+
+        # For some reason, there is a floating point difference between both
+        # for ts so we have to use floating point comparison
+        xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
+
+    def test_weighted_seasonal_avg_with_DJF(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.average(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+        )
+        expected = ds.copy()
+        # Drop the incomplete DJF seasons
+        expected = expected.isel(time=slice(2, -1))
+        expected = expected.drop_dims("time")
+        time_new = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-04-01T00:00:00.000000000",
+                    "2000-07-01T00:00:00.000000000",
+                    "2000-10-01T00:00:00.000000000",
+                    "2001-01-01T00:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-04-01T00:00:00.000000000",
+                        "2000-07-01T00:00:00.000000000",
+                        "2000-10-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                )
+            },
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((4, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "time": time_new,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_seasonal_avg_with_DJF_without_dropping_incomplete_seasons(
+        self,
+    ):
+        ds = self.ds.copy()
+
+        result = ds.temporal.average(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": False},
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        time_new = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-01T00:00:00.000000000",
+                    "2000-04-01T00:00:00.000000000",
+                    "2000-07-01T00:00:00.000000000",
+                    "2000-10-01T00:00:00.000000000",
+                    "2001-01-01T00:00:00.000000000",
+                    "2002-01-01T00:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-04-01T00:00:00.000000000",
+                        "2000-07-01T00:00:00.000000000",
+                        "2000-10-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                        "2002-01-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                )
+            },
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((6, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "time": time_new,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_seasonal_avg_with_JFD(self):
+        ds = self.ds.copy()
+
+        ds = self.ds.copy()
+
+        result = ds.temporal.average(
+            "ts",
+            "season",
+            season_config={"dec_mode": "JFD"},
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        time_new = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-01T00:00:00.000000000",
+                    "2000-04-01T00:00:00.000000000",
+                    "2000-07-01T00:00:00.000000000",
+                    "2000-10-01T00:00:00.000000000",
+                    "2001-01-01T00:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-04-01T00:00:00.000000000",
+                        "2000-07-01T00:00:00.000000000",
+                        "2000-10-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                )
+            },
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((5, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "time": time_new,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "dec_mode": "JFD",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_custom_season_avg(self):
+        ds = self.ds.copy()
+
+        custom_seasons = [
+            ["Jan", "Feb", "Mar"],
+            ["Apr", "May", "Jun"],
+            ["Jul", "Aug", "Sep"],
+            ["Oct", "Nov", "Dec"],
+        ]
+        result = ds.temporal.average(
+            "ts",
+            "season",
+            season_config={"custom_seasons": custom_seasons},
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-02-01T00:00:00.000000000",
+                    "2000-05-01T00:00:00.000000000",
+                    "2000-08-01T00:00:00.000000000",
+                    "2000-11-01T00:00:00.000000000",
+                    "2001-02-01T00:00:00.000000000",
+                    "2001-11-01T00:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-02-01T00:00:00.000000000",
+                        "2000-05-01T00:00:00.000000000",
+                        "2000-08-01T00:00:00.000000000",
+                        "2000-11-01T00:00:00.000000000",
+                        "2001-02-01T00:00:00.000000000",
+                        "2001-11-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((6, 4, 4)),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "season",
+                "custom_seasons": [
+                    "JanFebMar",
+                    "AprMayJun",
+                    "JulAugSep",
+                    "OctNovDec",
+                ],
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_monthly_avg(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.average("ts", "month")
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        time_new = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-01T00:00:00.000000000",
+                    "2000-02-01T00:00:00.000000000",
+                    "2000-03-01T00:00:00.000000000",
+                    "2000-04-01T00:00:00.000000000",
+                    "2000-05-01T00:00:00.000000000",
+                    "2000-06-01T00:00:00.000000000",
+                    "2000-07-01T00:00:00.000000000",
+                    "2000-08-01T00:00:00.000000000",
+                    "2000-09-01T00:00:00.000000000",
+                    "2000-10-01T00:00:00.000000000",
+                    "2000-11-01T00:00:00.000000000",
+                    "2000-12-01T00:00:00.000000000",
+                    "2001-01-01T00:00:00.000000000",
+                    "2001-02-01T00:00:00.000000000",
+                    "2001-12-01T00:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-02-01T00:00:00.000000000",
+                        "2000-03-01T00:00:00.000000000",
+                        "2000-04-01T00:00:00.000000000",
+                        "2000-05-01T00:00:00.000000000",
+                        "2000-06-01T00:00:00.000000000",
+                        "2000-07-01T00:00:00.000000000",
+                        "2000-08-01T00:00:00.000000000",
+                        "2000-09-01T00:00:00.000000000",
+                        "2000-10-01T00:00:00.000000000",
+                        "2000-11-01T00:00:00.000000000",
+                        "2000-12-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                        "2001-02-01T00:00:00.000000000",
+                        "2001-12-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+            },
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((15, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "time": time_new,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "month",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_daily_avg(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.average("ts", "day")
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        time_new = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T00:00:00.000000000",
+                    "2000-02-15T00:00:00.000000000",
+                    "2000-03-16T00:00:00.000000000",
+                    "2000-04-16T00:00:00.000000000",
+                    "2000-05-16T00:00:00.000000000",
+                    "2000-06-16T00:00:00.000000000",
+                    "2000-07-16T00:00:00.000000000",
+                    "2000-08-16T00:00:00.000000000",
+                    "2000-09-16T00:00:00.000000000",
+                    "2000-10-16T00:00:00.000000000",
+                    "2000-11-16T00:00:00.000000000",
+                    "2000-12-16T00:00:00.000000000",
+                    "2001-01-16T00:00:00.000000000",
+                    "2001-02-15T00:00:00.000000000",
+                    "2001-12-16T00:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-01-16T00:00:00.000000000",
+                        "2000-02-15T00:00:00.000000000",
+                        "2000-03-16T00:00:00.000000000",
+                        "2000-04-16T00:00:00.000000000",
+                        "2000-05-16T00:00:00.000000000",
+                        "2000-06-16T00:00:00.000000000",
+                        "2000-07-16T00:00:00.000000000",
+                        "2000-08-16T00:00:00.000000000",
+                        "2000-09-16T00:00:00.000000000",
+                        "2000-10-16T00:00:00.000000000",
+                        "2000-11-16T00:00:00.000000000",
+                        "2000-12-16T00:00:00.000000000",
+                        "2001-01-16T00:00:00.000000000",
+                        "2001-02-15T00:00:00.000000000",
+                        "2001-12-16T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+            },
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((15, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "time": time_new,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "day",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_hourly_avg(self):
+        ds = self.ds.copy()
+        ds.coords["time"].attrs["bounds"] = "time_bnds"
+
+        result = ds.temporal.average("ts", "hour")
+        expected = ds.copy()
+        expected["ts_original"] = ds.ts.copy()
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((15, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "year_month_day_hour": pd.MultiIndex.from_tuples(
+                    [
+                        (2000, 1, 16, 12),
+                        (2000, 2, 15, 12),
+                        (2000, 3, 16, 12),
+                        (2000, 4, 16, 0),
+                        (2000, 5, 16, 12),
+                        (2000, 6, 16, 0),
+                        (2000, 7, 16, 12),
+                        (2000, 8, 16, 12),
+                        (2000, 9, 16, 0),
+                        (2000, 10, 16, 12),
+                        (2000, 11, 16, 0),
+                        (2000, 12, 16, 12),
+                        (2001, 1, 16, 12),
+                        (2001, 2, 15, 0),
+                        (2001, 12, 16, 12),
+                    ]
+                ),
+            },
+            dims=["year_month_day_hour", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "hour",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        time_new = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",
+                    "2000-02-15T12:00:00.000000000",
+                    "2000-03-16T12:00:00.000000000",
+                    "2000-04-16T00:00:00.000000000",
+                    "2000-05-16T12:00:00.000000000",
+                    "2000-06-16T00:00:00.000000000",
+                    "2000-07-16T12:00:00.000000000",
+                    "2000-08-16T12:00:00.000000000",
+                    "2000-09-16T00:00:00.000000000",
+                    "2000-10-16T12:00:00.000000000",
+                    "2000-11-16T00:00:00.000000000",
+                    "2000-12-16T12:00:00.000000000",
+                    "2001-01-16T12:00:00.000000000",
+                    "2001-02-15T00:00:00.000000000",
+                    "2001-12-16T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        "2000-01-16T12:00:00.000000000",
+                        "2000-02-15T12:00:00.000000000",
+                        "2000-03-16T12:00:00.000000000",
+                        "2000-04-16T00:00:00.000000000",
+                        "2000-05-16T12:00:00.000000000",
+                        "2000-06-16T00:00:00.000000000",
+                        "2000-07-16T12:00:00.000000000",
+                        "2000-08-16T12:00:00.000000000",
+                        "2000-09-16T00:00:00.000000000",
+                        "2000-10-16T12:00:00.000000000",
+                        "2000-11-16T00:00:00.000000000",
+                        "2000-12-16T12:00:00.000000000",
+                        "2001-01-16T12:00:00.000000000",
+                        "2001-02-15T00:00:00.000000000",
+                        "2001-12-16T12:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+            },
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((15, 4, 4)),
+            coords={
+                "lat": self.ds.lat,
+                "lon": self.ds.lon,
+                "time": time_new,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "time_series",
+                "freq": "hour",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
 
 class TestClimatology:
+    # TODO: Update TestClimatology tests to use other numbers rather than 1's
+    # for better test reliability and accuracy. This may require subsetting.
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_raises_error_without_time_dimension(self):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+
+        with pytest.raises(KeyError):
+            ds.temporal.climatology("ts", "season")
+
+    def test_raises_error_with_incorrect_freq_arg(self):
+        with pytest.raises(ValueError):
+            self.ds.temporal.climatology(
+                "ts",
+                "incorrect_freq",
+            )
+
+    def test_raises_error_with_incorrect_dec_mode_arg(self):
+        with pytest.raises(ValueError):
+            self.ds.temporal.climatology(
+                "ts",
+                freq="season",
+                season_config={"dec_mode": "incorrect"},
+            )
+
+    def test_raises_error_if_data_var_does_not_exist_in_dataset(self):
+        with pytest.raises(KeyError):
+            self.ds.temporal.climatology("nonexistent_var", freq="season")
+
     def test_weighted_seasonal_climatology_with_DJF(self):
-        ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds = self.ds.copy()
 
         result = ds.temporal.climatology(
             "ts",
             "season",
             season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
         )
+
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected_time = xr.DataArray(
@@ -116,7 +861,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((4, 4, 4)),
-            coords={"lat": ds.lat, "lon": ds.lon, "time": expected_time},
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -126,6 +871,432 @@ class TestClimatology:
                 "center_times": "False",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    @requires_dask
+    def test_chunked_weighted_seasonal_climatology_with_DJF(self):
+        ds = self.ds.copy().chunk({"time": 2})
+
+        result = ds.temporal.climatology(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(1, 1, 1),
+                    cftime.datetime(1, 4, 1),
+                    cftime.datetime(1, 7, 1),
+                    cftime.datetime(1, 10, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 10, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((4, 4, 4)),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_seasonal_climatology_with_JFD(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.climatology(
+            "ts", "season", season_config={"dec_mode": "JFD"}
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(1, 1, 1),
+                    cftime.datetime(1, 4, 1),
+                    cftime.datetime(1, 7, 1),
+                    cftime.datetime(1, 10, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 10, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((4, 4, 4)),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "dec_mode": "JFD",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_custom_seasonal_climatology(self):
+        # FIXME: Fix this test
+        ds = self.ds.copy()
+
+        custom_seasons = [
+            ["Jan", "Feb", "Mar"],
+            ["Apr", "May", "Jun"],
+            ["Jul", "Aug", "Sep"],
+            ["Oct", "Nov", "Dec"],
+        ]
+        result = ds.temporal.climatology(
+            "ts", "season", season_config={"custom_seasons": custom_seasons}
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(1, 2, 1),
+                    cftime.datetime(1, 5, 1),
+                    cftime.datetime(1, 8, 1),
+                    cftime.datetime(1, 11, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.datetime(1, 2, 1),
+                        cftime.datetime(1, 5, 1),
+                        cftime.datetime(1, 8, 1),
+                        cftime.datetime(1, 11, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((4, 4, 4)),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "center_times": "False",
+                "custom_seasons": [
+                    "JanFebMar",
+                    "AprMayJun",
+                    "JulAugSep",
+                    "OctNovDec",
+                ],
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_monthly_climatology(self):
+        result = self.ds.temporal.climatology("ts", "month")
+
+        expected = self.ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(1, 1, 1),
+                    cftime.datetime(1, 2, 1),
+                    cftime.datetime(1, 3, 1),
+                    cftime.datetime(1, 4, 1),
+                    cftime.datetime(1, 5, 1),
+                    cftime.datetime(1, 6, 1),
+                    cftime.datetime(1, 7, 1),
+                    cftime.datetime(1, 8, 1),
+                    cftime.datetime(1, 9, 1),
+                    cftime.datetime(1, 10, 1),
+                    cftime.datetime(1, 11, 1),
+                    cftime.datetime(1, 12, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 2, 1),
+                        cftime.datetime(1, 3, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 5, 1),
+                        cftime.datetime(1, 6, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 8, 1),
+                        cftime.datetime(1, 9, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 11, 1),
+                        cftime.datetime(1, 12, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((12, 4, 4)),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "month",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_unweighted_monthly_climatology(self):
+        result = self.ds.temporal.climatology("ts", "month", weighted=False)
+
+        expected = self.ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(1, 1, 1),
+                    cftime.datetime(1, 2, 1),
+                    cftime.datetime(1, 3, 1),
+                    cftime.datetime(1, 4, 1),
+                    cftime.datetime(1, 5, 1),
+                    cftime.datetime(1, 6, 1),
+                    cftime.datetime(1, 7, 1),
+                    cftime.datetime(1, 8, 1),
+                    cftime.datetime(1, 9, 1),
+                    cftime.datetime(1, 10, 1),
+                    cftime.datetime(1, 11, 1),
+                    cftime.datetime(1, 12, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 2, 1),
+                        cftime.datetime(1, 3, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 5, 1),
+                        cftime.datetime(1, 6, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 8, 1),
+                        cftime.datetime(1, 9, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 11, 1),
+                        cftime.datetime(1, 12, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((12, 4, 4)),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "month",
+                "weighted": "False",
+                "center_times": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_daily_climatology(self):
+        result = self.ds.temporal.climatology("ts", "day", weighted=True)
+
+        expected = self.ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(1, 1, 16),
+                    cftime.datetime(1, 2, 15),
+                    cftime.datetime(1, 3, 16),
+                    cftime.datetime(1, 4, 16),
+                    cftime.datetime(1, 5, 16),
+                    cftime.datetime(1, 6, 16),
+                    cftime.datetime(1, 7, 16),
+                    cftime.datetime(1, 8, 16),
+                    cftime.datetime(1, 9, 16),
+                    cftime.datetime(1, 10, 16),
+                    cftime.datetime(1, 11, 16),
+                    cftime.datetime(1, 12, 16),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.datetime(1, 1, 16),
+                        cftime.datetime(1, 2, 15),
+                        cftime.datetime(1, 3, 16),
+                        cftime.datetime(1, 4, 16),
+                        cftime.datetime(1, 5, 16),
+                        cftime.datetime(1, 6, 16),
+                        cftime.datetime(1, 7, 16),
+                        cftime.datetime(1, 8, 16),
+                        cftime.datetime(1, 9, 16),
+                        cftime.datetime(1, 10, 16),
+                        cftime.datetime(1, 11, 16),
+                        cftime.datetime(1, 12, 16),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((12, 4, 4)),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "day",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_unweighted_daily_climatology(self):
+        result = self.ds.temporal.climatology("ts", "day", weighted=False)
+
+        expected = self.ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(1, 1, 16),
+                    cftime.datetime(1, 2, 15),
+                    cftime.datetime(1, 3, 16),
+                    cftime.datetime(1, 4, 16),
+                    cftime.datetime(1, 5, 16),
+                    cftime.datetime(1, 6, 16),
+                    cftime.datetime(1, 7, 16),
+                    cftime.datetime(1, 8, 16),
+                    cftime.datetime(1, 9, 16),
+                    cftime.datetime(1, 10, 16),
+                    cftime.datetime(1, 11, 16),
+                    cftime.datetime(1, 12, 16),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.datetime(1, 1, 16),
+                        cftime.datetime(1, 2, 15),
+                        cftime.datetime(1, 3, 16),
+                        cftime.datetime(1, 4, 16),
+                        cftime.datetime(1, 5, 16),
+                        cftime.datetime(1, 6, 16),
+                        cftime.datetime(1, 7, 16),
+                        cftime.datetime(1, 8, 16),
+                        cftime.datetime(1, 9, 16),
+                        cftime.datetime(1, 10, 16),
+                        cftime.datetime(1, 11, 16),
+                        cftime.datetime(1, 12, 16),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((12, 4, 4)),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "day",
+                "weighted": "False",
+                "center_times": "False",
             },
         )
 
@@ -327,1240 +1498,6 @@ class TestCenterTimes:
 
         result = ds.temporal.center_times(ds)
         assert result.identical(expected)
-
-
-class TestTemporalAvg:
-    # TODO: Update TestTimeSeries tests to use other numbers rather than 1's
-    # for better test reliability and accuracy. This may require subsetting.
-    class TestTimeSeries:
-        @pytest.fixture(autouse=True)
-        def setup(self):
-            # FIXME: Update test this so that it is accurate, rather than 1's
-            # for averages
-            # May involve subsetting
-            self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
-
-        def test_weighted_annual_avg(self):
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg("ts", "time_series", "year")
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-01-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    )
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((2, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "year",
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            # For some reason, there is a very small floating point difference
-            # between both for ts so we have to use floating point comparison
-            xr.testing.assert_allclose(result, expected)
-            assert result.ts.attrs == expected.ts.attrs
-
-        @requires_dask
-        def test_weighted_annual_avg_with_chunking(self):
-            ds = self.ds.copy().chunk({"time": 2})
-
-            result = ds.temporal._temporal_avg("ts", "time_series", "year")
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-01-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    )
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((2, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "year",
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            # For some reason, there is a very small floating point difference
-            # between both for ts so we have to use floating point comparison
-            xr.testing.assert_allclose(result, expected)
-            assert result.ts.attrs == expected.ts.attrs
-
-        def test_weighted_annual_avg_with_centering_time(self):
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg(
-                "ts", "time_series", "year", center_times=True
-            )
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-01-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    )
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((2, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "year",
-                    "weighted": "True",
-                    "center_times": "True",
-                },
-            )
-
-            # For some reason, there is a floating point difference between both
-            # for ts so we have to use floating point comparison
-            xr.testing.assert_allclose(result, expected)
-            assert result.ts.attrs == expected.ts.attrs
-
-        def test_weighted_seasonal_avg_with_DJF(self):
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg(
-                "ts",
-                "time_series",
-                "season",
-                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
-            )
-            expected = ds.copy()
-            # Drop the incomplete DJF seasons
-            expected = expected.isel(time=slice(2, -1))
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    [
-                        "2000-04-01T00:00:00.000000000",
-                        "2000-07-01T00:00:00.000000000",
-                        "2000-10-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    )
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((4, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "season",
-                    "weighted": "True",
-                    "center_times": "False",
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": "True",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_seasonal_avg_with_DJF_without_dropping_incomplete_seasons(
-            self,
-        ):
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg(
-                "ts",
-                "time_series",
-                "season",
-                season_config={"dec_mode": "DJF", "drop_incomplete_djf": False},
-            )
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    [
-                        "2000-01-01T00:00:00.000000000",
-                        "2000-04-01T00:00:00.000000000",
-                        "2000-07-01T00:00:00.000000000",
-                        "2000-10-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                        "2002-01-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                            "2002-01-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    )
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((6, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "season",
-                    "weighted": "True",
-                    "center_times": "False",
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": "False",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_seasonal_avg_with_JFD(self):
-            ds = self.ds.copy()
-
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg(
-                "ts",
-                "time_series",
-                "season",
-                season_config={"dec_mode": "JFD"},
-            )
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    [
-                        "2000-01-01T00:00:00.000000000",
-                        "2000-04-01T00:00:00.000000000",
-                        "2000-07-01T00:00:00.000000000",
-                        "2000-10-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    )
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((5, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "season",
-                    "weighted": "True",
-                    "center_times": "False",
-                    "dec_mode": "JFD",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_custom_season_avg(self):
-            ds = self.ds.copy()
-
-            custom_seasons = [
-                ["Jan", "Feb", "Mar"],
-                ["Apr", "May", "Jun"],
-                ["Jul", "Aug", "Sep"],
-                ["Oct", "Nov", "Dec"],
-            ]
-            result = ds.temporal._temporal_avg(
-                "ts",
-                "time_series",
-                "season",
-                season_config={"custom_seasons": custom_seasons},
-            )
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        "2000-02-01T00:00:00.000000000",
-                        "2000-05-01T00:00:00.000000000",
-                        "2000-08-01T00:00:00.000000000",
-                        "2000-11-01T00:00:00.000000000",
-                        "2001-02-01T00:00:00.000000000",
-                        "2001-11-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-02-01T00:00:00.000000000",
-                            "2000-05-01T00:00:00.000000000",
-                            "2000-08-01T00:00:00.000000000",
-                            "2000-11-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
-                            "2001-11-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((6, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "season",
-                    "custom_seasons": [
-                        "JanFebMar",
-                        "AprMayJun",
-                        "JulAugSep",
-                        "OctNovDec",
-                    ],
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_monthly_avg(self):
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg("ts", "time_series", "month")
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    [
-                        "2000-01-01T00:00:00.000000000",
-                        "2000-02-01T00:00:00.000000000",
-                        "2000-03-01T00:00:00.000000000",
-                        "2000-04-01T00:00:00.000000000",
-                        "2000-05-01T00:00:00.000000000",
-                        "2000-06-01T00:00:00.000000000",
-                        "2000-07-01T00:00:00.000000000",
-                        "2000-08-01T00:00:00.000000000",
-                        "2000-09-01T00:00:00.000000000",
-                        "2000-10-01T00:00:00.000000000",
-                        "2000-11-01T00:00:00.000000000",
-                        "2000-12-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                        "2001-02-01T00:00:00.000000000",
-                        "2001-12-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-02-01T00:00:00.000000000",
-                            "2000-03-01T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-05-01T00:00:00.000000000",
-                            "2000-06-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-08-01T00:00:00.000000000",
-                            "2000-09-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2000-11-01T00:00:00.000000000",
-                            "2000-12-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
-                            "2001-12-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    ),
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((15, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "month",
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_daily_avg(self):
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg("ts", "time_series", "day")
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    [
-                        "2000-01-16T00:00:00.000000000",
-                        "2000-02-15T00:00:00.000000000",
-                        "2000-03-16T00:00:00.000000000",
-                        "2000-04-16T00:00:00.000000000",
-                        "2000-05-16T00:00:00.000000000",
-                        "2000-06-16T00:00:00.000000000",
-                        "2000-07-16T00:00:00.000000000",
-                        "2000-08-16T00:00:00.000000000",
-                        "2000-09-16T00:00:00.000000000",
-                        "2000-10-16T00:00:00.000000000",
-                        "2000-11-16T00:00:00.000000000",
-                        "2000-12-16T00:00:00.000000000",
-                        "2001-01-16T00:00:00.000000000",
-                        "2001-02-15T00:00:00.000000000",
-                        "2001-12-16T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-01-16T00:00:00.000000000",
-                            "2000-02-15T00:00:00.000000000",
-                            "2000-03-16T00:00:00.000000000",
-                            "2000-04-16T00:00:00.000000000",
-                            "2000-05-16T00:00:00.000000000",
-                            "2000-06-16T00:00:00.000000000",
-                            "2000-07-16T00:00:00.000000000",
-                            "2000-08-16T00:00:00.000000000",
-                            "2000-09-16T00:00:00.000000000",
-                            "2000-10-16T00:00:00.000000000",
-                            "2000-11-16T00:00:00.000000000",
-                            "2000-12-16T00:00:00.000000000",
-                            "2001-01-16T00:00:00.000000000",
-                            "2001-02-15T00:00:00.000000000",
-                            "2001-12-16T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    ),
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((15, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "day",
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_hourly_avg(self):
-            ds = self.ds.copy()
-            ds.coords["time"].attrs["bounds"] = "time_bnds"
-
-            result = ds.temporal._temporal_avg("ts", "time_series", "hour")
-            expected = ds.copy()
-            expected["ts_original"] = ds.ts.copy()
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((15, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "year_month_day_hour": pd.MultiIndex.from_tuples(
-                        [
-                            (2000, 1, 16, 12),
-                            (2000, 2, 15, 12),
-                            (2000, 3, 16, 12),
-                            (2000, 4, 16, 0),
-                            (2000, 5, 16, 12),
-                            (2000, 6, 16, 0),
-                            (2000, 7, 16, 12),
-                            (2000, 8, 16, 12),
-                            (2000, 9, 16, 0),
-                            (2000, 10, 16, 12),
-                            (2000, 11, 16, 0),
-                            (2000, 12, 16, 12),
-                            (2001, 1, 16, 12),
-                            (2001, 2, 15, 0),
-                            (2001, 12, 16, 12),
-                        ]
-                    ),
-                },
-                dims=["year_month_day_hour", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "hour",
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            time_new = xr.DataArray(
-                data=np.array(
-                    [
-                        "2000-01-16T12:00:00.000000000",
-                        "2000-02-15T12:00:00.000000000",
-                        "2000-03-16T12:00:00.000000000",
-                        "2000-04-16T00:00:00.000000000",
-                        "2000-05-16T12:00:00.000000000",
-                        "2000-06-16T00:00:00.000000000",
-                        "2000-07-16T12:00:00.000000000",
-                        "2000-08-16T12:00:00.000000000",
-                        "2000-09-16T00:00:00.000000000",
-                        "2000-10-16T12:00:00.000000000",
-                        "2000-11-16T00:00:00.000000000",
-                        "2000-12-16T12:00:00.000000000",
-                        "2001-01-16T12:00:00.000000000",
-                        "2001-02-15T00:00:00.000000000",
-                        "2001-12-16T12:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            "2000-01-16T12:00:00.000000000",
-                            "2000-02-15T12:00:00.000000000",
-                            "2000-03-16T12:00:00.000000000",
-                            "2000-04-16T00:00:00.000000000",
-                            "2000-05-16T12:00:00.000000000",
-                            "2000-06-16T00:00:00.000000000",
-                            "2000-07-16T12:00:00.000000000",
-                            "2000-08-16T12:00:00.000000000",
-                            "2000-09-16T00:00:00.000000000",
-                            "2000-10-16T12:00:00.000000000",
-                            "2000-11-16T00:00:00.000000000",
-                            "2000-12-16T12:00:00.000000000",
-                            "2001-01-16T12:00:00.000000000",
-                            "2001-02-15T00:00:00.000000000",
-                            "2001-12-16T12:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    ),
-                },
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((15, 4, 4)),
-                coords={
-                    "lat": self.ds.lat,
-                    "lon": self.ds.lon,
-                    "time": time_new,
-                },
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "time_series",
-                    "freq": "hour",
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            assert result.identical(expected)
-
-    class TestClimatology:
-        # TODO: Update TestClimatology tests to use other numbers rather than 1's
-        # for better test reliability and accuracy. This may require subsetting.
-        @pytest.fixture(autouse=True)
-        def setup(self):
-            self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
-
-        def test_raises_error_without_time_dimension(self):
-            ds = self.ds.copy()
-            ds = ds.drop_dims("time")
-
-            with pytest.raises(KeyError):
-                ds.temporal._temporal_avg("climatology", "season", "ts")
-
-        def test_raises_error_with_incorrect_freq_arg(self):
-            with pytest.raises(ValueError):
-                self.ds.temporal._temporal_avg(
-                    "ts",
-                    "climatology",
-                    "incorrect_freq",
-                )
-
-        def test_raises_error_with_incorrect_dec_mode_arg(self):
-            with pytest.raises(ValueError):
-                self.ds.temporal._temporal_avg(
-                    "ts",
-                    "climatology",
-                    freq="season",
-                    season_config={"dec_mode": "incorrect"},
-                )
-
-        def test_raises_error_if_data_var_does_not_exist_in_dataset(self):
-            with pytest.raises(KeyError):
-                self.ds.temporal._temporal_avg(
-                    "nonexistent_var", "climatology", freq="season"
-                )
-
-        def test_weighted_seasonal_climatology_with_DJF(self):
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg(
-                "ts",
-                "climatology",
-                "season",
-                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
-            )
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
-                    ],
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            cftime.datetime(1, 1, 1),
-                            cftime.datetime(1, 4, 1),
-                            cftime.datetime(1, 7, 1),
-                            cftime.datetime(1, 10, 1),
-                        ],
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((4, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "climatology",
-                    "freq": "season",
-                    "weighted": "True",
-                    "center_times": "False",
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": "True",
-                },
-            )
-
-            assert result.identical(expected)
-
-        @requires_dask
-        def test_chunked_weighted_seasonal_climatology_with_DJF(self):
-            ds = self.ds.copy().chunk({"time": 2})
-
-            result = ds.temporal._temporal_avg(
-                "ts",
-                "climatology",
-                "season",
-                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
-            )
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
-                    ],
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            cftime.datetime(1, 1, 1),
-                            cftime.datetime(1, 4, 1),
-                            cftime.datetime(1, 7, 1),
-                            cftime.datetime(1, 10, 1),
-                        ],
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((4, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "climatology",
-                    "freq": "season",
-                    "weighted": "True",
-                    "center_times": "False",
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": "True",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_seasonal_climatology_with_JFD(self):
-            ds = self.ds.copy()
-
-            result = ds.temporal._temporal_avg(
-                "ts",
-                "climatology",
-                "season",
-                season_config={"dec_mode": "JFD"},
-            )
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
-                    ],
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            cftime.datetime(1, 1, 1),
-                            cftime.datetime(1, 4, 1),
-                            cftime.datetime(1, 7, 1),
-                            cftime.datetime(1, 10, 1),
-                        ],
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((4, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "climatology",
-                    "freq": "season",
-                    "weighted": "True",
-                    "center_times": "False",
-                    "dec_mode": "JFD",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_custom_seasonal_climatology(self):
-            # FIXME: Fix this test
-            ds = self.ds.copy()
-
-            custom_seasons = [
-                ["Jan", "Feb", "Mar"],
-                ["Apr", "May", "Jun"],
-                ["Jul", "Aug", "Sep"],
-                ["Oct", "Nov", "Dec"],
-            ]
-            result = ds.temporal._temporal_avg(
-                "ts",
-                "climatology",
-                "season",
-                season_config={"custom_seasons": custom_seasons},
-            )
-            expected = ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 11, 1),
-                    ],
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            cftime.datetime(1, 2, 1),
-                            cftime.datetime(1, 5, 1),
-                            cftime.datetime(1, 8, 1),
-                            cftime.datetime(1, 11, 1),
-                        ],
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((4, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "climatology",
-                    "freq": "season",
-                    "weighted": "True",
-                    "center_times": "False",
-                    "custom_seasons": [
-                        "JanFebMar",
-                        "AprMayJun",
-                        "JulAugSep",
-                        "OctNovDec",
-                    ],
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_monthly_climatology(self):
-            result = self.ds.temporal._temporal_avg("ts", "climatology", "month")
-
-            expected = self.ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 3, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 6, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 9, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 11, 1),
-                        cftime.datetime(1, 12, 1),
-                    ],
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            cftime.datetime(1, 1, 1),
-                            cftime.datetime(1, 2, 1),
-                            cftime.datetime(1, 3, 1),
-                            cftime.datetime(1, 4, 1),
-                            cftime.datetime(1, 5, 1),
-                            cftime.datetime(1, 6, 1),
-                            cftime.datetime(1, 7, 1),
-                            cftime.datetime(1, 8, 1),
-                            cftime.datetime(1, 9, 1),
-                            cftime.datetime(1, 10, 1),
-                            cftime.datetime(1, 11, 1),
-                            cftime.datetime(1, 12, 1),
-                        ],
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((12, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "climatology",
-                    "freq": "month",
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_unweighted_monthly_climatology(self):
-            result = self.ds.temporal._temporal_avg(
-                "ts", "climatology", "month", weighted=False
-            )
-
-            expected = self.ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 3, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 6, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 9, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 11, 1),
-                        cftime.datetime(1, 12, 1),
-                    ],
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            cftime.datetime(1, 1, 1),
-                            cftime.datetime(1, 2, 1),
-                            cftime.datetime(1, 3, 1),
-                            cftime.datetime(1, 4, 1),
-                            cftime.datetime(1, 5, 1),
-                            cftime.datetime(1, 6, 1),
-                            cftime.datetime(1, 7, 1),
-                            cftime.datetime(1, 8, 1),
-                            cftime.datetime(1, 9, 1),
-                            cftime.datetime(1, 10, 1),
-                            cftime.datetime(1, 11, 1),
-                            cftime.datetime(1, 12, 1),
-                        ],
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((12, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "climatology",
-                    "freq": "month",
-                    "weighted": "False",
-                    "center_times": "False",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_weighted_daily_climatology(self):
-            result = self.ds.temporal._temporal_avg(
-                "ts", "climatology", "day", weighted=True
-            )
-
-            expected = self.ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 16),
-                        cftime.datetime(1, 2, 15),
-                        cftime.datetime(1, 3, 16),
-                        cftime.datetime(1, 4, 16),
-                        cftime.datetime(1, 5, 16),
-                        cftime.datetime(1, 6, 16),
-                        cftime.datetime(1, 7, 16),
-                        cftime.datetime(1, 8, 16),
-                        cftime.datetime(1, 9, 16),
-                        cftime.datetime(1, 10, 16),
-                        cftime.datetime(1, 11, 16),
-                        cftime.datetime(1, 12, 16),
-                    ],
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            cftime.datetime(1, 1, 16),
-                            cftime.datetime(1, 2, 15),
-                            cftime.datetime(1, 3, 16),
-                            cftime.datetime(1, 4, 16),
-                            cftime.datetime(1, 5, 16),
-                            cftime.datetime(1, 6, 16),
-                            cftime.datetime(1, 7, 16),
-                            cftime.datetime(1, 8, 16),
-                            cftime.datetime(1, 9, 16),
-                            cftime.datetime(1, 10, 16),
-                            cftime.datetime(1, 11, 16),
-                            cftime.datetime(1, 12, 16),
-                        ],
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((12, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "climatology",
-                    "freq": "day",
-                    "weighted": "True",
-                    "center_times": "False",
-                },
-            )
-
-            assert result.identical(expected)
-
-        def test_unweighted_daily_climatology(self):
-            result = self.ds.temporal._temporal_avg(
-                "ts", "climatology", "day", weighted=False
-            )
-
-            expected = self.ds.copy()
-            expected = expected.drop_dims("time")
-            expected_time = xr.DataArray(
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 16),
-                        cftime.datetime(1, 2, 15),
-                        cftime.datetime(1, 3, 16),
-                        cftime.datetime(1, 4, 16),
-                        cftime.datetime(1, 5, 16),
-                        cftime.datetime(1, 6, 16),
-                        cftime.datetime(1, 7, 16),
-                        cftime.datetime(1, 8, 16),
-                        cftime.datetime(1, 9, 16),
-                        cftime.datetime(1, 10, 16),
-                        cftime.datetime(1, 11, 16),
-                        cftime.datetime(1, 12, 16),
-                    ],
-                ),
-                coords={
-                    "time": np.array(
-                        [
-                            cftime.datetime(1, 1, 16),
-                            cftime.datetime(1, 2, 15),
-                            cftime.datetime(1, 3, 16),
-                            cftime.datetime(1, 4, 16),
-                            cftime.datetime(1, 5, 16),
-                            cftime.datetime(1, 6, 16),
-                            cftime.datetime(1, 7, 16),
-                            cftime.datetime(1, 8, 16),
-                            cftime.datetime(1, 9, 16),
-                            cftime.datetime(1, 10, 16),
-                            cftime.datetime(1, 11, 16),
-                            cftime.datetime(1, 12, 16),
-                        ],
-                    ),
-                },
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            expected["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((12, 4, 4)),
-                coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
-                dims=["time", "lat", "lon"],
-                attrs={
-                    "operation": "temporal_avg",
-                    "mode": "climatology",
-                    "freq": "day",
-                    "weighted": "False",
-                    "center_times": "False",
-                },
-            )
-
-            assert result.identical(expected)
 
 
 class TestSetObjAttrs:
@@ -1842,7 +1779,7 @@ class TestCustomSeasons:
         assert result == expected
 
 
-class TestAverager:
+class TestGroupedAverage:
     # FIXME: Update test this so that it is accurate, rather than 1's
     # for averages
     # May involve subsetting
@@ -1891,7 +1828,7 @@ class TestAverager:
         )
 
         # Compare result of the method against the expected.
-        ts_result = ds.temporal._averager(ds["ts"])
+        ts_result = ds.temporal._grouped_average(ds["ts"])
         ts_expected = np.ones((12, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -1935,7 +1872,7 @@ class TestAverager:
         )
 
         # Compare result of the method against the expected.
-        ts_result = ds.temporal._averager(ds["ts"])
+        ts_result = ds.temporal._grouped_average(ds["ts"])
         ts_expected = np.ones((12, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -1980,7 +1917,7 @@ class TestAverager:
 
         # Compare result of the method against the expected.
         # Check non-bounds variables were properly grouped and averaged
-        ts_result = ds.temporal._averager(ds["ts"])
+        ts_result = ds.temporal._grouped_average(ds["ts"])
         ts_expected = np.ones((12, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -2032,7 +1969,7 @@ class TestAverager:
 
         # Compare result of the method against the expected.
         # Check non-bounds variables were properly grouped and averaged
-        ts_result = ds.temporal._averager(ds["ts"])
+        ts_result = ds.temporal._grouped_average(ds["ts"])
         ts_expected = np.ones((4, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -2082,7 +2019,7 @@ class TestAverager:
         )
 
         # Compare result of the method against the expected.
-        ts_result = ds.temporal._averager(ds["ts"])
+        ts_result = ds.temporal._grouped_average(ds["ts"])
         ts_expected = np.ones((4, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -3590,6 +3527,19 @@ class TestGroupByFreq:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
+    def test_groups_data_var_for_seasonal_means(self):
+        ds = self.ds.copy()
+
+        ds.temporal._mode = "mean"
+        ds.temporal._freq = "season"
+
+        ts = ds.ts.copy()
+        expected = ts.copy()
+        expected = expected.groupby("time.season")
+        result = ds.temporal._groupby_freq(ts)
+
+        assert result.groups == expected.groups
+
     def test_groups_data_var_for_seasonal_averaging_with_JFD(self):
         ds = self.ds.copy()
 
@@ -3626,6 +3576,7 @@ class TestGroupByFreq:
             },
         )
         ds.temporal._time_grouped = time_grouped
+        ds.temporal._mode = "time_series"
 
         ts = ds.ts.copy()
         expected = ts.copy()
@@ -3674,6 +3625,7 @@ class TestGroupByFreq:
             },
         )
         ds.temporal._time_grouped = time_grouped
+        ds.temporal._mode = "climatology"
 
         ts = ds.ts.copy()
         expected = ts.copy()

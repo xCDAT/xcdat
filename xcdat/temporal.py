@@ -1,6 +1,6 @@
 """Module containing temporal functions."""
 from itertools import chain
-from typing import Dict, List, Literal, Optional, TypedDict, get_args
+from typing import Dict, List, Literal, Optional, Tuple, TypedDict, get_args
 
 import cf_xarray  # noqa: F401
 import cftime
@@ -17,7 +17,7 @@ from xcdat.utils import str_to_bool
 logger = setup_custom_logger(__name__)
 
 # Type alias for supported time averaging modes.
-Mode = Literal["time_series", "climatology", "departures"]
+Mode = Literal["mean", "time_series", "climatology", "departures"]
 MODES = get_args(Mode)
 
 # Type alias for supported grouping frequencies.
@@ -46,18 +46,28 @@ SeasonConfigAttr = TypedDict(
     total=False,
 )
 
-SEASON_CONFIG_KEYS = ["dec_mode", "drop_incomplete_djf", "custom_seasons"]
+DEFAULT_SEASON_CONFIG: SeasonConfigInput = {
+    "dec_mode": "DJF",
+    "drop_incomplete_djf": False,
+    "custom_seasons": None,
+}
 
 # Type alias representing xarray datetime accessor components.
 # https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
-DateTimeComponent = Literal["hour", "day", "month", "season", "year"]
+DateTimeComponent = Literal["year", "season", "month", "day", "hour"]
 
 # A dictionary mapping temporal averaging mode and frequency to the xarray
-# datetime components used for grouping. Xarray datetime components are
-# extracted from the time coordinates of a data variable. The "season"
+# datetime components used for grouping/aggregating. Xarray datetime components
+# are extracted from the time coordinates of a data variable. Note, the "season"
 # frequency involves additional processing that requires the "year" and/or
-# "month" components. These components are removed before grouping.
-DATETIME_COMPONENTS = {
+# "month" components. These components are later removed before grouping.
+DATETIME_COMPONENTS: Dict[
+    Mode, Dict[DateTimeComponent, Tuple[DateTimeComponent, ...]]
+] = {
+    "mean": {
+        "year": ("year",),
+        "month": ("month",),
+    },
     "time_series": {
         "year": ("year",),
         "season": ("year", "season", "month"),  # becomes ("year", "season")
@@ -120,6 +130,15 @@ class TemporalAccessor:
     >>> ds.temporal.<method>
     >>> ds.temporal.<property>
 
+    Check the 'axis' attribute is set on the time coordinates:
+
+    >>> ds.time.attrs["axis"]
+    >>> T
+
+    Set the 'axis' attribute for the time coordinates if it isn't:
+
+    >>> ds.time.attrs["axis"] = "T"
+
     Parameters
     ----------
     dataset : xr.Dataset
@@ -141,19 +160,58 @@ class TemporalAccessor:
         # The weights for time coordinates, which are based on a chosen frequency.
         self._weights: Optional[xr.DataArray] = None
 
+    def mean(
+        self, data_var: str, freq: Literal["year", "month"], center_times: bool = False
+    ):
+        """Returns weighted means along the time dimension.
+
+        This method is particularly useful for yearly or monthly time series
+        data, where the number of days per year or month can vary based
+        on the calendar type (e.g., leap year). Use xarray's native ``.mean()``
+        method for other frequencies.
+
+        Weights are calculated by first determining the length of time for
+        each coordinate point using the difference of its upper and lower
+        bounds. The time lengths are grouped, then each time length is
+        divided by the total sum of the time lengths to get the weight of
+        each coordinate point.
+
+        Parameters
+        ----------
+        data_var: str
+            The key of the data variable for calculating means
+        freq : Literal["year", "month"]
+            The time frequency for calculating weights, either "year" or
+            "month".
+        center_times: bool, optional
+            If True, center time coordinates using the midpoint between its
+            upper and lower bounds. Otherwise, use the provided time
+            coordinates by default False.
+
+        Returns
+        -------
+        xr.Dataset
+            Dataset with the weighted means of a data variable.
+
+        Examples
+        --------
+
+        Get weighted means for a monthly time series data variable:
+
+        >>> ds_season = ds.temporal.average("ts", "month", center_times=False)
+        >>> ds_season.ts
+        """
+        return self._temporal_avg(data_var, "mean", freq, True, center_times)
+
     def average(
         self,
         data_var: str,
         freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfigInput = {
-            "dec_mode": "DJF",
-            "drop_incomplete_djf": False,
-            "custom_seasons": None,
-        },
+        season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
-        """Calculates the time series averages for a data variable.
+        """Returns time series averages for a data variable.
 
         Parameters
         ----------
@@ -171,15 +229,15 @@ class TemporalAccessor:
         weighted : bool, optional
             Calculate averages using weights, by default True.
 
-            To calculate the weights for the time dimension, first the length of
-            time for each coordinate point is calculated using the difference of
-            its upper and lower bounds. The time lengths are grouped, then each
-            time length is divided by the total sum of the time lengths to get
-            the weights.
+            Weights are calculated by first determining the length of time for
+            each coordinate point using the difference of its upper and lower
+            bounds. The time lengths are grouped, then each time length is
+            divided by the total sum of the time lengths to get the weight of
+            each coordinate point.
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
-            upper and lower bounds. Otherwise, use the provided time coordinates,
-            by default False.
+            upper and lower bounds. Otherwise, use the provided time
+            coordinates, by default False.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -224,7 +282,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset containing the averaged data variable.
+            Dataset with the averaged data variable.
 
         References
         ----------
@@ -232,19 +290,6 @@ class TemporalAccessor:
 
         Examples
         --------
-
-        Check the 'axis' attribute is set on the time coordinates:
-
-        >>> ds.time.attrs["axis"]
-        >>> T
-
-        Set the 'axis' attribute for the time coordinates if it isn't:
-
-        >>> ds.time.attrs["axis"] = "T"
-
-        Call ``average()`` method:
-
-        >>> ds.temporal.average(...)
 
         Get a data variable's seasonal averages:
 
@@ -303,13 +348,9 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfigInput = {
-            "dec_mode": "DJF",
-            "drop_incomplete_djf": False,
-            "custom_seasons": None,
-        },
+        season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
-        """Calculates the climatology for a data variable.
+        """Returns the climatology for a data variable.
 
         Parameters
         ----------
@@ -325,15 +366,15 @@ class TemporalAccessor:
         weighted : bool, optional
             Calculate averages using weights, by default True.
 
-            To calculate the weights for the time dimension, first the length of
-            time for each coordinate point is calculated using the difference of
-            its upper and lower bounds. The time lengths are grouped, then each
-            time length is divided by the total sum of the time lengths to get
-            the weights.
+            Weights are calculated by first determining the length of time for
+            each coordinate point using the difference of its upper and lower
+            bounds. The time lengths are grouped, then each time length is
+            divided by the total sum of the time lengths to get the weight of
+            each coordinate point.
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
-            upper and lower bounds. Otherwise, use the provided time coordinates,
-            by default False.
+            upper and lower bounds. Otherwise, use the provided time
+            coordinates, by default False.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -378,7 +419,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset containing the averaged data variable.
+            Dataset with the climatology of a data variable.
 
         References
         ----------
@@ -386,9 +427,6 @@ class TemporalAccessor:
 
         Examples
         --------
-        Import TemporalAccessor class:
-
-        >>> import xcdat
 
         Call ``climatology()`` method:
 
@@ -492,11 +530,11 @@ class TemporalAccessor:
         weighted : bool, optional
             Calculate averages using weights, by default True.
 
-            To calculate the weights for the time dimension, first the length of
-            time for each coordinate point is calculated using the difference of
-            its upper and lower bounds. The time lengths are grouped, then each
-            time length is divided by the total sum of the time lengths to get
-            the weights.
+            Weights are calculated by first determining the length of time for
+            each coordinate point using the difference of its upper and lower
+            bounds. The time lengths are grouped, then each time length is
+            divided by the total sum of the time lengths to get the weight of
+            each coordinate point.
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time coordinates,
@@ -554,9 +592,6 @@ class TemporalAccessor:
 
         Examples
         --------
-        Import TemporalAccessor class:
-
-        >>> import xcdat
 
         Get a data variable's annual cycle departures:
 
@@ -683,8 +718,9 @@ class TemporalAccessor:
         self._set_obj_attrs(mode, freq, weighted, center_times, season_config)
         ds = self._dataset.copy()
 
-        # Perform operations on the Dataset's time coordinates before operating
-        # on the data variable so that these updates cascade down to it.
+        # Since time coordinates are shared across the variables in the
+        # Dataset, perform Dataset level operations first to cascade the
+        # resulting time coordinates down to the data variable.
         if self._center_times:
             ds = self.center_times(ds)
 
@@ -695,15 +731,18 @@ class TemporalAccessor:
         ):
             ds = self._drop_incomplete_djf(ds)
 
-        # Group the time coordinates and average the data variable using them.
-        self._time_grouped = self._group_time_coords(ds.cf["T"])
         dv = _get_data_var(ds, data_var)
-        dv = self._averager(dv)
 
-        # The dataset's original "time" dimension becomes obsolete after
-        # calculating the climatology of the data variable, so it is dropped
-        # and replaced.
-        ds = ds.drop_dims("time")
+        if self._mode == "mean":
+            dv = self._average(dv)
+        else:
+            dv = self._grouped_average(dv)
+
+            # The original time dimension becomes obsolete after time averaging
+            # the data variable so it is dropped. Adding the time averaged
+            # data variable back to the dataset adds a new time dimension.
+            ds = ds.drop_dims("time")
+
         ds[dv.name] = dv
 
         return ds
@@ -765,10 +804,10 @@ class TemporalAccessor:
 
         # "season" frequency specific configuration attributes.
         for key in season_config.keys():
-            if key not in SEASON_CONFIG_KEYS:
+            if key not in DEFAULT_SEASON_CONFIG.keys():
                 raise KeyError(
                     f"'{key}' is not a supported season config. Supported "
-                    f"configs include: {SEASON_CONFIG_KEYS}."
+                    f"configs include: {DEFAULT_SEASON_CONFIG.keys()}."
                 )
         custom_seasons = season_config.get("custom_seasons", None)
         dec_mode = season_config.get("dec_mode", "DJF")
@@ -879,13 +918,39 @@ class TemporalAccessor:
 
         return c_seasons
 
-    def _averager(self, data_var: xr.DataArray) -> xr.DataArray:
-        """Averages a data variable by a grouping frequency.
+    def _average(self, data_var: xr.DataArray) -> xr.DataArray:
+        """Returns averages for a data variable.
+
+        The difference between this method and ``_grouped_average()`` is that
+        this one does not group by a frequency. It simply calculates weights
+        using the frequency (consisting of a single datetime component) and
+        applies it to the data variable. Then it calculates the mean along the
+        time dimension.
+
+        Parameters
+        ----------
+        data_var : xr.DataArray
+            The data variable.
+
+        Returns
+        -------
+        xr.DataArray
+            The means of the data variable.
+        """
+        dv = data_var.copy()
+        dim_name = self._dataset.cf["T"].name
+
+        with xr.set_options(keep_attrs=True):
+            self._weights = self._get_weights(dv)
+            dv = dv.weighted(self._weights).mean(dim=dim_name)
+
+        return dv
+
+    def _grouped_average(self, data_var: xr.DataArray) -> xr.DataArray:
+        """Returns grouped averages for a data variable.
 
         This method groups the data variable's values by the time coordinates
-        and averages them with or without weights. The parameters for
-        ``self._temporal_average()`` are stored as DataArray attributes in the
-        averaged data variable.
+        and averages them with or without weights.
 
         Parameters
         ----------
@@ -898,6 +963,7 @@ class TemporalAccessor:
             The averaged data variable.
         """
         dv = data_var.copy()
+        self._time_grouped = self._group_time_coords(dv.cf["T"])
 
         if self._weighted:
             self._weights = self._get_weights(dv)
@@ -1070,7 +1136,7 @@ class TemporalAccessor:
             if component not in df_new.columns:
                 df_new[component] = default_val
 
-        if self._mode == "time_series":
+        if self._mode in ["mean", "time_series"]:
             dates = pd.to_datetime(df_new).to_numpy()
         elif self._mode in ["climatology", "departures"]:
             # The "year" values are not considered when grouping the time
@@ -1306,11 +1372,15 @@ class TemporalAccessor:
             The data variable's time coordinates weights.
         """
         freq_groups = self._groupby_freq(data_var).count()  # type: ignore
-        # Sum the frequency group counts by all the dims except the grouped time
+
+        if self._mode == "mean":
+            dim_name = data_var.cf["T"].name
+        else:
+            dim_name = self._time_grouped.name
+
+        # Sum the frequency group counts by all the dims except the time
         # dimension to get a 1D array of counts.
-        summing_dims = tuple(
-            x for x in freq_groups.dims if x != self._time_grouped.name
-        )
+        summing_dims = tuple(x for x in freq_groups.dims if x != dim_name)
         freq_sums = freq_groups.sum(summing_dims)
 
         # Replace all non-zero counts with 1.0 (total weight of 100%).
@@ -1336,8 +1406,15 @@ class TemporalAccessor:
             A data variable grouped by the frequency.
         """
         dv = data_var.copy()
-        dv.coords[self._time_grouped.name] = self._time_grouped
-        dv_gb = dv.groupby(self._time_grouped.name)
+
+        # "mean" mode only groups by a single datetime component, while
+        # other modes require a DataArray of grouped time coordinates since
+        # time coordinates are grouped by multiple datetime components.
+        if self._mode == "mean":
+            dv_gb = dv.groupby(f"{self._dataset.cf['T'].name}.{self._freq}")
+        else:
+            dv.coords[self._time_grouped.name] = self._time_grouped
+            dv_gb = dv.groupby(self._time_grouped.name)
 
         return dv_gb
 
