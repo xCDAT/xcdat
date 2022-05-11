@@ -3,6 +3,7 @@ from typing import Any, Dict, Literal, Tuple
 import xarray as xr
 
 from xcdat.regridder import regrid2, xesmf
+from xcdat.utils import is_documented_by
 
 RegridTool = Literal["xesmf", "regrid2"]
 
@@ -69,6 +70,28 @@ class RegridderAccessor:
         ds = ds.bounds.add_missing_bounds()
 
         return ds
+
+    @is_documented_by(xesmf.XESMFRegridder.__init__)
+    def horizontal_xesmf(
+        self,
+        data_var: str,
+        dst_grid: xr.Dataset,
+        **options: Dict[str, Any],
+    ) -> xr.Dataset:
+        regridder = REGRID_TOOLS["xesmf"](self._ds, dst_grid, **options)
+
+        return regridder.horizontal(data_var, self._ds)
+
+    @is_documented_by(regrid2.Regrid2Regridder.__init__)
+    def horizontal_regrid2(
+        self,
+        data_var: str,
+        dst_grid: xr.Dataset,
+        **options: Dict[str, Any],
+    ) -> xr.Dataset:
+        regridder = REGRID_TOOLS["regrid2"](self._ds, dst_grid, **options)
+
+        return regridder.horizontal(data_var, self._ds)
 
     def horizontal(
         self,
