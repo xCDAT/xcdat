@@ -1,7 +1,10 @@
 import xarray as xr
 import xesmf as xe
 
+from xcdat.logger import setup_custom_logger
 from xcdat.regridder.base import BaseRegridder
+
+logger = setup_custom_logger(__name__)
 
 VALID_METHODS = [
     "bilinear",
@@ -106,12 +109,15 @@ class XESMFRegridder(BaseRegridder):
         for axes, variable_names in output_da.cf.axes.items():
             variable_name = variable_names[0]
 
-            if axes in ("X", "Y"):
-                bounds = self._dst_grid.bounds.get_bounds(variable_name)
+            try:
+                if axes in ("X", "Y"):
+                    bounds = self._dst_grid.bounds.get_bounds(variable_name)
+                else:
+                    bounds = ds.bounds.get_bounds(variable_name)
+            except KeyError:
+                logger.debug(f"Could not find bounds for {axes!r}")
             else:
-                bounds = ds.bounds.get_bounds(variable_name)
-
-            data_vars[bounds.name] = bounds.copy()
+                data_vars[bounds.name] = bounds.copy()
 
         data_vars[data_var] = output_da
 
