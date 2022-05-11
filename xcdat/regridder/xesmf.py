@@ -91,7 +91,7 @@ class XESMFRegridder(BaseRegridder):
             extrap_num_src_pnts=extrap_num_src_pnts,
         )
 
-    def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+    def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         input_data_var = ds.get(data_var, None)
 
         if input_data_var is None:

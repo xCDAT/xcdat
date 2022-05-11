@@ -70,7 +70,7 @@ class RegridderAccessor:
 
         return ds
 
-    def regrid(
+    def horizontal(
         self,
         data_var: str,
         dst_grid: xr.Dataset,
@@ -124,11 +124,11 @@ class RegridderAccessor:
 
         Regrid variable using "xesmf":
 
-        >>> ds.regridder.regrid("tas", out_grid, tool="xesmf", method="bilinear")
+        >>> ds.regridder.horizontal("tas", out_grid, tool="xesmf", method="bilinear")
 
         Regrid variable using "regrid2":
 
-        >>> ds.regridder.regrid("tas", out_grid, tool="regrid2")
+        >>> ds.regridder.horizontal("tas", out_grid, tool="regrid2")
         """
         try:
             regridder = REGRID_TOOLS[tool](self._ds, dst_grid, **options)
@@ -137,4 +137,4 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices {list(REGRID_TOOLS)}"
             )
 
-        return regridder.regrid(data_var, self._ds)
+        return regridder.horizontal(data_var, self._ds)

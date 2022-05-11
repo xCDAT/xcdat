@@ -175,7 +175,7 @@ class TestRegrid2Regridder:
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
         with pytest.raises(KeyError):
-            regridder.regrid("unknown", self.coarse_2d_ds)
+            regridder.horizontal("unknown", self.coarse_2d_ds)
 
     def test_regrid_mask(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
@@ -184,7 +184,7 @@ class TestRegrid2Regridder:
 
         self.coarse_2d_ds["mask"] = (("lat", "lon"), mask)
 
-        output_data = regridder.regrid("ts", self.coarse_2d_ds)
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
 
         expected_output = np.array(
             [
@@ -201,28 +201,28 @@ class TestRegrid2Regridder:
     def test_regrid_2d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
-        output_data = regridder.regrid("ts", self.coarse_2d_ds)
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
 
         assert np.all(output_data.ts == 1)
 
     def test_regrid_fine_coarse_2d(self):
         regridder = regrid2.Regrid2Regridder(self.fine_2d_ds, self.coarse_2d_ds)
 
-        output_data = regridder.regrid("ts", self.fine_2d_ds)
+        output_data = regridder.horizontal("ts", self.fine_2d_ds)
 
         assert np.all(output_data.ts == 1)
 
     def test_regrid_3d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_3d_ds, self.fine_2d_ds)
 
-        output_data = regridder.regrid("ts", self.coarse_3d_ds)
+        output_data = regridder.horizontal("ts", self.coarse_3d_ds)
 
         assert np.all(output_data.ts == 1)
 
     def test_regrid_4d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_4d_ds, self.fine_2d_ds)
 
-        output_data = regridder.regrid("ts", self.coarse_4d_ds)
+        output_data = regridder.horizontal("ts", self.coarse_4d_ds)
 
         assert np.all(output_data.ts == 1)
 
@@ -343,7 +343,7 @@ class TestXESMFRegridder:
 
         regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear")
 
-        output = regridder.regrid("ts", ds)
+        output = regridder.horizontal("ts", ds)
 
         assert isinstance(output, xr.Dataset)
 
@@ -355,7 +355,7 @@ class TestXESMFRegridder:
         regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear")
 
         with pytest.raises(KeyError):
-            regridder.regrid("unknown", ds)
+            regridder.horizontal("unknown", ds)
 
     def test_invalid_method(self):
         ds = self.ds.copy()
@@ -542,22 +542,22 @@ class TestAccessor:
 
     def test_valid_tool(self):
         mock_regridder = mock.MagicMock()
-        mock_regridder.return_value.regrid.return_value = "output data"
+        mock_regridder.return_value.horizontal.return_value = "output data"
 
         mock_data = mock.MagicMock()
 
         with mock.patch.dict(accessor.REGRID_TOOLS, {"regrid2": mock_regridder}):
-            output = self.ac.regrid("ts", mock_data, "regrid2")
+            output = self.ac.horizontal("ts", mock_data, "regrid2")
 
         assert output == "output data"
 
-        mock_regridder.return_value.regrid.assert_called_with("ts", self.data)
+        mock_regridder.return_value.horizontal.assert_called_with("ts", self.data)
 
     def test_invalid_tool(self):
         with pytest.raises(
             ValueError, match=r"Tool 'test' does not exist, valid choices"
         ):
-            self.ac.regrid("ts", mock.MagicMock(), "test")  # type: ignore
+            self.ac.horizontal("ts", mock.MagicMock(), "test")  # type: ignore
 
 
 class TestBase:
@@ -566,7 +566,7 @@ class TestBase:
             def __init__(self, src_grid, dst_grid, **options):
                 super().__init__(src_grid, dst_grid, **options)
 
-            def regrid(self, data_var, ds):
+            def horizontal(self, data_var, ds):
                 return ds
 
         regridder = NewRegridder(mock.MagicMock(), mock.MagicMock())
@@ -575,6 +575,6 @@ class TestBase:
 
         ds_in = mock.MagicMock()
 
-        ds_out = regridder.regrid("ts", ds_in)
+        ds_out = regridder.horizontal("ts", ds_in)
 
         assert ds_in == ds_out

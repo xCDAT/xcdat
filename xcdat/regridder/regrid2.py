@@ -442,7 +442,7 @@ class Regrid2Regridder(BaseRegridder):
 
         return xr.Dataset(data_vars)
 
-    def regrid(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+    def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """
         Regrid data between rectilinear grids.
 
