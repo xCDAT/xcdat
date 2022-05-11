@@ -43,10 +43,11 @@ GENERIC_AXIS_MAP: Dict[CFAxis, GenericAxis] = {
 def swap_lon_axis(
     dataset: xr.Dataset, to: Tuple[float, float], sort_ascending: bool = True
 ) -> xr.Dataset:
-    """Swap the longitude axis orientation for a dataset.
+    """Swap the orientation of a dataset's longitude axis.
 
-    This method also swaps the longitude bounds axis orientation if it exists,
-    and sorts values in ascending order.
+    This method also swaps the axis orientation of the longitude bounds if it
+    exists. Afterwards, it sorts longitude and longitude bounds values in
+    ascending order.
 
     Parameters
     ----------

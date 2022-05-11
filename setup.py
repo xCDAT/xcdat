@@ -26,7 +26,7 @@ install_requires: List[str] = [
 test_requires = ["pytest>=3"]
 
 setup(
-    author="XCDAT developers",
+    author="xCDAT developers",
     python_requires=">=3.8",
     classifiers=[
         "Development Status :: 3 - Alpha",
@@ -48,7 +48,7 @@ setup(
     packages=find_packages(include=["xcdat", "xcdat.*"]),
     test_suite="tests",
     tests_require=test_requires,
-    url="https://github.com/XCDAT/xcdat",
+    url="https://github.com/xCDAT/xcdat",
     version="0.2.0",
     zip_safe=False,
 )

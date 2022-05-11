@@ -29,7 +29,29 @@ BoundsAxis = Literal[
 
 @xr.register_dataset_accessor("bounds")
 class BoundsAccessor:
-    """A class to represent the BoundsAccessor.
+    """
+    An accessor class that provides bounds attributes and methods on xarray
+    Datasets through the ``.bounds`` attribute.
+
+    Examples
+    --------
+
+    Import BoundsAccessor class:
+
+    >>> import xcdat  # or from xcdat import bounds
+
+    Use BoundsAccessor class:
+
+    >>> ds = xcdat.open_dataset("/path/to/file")
+    >>>
+    >>> ds.bounds.<attribute>
+    >>> ds.bounds.<method>
+    >>> ds.bounds.<property>
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        A Dataset object.
 
     Examples
     ---------

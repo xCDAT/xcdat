@@ -41,7 +41,7 @@ class TestAverage:
         with pytest.raises(KeyError):
             self.ds.spatial.average(
                 "not_a_data_var",
-                axis=["lat", "incorrect_axis"],
+                axis=["Y", "incorrect_axis"],
             )
 
     def test_spatial_average_for_lat_and_lon_region_using_custom_weights(self):
@@ -53,7 +53,7 @@ class TestAverage:
             dims=["lat", "lon"],
         )
         result = ds.spatial.average(
-            axis=["lat", "lon"],
+            axis=["X", "Y"],
             lat_bounds=(-5.0, 5),
             lon_bounds=(-170, -120.1),
             weights=weights,
@@ -72,7 +72,7 @@ class TestAverage:
     def test_spatial_average_for_lat_and_lon_region(self):
         ds = self.ds.copy()
         result = ds.spatial.average(
-            "ts", axis=["lat", "lon"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+            "ts", axis=["X", "Y"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
         expected = self.ds.copy()
@@ -89,7 +89,7 @@ class TestAverage:
 
         # Specifying axis as a str instead of list of str.
         result = ds.spatial.average(
-            "ts", axis="lat", lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+            "ts", axis=["Y"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
         expected = self.ds.copy()
@@ -109,7 +109,7 @@ class TestAverage:
 
         # Specifying axis as a str instead of list of str.
         result = ds.spatial.average(
-            "ts", axis="lat", lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+            "ts", axis=["Y"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
         )
 
         expected = self.ds.copy()
@@ -124,32 +124,26 @@ class TestAverage:
         assert result.identical(expected)
 
 
-class TestValidateAxis:
+class TestValidateAxisArg:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test_raises_error_if_axis_list_contains_unsupported_axis(self):
         with pytest.raises(ValueError):
-            self.ds.spatial._validate_axis(self.ds.ts, axis=["lat", "incorrect_axis"])
+            self.ds.spatial._validate_axis_arg(axis=["Y", "incorrect_axis"])
 
     def test_raises_error_if_lat_axis_does_not_exist(self):
         ds = self.ds.copy()
-        ds["ts"] = xr.DataArray(data=None, coords={"lon": ds.lon}, dims=["lon"])
+        ds.lat.attrs["axis"] = None
         with pytest.raises(KeyError):
-            ds.spatial._validate_axis(ds.ts, axis=["lat", "lon"])
+            ds.spatial._validate_axis_arg(axis=["X", "Y"])
 
     def test_raises_error_if_lon_axis_does_not_exist(self):
         ds = self.ds.copy()
-        ds["ts"] = xr.DataArray(data=None, coords={"lat": ds.lat}, dims=["lat"])
+        ds.lon.attrs["axis"] = None
         with pytest.raises(KeyError):
-            ds.spatial._validate_axis(ds.ts, axis=["lat", "lon"])
-
-    def test_returns_list_of_str_if_axis_is_a_single_supported_str_input(self):
-        result = self.ds.spatial._validate_axis(self.ds.ts, axis="lat")
-        expected = ["lat"]
-
-        assert result == expected
+            ds.spatial._validate_axis_arg(axis=["X", "Y"])
 
 
 class TestValidateRegionBounds:
@@ -178,18 +172,18 @@ class TestValidateRegionBounds:
 
     def test_raises_error_if_lower_bound_is_not_a_float_or_int(self):
         with pytest.raises(TypeError):
-            self.ds.spatial._validate_region_bounds("lat", ("invalid", 1))
+            self.ds.spatial._validate_region_bounds("Y", ("invalid", 1))
 
     def test_raises_error_if_upper_bound_is_not_a_float_or_int(self):
         with pytest.raises(TypeError):
-            self.ds.spatial._validate_region_bounds("lon", (1, "invalid"))
+            self.ds.spatial._validate_region_bounds("X", (1, "invalid"))
 
     def test_raises_error_if_lower_lat_bound_is_bigger_than_upper(self):
         with pytest.raises(ValueError):
-            self.ds.spatial._validate_region_bounds("lat", (2, 1))
+            self.ds.spatial._validate_region_bounds("Y", (2, 1))
 
     def test_does_not_raise_error_if_lon_lower_bound_is_larger_than_upper(self):
-        self.ds.spatial._validate_region_bounds("lon", (2, 1))
+        self.ds.spatial._validate_region_bounds("X", (2, 1))
 
 
 class TestValidateWeights:
@@ -209,7 +203,7 @@ class TestValidateWeights:
             coords={"lat": self.ds.lat, "lon": self.ds.lon},
             dims=["lat", "lon"],
         )
-        self.ds.spatial._validate_weights(self.ds["ts"], axis="lat", weights=weights)
+        self.ds.spatial._validate_weights(self.ds["ts"], axis=["Y"], weights=weights)
 
     def test_error_is_raised_when_lat_axis_is_specified_but_lat_is_not_in_weights_dims(
         self,
@@ -219,7 +213,7 @@ class TestValidateWeights:
         )
         with pytest.raises(KeyError):
             self.ds.spatial._validate_weights(
-                self.ds["ts"], axis=["lon", "lat"], weights=weights
+                self.ds["ts"], axis=["X", "Y"], weights=weights
             )
 
     def test_error_is_raised_when_lon_axis_is_specified_but_lon_is_not_in_weights_dims(
@@ -230,7 +224,7 @@ class TestValidateWeights:
         )
         with pytest.raises(KeyError):
             self.ds.spatial._validate_weights(
-                self.ds["ts"], axis=["lon", "lat"], weights=weights
+                self.ds["ts"], axis=["X", "Y"], weights=weights
             )
 
     def test_error_is_raised_when_weights_lat_and_lon_dims_dont_align_with_data_var_dims(
@@ -247,7 +241,7 @@ class TestValidateWeights:
 
         with pytest.raises(ValueError):
             self.ds.spatial._validate_weights(
-                self.ds["ts"], axis=["lat", "lon"], weights=weights
+                self.ds["ts"], axis=["X", "Y"], weights=weights
             )
 
 
@@ -404,7 +398,7 @@ class TestGetWeights:
 
     def test_weights_for_region_in_lat_and_lon_domains(self):
         result = self.ds.spatial._get_weights(
-            axis=["lat", "lon"], lat_bounds=(-5, 5), lon_bounds=(-170, -120)
+            axis=["Y", "X"], lat_bounds=(-5, 5), lon_bounds=(-170, -120)
         )
         expected = xr.DataArray(
             data=np.array(
@@ -423,7 +417,7 @@ class TestGetWeights:
 
     def test_area_weights_for_region_in_lat_domain(self):
         result = self.ds.spatial._get_weights(
-            axis=["lat", "lon"], lat_bounds=(-5, 5), lon_bounds=None
+            axis=["Y", "X"], lat_bounds=(-5, 5), lon_bounds=None
         )
         expected = xr.DataArray(
             data=np.array(
@@ -454,7 +448,7 @@ class TestGetWeights:
             dims=["lat", "lon"],
         )
         result = self.ds.spatial._get_weights(
-            axis=["lat", "lon"], lat_bounds=None, lon_bounds=(-170, -120)
+            axis=["Y", "X"], lat_bounds=None, lon_bounds=(-170, -120)
         )
 
         xr.testing.assert_allclose(result, expected)
@@ -828,7 +822,7 @@ class TestAverager:
             dims=["lat", "lon"],
         )
 
-        result = ds.spatial._averager(ds.ts, axis=["lat", "lon"], weights=weights)
+        result = ds.spatial._averager(ds.ts, axis=["X", "Y"], weights=weights)
         expected = xr.DataArray(
             name="ts", data=np.ones(15), coords={"time": ds.time}, dims=["time"]
         )
@@ -843,7 +837,7 @@ class TestAverager:
             dims=["lat"],
         )
 
-        result = self.ds.spatial._averager(self.ds.ts, axis=["lat"], weights=weights)
+        result = self.ds.spatial._averager(self.ds.ts, axis=["Y"], weights=weights)
         expected = xr.DataArray(
             name="ts",
             data=np.ones((15, 4)),
@@ -861,7 +855,7 @@ class TestAverager:
             dims=["lon"],
         )
 
-        result = self.ds.spatial._averager(self.ds.ts, axis=["lon"], weights=weights)
+        result = self.ds.spatial._averager(self.ds.ts, axis=["X"], weights=weights)
         expected = xr.DataArray(
             name="ts",
             data=np.ones((15, 4)),
@@ -878,22 +872,9 @@ class TestAverager:
             dims=["lat", "lon"],
         )
 
-        result = self.ds.spatial._averager(
-            self.ds.ts, axis=["lat", "lon"], weights=weights
-        )
+        result = self.ds.spatial._averager(self.ds.ts, axis=["X", "Y"], weights=weights)
         expected = xr.DataArray(
             name="ts", data=np.ones(15), coords={"time": self.ds.time}, dims=["time"]
         )
 
         assert result.identical(expected)
-
-
-class TestGetGenericAxisKeys:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
-
-    def test_generic_keys(self):
-        result = self.ds.spatial._get_generic_axis_keys(["lat", "lon"])
-        expected = ["Y", "X"]
-        assert result == expected

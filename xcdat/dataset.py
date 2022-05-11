@@ -22,7 +22,7 @@ def open_dataset(
     data_var: Optional[str] = None,
     decode_times: bool = True,
     center_times: bool = False,
-    add_bounds: bool = False,
+    add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
@@ -44,8 +44,9 @@ def open_dataset(
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
     add_bounds: bool, optional
-        If True, add bounds for supported axes (T, X, Y) if they are missing in
-        the Dataset, by default False.
+        If True, add bounds for supported axes (X, Y, T) if they are missing in
+        the Dataset, by default True. Bounds are required for many xCDAT
+        features.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -78,7 +79,7 @@ def open_dataset(
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
     if decode_times:
-        cf_compliant_time: Optional[bool] = has_cf_compliant_time(path)
+        cf_compliant_time: Optional[bool] = _has_cf_compliant_time(path)
         if cf_compliant_time is False:
             # XCDAT handles decoding time values with non-CF units.
             ds = xr.open_dataset(path, decode_times=False, **kwargs)
@@ -105,7 +106,7 @@ def open_mfdataset(
     data_var: Optional[str] = None,
     decode_times: bool = True,
     center_times: bool = False,
-    add_bounds: bool = False,
+    add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
     data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
     preprocess: Optional[Callable] = None,
@@ -133,8 +134,9 @@ def open_mfdataset(
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
     add_bounds: bool, optional
-        If True, add bounds for supported axes (T, X, Y) if they are missing in
-        the Dataset, by default False.
+        If True, add bounds for supported axes (X, Y, T) if they are missing in
+        the Dataset, by default True. Bounds are required for many xCDAT
+        features.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -192,7 +194,7 @@ def open_mfdataset(
     .. [2] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
     """
     if decode_times:
-        cf_compliant_time: Optional[bool] = has_cf_compliant_time(paths)
+        cf_compliant_time: Optional[bool] = _has_cf_compliant_time(paths)
         # XCDAT handles decoding time values with non-CF units using the
         # preprocess kwarg.
         if cf_compliant_time is False:
@@ -209,69 +211,6 @@ def open_mfdataset(
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
     return ds
-
-
-def has_cf_compliant_time(
-    path: Union[
-        str,
-        pathlib.Path,
-        List[str],
-        List[pathlib.Path],
-        List[List[str]],
-        List[List[pathlib.Path]],
-    ]
-) -> Optional[bool]:
-    """Determine if a dataset has time coordinates with CF compliant units.
-
-    If the dataset does not contain a time dimension, None is returned.
-    Otherwise, the units attribute is extracted from the time coordinates to
-    determine whether it is CF or non-CF compliant.
-
-    Parameters
-    ----------
-    path : Union[str, pathlib.Path, List[str], List[pathlib.Path], \
-         List[List[str]], List[List[pathlib.Path]]]
-        Either a file (``"file.nc"``), a string glob in the form
-        ``"path/to/my/files/*.nc"``, or an explicit list of files to open.
-        Paths can be given as strings or as pathlib Paths. If concatenation
-        along more than one dimension is desired, then ``paths`` must be a
-        nested list-of-lists (see ``combine_nested`` for details). (A string
-        glob will be expanded to a 1-dimensional list.)
-
-    Returns
-    -------
-    Optional[bool]
-        None if time dimension does not exist, True if CF compliant, or False if
-        non-CF compliant.
-
-    Notes
-    -----
-    This function only checks one file for multi-file datasets to optimize
-    performance because it is slower to combine all files then check for CF
-    compliance.
-    """
-    first_file: Optional[Union[pathlib.Path, str]] = None
-
-    if isinstance(path, str) and "*" in path:
-        first_file = glob(path)[0]
-    elif isinstance(path, str) or isinstance(path, pathlib.Path):
-        first_file = path
-    elif isinstance(path, list):
-        if any(isinstance(sublist, list) for sublist in path):
-            first_file = path[0][0]  # type: ignore
-        else:
-            first_file = path[0]  # type: ignore
-
-    ds = xr.open_dataset(first_file, decode_times=False)
-
-    if ds.cf.dims.get("T") is None:
-        return None
-
-    time = ds.cf["T"]
-    units = _split_time_units_attr(time.attrs.get("units"))[0]
-    cf_compliant = units not in NON_CF_TIME_UNITS
-
-    return cf_compliant
 
 
 def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
@@ -406,6 +345,69 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     return ds
 
 
+def _has_cf_compliant_time(
+    path: Union[
+        str,
+        pathlib.Path,
+        List[str],
+        List[pathlib.Path],
+        List[List[str]],
+        List[List[pathlib.Path]],
+    ]
+) -> Optional[bool]:
+    """Checks if a dataset has time coordinates with CF compliant units.
+
+    If the dataset does not contain a time dimension, None is returned.
+    Otherwise, the units attribute is extracted from the time coordinates to
+    determine whether it is CF or non-CF compliant.
+
+    Parameters
+    ----------
+    path : Union[str, pathlib.Path, List[str], List[pathlib.Path], \
+         List[List[str]], List[List[pathlib.Path]]]
+        Either a file (``"file.nc"``), a string glob in the form
+        ``"path/to/my/files/*.nc"``, or an explicit list of files to open.
+        Paths can be given as strings or as pathlib Paths. If concatenation
+        along more than one dimension is desired, then ``paths`` must be a
+        nested list-of-lists (see ``combine_nested`` for details). (A string
+        glob will be expanded to a 1-dimensional list.)
+
+    Returns
+    -------
+    Optional[bool]
+        None if time dimension does not exist, True if CF compliant, or False if
+        non-CF compliant.
+
+    Notes
+    -----
+    This function only checks one file for multi-file datasets to optimize
+    performance because it is slower to combine all files then check for CF
+    compliance.
+    """
+    first_file: Optional[Union[pathlib.Path, str]] = None
+
+    if isinstance(path, str) and "*" in path:
+        first_file = glob(path)[0]
+    elif isinstance(path, str) or isinstance(path, pathlib.Path):
+        first_file = path
+    elif isinstance(path, list):
+        if any(isinstance(sublist, list) for sublist in path):
+            first_file = path[0][0]  # type: ignore
+        else:
+            first_file = path[0]  # type: ignore
+
+    ds = xr.open_dataset(first_file, decode_times=False)
+
+    if ds.cf.dims.get("T") is None:
+        return None
+
+    time = ds.cf["T"]
+    units = _split_time_units_attr(time.attrs.get("units"))[0]
+    cf_compliant = units not in NON_CF_TIME_UNITS
+
+    return cf_compliant
+
+
 def _postprocess_dataset(
     dataset: xr.Dataset,
     data_var: Optional[str] = None,
@@ -426,7 +428,7 @@ def _postprocess_dataset(
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
     add_bounds: bool, optional
-        If True, add bounds for supported axes (T, X, Y) if they are missing in
+        If True, add bounds for supported axes (X, Y, T) if they are missing in
         the Dataset, by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
@@ -517,7 +519,7 @@ def _keep_single_var(dataset: xr.Dataset, key: str) -> xr.Dataset:
     return dataset[[key] + bounds_vars]
 
 
-def get_data_var(dataset: xr.Dataset, key: str) -> xr.DataArray:
+def _get_data_var(dataset: xr.Dataset, key: str) -> xr.DataArray:
     """Get a data variable in the Dataset by key.
 
     Parameters
@@ -550,22 +552,24 @@ def _preprocess_non_cf_dataset(
 ) -> xr.Dataset:
     """Preprocessing for each non-CF compliant dataset in ``open_mfdataset()``.
 
-    This function allows for a user specified preprocess function, in addition
-    to XCDAT preprocessing functions.
+    This function accepts a user specified preprocess function, which is
+    executed before additional internal preprocessing functions.
 
     One call is performed to ``decode_non_cf_time()`` for decoding each
     dataset's time coordinates and time bounds (if they exist) with non-CF
     compliant units. By default, if ``decode_times=False`` is passed, xarray
-    will concatenate time values using the first dataset's "units" attribute.
+    will concatenate time values using the first dataset's ``units`` attribute.
     This is an issue for cases where the numerically encoded time values are the
-    same and the "units" attribute differs between datasets. For example,
-    two files have the same time values, but the units of the first file is
-    "months since 2000-01-01" and the second is "months since 2001-01-01". Since
-    the first dataset's units are used in xarray for concatenating datasets,
-    the time values corresponding to the second file will be dropped since they
-    appear to be the same as the first file. Calling ``decode_non_cf_time()``
-    on each dataset individually before concatenating solves the aforementioned
-    issue.
+    same and the ``units`` attribute differs between datasets.
+
+    For example, two files have the same time values, but the units of the first
+    file is "months since 2000-01-01" and the second is "months since
+    2001-01-01". Since the first dataset's units are used in xarray for
+    concatenating datasets, the time values corresponding to the second file
+    will be dropped since they appear to be the same as the first file.
+
+    Calling ``decode_non_cf_time()`` on each dataset individually before
+    concatenating solves the aforementioned issue.
 
     Parameters
     ----------

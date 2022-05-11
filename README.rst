@@ -1,7 +1,7 @@
 .. raw:: html
 
    <p align="center">
-      <img src="./docs/_static/xcdat_logo.png" alt="XCDAT logo"/>
+      <img src="./docs/_static/xcdat_logo.png" alt="xCDAT logo"/>
    </p>
 
 .. container::
@@ -25,12 +25,12 @@
    :target: https://anaconda.org/conda-forge/xcdat
 .. |platforms| image:: https://img.shields.io/conda/pn/conda-forge/xcdat.svg
    :target: https://anaconda.org/conda-forge/xcdat
-.. |CI/CD Build Workflow| image:: https://github.com/XCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
-   :target: https://github.com/XCDAT/xcdat/actions/workflows/build_workflow.yml
+.. |CI/CD Build Workflow| image:: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
+   :target: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml
 .. |docs| image:: https://readthedocs.org/projects/xcdat/badge/?version=latest
    :target: https://xcdat.readthedocs.io/en/latest/?badge=latest
-.. |Codecov| image:: https://codecov.io/gh/XCDAT/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
-   :target: https://codecov.io/gh/XCDAT/xcdat
+.. |Codecov| image:: https://codecov.io/gh/xCDAT/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
+   :target: https://codecov.io/gh/xCDAT/xcdat
 .. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
    :target: https://github.com/pre-commit/pre-commit
 .. |Code style: black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
@@ -40,7 +40,7 @@
 .. |Checked with mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
    :target: http://mypy-lang.org/
 
-XCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
+xCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
 It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library.
 
 .. _xarray: https://github.com/pydata/xarray
@@ -49,53 +49,64 @@ It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_
 Planned Features
 -----------------
 
-XCDAT aims to provide utilities for general xarray usage and climate domain specific features.
+The goal of xCDAT is to provide climate domain specific features and general utilities with xarray.
 
-These features include:
+Initial features include:
 
 - Support for CF compliant, E3SM non-CF compliant, and common metadata
 
-- Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` to apply common operations
+  - Leverage `cf_xarray`_ to interpret `CF convention`_ attributes on ``xarray`` objects
 
-  - Generate bounds for all supported axes if they don't exist
-  - Optional decoding of CF (via ``xarray``) and non-CF time units (via ``xcdat``)
+- Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` with post-processing options
+
+  - Generate bounds for axes supported by ``xcdat`` if they don't exist in the Dataset
+  - Optional decoding non-CF time units, in addition to CF time units (already supported in ``xarray``)
   - Optional centering of time coordinate using time bounds
-  - Optional conversion of longitudinal axes orientation
-
-- Robust handling of coordinates and its associated bounds
-
-  - Name-agnostic retrieval of CF compliant coordinates and bounds using ``cf_xarray``
-  - Generating bounds for an axis or axes if they don't exist
-  - Ability to operate on both [0, 360) and [-180, 180) longitudinal axis orientations
+  - Optional conversion of longitudinal axis orientation between [0, 360) and [-180, 180)
 
 - Temporal averaging
 
-  - Calculate time series averages, climatologies, and departures
+  - Time series averages, climatologies, and departures
   - Weighted or unweighted
   - Optional centering of time coordinates using time bounds
+  - Optional seasonal configuration
 
-- Geospatial weighted averaging over rectilinear grid
+- Geospatial weighted averaging
 
+  - Support rectilinear grid
   - Optional specification of regional domain
 
 - Horizontal and vertical structured regridding
 
-  - Operate on rectilinear and cuvilinear grids
+  - Support rectilinear and cuvilinear grids
 
-- Parallelism of XCDAT features using Dask
+Things we keep in mind:
+
+- Robust handling of coordinates and its associated bounds
+
+  - Coordinates and bounds are retrieved with ``cf_xarray`` using the standard ``axis`` and ``coordinate`` attributes
+  - Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
+
+- Support for parallelism using `dask`_ where it is both possible and makes sense
+
+.. _dask: https://dask.org/
 
 Feature Criteria
 ~~~~~~~~~~~~~~~~
 
-Features must meet the following criteria before being considered for implementation:
+Features must meet the following criteria before they are considered for implementation:
 
-1. Climate domain functionality and/or general ``xarray`` utility isn't provided natively with ``xarray``
-2. No other existing and actively developed xarray-based packages implement the feature
+1. Feature is not implemented by ``xarray``
+2. Feature is not implemented in another actively developed xarray-based package
 
    - For example, ``cf_xarray`` already handles interpretation of CF convention attributes on xarray objects
 
-3. Must be generally reusable and not specific to a single use case
-4. Must be relatively simple and lightweight to implement and use
+3. Feature is not limited to specific use cases (e.g., data quality issues)
+4. Feature is generally reusable
+5. Feature is relatively simple and lightweight to implement and use
+
+.. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
+.. _CF convention: http://cfconventions.org/
 
 Acknowledgement
 ---------------

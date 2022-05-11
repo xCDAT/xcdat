@@ -1,9 +1,20 @@
 name: Bug Report
-description: File a bug report to help us improve XCDAT
+description: File a bug report to help us improve xCDAT
 title: "[Bug]: "
 labels: ["Type: Bug"]
 assignees: []
 body:
+    - type: checkboxes
+      id: bug-report-criteria
+      attributes:
+        label: Bug Report Criteria
+        description: First, please make sure your bug report meets the following criteria.
+        options:
+          - label: Bug is not related to a data quality issue(s) beyond the scope of xCDAT
+            required: true
+          - label: Bug is not related to core xarray APIs (please open an issue in the xarray repo if it is)
+            required: true
+
     - type: textarea
       id: what-happened
       attributes:
@@ -56,6 +67,6 @@ body:
       attributes:
           label: Environment
           description: |
-              Paste your XCDAT version and the output `xr.show_versions()` here
+              Paste your xCDAT version and the output `xr.show_versions()` here
       validations:
           required: true
