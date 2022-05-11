@@ -170,8 +170,8 @@ class TemporalAccessor:
 
         This method is particularly useful for yearly or monthly time series
         data, where the number of days per month can vary based on the calendar
-        type (e.g., leap year). For other frequencies or unweighted means, use
-        xarray's native ``.mean()`` method directly.
+        type (e.g., leap year). For unweighted means or non-yearly/non-monthly
+        time series, use xarray's native ``.mean()`` method directly.
 
         Weights are calculated by first determining the length of time for
         each coordinate point using the difference of its upper and lower
@@ -221,7 +221,7 @@ class TemporalAccessor:
         center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
-        """Returns time series averages for a data variable.
+        """Returns grouped averages for a data variable.
 
         Parameters
         ----------
@@ -929,13 +929,11 @@ class TemporalAccessor:
         return c_seasons
 
     def _average(self, data_var: xr.DataArray) -> xr.DataArray:
-        """Returns averages for a data variable.
+        """Returns weighted averages for a data variable.
 
-        The difference between this method and ``_grouped_average()`` is that
-        this one does not group by a frequency. It simply calculates weights
-        using the frequency (consisting of a single datetime component) and
-        applies it to the data variable, then it averages along the time
-        dimension.
+        This method calculates the weights using the time frequency (consisting
+        of a single datetime component), then averages the data variable along
+        the time dimension.
 
         Parameters
         ----------
@@ -945,7 +943,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.DataArray
-            The means of the data variable.
+            The averages of the data variable.
         """
         dv = data_var.copy()
         dim_name = self._dataset.cf["T"].name
@@ -959,8 +957,8 @@ class TemporalAccessor:
     def _grouped_average(self, data_var: xr.DataArray) -> xr.DataArray:
         """Returns grouped averages for a data variable.
 
-        This method groups the data variable's values by the time coordinates
-        and averages them with or without weights.
+        This method groups the values of the data variable by the time
+        coordinates and averages them, with or without weights.
 
         Parameters
         ----------
@@ -970,7 +968,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.DataArray
-            The averaged data variable.
+            The averages of the data variable by group.
         """
         dv = data_var.copy()
         self._time_grouped = self._group_time_coords(dv.cf["T"])
@@ -982,7 +980,7 @@ class TemporalAccessor:
         else:
             dv = self._groupby_freq(dv).mean()  # type: ignore
 
-        # After grouping and aggregating on the grouped time coordinates, the
+        # After grouping on the time coordinates and aggregating the values, the
         # original time dimension is replaced with the grouped time dimension.
         # For example, grouping on "year_season" replaces the "time" dimension
         # with "year_season". This dimension will eventually be renamed back
@@ -1009,8 +1007,8 @@ class TemporalAccessor:
         pandas DataFrame is the chosen data structure because it simplifies the
         additional steps for processing the component values, specifically for
         the "season" frequency. The DataFrame is then converted to a numpy
-        list of cftime.datetime or datetime.datetime that is used as the data
-        for the final xarray DataArray of grouped time coordinates.
+        list of ``cftime.datetime`` or ``datetime.datetime`` that is used as the
+        data for the final ``xr.DataArray`` of grouped time coordinates.
 
         Parameters
         ----------
