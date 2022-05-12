@@ -61,6 +61,8 @@ DateTimeComponent = Literal["year", "season", "month", "day", "hour"]
 # are extracted from the time coordinates of a data variable. Note, the "season"
 # frequency involves additional processing that requires the "year" and/or
 # "month" components. These components are later removed before grouping.
+# FIXME: Fix seasonal frequency grouping (use a method instead of statically
+# defining it here)
 DATETIME_COMPONENTS: Dict[
     Mode, Dict[DateTimeComponent, Tuple[DateTimeComponent, ...]]
 ] = {
@@ -748,8 +750,9 @@ class TemporalAccessor:
             dv = self._group_average(dv)
 
             # The original time dimension is dropped from the Dataset because
-            # it becomes  after the data variable is averaged. A new time dimension
-            # will be added to the Dataset when adding the averaged data variable.
+            # it becomes  after the data variable is averaged. A new time
+            # dimension will be added to the Dataset when adding the averaged
+            # data variable.
             ds = ds.drop_dims("time")
 
         ds[dv.name] = dv
