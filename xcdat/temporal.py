@@ -165,7 +165,7 @@ class TemporalAccessor:
 
     def average(self, data_var: str, freq: Frequency, center_times: bool = False):
         """
-        Returns a Dataset with weighted average applied to the data variable 
+        Returns a Dataset with weighted average applied to the data variable
         with the time dimension removed.
 
         This method is particularly useful for yearly or monthly time series
@@ -361,8 +361,9 @@ class TemporalAccessor:
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with the climatology for the data variable.
-    This method is similar to ``_group_average()``, but uses different time groups
-    based on the frequency.
+
+        This method is similar to ``_group_average()``, but uses different time
+        groups based on the grouping frequency.
 
         Parameters
         ----------
@@ -439,10 +440,6 @@ class TemporalAccessor:
 
         Examples
         --------
-
-        Call ``climatology()`` method:
-
-        >>> ds.temporal.climatology(...)
 
         Get a data variable's seasonal climatology:
 
@@ -750,7 +747,7 @@ class TemporalAccessor:
         else:
             dv = self._group_average(dv)
 
-            # The original time dimension is dropped from the Dataset because 
+            # The original time dimension is dropped from the Dataset because
             # it becomes  after the data variable is averaged. A new time dimension
             # will be added to the Dataset when adding the averaged data variable.
             ds = ds.drop_dims("time")
@@ -931,8 +928,9 @@ class TemporalAccessor:
         return c_seasons
 
     def _average(self, data_var: xr.DataArray) -> xr.DataArray:
-    """"
-    Returns the weighted averages for a data variable with the time dimension removed.
+        """ "
+        Returns the weighted averages for a data variable with the time
+        dimension removed.
 
         This method calculates the weights using the time frequency (consisting
         of a single datetime component), then averages the data variable along
@@ -946,7 +944,8 @@ class TemporalAccessor:
         Returns
         -------
         xr.DataArray
-        The weighted averages for a data variable with the time dimension removed.
+        The weighted averages for a data variable with the time dimension
+        removed.
         """
         dv = data_var.copy()
 
