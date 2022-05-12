@@ -23,7 +23,7 @@ class TestTemporalAccessor:
         assert obj._dataset.identical(ds)
 
 
-class TestMean:
+class TestAverage:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = xr.Dataset(
@@ -65,7 +65,7 @@ class TestMean:
     def test_weighted_yearly_means(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.mean("ts", freq="year")
+        result = ds.temporal.average("ts", freq="year")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
             data=np.array([[1.20901639, 1.90346084], [1.08196721, 1.12295082]]),
@@ -78,7 +78,7 @@ class TestMean:
     def test_weighted_seasonal_means(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.mean("ts", freq="season")
+        result = ds.temporal.average("ts", freq="season")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
             data=np.array([[1.211326, 1.298328], [1.163043, 1.247253]]),
@@ -91,7 +91,7 @@ class TestMean:
     def test_weighted_monthly_means(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.mean("ts", freq="month")
+        result = ds.temporal.average("ts", freq="month")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
             data=np.array([[1.209064, 1.291667], [1.166667, 1.25]]),
@@ -104,7 +104,7 @@ class TestMean:
     def test_weighted_daily_means(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.mean("ts", freq="day")
+        result = ds.temporal.average("ts", freq="day")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
             data=np.array([[1.40977444, 1.23308271], [1.07518797, 1.11278195]]),
@@ -117,7 +117,7 @@ class TestMean:
     def test_weighted_hourly_means(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.mean("ts", freq="hour")
+        result = ds.temporal.average("ts", freq="hour")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
             data=np.array([[1.24837662, 1.30194805], [1.2027027, 1.30405405]]),
@@ -128,9 +128,9 @@ class TestMean:
         xr.testing.assert_allclose(result.ts, expected.ts)
 
 
-# TODO: Update TestTimeSeries tests to use other numbers rather than 1's
+# TODO: Update TestGroupAverage tests to use other numbers rather than 1's
 # for better test reliability and accuracy. This may require subsetting.
-class TestTimeSeries:
+class TestGroupAverage:
     @pytest.fixture(autouse=True)
     def setup(self):
         # FIXME: Update test this so that it is accurate, rather than 1's
@@ -141,7 +141,7 @@ class TestTimeSeries:
     def test_weighted_annual_avg(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.average("ts", "year")
+        result = ds.temporal.group_average("ts", "year")
         expected = ds.copy()
         expected = expected.drop_dims("time")
         time_new = xr.DataArray(
@@ -177,7 +177,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
                 "center_times": "False",
@@ -193,7 +193,7 @@ class TestTimeSeries:
     def test_weighted_annual_avg_with_chunking(self):
         ds = self.ds.copy().chunk({"time": 2})
 
-        result = ds.temporal.average("ts", "year")
+        result = ds.temporal.group_average("ts", "year")
         expected = ds.copy()
         expected = expected.drop_dims("time")
         time_new = xr.DataArray(
@@ -229,7 +229,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
                 "center_times": "False",
@@ -244,7 +244,7 @@ class TestTimeSeries:
     def test_weighted_annual_avg_with_centering_time(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.average("ts", "year", center_times=True)
+        result = ds.temporal.group_average("ts", "year", center_times=True)
         expected = ds.copy()
         expected = expected.drop_dims("time")
         time_new = xr.DataArray(
@@ -280,7 +280,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
                 "center_times": "True",
@@ -295,7 +295,7 @@ class TestTimeSeries:
     def test_weighted_seasonal_avg_with_DJF(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.average(
+        result = ds.temporal.group_average(
             "ts",
             "season",
             season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
@@ -344,7 +344,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
                 "center_times": "False",
@@ -360,7 +360,7 @@ class TestTimeSeries:
     ):
         ds = self.ds.copy()
 
-        result = ds.temporal.average(
+        result = ds.temporal.group_average(
             "ts",
             "season",
             season_config={"dec_mode": "DJF", "drop_incomplete_djf": False},
@@ -411,7 +411,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
                 "center_times": "False",
@@ -427,7 +427,7 @@ class TestTimeSeries:
 
         ds = self.ds.copy()
 
-        result = ds.temporal.average(
+        result = ds.temporal.group_average(
             "ts",
             "season",
             season_config={"dec_mode": "JFD"},
@@ -476,7 +476,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
                 "center_times": "False",
@@ -495,7 +495,7 @@ class TestTimeSeries:
             ["Jul", "Aug", "Sep"],
             ["Oct", "Nov", "Dec"],
         ]
-        result = ds.temporal.average(
+        result = ds.temporal.group_average(
             "ts",
             "season",
             season_config={"custom_seasons": custom_seasons},
@@ -541,7 +541,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "season",
                 "custom_seasons": [
                     "JanFebMar",
@@ -559,7 +559,7 @@ class TestTimeSeries:
     def test_weighted_monthly_avg(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.average("ts", "month")
+        result = ds.temporal.group_average("ts", "month")
         expected = ds.copy()
         expected = expected.drop_dims("time")
         time_new = xr.DataArray(
@@ -624,7 +624,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "month",
                 "weighted": "True",
                 "center_times": "False",
@@ -636,7 +636,7 @@ class TestTimeSeries:
     def test_weighted_daily_avg(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.average("ts", "day")
+        result = ds.temporal.group_average("ts", "day")
         expected = ds.copy()
         expected = expected.drop_dims("time")
         time_new = xr.DataArray(
@@ -701,7 +701,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "day",
                 "weighted": "True",
                 "center_times": "False",
@@ -714,7 +714,7 @@ class TestTimeSeries:
         ds = self.ds.copy()
         ds.coords["time"].attrs["bounds"] = "time_bnds"
 
-        result = ds.temporal.average("ts", "hour")
+        result = ds.temporal.group_average("ts", "hour")
         expected = ds.copy()
         expected["ts_original"] = ds.ts.copy()
         expected["ts"] = xr.DataArray(
@@ -746,7 +746,7 @@ class TestTimeSeries:
             dims=["year_month_day_hour", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "hour",
                 "weighted": "True",
                 "center_times": "False",
@@ -817,7 +817,7 @@ class TestTimeSeries:
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
-                "mode": "time_series",
+                "mode": "group_average",
                 "freq": "hour",
                 "weighted": "True",
                 "center_times": "False",
@@ -1563,7 +1563,7 @@ class TestSetObjAttrs:
 
         with pytest.raises(ValueError):
             ds.temporal._set_obj_attrs(
-                "time_series",
+                "group_average",
                 freq="unsupported",
                 weighted=True,
                 center_times=True,
@@ -1606,7 +1606,7 @@ class TestSetObjAttrs:
 
         for freq in time_series_freqs:
             ds.temporal._set_obj_attrs(
-                "time_series",
+                "group_average",
                 freq=freq,
                 weighted=True,
                 center_times=True,
@@ -2128,7 +2128,7 @@ class TestGroupTimeCoords:
         ds = self.ds.copy()
 
         # Set object attrs required to test the method.
-        ds.temporal._mode = "time_series"
+        ds.temporal._mode = "group_average"
         ds.temporal._freq = "season"
         ds.temporal._season_config = {"dec_mode": "DJF", "drop_incomplete_djf": False}
 
@@ -2242,7 +2242,7 @@ class TestProcessSeasonDataFrame:
         df = self.df.copy()
 
         # Set object attrs required to test the method.
-        ds.temporal._mode = "time_series"
+        ds.temporal._mode = "group_average"
         ds.temporal._season_config = {
             "custom_seasons": {
                 "JanFebMar": ["Jan", "Feb", "Mar"],
@@ -2313,7 +2313,7 @@ class TestConvertDFtoDT:
             columns=["year", "month"],
         )
 
-        ds.temporal._mode = "time_series"
+        ds.temporal._mode = "group_average"
         result = ds.temporal._convert_df_to_dt(df)
         expected = np.array(
             [
@@ -2675,7 +2675,7 @@ class TestDropObsoleteColumns:
         ds = self.ds.copy()
 
         # Set object attrs required to test the method.
-        ds.temporal._mode = "time_series"
+        ds.temporal._mode = "group_average"
 
         # Define method inputs.
         df = pd.DataFrame(columns=["year", "season", "month"])
@@ -3074,7 +3074,7 @@ class TestCalculateWeights:
 
             # Set object attrs required to test the method.
             ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "time_series"
+            ds.temporal._mode = "group_average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
             ds.temporal._time_grouped = xr.DataArray(
@@ -3137,7 +3137,7 @@ class TestCalculateWeights:
 
             # Set object attrs required to test the method.
             ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "time_series"
+            ds.temporal._mode = "group_average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
             ds.temporal._time_grouped = xr.DataArray(
@@ -3279,7 +3279,7 @@ class TestCalculateWeights:
 
             # Set object attrs required to test the method.
             ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "time_series"
+            ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal.season_config = {"dec_mode": "DJF"}
@@ -3337,7 +3337,7 @@ class TestCalculateWeights:
 
             # Set object attrs required to test the method.
             ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "time_series"
+            ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal.season_config = {"dec_mode": "JDF"}
@@ -3402,7 +3402,7 @@ class TestCalculateWeights:
 
             # Set object attrs required to test the method.
             ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "time_series"
+            ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal._season_config = {
@@ -3474,7 +3474,7 @@ class TestCalculateWeights:
 
             # Set object attrs required to test the method.
             ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "time_series"
+            ds.temporal._mode = "group_average"
             ds.temporal._freq = "daily"
             ds.temporal._weighted = "True"
             ds.temporal._time_grouped = xr.DataArray(
@@ -3519,7 +3519,7 @@ class TestCalculateWeights:
 
             # Set object attrs required to test the method.
             ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "time_series"
+            ds.temporal._mode = "group_average"
             ds.temporal._freq = "hour"
             ds.temporal._weighted = "True"
             ds.temporal.season_config = {"dec_mode": "JDF"}
@@ -3569,7 +3569,7 @@ class TestGroupByFreq:
     def test_groups_data_var_for_seasonal_means(self):
         ds = self.ds.copy()
 
-        ds.temporal._mode = "mean"
+        ds.temporal._mode = "average"
         ds.temporal._freq = "season"
 
         ts = ds.ts.copy()
@@ -3615,7 +3615,7 @@ class TestGroupByFreq:
             },
         )
         ds.temporal._time_grouped = time_grouped
-        ds.temporal._mode = "time_series"
+        ds.temporal._mode = "group_average"
 
         ts = ds.ts.copy()
         expected = ts.copy()

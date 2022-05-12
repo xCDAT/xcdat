@@ -17,7 +17,7 @@ from xcdat.utils import str_to_bool
 logger = setup_custom_logger(__name__)
 
 # Type alias for supported time averaging modes.
-Mode = Literal["mean", "time_series", "climatology", "departures"]
+Mode = Literal["average", "group_average", "climatology", "departures"]
 MODES = get_args(Mode)
 
 # Type alias for supported grouping frequencies.
@@ -64,14 +64,14 @@ DateTimeComponent = Literal["year", "season", "month", "day", "hour"]
 DATETIME_COMPONENTS: Dict[
     Mode, Dict[DateTimeComponent, Tuple[DateTimeComponent, ...]]
 ] = {
-    "mean": {
+    "average": {
         "year": ("year",),
         "season": ("season",),
         "month": ("month",),
         "day": ("day",),
         "hour": ("hour",),
     },
-    "time_series": {
+    "group_average": {
         "year": ("year",),
         "season": ("year", "season", "month"),  # becomes ("year", "season")
         "month": ("year", "month"),
@@ -163,14 +163,14 @@ class TemporalAccessor:
         # The weights for time coordinates, which are based on a chosen frequency.
         self._weights: Optional[xr.DataArray] = None
 
-    def mean(self, data_var: str, freq: Frequency, center_times: bool = False):
+    def average(self, data_var: str, freq: Frequency, center_times: bool = False):
         """
-        Returns weighted means for a data variable with the time dimension
+        Returns weighted average for a data variable with the time dimension
         removed.
 
         This method is particularly useful for yearly or monthly time series
         data, where the number of days per month can vary based on the calendar
-        type (e.g., leap year). For unweighted means or non-yearly/non-monthly
+        type (e.g., leap year). For unweighted averages or non-yearly/non-monthly
         time series, use xarray's native ``.mean()`` method directly.
 
         Weights are calculated by first determining the length of time for
@@ -182,7 +182,7 @@ class TemporalAccessor:
         Parameters
         ----------
         data_var: str
-            The key of the data variable for calculating means
+            The key of the data variable for calculating averages
         freq : Frequency
             The time frequency for calculating weights.
 
@@ -200,20 +200,20 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset with weighted mean applied to the data variable with the
+            Dataset with weighted average applied to the data variable with the
             time dimension removed.
 
         Examples
         --------
 
-        Get weighted means for a monthly time series data variable:
+        Get weighted averages for a monthly time series data variable:
 
-        >>> ds_month = ds.temporal.mean("ts", freq="month", center_times=False)
+        >>> ds_month = ds.temporal.average("ts", freq="month", center_times=False)
         >>> ds_month.ts
         """
-        return self._temporal_avg(data_var, "mean", freq, True, center_times)
+        return self._temporal_avg(data_var, "average", freq, True, center_times)
 
-    def average(
+    def group_average(
         self,
         data_var: str,
         freq: Frequency,
@@ -221,7 +221,7 @@ class TemporalAccessor:
         center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
-        """Returns grouped averages for a data variable.
+        """Returns group averages for a data variable.
 
         Parameters
         ----------
@@ -303,7 +303,7 @@ class TemporalAccessor:
 
         Get a data variable's seasonal averages:
 
-        >>> ds_season = ds.temporal.average(
+        >>> ds_season = ds.temporal.group_average(
         >>>     "ts",
         >>>     "season",
         >>>     season_config={
@@ -313,7 +313,7 @@ class TemporalAccessor:
         >>> )
         >>> ds_season.ts
         >>>
-        >>> ds_season_with_jfd = ds.temporal.average(
+        >>> ds_season_with_jfd = ds.temporal.group_average(
         >>>     "ts",
         >>>     "season",
         >>>     season_config={"dec_mode": "JFD"}
@@ -329,7 +329,7 @@ class TemporalAccessor:
         >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
         >>> ]
         >>>
-        >>> ds_season_custom = ds.temporal.average(
+        >>> ds_season_custom = ds.temporal.group_average(
         >>>     "ts",
         >>>     "season",
         >>>     season_config={"custom_seasons": custom_seasons}
@@ -349,7 +349,7 @@ class TemporalAccessor:
         }
         """
         return self._temporal_avg(
-            data_var, "time_series", freq, weighted, center_times, season_config
+            data_var, "group_average", freq, weighted, center_times, season_config
         )
 
     def climatology(
@@ -743,7 +743,7 @@ class TemporalAccessor:
 
         dv = _get_data_var(ds, data_var)
 
-        if self._mode == "mean":
+        if self._mode == "average":
             dv = self._average(dv)
         else:
             dv = self._grouped_average(dv)
@@ -1145,13 +1145,13 @@ class TemporalAccessor:
 
         # FIXME: This conditional could probably be written better so it is more
         # understandable.
-        if self._mode == "time_series" or (
-            self._mode == "mean" and self._freq != "month"
+        if self._mode == "group_average" or (
+            self._mode == "average" and self._freq != "month"
         ):
             dates = pd.to_datetime(df_new).to_numpy()
         else:
             # The "year" values are not considered when grouping the time
-            # coordinates for "climatology", "departures", or "mean" with the
+            # coordinates for "climatology", "departures", or "average" with the
             # "month" frequency, but are required for creating datetime objects.
             # The fallback value of 1 is used as a placeholder for the year.
             # However, year 1 is outside the Timestamp-valid range so
@@ -1309,7 +1309,7 @@ class TemporalAccessor:
             The DataFrame of time coordinates for the "season" frequency with
             obsolete columns dropped.
         """
-        if self._mode == "time_series":
+        if self._mode == "group_average":
             df_season = df_season.drop("month", axis=1)
         elif self._mode in ["climatology", "departures"]:
             df_season = df_season.drop(["year", "month"], axis=1)
@@ -1403,10 +1403,10 @@ class TemporalAccessor:
         """
         dv = data_var.copy()
 
-        # "mean" mode only groups by a single datetime component, while
+        # "average" mode only groups by a single datetime component, while
         # other modes require a DataArray of grouped time coordinates since
         # time coordinates are grouped by multiple datetime components.
-        if self._mode == "mean":
+        if self._mode == "average":
             dv_gb = dv.groupby(f"{self._dim_name}.{self._freq}")
         else:
             dv.coords[self._time_grouped.name] = self._time_grouped
