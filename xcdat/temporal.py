@@ -165,8 +165,8 @@ class TemporalAccessor:
 
     def average(self, data_var: str, freq: Frequency, center_times: bool = False):
         """
-        Returns weighted average for a data variable with the time dimension
-        removed.
+        Returns a Dataset with weighted average applied to the data variable 
+        with the time dimension removed.
 
         This method is particularly useful for yearly or monthly time series
         data, where the number of days per month can vary based on the calendar
@@ -221,7 +221,7 @@ class TemporalAccessor:
         center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
-        """Returns group averages for a data variable.
+        """Returns a Dataset with the data variable averaged by time group.
 
         Parameters
         ----------
@@ -292,7 +292,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset with the averaged data variable.
+            Dataset with the data variable averaged by time group.
 
         References
         ----------
@@ -360,7 +360,9 @@ class TemporalAccessor:
         center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
-        """Returns the climatology for a data variable.
+        """Returns a Dataset with the climatology for the data variable.
+    This method is similar to ``_group_average()``, but uses different time groups
+    based on the frequency.
 
         Parameters
         ----------
@@ -429,7 +431,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset with the climatology of a data variable.
+            Dataset with the climatology for a data variable.
 
         References
         ----------
@@ -748,9 +750,9 @@ class TemporalAccessor:
         else:
             dv = self._group_average(dv)
 
-            # The original time dimension becomes obsolete after time averaging
-            # the data variable so it is dropped. Adding the time averaged
-            # data variable back to the dataset adds a new time dimension.
+            # The original time dimension is dropped from the Dataset because 
+            # it becomes  after the data variable is averaged. A new time dimension
+            # will be added to the Dataset when adding the averaged data variable.
             ds = ds.drop_dims("time")
 
         ds[dv.name] = dv
@@ -929,7 +931,8 @@ class TemporalAccessor:
         return c_seasons
 
     def _average(self, data_var: xr.DataArray) -> xr.DataArray:
-        """Returns weighted averages for a data variable.
+    """"
+    Returns the weighted averages for a data variable with the time dimension removed.
 
         This method calculates the weights using the time frequency (consisting
         of a single datetime component), then averages the data variable along
@@ -943,7 +946,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.DataArray
-            The averages of the data variable.
+        The weighted averages for a data variable with the time dimension removed.
         """
         dv = data_var.copy()
 
@@ -954,7 +957,7 @@ class TemporalAccessor:
         return dv
 
     def _group_average(self, data_var: xr.DataArray) -> xr.DataArray:
-        """Returns group averages for a data variable.
+        """Returns the data variable averaged by time group.
 
         This method groups the values of the data variable by the time
         coordinates and averages them, with or without weights.
@@ -967,7 +970,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.DataArray
-            The averages of the data variable by group.
+            The data variable averaged by time group.
         """
         dv = data_var.copy()
         self._grouped_time = self._group_time_coords(dv[self._dim_name])
@@ -1123,7 +1126,7 @@ class TemporalAccessor:
         datetime objects require at least a year, month, and day value. However,
         some modes and time frequencies don't require year, month, and/or day
         for grouping. For these cases, use default values of 1 in order to
-        meet this requirement.
+        meet this datetime requirement.
 
         If the default value of 1 is used for the years, datetime objects
         must be created using `cftime.datetime` because year 1 is outside the
@@ -1140,7 +1143,7 @@ class TemporalAccessor:
             A numpy ndarray of datetime.datetime or cftime.datetime objects.
 
         References
-        --------
+        ----------
         .. [6] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
 
         .. [7] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
