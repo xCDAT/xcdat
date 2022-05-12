@@ -1451,7 +1451,7 @@ class TestDepartures:
         assert result.identical(expected)
 
 
-class TestCenterTimes:
+class Test_CenterTimes:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -1539,7 +1539,7 @@ class TestCenterTimes:
         assert result.identical(expected)
 
 
-class TestSetObjAttrs:
+class Test_SetObjAttrs:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -1708,7 +1708,7 @@ class TestSetObjAttrs:
         }
 
 
-class TestCustomSeasons:
+class Test_FormSeasons:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -1818,10 +1818,23 @@ class TestCustomSeasons:
         assert result == expected
 
 
-class TestGroupedAverage:
+class Test_Average:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    @pytest.mark.xfail
+    def test_weighted_average_with_yearly_weights(self):
+        assert False
+
+    @pytest.mark.xfail
+    def test_weighted_average_with_monthly_weights(self):
+        assert False
+
+
+class Test_GroupAverage:
     # FIXME: Update test this so that it is accurate, rather than 1's
-    # for averages
-    # May involve subsetting
+    # for averages. Might involve subsetting.
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -1836,7 +1849,7 @@ class TestGroupedAverage:
         ds.temporal._freq = "day"
         ds.temporal._weighted = True
         ds.temporal._center_times = True
-        ds.temporal._time_grouped = xr.DataArray(
+        ds.temporal._grouped_time = xr.DataArray(
             name="month_day",
             data=np.array(
                 [
@@ -1867,7 +1880,7 @@ class TestGroupedAverage:
         )
 
         # Compare result of the method against the expected.
-        ts_result = ds.temporal._grouped_average(ds["ts"])
+        ts_result = ds.temporal._group_average(ds["ts"])
         ts_expected = np.ones((12, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -1880,7 +1893,7 @@ class TestGroupedAverage:
         ds.temporal._freq = "day"
         ds.temporal._weighted = False
         ds.temporal._center_times = True
-        ds.temporal._time_grouped = xr.DataArray(
+        ds.temporal._grouped_time = xr.DataArray(
             name="month_day",
             data=np.array(
                 [
@@ -1911,7 +1924,7 @@ class TestGroupedAverage:
         )
 
         # Compare result of the method against the expected.
-        ts_result = ds.temporal._grouped_average(ds["ts"])
+        ts_result = ds.temporal._group_average(ds["ts"])
         ts_expected = np.ones((12, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -1924,7 +1937,7 @@ class TestGroupedAverage:
         ds.temporal._freq = "month"
         ds.temporal._weighted = True
         ds.temporal._center_times = True
-        ds.temporal._time_grouped = xr.DataArray(
+        ds.temporal._grouped_time = xr.DataArray(
             name="month",
             data=np.array(
                 [
@@ -1956,7 +1969,7 @@ class TestGroupedAverage:
 
         # Compare result of the method against the expected.
         # Check non-bounds variables were properly grouped and averaged
-        ts_result = ds.temporal._grouped_average(ds["ts"])
+        ts_result = ds.temporal._group_average(ds["ts"])
         ts_expected = np.ones((12, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -1975,7 +1988,7 @@ class TestGroupedAverage:
             "dec_mode": "DJF",
             "drop_incomplete_djf": True,
         }
-        ds.temporal._time_grouped = xr.DataArray(
+        ds.temporal._grouped_time = xr.DataArray(
             name="season",
             data=np.array(
                 [
@@ -2008,7 +2021,7 @@ class TestGroupedAverage:
 
         # Compare result of the method against the expected.
         # Check non-bounds variables were properly grouped and averaged
-        ts_result = ds.temporal._grouped_average(ds["ts"])
+        ts_result = ds.temporal._group_average(ds["ts"])
         ts_expected = np.ones((4, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
@@ -2022,7 +2035,7 @@ class TestGroupedAverage:
         ds.temporal._weighted = True
         ds.temporal._center_times = True
         ds.temporal._season_config = {"dec_mode": "JFD"}
-        ds.temporal._time_grouped = xr.DataArray(
+        ds.temporal._grouped_time = xr.DataArray(
             name="season",
             data=np.array(
                 [
@@ -2058,12 +2071,12 @@ class TestGroupedAverage:
         )
 
         # Compare result of the method against the expected.
-        ts_result = ds.temporal._grouped_average(ds["ts"])
+        ts_result = ds.temporal._group_average(ds["ts"])
         ts_expected = np.ones((4, 4, 4))
         assert np.allclose(ts_result, ts_expected)
 
 
-class TestDropIncompleteDJF:
+class Test_DropIncompleteDJF:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2119,7 +2132,7 @@ class TestDropIncompleteDJF:
         assert result.identical(expected)
 
 
-class TestGroupTimeCoords:
+class Test_GroupTimeCoords:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2212,7 +2225,7 @@ class TestGroupTimeCoords:
         assert result.identical(expected)
 
 
-class TestProcessSeasonDataFrame:
+class Test_ProcessSeasonDataFrame:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2301,7 +2314,7 @@ class TestProcessSeasonDataFrame:
         assert result.equals(expected)
 
 
-class TestConvertDFtoDT:
+class Test_ConvertDFtoDT:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2359,7 +2372,7 @@ class TestConvertDFtoDT:
         assert np.array_equal(result, expected)
 
 
-class TestMapMonthsToCustomSeasons:
+class Test_MapMonthsToCustomSeasons:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2571,7 +2584,7 @@ class TestMapMonthsToCustomSeasons:
         assert result.equals(expected)
 
 
-class TestMapSeasonstoMidMonths:
+class Test_MapSeasonstoMidMonths:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2622,7 +2635,7 @@ class TestMapSeasonstoMidMonths:
         assert result.equals(expected)
 
 
-class TestShiftDecembers:
+class Test_ShiftDecembers:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2666,7 +2679,7 @@ class TestShiftDecembers:
         assert result.equals(expected)
 
 
-class TestDropObsoleteColumns:
+class Test_DropObsoleteColumns:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2712,359 +2725,21 @@ class TestDropObsoleteColumns:
             ds.temporal._drop_obsolete_columns(df)
 
 
-class TestCalculateWeights:
-    class TestClimatology:
+class Test_GetWeights:
+    class TestWeightsForAverageMode:
         @pytest.fixture(autouse=True)
         def setup(self):
             self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
 
-        def test_weights_for_seasonal_climatology_with_DJF(self):
-            ds = self.ds.copy()
+        @pytest.mark.xfail()
+        def test_weights_for_yearly_averages(self):
+            assert False
 
-            # Replace time and time bounds with incomplete seasons removed
-            ds = ds.drop_dims("time")
-            ds.coords["time"] = xr.DataArray(
-                data=np.array(
-                    [
-                        "2000-03-16T12:00:00.000000000",
-                        "2000-04-16T00:00:00.000000000",
-                        "2000-05-16T12:00:00.000000000",
-                        "2000-06-16T00:00:00.000000000",
-                        "2000-07-16T12:00:00.000000000",
-                        "2000-08-16T12:00:00.000000000",
-                        "2000-09-16T00:00:00.000000000",
-                        "2000-10-16T12:00:00.000000000",
-                        "2000-11-16T00:00:00.000000000",
-                        "2000-12-16T12:00:00.000000000",
-                        "2001-01-16T12:00:00.000000000",
-                        "2001-02-15T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                },
-            )
-            ds["ts"] = xr.DataArray(
-                name="ts",
-                data=np.ones((12, 4, 4)),
-                coords={"time": ds.time, "lat": ds.lat, "lon": ds.lon},
-                dims=["time", "lat", "lon"],
-            )
-            ds["time_bnds"] = xr.DataArray(
-                name="time_bnds",
-                data=np.array(
-                    [
-                        [
-                            "2000-03-01T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-05-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-05-01T00:00:00.000000000",
-                            "2000-06-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-06-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-08-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-08-01T00:00:00.000000000",
-                            "2000-09-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-09-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-10-01T00:00:00.000000000",
-                            "2000-11-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-11-01T00:00:00.000000000",
-                            "2000-12-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2000-12-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2001-01-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
-                        ],
-                        [
-                            "2001-02-01T00:00:00.000000000",
-                            "2001-03-01T00:00:00.000000000",
-                        ],
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-                coords={"time": ds.time},
-                dims=["time", "bnds"],
-                attrs={
-                    "is_generated": "True",
-                },
-            )
+        @pytest.mark.xfail()
+        def test_weights_for_monthly_averages(self):
+            assert False
 
-            # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "climatology"
-            ds.temporal._freq = "season"
-            ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "DJF"}
-            ds.temporal._time_grouped = xr.DataArray(
-                name="season",
-                data=np.array(
-                    [
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                    ],
-                ),
-                coords={"time": ds.time},
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-            # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds["ts"])
-            expected = np.array(
-                [
-                    0.33695652,
-                    0.32608696,
-                    0.33695652,
-                    0.32608696,
-                    0.33695652,
-                    0.33695652,
-                    0.32967033,
-                    0.34065934,
-                    0.32967033,
-                    0.34444444,
-                    0.34444444,
-                    0.31111111,
-                ]
-            )
-
-            assert np.allclose(result, expected, equal_nan=True)
-
-        def test_weights_for_seasonal_climatology_with_JFD(self):
-            ds = self.ds.copy()
-
-            # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "climatology"
-            ds.temporal._freq = "season"
-            ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "JDF"}
-            ds.temporal._time_grouped = xr.DataArray(
-                name="season",
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                    ],
-                ),
-                coords={"time": ds.time},
-                dims=["time"],
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-
-            # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds["ts"])
-            expected = np.array(
-                [
-                    [
-                        0.17127072,
-                        0.16022099,
-                        0.33695652,
-                        0.32608696,
-                        0.33695652,
-                        0.32608696,
-                        0.33695652,
-                        0.33695652,
-                        0.32967033,
-                        0.34065934,
-                        0.32967033,
-                        0.17127072,
-                        0.17127072,
-                        0.15469613,
-                        0.17127072,
-                    ]
-                ]
-            )
-            assert np.allclose(result, expected, equal_nan=True)
-
-        def test_weights_for_annual_climatology(self):
-            ds = self.ds.copy()
-
-            # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "climatology"
-            ds.temporal._freq = "month"
-            ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "DJF"}
-            ds.temporal._time_grouped = xr.DataArray(
-                name="month",
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 3, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 6, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 9, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 11, 1),
-                        cftime.datetime(1, 12, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 12, 1),
-                    ],
-                ),
-                coords={"time": ds.time},
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-
-            # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(self.ds["ts"])
-            expected = np.array(
-                [
-                    [
-                        0.5,
-                        0.50877193,
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0,
-                        1.0,
-                        0.5,
-                        0.5,
-                        0.49122807,
-                        0.5,
-                    ]
-                ]
-            )
-            assert np.allclose(result, expected)
-
-        def test_weights_for_daily_climatology(self):
-            ds = self.ds.copy()
-
-            # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
-            ds.temporal._mode = "climatology"
-            ds.temporal._freq = "day"
-            ds.temporal._weighted = "True"
-            ds.temporal._season_config = {
-                "dec_mode": "DJF",
-                "drop_incomplete_djf": True,
-            }
-            ds.temporal._time_grouped = xr.DataArray(
-                name="month_day",
-                data=np.array(
-                    [
-                        cftime.datetime(1, 1, 16),
-                        cftime.datetime(1, 2, 15),
-                        cftime.datetime(1, 3, 16),
-                        cftime.datetime(1, 4, 16),
-                        cftime.datetime(1, 5, 6),
-                        cftime.datetime(1, 6, 16),
-                        cftime.datetime(1, 7, 16),
-                        cftime.datetime(1, 8, 16),
-                        cftime.datetime(1, 9, 16),
-                        cftime.datetime(1, 10, 16),
-                        cftime.datetime(1, 11, 16),
-                        cftime.datetime(1, 12, 16),
-                        cftime.datetime(1, 1, 16),
-                        cftime.datetime(1, 2, 15),
-                        cftime.datetime(1, 12, 16),
-                    ],
-                ),
-                coords={"time": ds.time},
-                attrs={
-                    "axis": "T",
-                    "long_name": "time",
-                    "standard_name": "time",
-                    "bounds": "time_bnds",
-                },
-            )
-
-            # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(self.ds["ts"])
-            expected = np.array(
-                [
-                    0.5,
-                    0.50877193,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    1.0,
-                    0.5,
-                    0.5,
-                    0.49122807,
-                    0.5,
-                ]
-            )
-            assert np.allclose(result, expected)
-
-    class TestTimeSeries:
+    class TestWeightsForGroupAverageMode:
         @pytest.fixture(autouse=True)
         def setup(self):
             self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -3077,7 +2752,7 @@ class TestCalculateWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
-            ds.temporal._time_grouped = xr.DataArray(
+            ds.temporal._grouped_time = xr.DataArray(
                 name="year",
                 data=np.array(
                     [
@@ -3110,7 +2785,7 @@ class TestCalculateWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(self.ds["ts"])
+            result = ds.temporal._get_weights()
             expected = np.array(
                 [
                     0.08469945,
@@ -3140,7 +2815,7 @@ class TestCalculateWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
-            ds.temporal._time_grouped = xr.DataArray(
+            ds.temporal._grouped_time = xr.DataArray(
                 name="year_month",
                 data=np.array(
                     [
@@ -3173,7 +2848,7 @@ class TestCalculateWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(self.ds["ts"])
+            result = ds.temporal._get_weights()
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
@@ -3283,7 +2958,7 @@ class TestCalculateWeights:
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal.season_config = {"dec_mode": "DJF"}
-            ds.temporal._time_grouped = xr.DataArray(
+            ds.temporal._grouped_time = xr.DataArray(
                 name="year_season",
                 data=np.array(
                     [
@@ -3313,7 +2988,7 @@ class TestCalculateWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds["ts"])
+            result = ds.temporal._get_weights()
             expected = np.array(
                 [
                     0.33695652,
@@ -3341,7 +3016,7 @@ class TestCalculateWeights:
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal.season_config = {"dec_mode": "JDF"}
-            ds.temporal._time_grouped = xr.DataArray(
+            ds.temporal._grouped_time = xr.DataArray(
                 name="year_season",
                 data=np.array(
                     [
@@ -3375,7 +3050,7 @@ class TestCalculateWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(self.ds["ts"])
+            result = ds.temporal._get_weights()
             expected = np.array(
                 [
                     0.34065934,
@@ -3414,7 +3089,7 @@ class TestCalculateWeights:
                 }
             }
 
-            ds.temporal._time_grouped = xr.DataArray(
+            ds.temporal._grouped_time = xr.DataArray(
                 name="year_season",
                 data=np.array(
                     [
@@ -3447,7 +3122,7 @@ class TestCalculateWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(self.ds["ts"])
+            result = ds.temporal._get_weights()
             expected = np.array(
                 [
                     0.34065934,
@@ -3477,7 +3152,7 @@ class TestCalculateWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "daily"
             ds.temporal._weighted = "True"
-            ds.temporal._time_grouped = xr.DataArray(
+            ds.temporal._grouped_time = xr.DataArray(
                 name="year_month_day",
                 data=np.array(
                     [
@@ -3510,7 +3185,7 @@ class TestCalculateWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(self.ds["ts"])
+            result = ds.temporal._get_weights()
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
@@ -3523,7 +3198,7 @@ class TestCalculateWeights:
             ds.temporal._freq = "hour"
             ds.temporal._weighted = "True"
             ds.temporal.season_config = {"dec_mode": "JDF"}
-            ds.temporal._time_grouped = xr.DataArray(
+            ds.temporal._grouped_time = xr.DataArray(
                 name="year_month_day_hour",
                 data=np.array(
                     [
@@ -3556,12 +3231,363 @@ class TestCalculateWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(self.ds["ts"])
+            result = ds.temporal._get_weights()
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
+    class TestWeightsForClimatologyMode:
+        @pytest.fixture(autouse=True)
+        def setup(self):
+            self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
 
-class TestGroupByFreq:
+        def test_weights_for_seasonal_climatology_with_DJF(self):
+            ds = self.ds.copy()
+
+            # Replace time and time bounds with incomplete seasons removed
+            ds = ds.drop_dims("time")
+            ds.coords["time"] = xr.DataArray(
+                data=np.array(
+                    [
+                        "2000-03-16T12:00:00.000000000",
+                        "2000-04-16T00:00:00.000000000",
+                        "2000-05-16T12:00:00.000000000",
+                        "2000-06-16T00:00:00.000000000",
+                        "2000-07-16T12:00:00.000000000",
+                        "2000-08-16T12:00:00.000000000",
+                        "2000-09-16T00:00:00.000000000",
+                        "2000-10-16T12:00:00.000000000",
+                        "2000-11-16T00:00:00.000000000",
+                        "2000-12-16T12:00:00.000000000",
+                        "2001-01-16T12:00:00.000000000",
+                        "2001-02-15T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+                dims=["time"],
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                },
+            )
+            ds["ts"] = xr.DataArray(
+                name="ts",
+                data=np.ones((12, 4, 4)),
+                coords={"time": ds.time, "lat": ds.lat, "lon": ds.lon},
+                dims=["time", "lat", "lon"],
+            )
+            ds["time_bnds"] = xr.DataArray(
+                name="time_bnds",
+                data=np.array(
+                    [
+                        [
+                            "2000-03-01T00:00:00.000000000",
+                            "2000-04-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-04-01T00:00:00.000000000",
+                            "2000-05-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-05-01T00:00:00.000000000",
+                            "2000-06-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-06-01T00:00:00.000000000",
+                            "2000-07-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-07-01T00:00:00.000000000",
+                            "2000-08-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-08-01T00:00:00.000000000",
+                            "2000-09-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-09-01T00:00:00.000000000",
+                            "2000-10-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-10-01T00:00:00.000000000",
+                            "2000-11-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-11-01T00:00:00.000000000",
+                            "2000-12-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2000-12-01T00:00:00.000000000",
+                            "2001-01-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2001-01-01T00:00:00.000000000",
+                            "2001-02-01T00:00:00.000000000",
+                        ],
+                        [
+                            "2001-02-01T00:00:00.000000000",
+                            "2001-03-01T00:00:00.000000000",
+                        ],
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+                coords={"time": ds.time},
+                dims=["time", "bnds"],
+                attrs={
+                    "is_generated": "True",
+                },
+            )
+
+            # Set object attrs required to test the method.
+            ds.temporal._time_bounds = ds.time_bnds.copy()
+            ds.temporal._mode = "climatology"
+            ds.temporal._freq = "season"
+            ds.temporal._weighted = "True"
+            ds.temporal.season_config = {"dec_mode": "DJF"}
+            ds.temporal._grouped_time = xr.DataArray(
+                name="season",
+                data=np.array(
+                    [
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 1, 1),
+                    ],
+                ),
+                coords={"time": ds.time},
+                dims=["time"],
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
+            )
+            # Compare result of the method against the expected.
+            result = ds.temporal._get_weights()
+            expected = np.array(
+                [
+                    0.33695652,
+                    0.32608696,
+                    0.33695652,
+                    0.32608696,
+                    0.33695652,
+                    0.33695652,
+                    0.32967033,
+                    0.34065934,
+                    0.32967033,
+                    0.34444444,
+                    0.34444444,
+                    0.31111111,
+                ]
+            )
+
+            assert np.allclose(result, expected, equal_nan=True)
+
+        def test_weights_for_seasonal_climatology_with_JFD(self):
+            ds = self.ds.copy()
+
+            # Set object attrs required to test the method.
+            ds.temporal._time_bounds = ds.time_bnds.copy()
+            ds.temporal._mode = "climatology"
+            ds.temporal._freq = "season"
+            ds.temporal._weighted = "True"
+            ds.temporal.season_config = {"dec_mode": "JDF"}
+            ds.temporal._grouped_time = xr.DataArray(
+                name="season",
+                data=np.array(
+                    [
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 1, 1),
+                    ],
+                ),
+                coords={"time": ds.time},
+                dims=["time"],
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
+            )
+
+            # Compare result of the method against the expected.
+            result = ds.temporal._get_weights()
+            expected = np.array(
+                [
+                    [
+                        0.17127072,
+                        0.16022099,
+                        0.33695652,
+                        0.32608696,
+                        0.33695652,
+                        0.32608696,
+                        0.33695652,
+                        0.33695652,
+                        0.32967033,
+                        0.34065934,
+                        0.32967033,
+                        0.17127072,
+                        0.17127072,
+                        0.15469613,
+                        0.17127072,
+                    ]
+                ]
+            )
+            assert np.allclose(result, expected, equal_nan=True)
+
+        def test_weights_for_annual_climatology(self):
+            ds = self.ds.copy()
+
+            # Set object attrs required to test the method.
+            ds.temporal._time_bounds = ds.time_bnds.copy()
+            ds.temporal._mode = "climatology"
+            ds.temporal._freq = "month"
+            ds.temporal._weighted = "True"
+            ds.temporal.season_config = {"dec_mode": "DJF"}
+            ds.temporal._grouped_time = xr.DataArray(
+                name="month",
+                data=np.array(
+                    [
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 2, 1),
+                        cftime.datetime(1, 3, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 5, 1),
+                        cftime.datetime(1, 6, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 8, 1),
+                        cftime.datetime(1, 9, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 11, 1),
+                        cftime.datetime(1, 12, 1),
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 2, 1),
+                        cftime.datetime(1, 12, 1),
+                    ],
+                ),
+                coords={"time": ds.time},
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
+            )
+
+            # Compare result of the method against the expected.
+            result = ds.temporal._get_weights()
+            expected = np.array(
+                [
+                    [
+                        0.5,
+                        0.50877193,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        1.0,
+                        0.5,
+                        0.5,
+                        0.49122807,
+                        0.5,
+                    ]
+                ]
+            )
+            assert np.allclose(result, expected)
+
+        def test_weights_for_daily_climatology(self):
+            ds = self.ds.copy()
+
+            # Set object attrs required to test the method.
+            ds.temporal._time_bounds = ds.time_bnds.copy()
+            ds.temporal._mode = "climatology"
+            ds.temporal._freq = "day"
+            ds.temporal._weighted = "True"
+            ds.temporal._season_config = {
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": True,
+            }
+            ds.temporal._grouped_time = xr.DataArray(
+                name="month_day",
+                data=np.array(
+                    [
+                        cftime.datetime(1, 1, 16),
+                        cftime.datetime(1, 2, 15),
+                        cftime.datetime(1, 3, 16),
+                        cftime.datetime(1, 4, 16),
+                        cftime.datetime(1, 5, 6),
+                        cftime.datetime(1, 6, 16),
+                        cftime.datetime(1, 7, 16),
+                        cftime.datetime(1, 8, 16),
+                        cftime.datetime(1, 9, 16),
+                        cftime.datetime(1, 10, 16),
+                        cftime.datetime(1, 11, 16),
+                        cftime.datetime(1, 12, 16),
+                        cftime.datetime(1, 1, 16),
+                        cftime.datetime(1, 2, 15),
+                        cftime.datetime(1, 12, 16),
+                    ],
+                ),
+                coords={"time": ds.time},
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
+            )
+
+            # Compare result of the method against the expected.
+            result = ds.temporal._get_weights()
+            expected = np.array(
+                [
+                    0.5,
+                    0.50877193,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.5,
+                    0.5,
+                    0.49122807,
+                    0.5,
+                ]
+            )
+            assert np.allclose(result, expected)
+
+
+class Test_GroupByFreq:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -3583,7 +3609,7 @@ class TestGroupByFreq:
         ds = self.ds.copy()
 
         # Set object attrs required to test the method.
-        time_grouped = xr.DataArray(
+        grouped_time = xr.DataArray(
             name="year_season",
             data=np.array(
                 [
@@ -3614,12 +3640,12 @@ class TestGroupByFreq:
                 "bounds": "time_bnds",
             },
         )
-        ds.temporal._time_grouped = time_grouped
+        ds.temporal._grouped_time = grouped_time
         ds.temporal._mode = "group_average"
 
         ts = ds.ts.copy()
         expected = ts.copy()
-        expected.coords["year_season"] = time_grouped
+        expected.coords["year_season"] = grouped_time
         expected = expected.groupby("year_season")
         result = ds.temporal._groupby_freq(ts)
 
@@ -3629,7 +3655,7 @@ class TestGroupByFreq:
         ds = self.ds.copy()
 
         # Set object attrs required to test the method.
-        time_grouped = xr.DataArray(
+        grouped_time = xr.DataArray(
             name="season",
             data=np.array(
                 [
@@ -3663,19 +3689,19 @@ class TestGroupByFreq:
                 "bounds": "time_bnds",
             },
         )
-        ds.temporal._time_grouped = time_grouped
+        ds.temporal._grouped_time = grouped_time
         ds.temporal._mode = "climatology"
 
         ts = ds.ts.copy()
         expected = ts.copy()
-        expected.coords["season"] = time_grouped
+        expected.coords["season"] = grouped_time
         expected = expected.groupby("season")
         result = ds.temporal._groupby_freq(ts)
 
         assert result.groups == expected.groups
 
 
-class TestAddOperationAttributes:
+class Test_AddOperationAttributes:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -3692,7 +3718,7 @@ class TestAddOperationAttributes:
             "dec_mode": "DJF",
             "drop_incomplete_djf": "True",
         }
-        ds.temporal._time_grouped = xr.DataArray(
+        ds.temporal._grouped_time = xr.DataArray(
             name="year_season",
             data=np.array(
                 [
@@ -3757,7 +3783,7 @@ class TestAddOperationAttributes:
                 "OctNovDec": ["Oct", "Nov", "Dec"],
             }
         }
-        ds.temporal._time_grouped = xr.DataArray(
+        ds.temporal._grouped_time = xr.DataArray(
             name="year_season",
             data=np.array(
                 [
