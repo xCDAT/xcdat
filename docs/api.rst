@@ -104,9 +104,9 @@ Methods
     Dataset.bounds.add_missing_bounds
     Dataset.spatial.average
     Dataset.temporal.average
+    Dataset.temporal.group_average
     Dataset.temporal.climatology
     Dataset.temporal.departures
-    Dataset.temporal.mean
     Dataset.temporal.center_times
 
 .. _dsmeth_1:
