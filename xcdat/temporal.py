@@ -18,12 +18,45 @@ logger = setup_custom_logger(__name__)
 
 # Type alias for supported time averaging modes.
 Mode = Literal["average", "group_average", "climatology", "departures"]
+#: Tuple of supported temporal averaging modes.
 MODES = get_args(Mode)
 
 # Type alias for supported grouping frequencies.
-Frequency = Literal["hour", "day", "month", "season", "year"]
+Frequency = Literal["year", "season", "month", "day", "hour"]
 #: Tuple of supported grouping frequencies.
 FREQUENCIES = get_args(Frequency)
+
+# Type alias representing xarray datetime accessor components.
+# https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
+DateTimeComponent = Literal["year", "season", "month", "day", "hour"]
+
+#: A dictionary mapping temporal averaging mode and frequency to the time groups.
+TIME_GROUPS: Dict[Mode, Dict[Frequency, Tuple[DateTimeComponent, ...]]] = {
+    "average": {
+        "year": ("year",),
+        "season": ("season",),
+        "month": ("month",),
+        "day": ("day",),
+        "hour": ("hour",),
+    },
+    "group_average": {
+        "year": ("year",),
+        "season": ("year", "season"),
+        "month": ("year", "month"),
+        "day": ("year", "month", "day"),
+        "hour": ("year", "month", "day", "hour"),
+    },
+    "climatology": {
+        "season": ("season",),
+        "month": ("month",),
+        "day": ("month", "day"),
+    },
+    "departures": {
+        "season": ("season",),
+        "month": ("month",),
+        "day": ("month", "day"),
+    },
+}
 
 # Configuration specific to the "season" frequency.
 SeasonConfigInput = TypedDict(
@@ -50,46 +83,6 @@ DEFAULT_SEASON_CONFIG: SeasonConfigInput = {
     "dec_mode": "DJF",
     "drop_incomplete_djf": False,
     "custom_seasons": None,
-}
-
-# Type alias representing xarray datetime accessor components.
-# https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
-DateTimeComponent = Literal["year", "season", "month", "day", "hour"]
-
-# A dictionary mapping temporal averaging mode and frequency to the xarray
-# datetime components used for grouping/aggregating. Xarray datetime components
-# are extracted from the time coordinates of a data variable. Note, the "season"
-# frequency involves additional processing that requires the "year" and/or
-# "month" components. These components are later removed before grouping.
-# FIXME: Fix seasonal frequency grouping (use a method instead of statically
-# defining it here)
-DATETIME_COMPONENTS: Dict[
-    Mode, Dict[DateTimeComponent, Tuple[DateTimeComponent, ...]]
-] = {
-    "average": {
-        "year": ("year",),
-        "season": ("season",),
-        "month": ("month",),
-        "day": ("day",),
-        "hour": ("hour",),
-    },
-    "group_average": {
-        "year": ("year",),
-        "season": ("year", "season", "month"),  # becomes ("year", "season")
-        "month": ("year", "month"),
-        "day": ("year", "month", "day"),
-        "hour": ("year", "month", "day", "hour"),
-    },
-    "climatology": {
-        "season": ("year", "season", "month"),  # becomes ("season")
-        "month": ("month",),
-        "day": ("month", "day"),
-    },
-    "departures": {
-        "season": ("year", "season", "month"),  # becomes ("season")
-        "month": ("month",),
-        "day": ("month", "day"),
-    },
 }
 
 #: A dictionary mapping month integers to their equivalent 3-letter string.
@@ -213,7 +206,7 @@ class TemporalAccessor:
         >>> ds_month = ds.temporal.average("ts", freq="month", center_times=False)
         >>> ds_month.ts
         """
-        return self._temporal_avg(data_var, "average", freq, True, center_times)
+        return self._averager(data_var, "average", freq, True, center_times)
 
     def group_average(
         self,
@@ -350,7 +343,7 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
-        return self._temporal_avg(
+        return self._averager(
             data_var, "group_average", freq, weighted, center_times, season_config
         )
 
@@ -364,8 +357,6 @@ class TemporalAccessor:
     ):
         """Returns a Dataset with the climatology for the data variable.
 
-        This method is similar to ``_group_average()``, but uses different time
-        groups based on the grouping frequency.
 
         Parameters
         ----------
@@ -490,7 +481,7 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
-        return self._temporal_avg(
+        return self._averager(
             data_var, "climatology", freq, weighted, center_times, season_config
         )
 
@@ -516,9 +507,9 @@ class TemporalAccessor:
         This method uses xarray's grouped arithmetic as a shortcut for mapping
         over all unique labels. Grouped arithmetic works by assigning a grouping
         label to each time coordinate of the observation data based on the
-        grouping frequency. Afterwards, the corresponding climatology is removed
-        from the observation data at each time coordinate based on the matching
-        labels.
+        averaging mode and frequency. Afterwards, the corresponding climatology
+        is removed from the observation data at each time coordinate based on
+        the matching labels.
 
         xarray's grouped arithmetic operates over each value of the DataArray
         corresponding to each grouping label without changing the size of the
@@ -622,11 +613,12 @@ class TemporalAccessor:
         """
         ds = self._dataset.copy()
 
-        # Calculate the climatology data variable and use its attributes
-        # to set the object attributes for calculating departures.
+        # Calculate the climatology data variable and set the object attributes
+        # using the method arguments.
         dv_climo = ds.temporal.climatology(
             data_var, freq, weighted, center_times, season_config
         )[data_var]
+
         self._set_obj_attrs(
             "departures",
             dv_climo.attrs["freq"],
@@ -641,11 +633,9 @@ class TemporalAccessor:
             },
         )
 
-        # Get the observation data and group it using the time coordinate
-        # groups.
+        # Get the observation data and group it using the time coordinates.
         dv_obs = _get_data_var(ds, data_var)
-        self._grouped_time = self._group_time_coords(ds[self._dim_name])
-        dv_obs_grouped = self._groupby_freq(dv_obs)
+        dv_obs_grouped = self._group_data(dv_obs)
 
         # Rename the climatology data var's time dimension to align with the
         # grouped observation data var's time dimension so that xarray's
@@ -653,7 +643,7 @@ class TemporalAccessor:
         # is thrown: `ValueError: incompatible dimensions for a grouped
         # binary operation: the group variable '<CHOSEN_FREQ>' is not a
         # dimension on the other argument`
-        dv_climo = dv_climo.rename({"time": self._grouped_time.name})
+        dv_climo = dv_climo.rename({self._dim_name: self._labeled_time.name})
 
         with xr.set_options(keep_attrs=True):
             # Use xarray's grouped arithmetic to subtract the climatology
@@ -662,9 +652,10 @@ class TemporalAccessor:
             ds_departs[data_var] = dv_obs_grouped - dv_climo
             ds_departs[data_var] = self._add_operation_attrs(ds_departs[data_var])
 
-            # Drop the grouped time coordinates from the final output since
-            # it is no longer needed.
-            ds_departs = ds_departs.drop_vars(self._grouped_time.name)
+            # After performing grouped arithmetic, the original time coordinates
+            # restored so the grouped time coordinates are dropped because they
+            # are no longer needed.
+            ds_departs = ds_departs.drop_vars(self._labeled_time.name)
 
         return ds_departs
 
@@ -712,7 +703,7 @@ class TemporalAccessor:
         ds[time_bounds.name] = self._time_bounds
         return ds
 
-    def _temporal_avg(
+    def _averager(
         self,
         data_var: str,
         mode: Mode,
@@ -725,7 +716,7 @@ class TemporalAccessor:
             "custom_seasons": None,
         },
     ) -> xr.Dataset:
-        """Calculates the temporal average for a data variable."""
+        """Averages a data variable based on the averaging mode and frequency."""
         self._set_obj_attrs(mode, freq, weighted, center_times, season_config)
         ds = self._dataset.copy()
 
@@ -801,7 +792,8 @@ class TemporalAccessor:
             raise ValueError(
                 f"Incorrect `mode` argument. Supported modes include: " f"{modes}."
             )
-        freq_keys = DATETIME_COMPONENTS[mode].keys()
+
+        freq_keys = TIME_GROUPS[mode].keys()
         if freq not in freq_keys and "hour" not in freq:
             raise ValueError(
                 f"Incorrect `freq` argument. Supported frequencies for {mode} "
@@ -931,13 +923,9 @@ class TemporalAccessor:
         return c_seasons
 
     def _average(self, data_var: xr.DataArray) -> xr.DataArray:
-        """ "
+        """
         Returns the weighted averages for a data variable with the time
         dimension removed.
-
-        This method calculates the weights using the time frequency (consisting
-        of a single datetime component), then averages the data variable along
-        the time dimension.
 
         Parameters
         ----------
@@ -961,9 +949,6 @@ class TemporalAccessor:
     def _group_average(self, data_var: xr.DataArray) -> xr.DataArray:
         """Returns the data variable averaged by time group.
 
-        This method groups the values of the data variable by the time
-        coordinates and averages them, with or without weights.
-
         Parameters
         ----------
         data_var : xr.DataArray
@@ -975,44 +960,43 @@ class TemporalAccessor:
             The data variable averaged by time group.
         """
         dv = data_var.copy()
-        self._grouped_time = self._group_time_coords(dv[self._dim_name])
 
         if self._weighted:
             self._weights = self._get_weights()
             dv *= self._weights
-            dv = self._groupby_freq(dv).sum()  # type: ignore
+            dv = self._group_data(dv).sum()  # type: ignore
         else:
-            dv = self._groupby_freq(dv).mean()  # type: ignore
+            dv = self._group_data(dv).mean()  # type: ignore
 
-        # After grouping on the time coordinates and aggregating the values, the
+        # After grouping and aggregating the data variable values, the
         # original time dimension is replaced with the grouped time dimension.
         # For example, grouping on "year_season" replaces the "time" dimension
-        # with "year_season". This dimension will eventually be renamed back
-        # to "time" when the data variable as added back to the dataset.
-        dv = dv.rename({self._grouped_time.name: "time"})  # type: ignore
+        # with "year_season". This dimension needs to be renamed back to
+        # the original time dimension name before the data variable is added
+        # back to the dataset.
+        dv = dv.rename({self._labeled_time.name: self._dim_name})  # type: ignore
 
         # After grouping and aggregating, the grouped time dimension's
         # attributes are removed. Unfortunately, `xr.set_options(keep_attrs=True)`,
         # `.sum(keep_attrs=True)`, and `.mean(keep_attrs=True)` only keeps
         # attributes for data variables and not their coordinates so they need
         # to be restored manually
-        dv["time"].attrs = self._grouped_time.attrs
-        dv["time"].encoding = self._grouped_time.encoding
+        dv[self._dim_name].attrs = self._labeled_time.attrs
+        dv[self._dim_name].encoding = self._labeled_time.encoding
 
         dv = self._add_operation_attrs(dv)
 
         return dv
 
-    def _group_time_coords(self, time_coords: xr.DataArray) -> xr.DataArray:
-        """Groups the time coordinates by a frequency.
+    def _label_time_coords(self, time_coords: xr.DataArray) -> xr.DataArray:
+        """
+        Labels time coordinates for grouping based averaging mode and frequency.
 
-        This method extracts xarray datetime components from the time
-        coordinates and stores them as column values in a pandas DataFrame. A
-        pandas DataFrame is the chosen data structure because it simplifies the
-        additional steps for processing the component values, specifically for
-        the "season" frequency. The DataFrame is then converted to a numpy
-        list of ``cftime.datetime`` or ``datetime.datetime`` that is used as the
-        data for the final ``xr.DataArray`` of grouped time coordinates.
+        To create labeled time coordinates for grouping, this method extracts
+        specific xarray datetime components from the DataArray of time
+        coordiantes and stores them in a pandas DataFrame. The DataFrame is
+        converted to a numpy array of datetime objects, which serves as the
+        data source for the final ``xr.DataArray`` of labeled time coordinates.
 
         Parameters
         ----------
@@ -1022,22 +1006,13 @@ class TemporalAccessor:
         Returns
         -------
         xr.DataArray
-            The time coordinates grouped by a frequency.
-
-        Notes
-        -----
-        Refer to [5]_ for information on xarray datetime accessor components.
-
-        References
-        ----------
-        .. [5] https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
+            The DataArray of labeled time coordinates for grouping.
 
         Examples
         --------
 
         Original daily time coordinates:
 
-        >>> # Original daily time coordinates.
         >>> <xarray.DataArray 'time' (time: 4)>
         >>> array(['2000-01-01T12:00:00.000000000',
         >>>        '2000-01-31T21:00:00.000000000',
@@ -1046,13 +1021,8 @@ class TemporalAccessor:
         >>>       dtype='datetime64[ns]')
         >>> Coordinates:
         >>> * time     (time) datetime64[ns] 2000-01-01T12:00:00 ... 2000-04-01T03:00:00
-        >>> Attributes:
-        >>>     long_name:      time
-        >>>     standard_name:  time
-        >>>     axis:           T
-        >>>     bounds:         time_bnds
 
-        Daily time coordinates grouped by month for time series averaging:
+        Daily time coordinates labeled by year and month:
 
         >>> <xarray.DataArray 'time' (time: 3)>
         >>> array(['2000-01-01T00:00:00.000000000',
@@ -1061,25 +1031,13 @@ class TemporalAccessor:
         >>>       dtype='datetime64[ns]')
         >>> Coordinates:
         >>> * time     (time) datetime64[ns] 2000-01-01T00:00:00 ... 2000-04-01T00:00:00
-        >>> Attributes:
-        >>>     long_name:      time
-        >>>     standard_name:  time
-        >>>     axis:           T
-        >>>     bounds:         time_bnds
         """
-        df = pd.DataFrame()
-
-        for component in DATETIME_COMPONENTS[self._mode][self._freq]:
-            df[component] = time_coords[f"time.{component}"].values
-
-        if self._freq == "season":
-            df = self._process_season_dataframe(df)
-
-        datetime_objs = self._convert_df_to_dt(df)
+        df_dt_components: pd.DataFrame = self._get_dt_components(time_coords)
+        dt_objects = self._convert_df_to_dt(df_dt_components)
 
         time_grouped = xr.DataArray(
-            name="_".join(df.columns),
-            data=datetime_objs,
+            name="_".join(df_dt_components.columns),
+            data=dt_objects,
             coords={"time": time_coords.time},
             dims=["time"],
             attrs=time_coords.time.attrs,
@@ -1088,15 +1046,60 @@ class TemporalAccessor:
 
         return time_grouped
 
-    def _process_season_dataframe(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Processes a DataFrame of datetime components for the season frequency.
+    def _get_dt_components(self, time_coords: xr.DataArray) -> pd.DataFrame:
+        """Returns a DataFrame of xarray datetime components.
 
-        Processing includes:
+        This method extracts the required xarray datetime components (e.g.,
+        year, month, day, etc.) from each time coordinate based on the averaging
+        mode and frequency and stores it in a pandas DataFrame. For the seasonal
+        frequency, additional DataFrame processing is performed.
 
-        * Mapping custom seasons to each time coordinate if they are used.
+        Refer to [5]_ for information on xarray datetime accessor components.
+
+        Seasonal processing includes:
+
+        * If custom seasons are used, map them to each time coordinate based
+          on the middle month of the custom season.
         * If season with December is "DJF", shift Decembers over to the next
-          year so DJF groups are correctly formed.
+          year so DJF seasons are correctly grouped using the previous year
+          December.
         * Drop obsolete columns after processing is done.
+
+        Parameters
+        ----------
+        time_coords : xr.DataArray
+            The time coordinates.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame of datetime components.
+
+        References
+        ----------
+        .. [5] https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
+        """
+        df = pd.DataFrame()
+
+        for component in TIME_GROUPS[self._mode][self._freq]:
+            df[component] = time_coords[f"{self._dim_name}.{component}"].values
+
+        # TODO: Figure out more readable conditional statements here.
+        if self._freq == "season":
+            if self._mode in ["climatology", "departures"]:
+                df["year"] = time_coords[f"{self._dim_name}.year"].values
+            if (
+                self._mode in ["climatology", "departures"]
+                or self._mode == "group_average"
+            ):
+                df["month"] = time_coords[f"{self._dim_name}.month"].values
+
+            df = self._process_season_df(df)
+
+        return df
+
+    def _process_season_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Processes a DataFrame of datetime components for the season frequency.
 
         Parameters
         ----------
@@ -1112,65 +1115,15 @@ class TemporalAccessor:
         custom_seasons = self._season_config.get("custom_seasons")
         dec_mode = self._season_config.get("dec_mode")
 
-        if custom_seasons is None:
+        if custom_seasons is not None:
+            df_new = self._map_months_to_custom_seasons(df_new)
+        else:
             if dec_mode == "DJF":
                 df_new = self._shift_decembers(df_new)
-        else:
-            df_new = self._map_months_to_custom_seasons(df_new)
 
         df_new = self._drop_obsolete_columns(df_new)
         df_new = self._map_seasons_to_mid_months(df_new)
         return df_new
-
-    def _convert_df_to_dt(self, df: pd.DataFrame) -> np.ndarray:
-        """Converts a DataFrame of datetime components to datetime objects.
-
-        datetime objects require at least a year, month, and day value. However,
-        some modes and time frequencies don't require year, month, and/or day
-        for grouping. For these cases, use default values of 1 in order to
-        meet this datetime requirement.
-
-        If the default value of 1 is used for the years, datetime objects
-        must be created using `cftime.datetime` because year 1 is outside the
-        Timestamp-valid range. Refer to [6]_ and [7]_ for more information.
-
-        Parameters
-        ----------
-        df : pd.DataFrame
-            The DataFrame of xarray datetime components.
-
-        Returns
-        -------
-        np.ndarray
-            A numpy ndarray of datetime.datetime or cftime.datetime objects.
-
-        References
-        ----------
-        .. [6] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
-
-        .. [7] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
-        """
-        df_new = df.copy()
-
-        dt_components_defaults = {"year": 1, "month": 1, "day": 1, "hour": 0}
-        for component, default_val in dt_components_defaults.items():
-            if component not in df_new.columns:
-                df_new[component] = default_val
-
-        year_is_unused = self._mode in ["climatology", "departures"] or (
-            self._mode == "average" and self._freq != "year"
-        )
-        if year_is_unused:
-            dates = [
-                cftime.datetime(year, month, day, hour)
-                for year, month, day, hour in zip(
-                    df_new.year, df_new.month, df_new.day, df_new.hour
-                )
-            ]
-        else:
-            dates = pd.to_datetime(df_new)
-
-        return np.array(dates)
 
     def _map_months_to_custom_seasons(self, df: pd.DataFrame) -> pd.DataFrame:
         """Maps months to custom seasons.
@@ -1324,6 +1277,56 @@ class TemporalAccessor:
 
         return df_season
 
+    def _convert_df_to_dt(self, df: pd.DataFrame) -> np.ndarray:
+        """Converts a DataFrame of datetime components to datetime objects.
+
+        datetime objects require at least a year, month, and day value. However,
+        some modes and time frequencies don't require year, month, and/or day
+        for grouping. For these cases, use default values of 1 in order to
+        meet this datetime requirement.
+
+        If the default value of 1 is used for the years, datetime objects
+        must be created using `cftime.datetime` because year 1 is outside the
+        Timestamp-valid range. Refer to [6]_ and [7]_ for more information.
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            The DataFrame of xarray datetime components.
+
+        Returns
+        -------
+        np.ndarray
+            A numpy ndarray of datetime.datetime or cftime.datetime objects.
+
+        References
+        ----------
+        .. [6] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
+
+        .. [7] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
+        """
+        df_new = df.copy()
+
+        dt_components_defaults = {"year": 1, "month": 1, "day": 1, "hour": 0}
+        for component, default_val in dt_components_defaults.items():
+            if component not in df_new.columns:
+                df_new[component] = default_val
+
+        year_is_unused = self._mode in ["climatology", "departures"] or (
+            self._mode == "average" and self._freq != "year"
+        )
+        if year_is_unused:
+            dates = [
+                cftime.datetime(year, month, day, hour)
+                for year, month, day, hour in zip(
+                    df_new.year, df_new.month, df_new.day, df_new.hour
+                )
+            ]
+        else:
+            dates = pd.to_datetime(df_new)
+
+        return np.array(dates)
+
     def _get_weights(self) -> xr.DataArray:
         """Calculates weights for a data variable using time bounds.
 
@@ -1333,10 +1336,12 @@ class TemporalAccessor:
         coordinates are recorded (e.g., monthly, daily, hourly) and the calendar
         type used.
 
-        The time lengths are grouped by the grouping frequency, then each time
-        length is divided by the total sum of the time lengths in its group to
-        get the weights. The sum of the weights for each group is validated to
-        ensure it equals 1.0.
+        The time lengths are labeled and grouped, then each time length is
+        divided by the total sum of the time lengths in its group to get its
+        corresponding weight.
+
+        The sum of the weights for each group is validated to ensure it equals
+        1.0.
 
         Returns
         -------
@@ -1345,11 +1350,11 @@ class TemporalAccessor:
 
         Notes
         -----
-        Refer to [6]_ for the supported CF convention calendar types.
+        Refer to [8]_ for the supported CF convention calendar types.
 
         References
         ----------
-        .. [6] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
+        .. [8] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
         # FIXME: This takes awhile ~1.5-2.2 seconds, not sure if there is a way
         # around this because this is a vectorized operation already (to my
@@ -1367,10 +1372,10 @@ class TemporalAccessor:
         # notes). To avoid this warning please use the scalar types
         # `np.float64`, or string notation.`
         time_lengths = time_lengths.astype(np.float64)
-        grouped_time = self._groupby_freq(time_lengths)
-        weights: xr.DataArray = grouped_time / grouped_time.sum()  # type: ignore
+        grouped_time_lengths = self._group_data(time_lengths)
+        weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()  # type: ignore
 
-        num_groups = len(grouped_time.groups.keys())
+        num_groups = len(grouped_time_lengths.groups)
         self._validate_weights(weights, num_groups)
 
         return weights
@@ -1385,17 +1390,19 @@ class TemporalAccessor:
         num_groups : int
             The number of groups.
         """
-        actual_sum = self._groupby_freq(weights).sum().values  # type: ignore
+        actual_sum = self._group_data(weights).sum().values  # type: ignore
         expected_sum = np.ones(num_groups)
 
         np.testing.assert_allclose(actual_sum, expected_sum)
 
-    def _groupby_freq(self, data_var: xr.DataArray) -> DataArrayGroupBy:
-        """Groups a data variable by a time frequency.
+    def _group_data(self, data_var: xr.DataArray) -> DataArrayGroupBy:
+        """Groups a data variable.
 
-        This method returning a DataArrayGroupBy object, enabling support for
-        xarray's grouped arithmetic as a shortcut for mapping over all unique
-        labels.
+        This method groups a data variable either by a single datetime component
+        for "average" mode, or labeled time coordinates for all other modes.
+
+        It returns a DataArrayGroupBy object, which enables support for xarray's
+        grouped arithmetic as a shortcut for mapping over all unique labels.
 
         Parameters
         ----------
@@ -1405,15 +1412,16 @@ class TemporalAccessor:
         Returns
         -------
         DataArrayGroupBy
-            A data variable grouped by the frequency.
+            A data variable grouped by label.
         """
         dv = data_var.copy()
 
         if self._mode == "average":
             dv_gb = dv.groupby(f"{self._dim_name}.{self._freq}")
         else:
-            dv.coords[self._grouped_time.name] = self._grouped_time
-            dv_gb = dv.groupby(self._grouped_time.name)
+            self._labeled_time = self._label_time_coords(dv[self._dim_name])
+            dv.coords[self._labeled_time.name] = self._labeled_time
+            dv_gb = dv.groupby(self._labeled_time.name)
 
         return dv_gb
 

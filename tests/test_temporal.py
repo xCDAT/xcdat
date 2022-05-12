@@ -1823,13 +1823,31 @@ class Test_Average:
     def setup(self):
         self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    @pytest.mark.xfail
     def test_weighted_average_with_yearly_weights(self):
-        assert False
+        ds = self.ds.copy()
 
-    @pytest.mark.xfail
+        # Set object attrs required to test the method
+        ds.temporal._time_bounds = ds.time_bnds.copy()
+        ds.temporal._mode = "average"
+        ds.temporal._freq = "year"
+
+        # Compare result of the method against the expected.
+        ts_result = ds.temporal._average(ds["ts"])
+        ts_expected = np.ones((12, 4, 4))
+        assert np.allclose(ts_result, ts_expected)
+
     def test_weighted_average_with_monthly_weights(self):
-        assert False
+        ds = self.ds.copy()
+
+        # Set object attrs required to test the method
+        ds.temporal._time_bounds = ds.time_bnds.copy()
+        ds.temporal._mode = "average"
+        ds.temporal._freq = "month"
+
+        # Compare result of the method against the expected.
+        ts_result = ds.temporal._average(ds["ts"])
+        ts_expected = np.ones((4, 4, 4))
+        assert np.allclose(ts_result, ts_expected)
 
 
 class Test_GroupAverage:
@@ -1849,7 +1867,7 @@ class Test_GroupAverage:
         ds.temporal._freq = "day"
         ds.temporal._weighted = True
         ds.temporal._center_times = True
-        ds.temporal._grouped_time = xr.DataArray(
+        ds.temporal._labeled_time = xr.DataArray(
             name="month_day",
             data=np.array(
                 [
@@ -1893,7 +1911,7 @@ class Test_GroupAverage:
         ds.temporal._freq = "day"
         ds.temporal._weighted = False
         ds.temporal._center_times = True
-        ds.temporal._grouped_time = xr.DataArray(
+        ds.temporal._labeled_time = xr.DataArray(
             name="month_day",
             data=np.array(
                 [
@@ -1937,7 +1955,7 @@ class Test_GroupAverage:
         ds.temporal._freq = "month"
         ds.temporal._weighted = True
         ds.temporal._center_times = True
-        ds.temporal._grouped_time = xr.DataArray(
+        ds.temporal._labeled_time = xr.DataArray(
             name="month",
             data=np.array(
                 [
@@ -1988,7 +2006,7 @@ class Test_GroupAverage:
             "dec_mode": "DJF",
             "drop_incomplete_djf": True,
         }
-        ds.temporal._grouped_time = xr.DataArray(
+        ds.temporal._labeled_time = xr.DataArray(
             name="season",
             data=np.array(
                 [
@@ -2035,7 +2053,7 @@ class Test_GroupAverage:
         ds.temporal._weighted = True
         ds.temporal._center_times = True
         ds.temporal._season_config = {"dec_mode": "JFD"}
-        ds.temporal._grouped_time = xr.DataArray(
+        ds.temporal._labeled_time = xr.DataArray(
             name="season",
             data=np.array(
                 [
@@ -2132,12 +2150,12 @@ class Test_DropIncompleteDJF:
         assert result.identical(expected)
 
 
-class Test_GroupTimeCoords:
+class Test_LabelTimeCoords:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_groups_time_coords_for_time_series_season_freq(self):
+    def test_labels_time_coords_for_seasonal_group_average(self):
         ds = self.ds.copy()
 
         # Set object attrs required to test the method.
@@ -2146,7 +2164,7 @@ class Test_GroupTimeCoords:
         ds.temporal._season_config = {"dec_mode": "DJF", "drop_incomplete_djf": False}
 
         # Compare result of the method against the expected.
-        result = ds.temporal._group_time_coords(ds.ts)
+        result = ds.temporal._label_time_coords(ds.ts)
         expected = xr.DataArray(
             name="year_month",
             data=np.array(
@@ -2180,7 +2198,7 @@ class Test_GroupTimeCoords:
         )
         assert result.identical(expected)
 
-    def test_groups_time_coords_for_climatology_season_freq(self):
+    def test_labels_time_coords_for_seasonal_climatology(self):
         ds = self.ds.copy()
 
         # Set object attrs required to test the method.
@@ -2190,7 +2208,7 @@ class Test_GroupTimeCoords:
         ds.temporal._season_config = {"dec_mode": "DJF", "drop_incomplete_djf": False}
 
         # Compare result of the method against the expected.
-        result = ds.temporal._group_time_coords(ds.ts)
+        result = ds.temporal._label_time_coords(ds.ts)
         expected = xr.DataArray(
             name="month",
             data=np.array(
@@ -2225,7 +2243,7 @@ class Test_GroupTimeCoords:
         assert result.identical(expected)
 
 
-class Test_ProcessSeasonDataFrame:
+class Test_ProcessSeasonDF:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -2266,7 +2284,7 @@ class Test_ProcessSeasonDataFrame:
         }
 
         # Compare result of the method against the expected.
-        result = ds.temporal._process_season_dataframe(df)
+        result = ds.temporal._process_season_df(df)
         expected = pd.DataFrame(
             data=np.array(
                 [
@@ -2303,7 +2321,7 @@ class Test_ProcessSeasonDataFrame:
         }
 
         # Compare result of the method against the expected.
-        result = ds.temporal._process_season_dataframe(df)
+        result = ds.temporal._process_season_df(df)
         expected = pd.DataFrame(
             data=np.array(
                 [1, 1, 4, 4, 4, 7, 7, 7, 10, 10, 10, 1],
@@ -2731,13 +2749,130 @@ class Test_GetWeights:
         def setup(self):
             self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
 
-        @pytest.mark.xfail()
         def test_weights_for_yearly_averages(self):
-            assert False
+            ds = self.ds.copy()
 
-        @pytest.mark.xfail()
+            # Set object attrs required to test the method.
+            ds.temporal._time_bounds = ds.time_bnds.copy()
+            ds.temporal._mode = "average"
+            ds.temporal._freq = "year"
+            ds.temporal._weighted = "True"
+            ds.temporal._labeled_time = xr.DataArray(
+                name="year",
+                data=np.array(
+                    [
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-01-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
+                    ],
+                    dtype="datetime64[ns]",
+                ),
+                coords={"time": ds.time},
+                dims=["time"],
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
+            )
+
+            # Compare result of the method against the expected.
+            result = ds.temporal._get_weights()
+            expected = np.array(
+                [
+                    0.08469945,
+                    0.07923497,
+                    0.08469945,
+                    0.08196721,
+                    0.08469945,
+                    0.08196721,
+                    0.08469945,
+                    0.08469945,
+                    0.08196721,
+                    0.08469945,
+                    0.08196721,
+                    0.08469945,
+                    0.34444444,
+                    0.31111111,
+                    0.34444444,
+                ]
+            )
+            assert np.allclose(result, expected)
+
         def test_weights_for_monthly_averages(self):
-            assert False
+            ds = self.ds.copy()
+
+            # Set object attrs required to test the method.
+            ds.temporal._time_bounds = ds.time_bnds.copy()
+            ds.temporal._mode = "average"
+            ds.temporal._freq = "month"
+            ds.temporal._weighted = "True"
+            ds.temporal._labeled_time = xr.DataArray(
+                name="month",
+                data=np.array(
+                    [
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 2, 1),
+                        cftime.datetime(1, 3, 1),
+                        cftime.datetime(1, 4, 1),
+                        cftime.datetime(1, 5, 1),
+                        cftime.datetime(1, 6, 1),
+                        cftime.datetime(1, 7, 1),
+                        cftime.datetime(1, 8, 1),
+                        cftime.datetime(1, 9, 1),
+                        cftime.datetime(1, 10, 1),
+                        cftime.datetime(1, 11, 1),
+                        cftime.datetime(1, 12, 1),
+                        cftime.datetime(1, 1, 1),
+                        cftime.datetime(1, 2, 1),
+                        cftime.datetime(1, 12, 1),
+                    ],
+                ),
+                coords={"time": ds.time},
+                attrs={
+                    "axis": "T",
+                    "long_name": "time",
+                    "standard_name": "time",
+                    "bounds": "time_bnds",
+                },
+            )
+
+            # Compare result of the method against the expected.
+            result = ds.temporal._get_weights()
+            expected = np.array(
+                [
+                    0.5,
+                    0.50877193,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    1.0,
+                    0.5,
+                    0.5,
+                    # This is a leap year month, so the weight is less.
+                    0.49122807,
+                    0.5,
+                ]
+            )
+            assert np.allclose(result, expected)
 
     class TestWeightsForGroupAverageMode:
         @pytest.fixture(autouse=True)
@@ -2752,7 +2887,7 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._labeled_time = xr.DataArray(
                 name="year",
                 data=np.array(
                     [
@@ -2815,7 +2950,7 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._labeled_time = xr.DataArray(
                 name="year_month",
                 data=np.array(
                     [
@@ -2833,7 +2968,7 @@ class Test_GetWeights:
                         "2000-12-01T00:00:00.000000000",
                         "2001-01-01T00:00:00.000000000",
                         "2001-02-01T00:00:00.000000000",
-                        "20012-12-01T00:00:00.000000000",
+                        "2001-12-01T00:00:00.000000000",
                     ],
                     dtype="datetime64[ns]",
                 ),
@@ -2957,20 +3092,24 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "DJF"}
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._season_config = {"dec_mode": "DJF"}
+            ds.temporal._labeled_time = xr.DataArray(
                 name="year_season",
                 data=np.array(
                     [
+                        # 2000 MAM
                         "2000-04-01T00:00:00.000000000",
                         "2000-04-01T00:00:00.000000000",
                         "2000-04-01T00:00:00.000000000",
+                        # 2000 JJA
                         "2000-07-01T00:00:00.000000000",
                         "2000-07-01T00:00:00.000000000",
                         "2000-07-01T00:00:00.000000000",
+                        # 2000 SON
                         "2000-10-01T00:00:00.000000000",
                         "2000-10-01T00:00:00.000000000",
                         "2000-10-01T00:00:00.000000000",
+                        # 2001 DJF
                         "2001-01-01T00:00:00.000000000",
                         "2001-01-01T00:00:00.000000000",
                         "2001-01-01T00:00:00.000000000",
@@ -3015,27 +3154,32 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "JDF"}
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._season_config = {"dec_mode": "JDF"}
+            ds.temporal._labeled_time = xr.DataArray(
                 name="year_season",
                 data=np.array(
                     [
+                        # 2000 JFD
                         "2000-01-01T00:00:00.000000000",
                         "2000-01-01T00:00:00.000000000",
+                        # 2000 MAM
                         "2000-04-01T00:00:00.000000000",
                         "2000-04-01T00:00:00.000000000",
                         "2000-04-01T00:00:00.000000000",
+                        # 2000 JJA
                         "2000-07-01T00:00:00.000000000",
                         "2000-07-01T00:00:00.000000000",
                         "2000-07-01T00:00:00.000000000",
+                        # 2000 SON
                         "2000-10-01T00:00:00.000000000",
                         "2000-10-01T00:00:00.000000000",
                         "2000-10-01T00:00:00.000000000",
-                        # This month is included in the JFD season
+                        # 2000 JFD
                         "2000-01-01T00:00:00.000000000",
+                        # 2001 JFD
                         "2001-01-01T00:00:00.000000000",
                         "2001-01-01T00:00:00.000000000",
-                        "2002-01-01T00:00:00.000000000",
+                        "2001-01-01T00:00:00.000000000",
                     ],
                     dtype="datetime64[ns]",
                 ),
@@ -3065,9 +3209,9 @@ class Test_GetWeights:
                     0.34065934,
                     0.32967033,
                     0.34065934,
-                    0.52542373,
-                    0.47457627,
-                    1.0,
+                    0.34444444,
+                    0.31111111,
+                    0.34444444,
                 ]
             )
             assert np.allclose(result, expected)
@@ -3089,22 +3233,27 @@ class Test_GetWeights:
                 }
             }
 
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._labeled_time = xr.DataArray(
                 name="year_season",
                 data=np.array(
                     [
+                        # 2000 JanFebMar
                         "2000-02-01T00:00:00.000000000",
                         "2000-02-01T00:00:00.000000000",
                         "2000-02-01T00:00:00.000000000",
+                        # 2000 AprMayJun
                         "2000-05-01T00:00:00.000000000",
                         "2000-05-01T00:00:00.000000000",
                         "2000-05-01T00:00:00.000000000",
+                        # 2000 JunAugSep
                         "2000-08-01T00:00:00.000000000",
                         "2000-08-01T00:00:00.000000000",
                         "2000-08-01T00:00:00.000000000",
+                        # 2000 OctNovDec
                         "2000-11-01T00:00:00.000000000",
                         "2000-11-01T00:00:00.000000000",
                         "2000-11-01T00:00:00.000000000",
+                        # 2001 JanFebMar
                         "2001-02-01T00:00:00.000000000",
                         "2001-02-01T00:00:00.000000000",
                         "2002-02-01T00:00:00.000000000",
@@ -3150,9 +3299,9 @@ class Test_GetWeights:
             # Set object attrs required to test the method.
             ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "group_average"
-            ds.temporal._freq = "daily"
+            ds.temporal._freq = "day"
             ds.temporal._weighted = "True"
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._labeled_time = xr.DataArray(
                 name="year_month_day",
                 data=np.array(
                     [
@@ -3197,8 +3346,8 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "hour"
             ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "JDF"}
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._season_config = {"dec_mode": "JDF"}
+            ds.temporal._labeled_time = xr.DataArray(
                 name="year_month_day_hour",
                 data=np.array(
                     [
@@ -3343,8 +3492,8 @@ class Test_GetWeights:
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "DJF"}
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._season_config = {"dec_mode": "DJF"}
+            ds.temporal._labeled_time = xr.DataArray(
                 name="season",
                 data=np.array(
                     [
@@ -3400,8 +3549,8 @@ class Test_GetWeights:
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "JDF"}
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._season_config = {"dec_mode": "JDF"}
+            ds.temporal._labeled_time = xr.DataArray(
                 name="season",
                 data=np.array(
                     [
@@ -3465,8 +3614,7 @@ class Test_GetWeights:
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
-            ds.temporal.season_config = {"dec_mode": "DJF"}
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._labeled_time = xr.DataArray(
                 name="month",
                 data=np.array(
                     [
@@ -3529,11 +3677,7 @@ class Test_GetWeights:
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "day"
             ds.temporal._weighted = "True"
-            ds.temporal._season_config = {
-                "dec_mode": "DJF",
-                "drop_incomplete_djf": True,
-            }
-            ds.temporal._grouped_time = xr.DataArray(
+            ds.temporal._labeled_time = xr.DataArray(
                 name="month_day",
                 data=np.array(
                     [
@@ -3587,21 +3731,22 @@ class Test_GetWeights:
             assert np.allclose(result, expected)
 
 
-class Test_GroupByFreq:
+class Test_GroupData:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
     def test_groups_data_var_for_seasonal_means(self):
         ds = self.ds.copy()
+        ts = ds.ts.copy()
 
+        # Set object attrs required to test the method.
         ds.temporal._mode = "average"
         ds.temporal._freq = "season"
+        result = ds.temporal._group_data(ts)
 
-        ts = ds.ts.copy()
         expected = ts.copy()
         expected = expected.groupby("time.season")
-        result = ds.temporal._groupby_freq(ts)
 
         assert result.groups == expected.groups
 
@@ -3609,7 +3754,13 @@ class Test_GroupByFreq:
         ds = self.ds.copy()
 
         # Set object attrs required to test the method.
-        grouped_time = xr.DataArray(
+        ds.temporal._mode = "group_average"
+        ds.temporal._freq = "season"
+        ds.temporal._season_config = {"dec_mode": "JFD"}
+        result = ds.temporal._group_data(ds.ts.copy())
+
+        expected = ds.ts.copy()
+        expected.coords["year_season"] = xr.DataArray(
             name="year_season",
             data=np.array(
                 [
@@ -3624,10 +3775,10 @@ class Test_GroupByFreq:
                     "2000-10-01T00:00:00.000000000",
                     "2000-10-01T00:00:00.000000000",
                     "2000-10-01T00:00:00.000000000",
+                    "2000-01-01T00:00:00.000000000",
                     "2001-01-01T00:00:00.000000000",
                     "2001-01-01T00:00:00.000000000",
                     "2001-01-01T00:00:00.000000000",
-                    "2002-01-01T00:00:00.000000000",
                 ],
                 dtype="datetime64[ns]",
             ),
@@ -3640,33 +3791,32 @@ class Test_GroupByFreq:
                 "bounds": "time_bnds",
             },
         )
-        ds.temporal._grouped_time = grouped_time
-        ds.temporal._mode = "group_average"
-
-        ts = ds.ts.copy()
-        expected = ts.copy()
-        expected.coords["year_season"] = grouped_time
         expected = expected.groupby("year_season")
-        result = ds.temporal._groupby_freq(ts)
 
         assert result.groups == expected.groups
 
     def test_groups_data_var_for_seasonal_climatology_with_DJF(self):
         ds = self.ds.copy()
+        ts = ds.ts.copy()
 
         # Set object attrs required to test the method.
-        grouped_time = xr.DataArray(
+        ds.temporal._mode = "climatology"
+        ds.temporal._freq = "season"
+        ds.temporal._season_config = {"dec_mode": "DJF"}
+        result = ds.temporal._group_data(ts)
+
+        expected = ts.copy()
+        expected.coords["season"] = xr.DataArray(
             name="season",
             data=np.array(
                 [
-                    # JFD
-                    cftime.datetime(1, 1, 1),
+                    # DJF
                     cftime.datetime(1, 1, 1),
                     cftime.datetime(1, 1, 1),
                     # MAM
-                    cftime.datetime(1, 3, 1),
-                    cftime.datetime(1, 3, 1),
-                    cftime.datetime(1, 3, 1),
+                    cftime.datetime(1, 4, 1),
+                    cftime.datetime(1, 4, 1),
+                    cftime.datetime(1, 4, 1),
                     # JJA
                     cftime.datetime(1, 7, 1),
                     cftime.datetime(1, 7, 1),
@@ -3675,7 +3825,8 @@ class Test_GroupByFreq:
                     cftime.datetime(1, 10, 1),
                     cftime.datetime(1, 10, 1),
                     cftime.datetime(1, 10, 1),
-                    # JFD
+                    # DJF
+                    cftime.datetime(1, 1, 1),
                     cftime.datetime(1, 1, 1),
                     cftime.datetime(1, 1, 1),
                     cftime.datetime(1, 1, 1),
@@ -3689,14 +3840,7 @@ class Test_GroupByFreq:
                 "bounds": "time_bnds",
             },
         )
-        ds.temporal._grouped_time = grouped_time
-        ds.temporal._mode = "climatology"
-
-        ts = ds.ts.copy()
-        expected = ts.copy()
-        expected.coords["season"] = grouped_time
         expected = expected.groupby("season")
-        result = ds.temporal._groupby_freq(ts)
 
         assert result.groups == expected.groups
 
@@ -3718,7 +3862,7 @@ class Test_AddOperationAttributes:
             "dec_mode": "DJF",
             "drop_incomplete_djf": "True",
         }
-        ds.temporal._grouped_time = xr.DataArray(
+        ds.temporal._labeled_time = xr.DataArray(
             name="year_season",
             data=np.array(
                 [
@@ -3783,7 +3927,7 @@ class Test_AddOperationAttributes:
                 "OctNovDec": ["Oct", "Nov", "Dec"],
             }
         }
-        ds.temporal._grouped_time = xr.DataArray(
+        ds.temporal._labeled_time = xr.DataArray(
             name="year_season",
             data=np.array(
                 [
