@@ -149,16 +149,16 @@ class TemporalAccessor:
     """
 
     def __init__(self, dataset: xr.Dataset):
+        self._dataset: xr.Dataset = dataset
+
         try:
-            dataset.cf["T"]
+            self._dim_name = self._dataset.cf["T"].name
         except KeyError:
             raise KeyError(
                 "A 'T' axis dimension was not found in the dataset. Make sure the "
                 "dataset has time axis coordinates and its 'axis' attribute is set to "
                 "'T'."
             )
-
-        self._dataset: xr.Dataset = dataset
 
         # The weights for time coordinates, which are based on a chosen frequency.
         self._weights: Optional[xr.DataArray] = None
@@ -643,7 +643,7 @@ class TemporalAccessor:
         # Get the observation data and group it using the time coordinate
         # groups.
         dv_obs = _get_data_var(ds, data_var)
-        self._time_grouped = self._group_time_coords(ds.cf["T"])
+        self._time_grouped = self._group_time_coords(ds[self._dim_name])
         dv_obs_grouped = self._groupby_freq(dv_obs)
 
         # Rename the climatology data var's time dimension to align with the
@@ -695,7 +695,7 @@ class TemporalAccessor:
         bounds_diffs: np.timedelta64 = (upper_bounds - lower_bounds) / 2
         bounds_mids: np.ndarray = lower_bounds + bounds_diffs
 
-        time: xr.DataArray = ds.cf["T"].copy()
+        time: xr.DataArray = ds[self._dim_name].copy()
         time_centered = xr.DataArray(
             name=time.name,
             data=bounds_mids,
@@ -946,11 +946,10 @@ class TemporalAccessor:
             The averages of the data variable.
         """
         dv = data_var.copy()
-        dim_name = self._dataset.cf["T"].name
 
         with xr.set_options(keep_attrs=True):
-            self._weights = self._get_weights(dv)
-            dv = dv.weighted(self._weights).mean(dim=dim_name)
+            self._weights = self._get_weights()
+            dv = dv.weighted(self._weights).mean(dim=self._dim_name)
 
         return dv
 
@@ -971,10 +970,10 @@ class TemporalAccessor:
             The averages of the data variable by group.
         """
         dv = data_var.copy()
-        self._time_grouped = self._group_time_coords(dv.cf["T"])
+        self._time_grouped = self._group_time_coords(dv[self._dim_name])
 
         if self._weighted:
-            self._weights = self._get_weights(dv)
+            self._weights = self._get_weights()
             dv *= self._weights
             dv = self._groupby_freq(dv).sum()  # type: ignore
         else:
@@ -1144,15 +1143,19 @@ class TemporalAccessor:
             if component not in df_new.columns:
                 df_new[component] = default_val
 
-        if self._mode in ["mean", "time_series"]:
+        # FIXME: This conditional could probably be written better so it is more
+        # understandable.
+        if self._mode == "time_series" or (
+            self._mode == "mean" and self._freq != "month"
+        ):
             dates = pd.to_datetime(df_new).to_numpy()
-        elif self._mode in ["climatology", "departures"]:
+        else:
             # The "year" values are not considered when grouping the time
-            # coordinates for "climatology" and "departures", but are required
-            # for creating datetime objects. The fallback value of 1 is
-            # used as a placeholder for the year. However, year 1 is outside the
-            # Timestamp-valid range so `cftime.datetime` objects are used
-            # instead of `datetime.datetime`.
+            # coordinates for "climatology", "departures", or "mean" with the
+            # "month" frequency, but are required for creating datetime objects.
+            # The fallback value of 1 is used as a placeholder for the year.
+            # However, year 1 is outside the Timestamp-valid range so
+            # `cftime.datetime` objects are used instead of `datetime.datetime`.
             # https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
             # https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
             dates = np.array(
@@ -1318,7 +1321,7 @@ class TemporalAccessor:
 
         return df_season
 
-    def _get_weights(self, data_var: xr.DataArray) -> xr.DataArray:
+    def _get_weights(self) -> xr.DataArray:
         """Calculates weights for a data variable using time bounds.
 
         This method gets the length of time for each coordinate point by using
@@ -1330,12 +1333,7 @@ class TemporalAccessor:
         The time lengths are grouped by the grouping frequency, then each time
         length is divided by the total sum of the time lengths in its group to
         get the weights. The sum of the weights for each group is validated to
-        ensure it equals 1.0 (100%).
-
-        Parameters
-        -------
-        data_var : xr.DataArray
-            The data variable.
+        ensure it equals 1.0.
 
         Returns
         -------
@@ -1350,6 +1348,7 @@ class TemporalAccessor:
         ----------
         .. [6] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
+        # FIXME: This takes awhile ~1.5-2.2 seconds
         with xr.set_options(keep_attrs=True):
             time_lengths: xr.DataArray = (
                 self._time_bounds[:, 1] - self._time_bounds[:, 0]
@@ -1366,34 +1365,23 @@ class TemporalAccessor:
         time_grouped = self._groupby_freq(time_lengths)
         weights: xr.DataArray = time_grouped / time_grouped.sum()  # type: ignore
 
-        self._validate_weights(data_var, weights)
+        self._validate_weights(weights)
+
         return weights
 
-    def _validate_weights(self, data_var: xr.DataArray, weights: xr.DataArray):
-        """Validates the sums of the weights for each group equals 1.0 (100%).
+    def _validate_weights(self, weights: xr.DataArray):
+        """Validates that the sum of the weights for each group equals 1.0.
 
         Parameters
         ----------
-        data_var : xr.DataArray
-            The data variable.
         weights : xr.DataArray
-            The data variable's time coordinates weights.
+            The weights for the time coordinates.
         """
-        freq_groups = self._groupby_freq(data_var).count()  # type: ignore
-
-        if self._mode == "mean":
-            dim_name = data_var.cf["T"].name
-        else:
-            dim_name = self._time_grouped.name
-
-        # Sum the frequency group counts by all the dims except the time
-        # dimension to get a 1D array of counts.
-        summing_dims = tuple(x for x in freq_groups.dims if x != dim_name)
-        freq_sums = freq_groups.sum(summing_dims)
-
-        # Replace all non-zero counts with 1.0 (total weight of 100%).
-        expected_sum = np.where(freq_sums > 0, 1.0, freq_sums)
         actual_sum = self._groupby_freq(weights).sum().values  # type: ignore
+
+        num_groups = len(np.unique(self._time_grouped.values))
+        expected_sum = np.ones(num_groups)
+
         np.testing.assert_allclose(actual_sum, expected_sum)
 
     def _groupby_freq(self, data_var: xr.DataArray) -> DataArrayGroupBy:
@@ -1419,7 +1407,7 @@ class TemporalAccessor:
         # other modes require a DataArray of grouped time coordinates since
         # time coordinates are grouped by multiple datetime components.
         if self._mode == "mean":
-            dv_gb = dv.groupby(f"{self._dataset.cf['T'].name}.{self._freq}")
+            dv_gb = dv.groupby(f"{self._dim_name}.{self._freq}")
         else:
             dv.coords[self._time_grouped.name] = self._time_grouped
             dv_gb = dv.groupby(self._time_grouped.name)
