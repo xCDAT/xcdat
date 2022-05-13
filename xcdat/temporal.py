@@ -989,14 +989,14 @@ class TemporalAccessor:
         return dv
 
     def _label_time_coords(self, time_coords: xr.DataArray) -> xr.DataArray:
-        """
-        Labels time coordinates for grouping based averaging mode and frequency.
+        """Labels time coordinates with a group for grouping.
 
-        To create labeled time coordinates for grouping, this method extracts
-        specific xarray datetime components from the DataArray of time
-        coordiantes and stores them in a pandas DataFrame. The DataFrame is
-        converted to a numpy array of datetime objects, which serves as the
-        data source for the final ``xr.DataArray`` of labeled time coordinates.
+        This methods labels time coordinates for grouping by first extracting
+        specific xarray datetime components from time coordinates and storing
+        them in a pandas DataFrame. After processing (if necessary) is performed
+        on the DataFrame, it is converted to a numpy array of datetime
+        objects. This numpy serves as the data source for the final
+        DataArray of labeled time coordinates.
 
         Parameters
         ----------
@@ -1032,7 +1032,7 @@ class TemporalAccessor:
         >>> Coordinates:
         >>> * time     (time) datetime64[ns] 2000-01-01T00:00:00 ... 2000-04-01T00:00:00
         """
-        df_dt_components: pd.DataFrame = self._get_dt_components(time_coords)
+        df_dt_components: pd.DataFrame = self._get_df_dt_components(time_coords)
         dt_objects = self._convert_df_to_dt(df_dt_components)
 
         time_grouped = xr.DataArray(
@@ -1046,17 +1046,16 @@ class TemporalAccessor:
 
         return time_grouped
 
-    def _get_dt_components(self, time_coords: xr.DataArray) -> pd.DataFrame:
+    def _get_df_dt_components(self, time_coords: xr.DataArray) -> pd.DataFrame:
         """Returns a DataFrame of xarray datetime components.
 
-        This method extracts the required xarray datetime components (e.g.,
-        year, month, day, etc.) from each time coordinate based on the averaging
-        mode and frequency and stores it in a pandas DataFrame. For the seasonal
-        frequency, additional DataFrame processing is performed.
+        This method extracts the applicable xarray datetime components from each
+        time coordinate based on the averaging mode and frequency, and stores
+        them in a DataFrame. Refer to [5]_ for information on xarray datetime
+        accessor components.
 
-        Refer to [5]_ for information on xarray datetime accessor components.
-
-        Seasonal processing includes:
+        Additional processing is performed for the seasonal frequency,
+        including:
 
         * If custom seasons are used, map them to each time coordinate based
           on the middle month of the custom season.
@@ -1081,17 +1080,23 @@ class TemporalAccessor:
         """
         df = pd.DataFrame()
 
+        # Use the TIME_GROUPS dictionary to determine which components
+        # are needed to form the labeled time coordinates.
         for component in TIME_GROUPS[self._mode][self._freq]:
             df[component] = time_coords[f"{self._dim_name}.{component}"].values
 
-        # TODO: Figure out more readable conditional statements here.
+        # The season frequency requires additional datetime components for
+        # processing, which are later removed before time coordinates are
+        # labeled for grouping. These components weren't included for the
+        # "season" frequency in the TIME_GROUPS dictionary because it might
+        # cause confusion, since TIME_GROUPS represents the final grouping
+        # labels.
         if self._freq == "season":
             if self._mode in ["climatology", "departures"]:
                 df["year"] = time_coords[f"{self._dim_name}.year"].values
-            if (
-                self._mode in ["climatology", "departures"]
-                or self._mode == "group_average"
-            ):
+                df["month"] = time_coords[f"{self._dim_name}.month"].values
+
+            if self._mode == "group_average":
                 df["month"] = time_coords[f"{self._dim_name}.month"].values
 
             df = self._process_season_df(df)
