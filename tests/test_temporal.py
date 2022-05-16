@@ -62,7 +62,7 @@ class TestAverage:
             dims=["time", "lat", "lon"],
         )
 
-    def test_weighted_yearly_means(self):
+    def test_weighted_yearly_averages(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="year")
@@ -75,7 +75,7 @@ class TestAverage:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
-    def test_weighted_seasonal_means(self):
+    def test_weighted_seasonal_averages(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="season")
@@ -88,7 +88,7 @@ class TestAverage:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
-    def test_weighted_monthly_means(self):
+    def test_weighted_monthly_averages(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="month")
@@ -101,7 +101,7 @@ class TestAverage:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
-    def test_weighted_daily_means(self):
+    def test_weighted_daily_averages(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="day")
@@ -114,7 +114,7 @@ class TestAverage:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
-    def test_weighted_hourly_means(self):
+    def test_weighted_hourly_averages(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="hour")
@@ -3736,7 +3736,7 @@ class Test_GroupData:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_groups_data_var_for_seasonal_means(self):
+    def test_groups_data_var_for_seasonal_averages(self):
         ds = self.ds.copy()
         ts = ds.ts.copy()
 

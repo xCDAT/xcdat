@@ -160,13 +160,14 @@ class TemporalAccessor:
 
     def average(self, data_var: str, freq: Frequency, center_times: bool = False):
         """
-        Returns a Dataset with weighted average applied to the data variable
-        with the time dimension removed.
+        Returns a Dataset with the time weighted average of a data variable
+        and the time dimension removed.
 
-        This method is particularly useful for yearly or monthly time series
-        data, where the number of days per month can vary based on the calendar
-        type (e.g., leap year). For unweighted averages or non-yearly/non-monthly
-        time series, use xarray's native ``.mean()`` method directly.
+        This method is particularly useful for monthly or yearly time series
+        data since the number of days per month (e.g., leap year) can vary based
+        on the calendar type, which can affect weighting . For unweighted
+        averages or other time frequencies, call xarray's native ``.mean()``
+        method on the data variable instead.
 
         Weights are calculated by first determining the length of time for
         each coordinate point using the difference of its upper and lower
@@ -181,11 +182,11 @@ class TemporalAccessor:
         freq : Frequency
             The time frequency for calculating weights.
 
-            * "year": groups by year
-            * "season": groups by season
-            * "month": groups by month
-            * "day": groups by day
-            * "hour": groups by hour
+            * "year": weights by year
+            * "season": weights by season
+            * "month": weights by month
+            * "day": weights by day
+            * "hour": weights by hour
 
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
@@ -195,7 +196,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset with weighted average applied to the data variable with the
+            Dataset with the time weighted average of the data variable and the
             time dimension removed.
 
         Examples
@@ -216,7 +217,7 @@ class TemporalAccessor:
         center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
-        """Returns a Dataset with the data variable averaged by time group.
+        """Returns a Dataset with average of a data variable by time group.
 
         Parameters
         ----------
@@ -287,7 +288,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset with the data variable averaged by time group.
+            Dataset with the average of a data variable by time group.
 
         References
         ----------
@@ -355,8 +356,7 @@ class TemporalAccessor:
         center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
-        """Returns a Dataset with the climatology for the data variable.
-
+        """Returns a Dataset with the climatology of a data variable.
 
         Parameters
         ----------
@@ -425,7 +425,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.Dataset
-            Dataset with the climatology for a data variable.
+            Dataset with the climatology of a data variable.
 
         References
         ----------
@@ -491,13 +491,11 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfigInput = {
-            "dec_mode": "DJF",
-            "drop_incomplete_djf": False,
-            "custom_seasons": None,
-        },
+        season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
-        """Calculates climatological departures ("anomalies").
+        """
+        Returns a Dataset with the climatological departures ("anomalies") for
+        a data variable.
 
         In climatology, “anomalies” refer to the difference between the value
         during a given time interval (e.g., the January average surface air
@@ -710,42 +708,24 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfigInput = {
-            "dec_mode": "DJF",
-            "drop_incomplete_djf": False,
-            "custom_seasons": None,
-        },
+        season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
         self._set_obj_attrs(mode, freq, weighted, center_times, season_config)
-        ds = self._dataset.copy()
-
-        # Since time coordinates are shared across the variables in the
-        # Dataset, perform Dataset level operations first to cascade the
-        # resulting time coordinates down to the data variable.
-        if self._center_times:
-            ds = self.center_times(ds)
-
-        if (
-            self._freq == "season"
-            and self._season_config.get("dec_mode") == "DJF"
-            and self._season_config.get("drop_incomplete_djf") is True
-        ):
-            ds = self._drop_incomplete_djf(ds)
+        ds = self._process_dataset()
 
         dv = _get_data_var(ds, data_var)
 
         if self._mode == "average":
             dv = self._average(dv)
-        else:
+        elif self._mode in ["group_average", "climatology", "departures"]:
             dv = self._group_average(dv)
 
-            # The original time dimension is dropped from the Dataset because
-            # it becomes  after the data variable is averaged. A new time
-            # dimension will be added to the Dataset when adding the averaged
-            # data variable.
-            ds = ds.drop_dims("time")
-
+        # The original time dimension is dropped from the Dataset because
+        # it becomes obsolete after the data variable is averaged. A new time
+        # dimension will be added to the Dataset when adding the averaged
+        # data variable.
+        ds = ds.drop_dims("time")
         ds[dv.name] = dv
 
         return ds
@@ -756,7 +736,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool,
         center_times: bool,
-        season_config: SeasonConfigInput,
+        season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Validates method arguments and sets them as object attributes.
 
@@ -772,10 +752,10 @@ class TemporalAccessor:
             If True, center time coordinates using the midpoint between of its
             upper and lower bounds. Otherwise, use the provided time
             coordinates, by default False.
-        season_config: SeasonConfigInput
+        season_config: Optional[SeasonConfigInput]
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
-            ignored and vice versa.
+            ignored and vice versa, by default DEFAULT_SEASON_CONFIG.
 
         Raises
         ------
@@ -830,6 +810,23 @@ class TemporalAccessor:
                 self._season_config["drop_incomplete_djf"] = drop_incomplete_djf
         else:
             self._season_config["custom_seasons"] = self._form_seasons(custom_seasons)
+
+    def _process_dataset(self) -> xr.Dataset:
+        ds = self._dataset.copy()
+        # Since time coordinates are shared across the variables in the
+        # Dataset, perform Dataset level operations first to cascade the
+        # resulting time coordinates down to the data variable.
+        if self._center_times:
+            ds = self.center_times(ds)
+
+        if (
+            self._freq == "season"
+            and self._season_config.get("dec_mode") == "DJF"
+            and self._season_config.get("drop_incomplete_djf") is True
+        ):
+            ds = self._drop_incomplete_djf(ds)
+
+        return ds
 
     def _drop_incomplete_djf(self, dataset: xr.Dataset) -> xr.Dataset:
         """Drops incomplete DJF seasons within a continuous time series.
