@@ -233,15 +233,17 @@ class Regrid2Regridder(BaseRegridder):
         """
         super().__init__(src_grid, dst_grid, **options)
 
-        src_lat = src_grid.bounds.get_bounds("lat")
-        self._dst_lat = dst_grid.bounds.get_bounds("lat")
+        self._src_lat = self._src_grid.bounds.get_bounds("lat")
+        self._src_lon = self._src_grid.bounds.get_bounds("lon")
 
-        self._lat_mapping, self._lat_weights = map_latitude(src_lat, self._dst_lat)
+        self._dst_lat = self._dst_grid.bounds.get_bounds("lat")
+        self._dst_lon = self._dst_grid.bounds.get_bounds("lon")
 
-        src_lon = src_grid.bounds.get_bounds("lon")
-        self._dst_lon = dst_grid.bounds.get_bounds("lon")
+        self._lat_mapping: Any = None
+        self._lon_mapping: Any = None
 
-        self._lon_mapping, self._lon_weights = map_longitude(src_lon, self._dst_lon)
+        self._lat_weights: Any = None
+        self._lon_weights: Any = None
 
     def _base_put_indexes(self, axis_sizes: Dict[str, int]) -> np.ndarray:
         """
@@ -485,6 +487,17 @@ class Regrid2Regridder(BaseRegridder):
         if input_data_var is None:
             raise KeyError(
                 f"The data variable '{data_var}' does not exist in the dataset."
+            )
+
+        # Do initial mapping between src/dst latitude and longitude.
+        if self._lat_mapping is None and self._lat_weights is None:
+            self._lat_mapping, self._lat_weights = map_latitude(
+                self._src_lat, self._dst_lat
+            )
+
+        if self._lon_mapping is None and self._lon_weights is None:
+            self._lon_mapping, self._lon_weights = map_longitude(
+                self._src_lon, self._dst_lon
             )
 
         # operate on pure numpy
