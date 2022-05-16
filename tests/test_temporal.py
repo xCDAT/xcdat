@@ -1,11 +1,10 @@
 import cftime
 import numpy as np
-import pandas as pd
 import pytest
 import xarray as xr
 from xarray.tests import requires_dask
 
-from tests.fixtures import generate_dataset, time_bnds, time_cf
+from tests.fixtures import generate_dataset
 from xcdat.temporal import TemporalAccessor
 
 
@@ -24,38 +23,46 @@ class TestTemporalAccessor:
 class TestAverage:
     @pytest.fixture(autouse=True)
     def setup(self):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",
+                    "2000-03-16T12:00:00.000000000",
+                    "2000-06-16T00:00:00.000000000",
+                    "2000-09-16T00:00:00.000000000",
+                    "2001-02-15T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={"axis": "T", "long_name": "time", "standard_name": "time"},
+        )
+
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-09-01T00:00:00.000000000", "2000-10-01T00:00:00.000000000"],
+                    ["2001-02-01T00:00:00.000000000", "2001-03-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
         self.ds = xr.Dataset(
             data_vars={"time_bnds": time_bnds},
-            coords={"lat": [-90, 90], "lon": [0, 385.125], "time": time_cf},
+            coords={"lat": [-90], "lon": [0], "time": time},
         )
         self.ds.time.attrs["bounds"] = "time_bnds"
 
         self.ds["ts"] = xr.DataArray(
-            data=np.array(
-                [
-                    # DJF
-                    [[1, 1], [1, 1]],
-                    [[2, 1], [1, 1]],
-                    # MAM
-                    [[1, 2], [1, 1]],
-                    [[1, 1], [1, 1]],
-                    [[1, 1], [1, 1]],
-                    # JJA
-                    [[1, 1], [3, 1]],
-                    [[1, 1], [1, 1]],
-                    [[1, 1], [1, 1]],
-                    # SON
-                    [[1, 1], [1, 4]],
-                    [[1, 1], [1, 1]],
-                    [[1, 1], [1, 1]],
-                    # DJF
-                    [[5, 1], [1, 1]],
-                    # DJF
-                    [[1, 6], [1, 1]],
-                    [[1, 1], [1, 1]],
-                    [[1, 1], [1, 1]],
-                ]
-            ),
+            data=np.array([[[2]], [[1]], [[1]], [[1]], [[2]]]),
             coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
             dims=["time", "lat", "lon"],
         )
@@ -66,7 +73,7 @@ class TestAverage:
         result = ds.temporal.average("ts", freq="year")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.20901639, 1.90346084], [1.08196721, 1.12295082]]),
+            data=np.array([[1.62704981]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
         )
@@ -79,7 +86,7 @@ class TestAverage:
         result = ds.temporal.average("ts", freq="season")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.211326, 1.298328], [1.163043, 1.247253]]),
+            data=np.array([[1.25]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
         )
@@ -92,7 +99,7 @@ class TestAverage:
         result = ds.temporal.average("ts", freq="month")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.209064, 1.291667], [1.166667, 1.25]]),
+            data=np.array([[1.4]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
         )
@@ -105,7 +112,7 @@ class TestAverage:
         result = ds.temporal.average("ts", freq="day")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.40977444, 1.23308271], [1.07518797, 1.11278195]]),
+            data=np.array([[1.627049]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
         )
@@ -118,7 +125,7 @@ class TestAverage:
         result = ds.temporal.average("ts", freq="hour")
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.24837662, 1.30194805], [1.2027027, 1.30405405]]),
+            data=np.array([[1.327778]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
         )
@@ -127,11 +134,52 @@ class TestAverage:
 
 
 class TestGroupAverage:
-    # TODO: Update TestGroupAverage tests to use other numbers rather than 1's
-    # for better test reliability and accuracy. This may require subsetting.
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",
+                    "2000-03-16T12:00:00.000000000",
+                    "2000-06-16T00:00:00.000000000",
+                    "2000-09-16T00:00:00.000000000",
+                    "2001-02-15T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={"axis": "T", "long_name": "time", "standard_name": "time"},
+        )
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-09-01T00:00:00.000000000", "2000-10-01T00:00:00.000000000"],
+                    ["2001-02-01T00:00:00.000000000", "2001-03-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        self.ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+        self.ds.time.attrs["bounds"] = "time_bnds"
+
+        self.ds["ts"] = xr.DataArray(
+            data=np.array(
+                [[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]], dtype="float64"
+            ),
+            coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
+            dims=["time", "lat", "lon"],
+        )
 
     def test_weighted_annual_avg(self):
         ds = self.ds.copy()
@@ -139,35 +187,37 @@ class TestGroupAverage:
         result = ds.temporal.group_average("ts", "year")
         expected = ds.copy()
         expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
-            data=np.array(
-                ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-01-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                )
-            },
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((2, 4, 4)),
+            data=np.array([[[1.25409836]], [[2.0]]]),
             coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-01T00:00:00.000000000",
+                            "2001-01-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    coords={
+                        "time": np.array(
+                            [
+                                "2000-01-01T00:00:00.000000000",
+                                "2001-01-01T00:00:00.000000000",
+                            ],
+                            dtype="datetime64[ns]",
+                        )
+                    },
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -179,8 +229,6 @@ class TestGroupAverage:
             },
         )
 
-        # For some reason, there is a very small floating point difference
-        # between both for ts so we have to use floating point comparison
         xr.testing.assert_allclose(result, expected)
         assert result.ts.attrs == expected.ts.attrs
 
@@ -191,35 +239,37 @@ class TestGroupAverage:
         result = ds.temporal.group_average("ts", "year")
         expected = ds.copy()
         expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
-            data=np.array(
-                ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-01-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                )
-            },
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((2, 4, 4)),
+            data=np.array([[[1.25409836]], [[2.0]]]),
             coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-01T00:00:00.000000000",
+                            "2001-01-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    coords={
+                        "time": np.array(
+                            [
+                                "2000-01-01T00:00:00.000000000",
+                                "2001-01-01T00:00:00.000000000",
+                            ],
+                            dtype="datetime64[ns]",
+                        )
+                    },
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -231,56 +281,6 @@ class TestGroupAverage:
             },
         )
 
-        # For some reason, there is a very small floating point difference
-        # between both for ts so we have to use floating point comparison
-        xr.testing.assert_allclose(result, expected)
-        assert result.ts.attrs == expected.ts.attrs
-
-    def test_weighted_annual_avg_with_centering_time(self):
-        ds = self.ds.copy()
-
-        result = ds.temporal.group_average("ts", "year", center_times=True)
-        expected = ds.copy()
-        expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
-            data=np.array(
-                ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    ["2000-01-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-                    dtype="datetime64[ns]",
-                )
-            },
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
-        expected["ts"] = xr.DataArray(
-            name="ts",
-            data=np.ones((2, 4, 4)),
-            coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
-            },
-            dims=["time", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "group_average",
-                "freq": "year",
-                "weighted": "True",
-                "center_times": "True",
-            },
-        )
-
-        # For some reason, there is a floating point difference between both
-        # for ts so we have to use floating point comparison
         xr.testing.assert_allclose(result, expected)
         assert result.ts.attrs == expected.ts.attrs
 
@@ -296,42 +296,30 @@ class TestGroupAverage:
         # Drop the incomplete DJF seasons
         expected = expected.isel(time=slice(2, -1))
         expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
-            data=np.array(
-                [
-                    "2000-04-01T00:00:00.000000000",
-                    "2000-07-01T00:00:00.000000000",
-                    "2000-10-01T00:00:00.000000000",
-                    "2001-01-01T00:00:00.000000000",
-                ],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-04-01T00:00:00.000000000",
-                        "2000-07-01T00:00:00.000000000",
-                        "2000-10-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                )
-            },
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((4, 4, 4)),
+            data=np.array([[[1]], [[1]], [[1]], [[2.0]]]),
             coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-04-01T00:00:00.000000000",
+                            "2000-07-01T00:00:00.000000000",
+                            "2000-10-01T00:00:00.000000000",
+                            "2001-01-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -359,46 +347,31 @@ class TestGroupAverage:
         )
         expected = ds.copy()
         expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
-            data=np.array(
-                [
-                    "2000-01-01T00:00:00.000000000",
-                    "2000-04-01T00:00:00.000000000",
-                    "2000-07-01T00:00:00.000000000",
-                    "2000-10-01T00:00:00.000000000",
-                    "2001-01-01T00:00:00.000000000",
-                    "2002-01-01T00:00:00.000000000",
-                ],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-01-01T00:00:00.000000000",
-                        "2000-04-01T00:00:00.000000000",
-                        "2000-07-01T00:00:00.000000000",
-                        "2000-10-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                        "2002-01-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                )
-            },
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((6, 4, 4)),
+            data=np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
             coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-01T00:00:00.000000000",
+                            "2000-04-01T00:00:00.000000000",
+                            "2000-07-01T00:00:00.000000000",
+                            "2000-10-01T00:00:00.000000000",
+                            "2001-01-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -424,44 +397,43 @@ class TestGroupAverage:
         )
         expected = ds.copy()
         expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
-            data=np.array(
-                [
-                    "2000-01-01T00:00:00.000000000",
-                    "2000-04-01T00:00:00.000000000",
-                    "2000-07-01T00:00:00.000000000",
-                    "2000-10-01T00:00:00.000000000",
-                    "2001-01-01T00:00:00.000000000",
-                ],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-01-01T00:00:00.000000000",
-                        "2000-04-01T00:00:00.000000000",
-                        "2000-07-01T00:00:00.000000000",
-                        "2000-10-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                )
-            },
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((5, 4, 4)),
+            data=np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
             coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-01T00:00:00.000000000",
+                            "2000-04-01T00:00:00.000000000",
+                            "2000-07-01T00:00:00.000000000",
+                            "2000-10-01T00:00:00.000000000",
+                            "2001-01-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    coords={
+                        "time": np.array(
+                            [
+                                "2000-01-01T00:00:00.000000000",
+                                "2000-04-01T00:00:00.000000000",
+                                "2000-07-01T00:00:00.000000000",
+                                "2000-10-01T00:00:00.000000000",
+                                "2001-01-01T00:00:00.000000000",
+                            ],
+                            dtype="datetime64[ns]",
+                        )
+                    },
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -492,42 +464,31 @@ class TestGroupAverage:
         )
         expected = ds.copy()
         expected = expected.drop_dims("time")
-        expected_time = xr.DataArray(
-            data=np.array(
-                [
-                    "2000-02-01T00:00:00.000000000",
-                    "2000-05-01T00:00:00.000000000",
-                    "2000-08-01T00:00:00.000000000",
-                    "2000-11-01T00:00:00.000000000",
-                    "2001-02-01T00:00:00.000000000",
-                    "2001-11-01T00:00:00.000000000",
-                ],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-02-01T00:00:00.000000000",
-                        "2000-05-01T00:00:00.000000000",
-                        "2000-08-01T00:00:00.000000000",
-                        "2000-11-01T00:00:00.000000000",
-                        "2001-02-01T00:00:00.000000000",
-                        "2001-11-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-            },
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((6, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            data=np.array([[[1.5]], [[1.0]], [[1.0]], [[2.0]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-02-01T00:00:00.000000000",
+                            "2000-05-01T00:00:00.000000000",
+                            "2000-08-01T00:00:00.000000000",
+                            "2001-02-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -595,64 +556,31 @@ class TestGroupAverage:
         result = ds.temporal.group_average("ts", "month")
         expected = ds.copy()
         expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
-            data=np.array(
-                [
-                    "2000-01-01T00:00:00.000000000",
-                    "2000-02-01T00:00:00.000000000",
-                    "2000-03-01T00:00:00.000000000",
-                    "2000-04-01T00:00:00.000000000",
-                    "2000-05-01T00:00:00.000000000",
-                    "2000-06-01T00:00:00.000000000",
-                    "2000-07-01T00:00:00.000000000",
-                    "2000-08-01T00:00:00.000000000",
-                    "2000-09-01T00:00:00.000000000",
-                    "2000-10-01T00:00:00.000000000",
-                    "2000-11-01T00:00:00.000000000",
-                    "2000-12-01T00:00:00.000000000",
-                    "2001-01-01T00:00:00.000000000",
-                    "2001-02-01T00:00:00.000000000",
-                    "2001-12-01T00:00:00.000000000",
-                ],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-01-01T00:00:00.000000000",
-                        "2000-02-01T00:00:00.000000000",
-                        "2000-03-01T00:00:00.000000000",
-                        "2000-04-01T00:00:00.000000000",
-                        "2000-05-01T00:00:00.000000000",
-                        "2000-06-01T00:00:00.000000000",
-                        "2000-07-01T00:00:00.000000000",
-                        "2000-08-01T00:00:00.000000000",
-                        "2000-09-01T00:00:00.000000000",
-                        "2000-10-01T00:00:00.000000000",
-                        "2000-11-01T00:00:00.000000000",
-                        "2000-12-01T00:00:00.000000000",
-                        "2001-01-01T00:00:00.000000000",
-                        "2001-02-01T00:00:00.000000000",
-                        "2001-12-01T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-            },
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((15, 4, 4)),
+            data=np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
             coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-01T00:00:00.000000000",
+                            "2000-03-01T00:00:00.000000000",
+                            "2000-06-01T00:00:00.000000000",
+                            "2000-09-01T00:00:00.000000000",
+                            "2001-02-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -672,64 +600,31 @@ class TestGroupAverage:
         result = ds.temporal.group_average("ts", "day")
         expected = ds.copy()
         expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
-            data=np.array(
-                [
-                    "2000-01-16T00:00:00.000000000",
-                    "2000-02-15T00:00:00.000000000",
-                    "2000-03-16T00:00:00.000000000",
-                    "2000-04-16T00:00:00.000000000",
-                    "2000-05-16T00:00:00.000000000",
-                    "2000-06-16T00:00:00.000000000",
-                    "2000-07-16T00:00:00.000000000",
-                    "2000-08-16T00:00:00.000000000",
-                    "2000-09-16T00:00:00.000000000",
-                    "2000-10-16T00:00:00.000000000",
-                    "2000-11-16T00:00:00.000000000",
-                    "2000-12-16T00:00:00.000000000",
-                    "2001-01-16T00:00:00.000000000",
-                    "2001-02-15T00:00:00.000000000",
-                    "2001-12-16T00:00:00.000000000",
-                ],
-                dtype="datetime64[ns]",
-            ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-01-16T00:00:00.000000000",
-                        "2000-02-15T00:00:00.000000000",
-                        "2000-03-16T00:00:00.000000000",
-                        "2000-04-16T00:00:00.000000000",
-                        "2000-05-16T00:00:00.000000000",
-                        "2000-06-16T00:00:00.000000000",
-                        "2000-07-16T00:00:00.000000000",
-                        "2000-08-16T00:00:00.000000000",
-                        "2000-09-16T00:00:00.000000000",
-                        "2000-10-16T00:00:00.000000000",
-                        "2000-11-16T00:00:00.000000000",
-                        "2000-12-16T00:00:00.000000000",
-                        "2001-01-16T00:00:00.000000000",
-                        "2001-02-15T00:00:00.000000000",
-                        "2001-12-16T00:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-            },
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((15, 4, 4)),
+            data=np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
             coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-16T00:00:00.000000000",
+                            "2000-03-16T00:00:00.000000000",
+                            "2000-06-16T00:00:00.000000000",
+                            "2000-09-16T00:00:00.000000000",
+                            "2001-02-15T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -743,94 +638,19 @@ class TestGroupAverage:
 
         assert result.identical(expected)
 
-    def test_weighted_hourly_avg(self):
+    def test_weighted_daily_averages_and_center_times(self):
         ds = self.ds.copy()
-        ds.coords["time"].attrs["bounds"] = "time_bnds"
-
-        result = ds.temporal.group_average("ts", "hour")
-        expected = ds.copy()
-        expected["ts_original"] = ds.ts.copy()
-        expected["ts"] = xr.DataArray(
-            name="ts",
-            data=np.ones((15, 4, 4)),
-            coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "year_month_day_hour": pd.MultiIndex.from_tuples(
-                    [
-                        (2000, 1, 16, 12),
-                        (2000, 2, 15, 12),
-                        (2000, 3, 16, 12),
-                        (2000, 4, 16, 0),
-                        (2000, 5, 16, 12),
-                        (2000, 6, 16, 0),
-                        (2000, 7, 16, 12),
-                        (2000, 8, 16, 12),
-                        (2000, 9, 16, 0),
-                        (2000, 10, 16, 12),
-                        (2000, 11, 16, 0),
-                        (2000, 12, 16, 12),
-                        (2001, 1, 16, 12),
-                        (2001, 2, 15, 0),
-                        (2001, 12, 16, 12),
-                    ]
-                ),
-            },
-            dims=["year_month_day_hour", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "group_average",
-                "freq": "hour",
-                "weighted": "True",
-                "center_times": "False",
-            },
-        )
-
-        expected = ds.copy()
-        expected = expected.drop_dims("time")
-        time_new = xr.DataArray(
+        ds["time"] = xr.DataArray(
             data=np.array(
                 [
-                    "2000-01-16T12:00:00.000000000",
-                    "2000-02-15T12:00:00.000000000",
-                    "2000-03-16T12:00:00.000000000",
-                    "2000-04-16T00:00:00.000000000",
-                    "2000-05-16T12:00:00.000000000",
-                    "2000-06-16T00:00:00.000000000",
-                    "2000-07-16T12:00:00.000000000",
-                    "2000-08-16T12:00:00.000000000",
-                    "2000-09-16T00:00:00.000000000",
-                    "2000-10-16T12:00:00.000000000",
-                    "2000-11-16T00:00:00.000000000",
-                    "2000-12-16T12:00:00.000000000",
-                    "2001-01-16T12:00:00.000000000",
-                    "2001-02-15T00:00:00.000000000",
-                    "2001-12-16T12:00:00.000000000",
+                    "2000-01-01T12:00:00.000000000",
+                    "2000-03-01T12:00:00.000000000",
+                    "2000-06-01T00:00:00.000000000",
+                    "2000-09-01T00:00:00.000000000",
+                    "2001-02-01T12:00:00.000000000",
                 ],
                 dtype="datetime64[ns]",
             ),
-            coords={
-                "time": np.array(
-                    [
-                        "2000-01-16T12:00:00.000000000",
-                        "2000-02-15T12:00:00.000000000",
-                        "2000-03-16T12:00:00.000000000",
-                        "2000-04-16T00:00:00.000000000",
-                        "2000-05-16T12:00:00.000000000",
-                        "2000-06-16T00:00:00.000000000",
-                        "2000-07-16T12:00:00.000000000",
-                        "2000-08-16T12:00:00.000000000",
-                        "2000-09-16T00:00:00.000000000",
-                        "2000-10-16T12:00:00.000000000",
-                        "2000-11-16T00:00:00.000000000",
-                        "2000-12-16T12:00:00.000000000",
-                        "2001-01-16T12:00:00.000000000",
-                        "2001-02-15T00:00:00.000000000",
-                        "2001-12-16T12:00:00.000000000",
-                    ],
-                    dtype="datetime64[ns]",
-                ),
-            },
             dims=["time"],
             attrs={
                 "axis": "T",
@@ -839,13 +659,78 @@ class TestGroupAverage:
                 "bounds": "time_bnds",
             },
         )
+        ds["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-09-01T00:00:00.000000000", "2000-10-01T00:00:00.000000000"],
+                    ["2001-02-01T00:00:00.000000000", "2001-03-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": ds.time},
+            dims=["time", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        result = ds.temporal.group_average("ts", "day", center_times=True)
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((15, 4, 4)),
+            data=np.array([[[2]], [[1]], [[1]], [[1]], [[2]]]),
             coords={
-                "lat": self.ds.lat,
-                "lon": self.ds.lon,
-                "time": time_new,
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-16T00:00:00.000000000",
+                            "2000-03-16T00:00:00.000000000",
+                            "2000-06-16T00:00:00.000000000",
+                            "2000-09-16T00:00:00.000000000",
+                            "2001-02-15T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "day",
+                "weighted": "True",
+                "center_times": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_hourly_avg(self):
+        ds = self.ds.copy()
+        ds.coords["time"].attrs["bounds"] = "time_bnds"
+
+        result = ds.temporal.group_average("ts", "hour")
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[2]], [[1]], [[1]], [[1]], [[2]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": ds.time,
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -907,7 +792,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((4, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -963,7 +848,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((4, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -1016,7 +901,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((4, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -1075,7 +960,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((4, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -1145,7 +1030,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((12, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -1208,7 +1093,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((12, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -1271,7 +1156,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((12, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -1334,7 +1219,7 @@ class TestClimatology:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.ones((12, 4, 4)),
-            coords={"lat": self.ds.lat, "lon": self.ds.lon, "time": expected_time},
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
                 "operation": "temporal_avg",
@@ -1373,8 +1258,8 @@ class TestDepartures:
         expected["ts"] = xr.DataArray(
             data=np.zeros((12, 4, 4)),
             coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
+                "lat": expected.lat,
+                "lon": expected.lon,
                 "time": ds.time,
             },
             dims=["time", "lat", "lon"],
@@ -1407,8 +1292,8 @@ class TestDepartures:
         expected["ts"] = xr.DataArray(
             data=np.zeros((12, 4, 4)),
             coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
+                "lat": expected.lat,
+                "lon": expected.lon,
                 "time": ds.time,
             },
             dims=["time", "lat", "lon"],
@@ -1439,8 +1324,8 @@ class TestDepartures:
         expected["ts"] = xr.DataArray(
             data=np.zeros((15, 4, 4)),
             coords={
-                "lat": ds.lat,
-                "lon": ds.lon,
+                "lat": expected.lat,
+                "lon": expected.lon,
                 "time": ds.time,
             },
             dims=["time", "lat", "lon"],

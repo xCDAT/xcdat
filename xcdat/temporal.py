@@ -862,7 +862,7 @@ class TemporalAccessor:
                 coord_pt = ds.loc[dict(time=year_month)].time[0]
                 ds_time = ds_time.where(ds_time.time != coord_pt, drop=True)  # type: ignore
                 self._time_bounds = ds_time[self._time_bounds.name]
-            except KeyError:
+            except (KeyError, IndexError):
                 continue
 
         ds_final = xr.merge((ds_time, ds_no_time))  # type: ignore
