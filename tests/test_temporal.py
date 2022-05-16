@@ -1451,7 +1451,7 @@ class TestDepartures:
         assert result.identical(expected)
 
 
-class Test_CenterTimes:
+class TestCenterTimes:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
