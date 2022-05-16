@@ -1146,14 +1146,12 @@ class TemporalAccessor:
             The DataFrame of xarray datetime coordinates, with each row mapped
             to a custom season.
         """
-        custom_seasons = self._season_config.get("custom_seasons")
-        if custom_seasons is None:
-            raise ValueError("Custom seasons were not assigned to this object.")
+        custom_seasons = self._season_config["custom_seasons"]
 
         # Time complexity of O(n^2), but okay with these small data structures.
         seasons_map = {}
         for mon_int, mon_str in MONTH_INT_TO_STR.items():
-            for season in custom_seasons:
+            for season in custom_seasons:  # type: ignore
                 if mon_str in season:
                     seasons_map[mon_int] = season
 
@@ -1271,11 +1269,6 @@ class TemporalAccessor:
             df_season = df_season.drop("month", axis=1)
         elif self._mode in ["climatology", "departures"]:
             df_season = df_season.drop(["year", "month"], axis=1)
-        else:
-            raise ValueError(
-                "Unable to drop columns in the datetime components "
-                f"DataFrame for unsupported mode, '{self._mode}'."
-            )
 
         return df_season
 
