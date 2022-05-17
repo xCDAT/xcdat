@@ -210,10 +210,9 @@ class TemporalAccessor:
                 The mode for the season that includes December.
 
                 * "DJF": season includes the previous year December.
-                * "JFD": season includes the same year December. Xarray
-                    incorrectly labels the season with December as "DJF" when it
-                    should be "JFD". Refer to [1]_ for more information on this
-                    xarray behavior.
+                * "JFD": season includes the same year December.
+                    Xarray labels the season with December as "DJF", but it is
+                    actually "JFD".
 
             * "drop_incomplete_djf" (bool, by default False)
                 If the "dec_mode" is "DJF", this flag drops (True) or keeps
@@ -304,10 +303,9 @@ class TemporalAccessor:
                 The mode for the season that includes December.
 
                 * "DJF": season includes the previous year December.
-                * "JFD": season includes the same year December. Xarray
-                    incorrectly labels the season with December as "DJF" when it
-                    should be "JFD". Refer to [1]_ for more information on this
-                    xarray behavior.
+                * "JFD": season includes the same year December.
+                    Xarray labels the season with December as "DJF", but it is
+                    actually "JFD".
 
             * "drop_incomplete_djf" (bool, by default False)
                 If the "dec_mode" is "DJF", this flag drops (True) or keeps
@@ -338,10 +336,6 @@ class TemporalAccessor:
         -------
         xr.Dataset
             Dataset with the average of a data variable by time group.
-
-        References
-        ----------
-        .. [1] https://github.com/pydata/xarray/issues/810
 
         Examples
         --------
@@ -441,10 +435,9 @@ class TemporalAccessor:
                The mode for the season that includes December.
 
                 * "DJF": season includes the previous year December.
-                * "JFD": season includes the same year December. Xarray
-                  incorrectly labels the season with December as "DJF" when it
-                  should be "JFD". Refer to [2]_ for more information on this
-                  xarray behavior.
+                * "JFD": season includes the same year December.
+                    Xarray labels the season with December as "DJF", but it is
+                    actually "JFD".
 
             * "drop_incomplete_djf" (bool, by default False)
                 If the "dec_mode" is "DJF", this flag drops (True) or keeps
@@ -475,10 +468,6 @@ class TemporalAccessor:
         -------
         xr.Dataset
             Dataset with the climatology of a data variable.
-
-        References
-        ----------
-        .. [2] https://github.com/pydata/xarray/issues/810
 
         Examples
         --------
@@ -560,9 +549,8 @@ class TemporalAccessor:
 
         xarray's grouped arithmetic operates over each value of the DataArray
         corresponding to each grouping label without changing the size of the
-        DataArra. For example,the original monthly time coordinates are
+        DataArray. For example,the original monthly time coordinates are
         maintained when calculating seasonal departures on monthly data.
-        Visit [3]_ to learn more about how xarray's grouped arithmetic works.
 
         Parameters
         ----------
@@ -599,10 +587,9 @@ class TemporalAccessor:
                The mode for the season that includes December.
 
                 * "DJF": season includes the previous year December.
-                * "JFD": season includes the same year December. Xarray
-                  incorrectly labels the season with December as "DJF" when it
-                  should be "JFD". Refer to [4]_ for more information on this
-                  xarray behavior.
+                * "JFD": season includes the same year December.
+                    Xarray labels the season with December as "DJF", but it is
+                    actually "JFD".
 
             * "drop_incomplete_djf" (bool, by default False)
                 If the "dec_mode" is "DJF", this flag drops (True) or keeps
@@ -634,10 +621,13 @@ class TemporalAccessor:
         xr.Dataset
             The Dataset containing the departures for a data var's climatology.
 
+        Notes
+        -----
+        Refer to [1]_ to learn more about how xarray's grouped arithmetic works.
+
         References
         ----------
-        .. [3] https://xarray.pydata.org/en/stable/user-guide/groupby.html#grouped-arithmetic
-        .. [4] https://github.com/pydata/xarray/issues/810
+        .. [1] https://xarray.pydata.org/en/stable/user-guide/groupby.html#grouped-arithmetic
 
         Examples
         --------
@@ -1097,8 +1087,7 @@ class TemporalAccessor:
 
         This method extracts the applicable xarray datetime components from each
         time coordinate based on the averaging mode and frequency, and stores
-        them in a DataFrame. Refer to [5]_ for information on xarray datetime
-        accessor components.
+        them in a DataFrame.
 
         Additional processing is performed for the seasonal frequency,
         including:
@@ -1120,9 +1109,13 @@ class TemporalAccessor:
         pd.DataFrame
             A DataFrame of datetime components.
 
+        Notes
+        -----
+        Refer to [2]_ for information on xarray datetime accessor components.
+
         References
         ----------
-        .. [5] https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
+        .. [2] https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
         """
         df = pd.DataFrame()
 
@@ -1331,7 +1324,7 @@ class TemporalAccessor:
 
         If the default value of 1 is used for the years, datetime objects
         must be created using `cftime.datetime` because year 1 is outside the
-        Timestamp-valid range. Refer to [6]_ and [7]_ for more information.
+        Timestamp-valid range.
 
         Parameters
         ----------
@@ -1343,11 +1336,15 @@ class TemporalAccessor:
         np.ndarray
             A numpy ndarray of datetime.datetime or cftime.datetime objects.
 
+        Notes
+        -----
+        Refer to [3]_ and [4]_ for more information on Timestamp-valid range.
+
         References
         ----------
-        .. [6] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
+        .. [3] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
 
-        .. [7] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
+        .. [4] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
         """
         df_new = df.copy()
 
@@ -1394,11 +1391,11 @@ class TemporalAccessor:
 
         Notes
         -----
-        Refer to [8]_ for the supported CF convention calendar types.
+        Refer to [5]_ for the supported CF convention calendar types.
 
         References
         ----------
-        .. [8] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
+        .. [5] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
         # FIXME: This takes awhile ~1.5-2.2 seconds, not sure if there is a way
         # around this because this is a vectorized operation already (to my
