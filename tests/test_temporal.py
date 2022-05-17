@@ -282,7 +282,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
-                "operation": "temporal_averages",
+                "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
