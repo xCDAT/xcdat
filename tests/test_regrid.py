@@ -177,24 +177,54 @@ class TestRegrid2Regridder:
         with pytest.raises(KeyError):
             regridder.horizontal("unknown", self.coarse_2d_ds)
 
-    def test_regrid_mask(self):
+    def test_regrid_input_mask(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
-        mask = np.array([[0, 0], [1, 1], [0, 0]])
-
-        self.coarse_2d_ds["mask"] = (("lat", "lon"), mask)
+        self.coarse_2d_ds["mask"] = (("lat", "lon"), [[0, 0], [1, 1], [0, 0]])
 
         output_data = regridder.horizontal("ts", self.coarse_2d_ds)
 
         expected_output = np.array(
             [
-                [0.0, 0.0, 0.0, 0.0],
-                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
-                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
-                [0.0, 0.0, 0.0, 0.0],
+                [1.0, 1.0, 1.0, 1.0],
+                [1e20, 1e20, 1e20, 1e20],
+                [1e20, 1e20, 1e20, 1e20],
+                [1.0, 1.0, 1.0, 1.0],
             ],
             dtype=np.float32,
         )
+
+        # need to replace nans since nan != nan
+        output_data["ts"] = output_data.ts.fillna(1e20)
+
+        assert np.all(output_data.ts.values == expected_output)
+
+    def test_regrid_output_mask(self):
+        output_mask = [
+            [0, 0, 0, 0],
+            [1, 1, 1, 1],
+            [1, 1, 1, 1],
+            [0, 0, 0, 0],
+        ]
+
+        self.fine_2d_ds["mask"] = (("lat", "lon"), output_mask)
+
+        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
+
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
+
+        expected_output = np.array(
+            [
+                [1.0, 1.0, 1.0, 1.0],
+                [1e20, 1e20, 1e20, 1e20],
+                [1e20, 1e20, 1e20, 1e20],
+                [1.0, 1.0, 1.0, 1.0],
+            ],
+            dtype=np.float32,
+        )
+
+        # need to replace nans since nan != nan
+        output_data["ts"] = output_data.ts.fillna(1e20)
 
         assert np.all(output_data.ts.values == expected_output)
 
