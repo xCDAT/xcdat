@@ -77,6 +77,9 @@ Classes
     xcdat.bounds.BoundsAccessor
     xcdat.spatial.SpatialAccessor
     xcdat.temporal.TemporalAccessor
+    xcdat.regridder.accessor.RegridderAccessor
+    xcdat.regridder.regrid2.Regrid2Regridder
+    xcdat.regridder.xesmf.XESMFRegridder
 
 .. currentmodule:: xarray
 
@@ -89,6 +92,7 @@ Attributes
 
     Dataset.bounds.map
     Dataset.bounds.keys
+    Dataset.regridder.grid
 
 .. _dsattr_1:
 
@@ -107,5 +111,8 @@ Methods
     Dataset.temporal.climatology
     Dataset.temporal.departures
     Dataset.temporal.center_times
+    Dataset.regridder.horizontal
+    Dataset.regridder.horizontal_xesmf
+    Dataset.regridder.horizontal_regrid2
 
 .. _dsmeth_1:

@@ -7,9 +7,9 @@ import xarray as xr
 class BaseRegridder(abc.ABC):
     """BaseRegridder."""
 
-    def __init__(self, src_grid: xr.Dataset, dst_grid: xr.Dataset, **options: Any):
-        self._src_grid = src_grid
-        self._dst_grid = dst_grid
+    def __init__(self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Any):
+        self._input_grid = input_grid
+        self._output_grid = output_grid
         self._options = options
 
     @abc.abstractmethod
