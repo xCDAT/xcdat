@@ -72,6 +72,7 @@ class TestAverage:
 
         result = ds.temporal.average("ts", freq="year")
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             data=np.array([[1.62704981]]),
             coords={"lat": expected.lat, "lon": expected.lon},
@@ -89,6 +90,7 @@ class TestAverage:
             season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
         )
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             data=np.array([[1.25]]),
             coords={"lat": expected.lat, "lon": expected.lon},
@@ -108,6 +110,7 @@ class TestAverage:
             season_config={"dec_mode": "DJF", "drop_incomplete_djf": False},
         )
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             data=np.array([[1.25]]),
             coords={"lat": expected.lat, "lon": expected.lon},
@@ -125,6 +128,7 @@ class TestAverage:
             season_config={"dec_mode": "JFD"},
         )
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             data=np.array([[1.25]]),
             coords={"lat": expected.lat, "lon": expected.lon},
@@ -146,6 +150,7 @@ class TestAverage:
             "ts", "season", season_config={"custom_seasons": custom_seasons}
         )
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             data=np.array([[1.25]]),
             coords={"lat": expected.lat, "lon": expected.lon},
@@ -159,6 +164,7 @@ class TestAverage:
 
         result = ds.temporal.average("ts", freq="month")
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             data=np.array([[1.4]]),
             coords={"lat": expected.lat, "lon": expected.lon},
@@ -172,6 +178,7 @@ class TestAverage:
 
         result = ds.temporal.average("ts", freq="day")
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             data=np.array([[1.627049]]),
             coords={"lat": expected.lat, "lon": expected.lon},
@@ -185,6 +192,7 @@ class TestAverage:
 
         result = ds.temporal.average("ts", freq="hour")
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             data=np.array([[1.327778]]),
             coords={"lat": expected.lat, "lon": expected.lon},
