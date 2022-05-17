@@ -67,7 +67,7 @@ class TestAverage:
             dims=["time", "lat", "lon"],
         )
 
-    def test_weighted_yearly_averages(self):
+    def test_averages_weighted_by_year(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="year")
@@ -80,10 +80,14 @@ class TestAverage:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
-    def test_weighted_seasonal_averages(self):
+    def test_averages_weighted_by_season_with_DJF_and_drop_incomplete_DJF_seasons(self):
         ds = self.ds.copy()
 
-        result = ds.temporal.average("ts", freq="season")
+        result = ds.temporal.average(
+            "ts",
+            freq="season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+        )
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
             data=np.array([[1.25]]),
@@ -93,7 +97,64 @@ class TestAverage:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
-    def test_weighted_monthly_averages(self):
+    def test_averages_weighted_by_season_with_DJF_without_dropping_incomplete_DJF_seasons(
+        self,
+    ):
+        ds = self.ds.copy()
+
+        result = ds.temporal.average(
+            "ts",
+            freq="season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": False},
+        )
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([[1.25]]),
+            coords={"lat": expected.lat, "lon": expected.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result.ts, expected.ts)
+
+    def test_averages_weighted_by_season_with_JFD(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.average(
+            "ts",
+            freq="season",
+            season_config={"dec_mode": "JFD"},
+        )
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([[1.25]]),
+            coords={"lat": expected.lat, "lon": expected.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result.ts, expected.ts)
+
+    def test_averages_weighted_by_custom_season(self):
+        ds = self.ds.copy()
+
+        custom_seasons = [
+            ["Jan", "Feb", "Mar"],
+            ["Apr", "May", "Jun"],
+            ["Jul", "Aug", "Sep"],
+            ["Oct", "Nov", "Dec"],
+        ]
+        result = ds.temporal.average(
+            "ts", "season", season_config={"custom_seasons": custom_seasons}
+        )
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.array([[1.25]]),
+            coords={"lat": expected.lat, "lon": expected.lon},
+            dims=["lat", "lon"],
+        )
+
+        assert result.identical(expected)
+
+    def test_averages_weighted_by_month(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="month")
@@ -106,7 +167,7 @@ class TestAverage:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
-    def test_weighted_daily_averages(self):
+    def test_averages_weighted_by_day(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="day")
@@ -119,7 +180,7 @@ class TestAverage:
 
         xr.testing.assert_allclose(result.ts, expected.ts)
 
-    def test_weighted_hourly_averages(self):
+    def test_averages_weighted_by_hour(self):
         ds = self.ds.copy()
 
         result = ds.temporal.average("ts", freq="hour")

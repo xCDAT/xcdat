@@ -158,7 +158,13 @@ class TemporalAccessor:
         # The weights for time coordinates, which are based on a chosen frequency.
         self._weights: Optional[xr.DataArray] = None
 
-    def average(self, data_var: str, freq: Frequency, center_times: bool = False):
+    def average(
+        self,
+        data_var: str,
+        freq: Frequency,
+        center_times: bool = False,
+        season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+    ):
         """
         Returns a Dataset with the time weighted average of a data variable
         and the time dimension removed.
@@ -193,6 +199,47 @@ class TemporalAccessor:
             upper and lower bounds. Otherwise, use the provided time
             coordinates by default False.
 
+        season_config: SeasonConfigInput, optional
+            A dictionary for "season" frequency configurations. If configs for
+            predefined seasons are passed, configs for custom seasons are
+            ignored and vice versa.
+
+            Configs for predefined seasons:
+
+            * "dec_mode" (Literal["DJF", "JFD"], by default "DJF")
+                The mode for the season that includes December.
+
+                * "DJF": season includes the previous year December.
+                * "JFD": season includes the same year December. Xarray
+                    incorrectly labels the season with December as "DJF" when it
+                    should be "JFD". Refer to [1]_ for more information on this
+                    xarray behavior.
+
+            * "drop_incomplete_djf" (bool, by default False)
+                If the "dec_mode" is "DJF", this flag drops (True) or keeps
+                (False) time coordinates that fall under incomplete DJF seasons
+                Incomplete DJF seasons include the start year Jan/Feb and the
+                end year Dec.
+
+            Configs for custom seasons:
+
+            * "custom_seasons" ([List[List[str]]], by default None)
+                List of sublists containing month strings, with each sublist
+                representing a custom season.
+
+                * Month strings must be in the three letter format (e.g., 'Jan')
+                * Each month must be included once in a custom season
+                * Order of the months in each custom season does not matter
+                * Custom seasons can vary in length
+
+                >>> # Example of custom seasons in a three month format:
+                >>> custom_seasons = [
+                >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
+                >>>     ["Apr", "May", "Jun"],  # "AprMayJun"
+                >>>     ["Jul", "Aug", "Sep"],  # "JunJulAug"
+                >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
+                >>> ]
+
         Returns
         -------
         xr.Dataset
@@ -207,7 +254,9 @@ class TemporalAccessor:
         >>> ds_month = ds.temporal.average("ts", freq="month", center_times=False)
         >>> ds_month.ts
         """
-        return self._averager(data_var, "average", freq, True, center_times)
+        return self._averager(
+            data_var, "average", freq, True, center_times, season_config
+        )
 
     def group_average(
         self,
