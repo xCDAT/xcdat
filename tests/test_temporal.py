@@ -152,7 +152,7 @@ class TestAverage:
             dims=["lat", "lon"],
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_allclose(result.ts, expected.ts)
 
     def test_averages_weighted_by_month(self):
         ds = self.ds.copy()
