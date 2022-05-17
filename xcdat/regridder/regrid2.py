@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import xarray as xr
@@ -214,30 +214,55 @@ def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
 class Regrid2Regridder(BaseRegridder):
     def __init__(
-        self, src_grid: xr.Dataset, dst_grid: xr.Dataset, **options: Dict[str, Any]
+        self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Dict[str, Any]
     ):
         """
-        Class to generate mapping and apply regridding between source and destination
-        grid.
+        Pure python implementation of the regrid2 horizontal regridder from
+        CDMS2's regrid2 module.
 
-        Supported options: None
+        Regrid data from ``input_grid`` to ``output_grid``.
+
+        Available options: None
 
         Parameters
         ----------
-        src_grid : xr.Dataset
+        input_grid : xr.Dataset
             Dataset containing the source grid.
-        dst_grid : xr.Dataset
+        output_grid : xr.Dataset
             Dataset containing the destination grid.
         options : Dict[str, Any]
             Dictionary with extra parameters for the regridder.
+
+        Examples
+        --------
+        Import xCDAT:
+
+        >>> import xcdat
+        >>> from xcdat.regridder import regrid2
+
+        Open a dataset:
+
+        >>> ds = xcdat.open_dataset("ts.nc")
+
+        Create output grid:
+
+        >>> output_grid = xcdat.create_gaussian_grid(32)
+
+        Create regridder:
+
+        >>> regridder = regrid2.Regrid2Regridder(ds.grid, output_grid)
+
+        Regrid data:
+
+        >>> data_new_grid = regridder.horizontal("ts", ds)
         """
-        super().__init__(src_grid, dst_grid, **options)
+        super().__init__(input_grid, output_grid, **options)
 
-        self._src_lat = self._src_grid.bounds.get_bounds("lat")
-        self._src_lon = self._src_grid.bounds.get_bounds("lon")
+        self._src_lat = self._input_grid.bounds.get_bounds("lat")
+        self._src_lon = self._input_grid.bounds.get_bounds("lon")
 
-        self._dst_lat = self._dst_grid.bounds.get_bounds("lat")
-        self._dst_lon = self._dst_grid.bounds.get_bounds("lon")
+        self._dst_lat = self._output_grid.bounds.get_bounds("lat")
+        self._dst_lon = self._output_grid.bounds.get_bounds("lon")
 
         self._lat_mapping: Any = None
         self._lon_mapping: Any = None
@@ -297,8 +322,8 @@ class Regrid2Regridder(BaseRegridder):
         for standard_name in da.sizes.keys():
             axis_name = axis_name_map[standard_name]
 
-            if standard_name in self._dst_grid:
-                output_sizes[axis_name] = self._dst_grid.sizes[standard_name]
+            if standard_name in self._output_grid:
+                output_sizes[axis_name] = self._output_grid.sizes[standard_name]
             else:
                 output_sizes[axis_name] = da.sizes[standard_name]
 
@@ -309,7 +334,6 @@ class Regrid2Regridder(BaseRegridder):
         input_data: np.ndarray,
         axis_sizes: Dict[str, int],
         ordered_axis_names: List[str],
-        mask: Optional[np.ndarray] = None,
     ) -> np.ndarray:
         """
         Applies regridding to input data.
@@ -322,8 +346,6 @@ class Regrid2Regridder(BaseRegridder):
             Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
         ordered_axis_names : List[str]
             List of axis name in order of dimenions of ``input_data``.
-        mask: Optional[np.ndarray], optional
-            Multi-dimensional numpy array used for masking, defaults to None.
 
         Returns
         -------
@@ -340,20 +362,10 @@ class Regrid2Regridder(BaseRegridder):
 
         base_put_index = self._base_put_indexes(axis_sizes)
 
-        mask_lat_index = 0
-        mask_lon_index = 1
-
-        if mask is None:
-            input_shape = input_data.shape
-
-            mask = np.ones((input_shape[input_lat_index], input_shape[input_lon_index]))
-
         for lat_index, lat_map in enumerate(self._lat_mapping):
             lat_weight = self._lat_weights[lat_index]
 
             input_lat_segment = np.take(input_data, lat_map, axis=input_lat_index)
-
-            mask_lat_segment = np.take(mask, lat_map, axis=mask_lat_index)
 
             for lon_index, lon_map in enumerate(self._lon_mapping):
                 lon_weight = self._lon_weights[lon_index]
@@ -365,13 +377,6 @@ class Regrid2Regridder(BaseRegridder):
                 input_lon_segment = np.take(
                     input_lat_segment, lon_map, axis=input_lon_index
                 )
-
-                mask_lon_segment = np.take(
-                    mask_lat_segment, lon_map, axis=mask_lon_index
-                )
-
-                # apply mask
-                input_lon_segment = np.multiply(input_lon_segment, mask_lon_segment)
 
                 data = (
                     np.multiply(input_lon_segment, dot_weight).sum(
@@ -424,9 +429,9 @@ class Regrid2Regridder(BaseRegridder):
         # Grab coords and bounds from appropriate dataset.
         for variable_name, axis_name in variable_axis_name_map.items():
             if axis_name in ["X", "Y"]:
-                coords[variable_name] = self._dst_grid[variable_name].copy()
+                coords[variable_name] = self._output_grid[variable_name].copy()
 
-                bounds = self._dst_grid.bounds.get_bounds(variable_name)
+                bounds = self._output_grid.bounds.get_bounds(variable_name)
             else:
                 coords[variable_name] = input_ds[variable_name].copy()
 
@@ -446,10 +451,11 @@ class Regrid2Regridder(BaseRegridder):
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """
-        Regrid data between rectilinear grids.
+        Regrid ``data_var`` in ``ds`` to output grid.
 
-        Precalculated mapping and weights for the source to destination grid
-        are applied to the selected variable in the Dataset.
+        Mappings and weights between input and output grid are calculated
+        on the first call, allowing a regridder to be applied to many input
+        datasets.
 
         Parameters
         ----------
@@ -468,19 +474,31 @@ class Regrid2Regridder(BaseRegridder):
         KeyError
             If data variable does not exist in the Dataset.
 
+        Notes
+        -----
+
         Examples
         --------
-        Import:
+        Import xCDAT:
 
+        >>> import xcdat
         >>> from xcdat.regridder import regrid2
+
+        Open a dataset:
+
+        >>> ds = xcdat.open_dataset("ts.nc")
+
+        Create output grid:
+
+        >>> output_grid = xcdat.create_gaussian_grid(32)
 
         Create regridder:
 
-        >>> regridder = regrid2.Regrid2Regridder(input_grid, output_grid)
+        >>> regridder = regrid2.Regrid2Regridder(ds, output_grid)
 
-        Regrid variable:
+        Regrid data:
 
-        >>> regridder.regrid("ts", input_ds)
+        >>> data_new_grid = regridder.horizontal("ts", ds)
         """
         input_data_var = ds.get(data_var, None)
 
@@ -500,6 +518,12 @@ class Regrid2Regridder(BaseRegridder):
                 self._src_lon, self._dst_lon
             )
 
+        src_mask = self._input_grid.get("mask", None)
+
+        # apply source mask to input data
+        if src_mask is not None:
+            input_data_var = input_data_var.where(src_mask == 0.0)
+
         # operate on pure numpy
         input_data = input_data_var.values
 
@@ -509,14 +533,15 @@ class Regrid2Regridder(BaseRegridder):
 
         ordered_axis_names = list(output_axis_sizes)
 
-        mask = ds.get("mask", None)
-
-        output_data = self._regrid(
-            input_data, output_axis_sizes, ordered_axis_names, mask=mask
-        )
+        output_data = self._regrid(input_data, output_axis_sizes, ordered_axis_names)
 
         output_ds = self._create_output_dataset(
             ds, data_var, output_data, axis_variable_name_map, ordered_axis_names
         )
+
+        dst_mask = self._output_grid.get("mask", None)
+
+        if dst_mask is not None:
+            output_ds[data_var] = output_ds[data_var].where(dst_mask == 0.0)
 
         return output_ds
