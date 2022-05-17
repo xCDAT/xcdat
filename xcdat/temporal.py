@@ -164,10 +164,10 @@ class TemporalAccessor:
         and the time dimension removed.
 
         This method is particularly useful for monthly or yearly time series
-        data since the number of days per month (e.g., leap year) can vary based
-        on the calendar type, which can affect weighting . For unweighted
-        averages or other time frequencies, call xarray's native ``.mean()``
-        method on the data variable instead.
+        data since the number of days per month can vary based on the calendar
+        type, which can affect weighting. For unweighted time averages or other
+        frequencies, call xarray's native ``.mean()`` method on the data
+        variable instead.
 
         Weights are calculated by first determining the length of time for
         each coordinate point using the difference of its upper and lower

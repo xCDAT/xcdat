@@ -181,7 +181,7 @@ class TestGroupAverage:
             dims=["time", "lat", "lon"],
         )
 
-    def test_weighted_annual_avg(self):
+    def test_weighted_annual_averages(self):
         ds = self.ds.copy()
 
         result = ds.temporal.group_average("ts", "year")
@@ -221,7 +221,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
-                "operation": "temporal_avg",
+                "operation": "temporal_averages",
                 "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
@@ -233,7 +233,7 @@ class TestGroupAverage:
         assert result.ts.attrs == expected.ts.attrs
 
     @requires_dask
-    def test_weighted_annual_avg_with_chunking(self):
+    def test_weighted_annual_averages_with_chunking(self):
         ds = self.ds.copy().chunk({"time": 2})
 
         result = ds.temporal.group_average("ts", "year")
@@ -284,7 +284,7 @@ class TestGroupAverage:
         xr.testing.assert_allclose(result, expected)
         assert result.ts.attrs == expected.ts.attrs
 
-    def test_weighted_seasonal_avg_with_DJF(self):
+    def test_weighted_seasonal_averages_with_DJF_and_drop_incomplete_seasons(self):
         ds = self.ds.copy()
 
         result = ds.temporal.group_average(
@@ -335,7 +335,7 @@ class TestGroupAverage:
 
         assert result.identical(expected)
 
-    def test_weighted_seasonal_avg_with_DJF_without_dropping_incomplete_seasons(
+    def test_weighted_seasonal_averages_with_DJF_without_dropping_incomplete_seasons(
         self,
     ):
         ds = self.ds.copy()
@@ -387,7 +387,7 @@ class TestGroupAverage:
 
         assert result.identical(expected)
 
-    def test_weighted_seasonal_avg_with_JFD(self):
+    def test_weighted_seasonal_averages_with_JFD(self):
         ds = self.ds.copy()
 
         result = ds.temporal.group_average(
@@ -448,7 +448,7 @@ class TestGroupAverage:
 
         assert result.identical(expected)
 
-    def test_weighted_custom_season_avg(self):
+    def test_weighted_custom_seasonal_averages(self):
         ds = self.ds.copy()
 
         custom_seasons = [
@@ -550,7 +550,7 @@ class TestGroupAverage:
                 season_config={"custom_seasons": custom_seasons},
             )
 
-    def test_weighted_monthly_avg(self):
+    def test_weighted_monthly_averages(self):
         ds = self.ds.copy()
 
         result = ds.temporal.group_average("ts", "month")
@@ -594,7 +594,7 @@ class TestGroupAverage:
 
         assert result.identical(expected)
 
-    def test_weighted_daily_avg(self):
+    def test_weighted_daily_averages(self):
         ds = self.ds.copy()
 
         result = ds.temporal.group_average("ts", "day")
@@ -717,7 +717,7 @@ class TestGroupAverage:
 
         assert result.identical(expected)
 
-    def test_weighted_hourly_avg(self):
+    def test_weighted_hourly_averages(self):
         ds = self.ds.copy()
         ds.coords["time"].attrs["bounds"] = "time_bnds"
 
