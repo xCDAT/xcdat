@@ -28,7 +28,6 @@ class XESMFRegridder(BaseRegridder):
         extrap_method: str = None,
         extrap_dist_exponent: float = None,
         extrap_num_src_pnts: int = None,
-        **options,
     ):
         """
         Wrapper class for xESMF regridder class.
@@ -92,7 +91,7 @@ class XESMFRegridder(BaseRegridder):
 
         >>> data_new_grid = regridder.horizontal("ts", ds, periodic=True)
         """
-        super().__init__(input_grid, output_grid, **options)
+        super().__init__(input_grid, output_grid)
 
         if method not in VALID_METHODS:
             raise ValueError(
@@ -104,15 +103,12 @@ class XESMFRegridder(BaseRegridder):
                 f"{extrap_method!r} is not valid, possible options: {', '.join(VALID_EXTRAP_METHODS)}"
             )
 
-        self._regridder = xe.Regridder(
-            self._input_grid,
-            self._output_grid,
-            method,
-            periodic=periodic,
-            extrap_method=extrap_method,
-            extrap_dist_exponent=extrap_dist_exponent,
-            extrap_num_src_pnts=extrap_num_src_pnts,
-        )
+        self._method = method
+        self._periodic = periodic
+        self._extrap_method = extrap_method
+        self._extrap_dist_exponent = extrap_dist_exponent
+        self._extrap_num_src_pnts = extrap_num_src_pnts
+        self._regridder: xe.XESMFRegridder = None
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """
@@ -161,32 +157,37 @@ class XESMFRegridder(BaseRegridder):
 
         >>> data_new_grid = regridder.horizontal("ts", ds)
         """
-        input_data_var = ds.get(data_var, None)
+        input_da = ds.get(data_var, None)
 
-        if input_data_var is None:
+        if input_da is None:
             raise KeyError(
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        output_da = self._regridder(input_data_var, keep_attrs=True)
+        if self._regridder is None:
+            self._regridder = xe.Regridder(
+                self._input_grid,
+                self._output_grid,
+                method=self._method,
+                periodic=self._periodic,
+                extrap_method=self._extrap_method,
+                extrap_dist_exponent=self._extrap_dist_exponent,
+                extrap_num_src_pnts=self._extrap_num_src_pnts,
+            )
 
-        data_vars = {}
+        output_da = self._regridder(input_da, keep_attrs=True)
 
-        for axes, variable_names in output_da.cf.axes.items():
-            variable_name = variable_names[0]
+        output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
 
-            try:
-                if axes in ("X", "Y"):
-                    bounds = self._output_grid.bounds.get_bounds(variable_name)
-                else:
-                    bounds = ds.bounds.get_bounds(variable_name)
-            except KeyError:
-                logger.debug(f"Could not find bounds for {axes!r}")
+        for dim_name, var_names in ds.cf.axes.items():
+            if dim_name in ("X", "Y"):
+                output_ds = output_ds.bounds.add_bounds(var_names[0])
             else:
-                data_vars[bounds.name] = bounds.copy()
-
-        data_vars[data_var] = output_da
-
-        output_ds = xr.Dataset(data_vars)
+                try:
+                    dim_bounds = ds.cf.get_bounds(dim_name)
+                except KeyError:
+                    output_ds = output_ds.bounds.add_bounds(var_names[0])
+                else:
+                    output_ds[dim_bounds.name] = dim_bounds
 
         return output_ds

@@ -361,11 +361,11 @@ class TestRegrid2Regridder:
         assert north[0], north[-1] == (60, 90)
 
 
-# TODO improve testing
 class TestXESMFRegridder:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = fixtures.generate_dataset(True, True)
+        self.ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+
         self.new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
     def test_regrid(self):
@@ -374,8 +374,6 @@ class TestXESMFRegridder:
         regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear")
 
         output = regridder.horizontal("ts", ds)
-
-        assert isinstance(output, xr.Dataset)
 
         assert output.ts.shape == (15, 45, 72)
 
@@ -400,6 +398,17 @@ class TestXESMFRegridder:
             xesmf.XESMFRegridder(
                 ds, self.new_grid, "bilinear", extrap_method="bad value"
             )
+
+    def test_output_bounds(self):
+        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=False)
+
+        regridder = xesmf.XESMFRegridder(ds, self.new_grid, method="bilinear")
+
+        output = regridder.horizontal("ts", ds)
+
+        assert "lat_bnds" in output
+        assert "lon_bnds" in output
+        assert "time_bnds" in output
 
 
 class TestGrid:
