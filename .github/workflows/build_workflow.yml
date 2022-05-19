@@ -86,8 +86,6 @@ jobs:
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
               name: Install xcdat
               run: |
-                  conda install -y -c conda-forge esmpy
-
                   python -m pip install .
 
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
