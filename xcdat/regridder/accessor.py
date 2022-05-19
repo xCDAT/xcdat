@@ -23,7 +23,7 @@ class RegridderAccessor:
 
     Import RegridderAccessor class:
 
-    >>> import xcdat  # or from xcdat.regridder import accessor
+    >>> import xcdat  # or from xcdat import regridder
 
     Use RegridderAccessor class:
 
