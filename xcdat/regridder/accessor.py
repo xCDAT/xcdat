@@ -129,14 +129,6 @@ class RegridderAccessor:
         Examples
         --------
 
-        Import xCDAT:
-
-        >>> import xcdat
-
-        Open dataset:
-
-        >>> ds = xcdat.open_dataset("ts.nc")
-
         Generate output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
@@ -184,15 +176,6 @@ class RegridderAccessor:
 
         Examples
         --------
-
-        Import xCDAT:
-
-        >>> import xcdat
-
-        Open dataset:
-
-        >>> ds = xcdat.open_dataset("ts.nc")
-
         Generate output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
@@ -213,7 +196,8 @@ class RegridderAccessor:
         **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
-        Apply horizontal regridding to ``data_var`` of the current ``xr.Dataset`` to ``output_grid``.
+        Apply horizontal regridding to ``data_var`` of the current 
+        ``xr.Dataset`` to ``output_grid``.
 
         Supported tools:
 
@@ -248,13 +232,6 @@ class RegridderAccessor:
 
         Examples
         --------
-        Import xCDAT:
-
-        >>> import xcdat
-
-        Open a dataset:
-
-        >>> ds = xcdat.open_dataset("ts.nc")
 
         Create destination grid:
 

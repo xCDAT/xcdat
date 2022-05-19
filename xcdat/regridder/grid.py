@@ -105,7 +105,6 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
 
     return grid
 
-
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
     """Create Gaussian axis.
 
@@ -167,9 +166,8 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
 
 
 def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
-    """Gaussian axis.
-
-    Calculates the bounds and weights for a Guassian axis.
+    """Calculates the bounds and weights for a Guassian axis.
+    
 
     Math is based on CDAT implementation in regrid2 module.
 
@@ -186,7 +184,7 @@ def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
-        First `np.ndarray` contains the angels of the bounds and the second contains the weights.
+        First `np.ndarray` contains the angles of the bounds and the second contains the weights.
     """
     points = _bessel_function_zeros(mid + 1)
 
@@ -321,7 +319,7 @@ def create_uniform_axis(
     start : float
         Starting latitude point.
     stop : float
-        Stoping latitude point.
+        Stopping latitude point.
     delta : float
         Distance between points.
     name : str
@@ -348,8 +346,8 @@ def create_uniform_grid(
     lon_delta: float,
 ) -> xr.Dataset:
     """
-    Creates a uniform rectilinear grid. Sets appropriate attributes
-    for lat/lon axis.
+    Creates a uniform rectilinear grid and sets appropriate 
+    the attributes for the lat/lon axis.
 
     Parameters
     ----------
@@ -402,8 +400,7 @@ def create_uniform_grid(
 
 
 def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
-    """
-    Creates a global mean grid.
+    """Creates a global mean grid.
 
     Parameters
     ----------
@@ -470,8 +467,7 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
 
 
 def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
-    """
-    Creates a zonal grid.
+    """Creates a zonal grid.
 
     Parameters
     ----------

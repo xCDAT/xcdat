@@ -65,8 +65,7 @@ class Regrid2Regridder(BaseRegridder):
         self._lon_weights: Any = None
 
     def _base_put_indexes(self, axis_sizes: Dict[str, int]) -> np.ndarray:
-        """
-        Calculates the base indexes to place cell (0, 0).
+        """Calculates the base indexes to place cell (0, 0).
 
         Example:
         For a 3D array (time, lat, lon) with the shape (2, 2, 2) the offsets to
@@ -96,8 +95,7 @@ class Regrid2Regridder(BaseRegridder):
         return (np.arange(number_of_offsets) * offset).astype(np.int64)
 
     def _output_axis_sizes(self, da: xr.DataArray) -> Dict[str, int]:
-        """
-        Maps axes to output array sizes.
+        """Maps axes to output array sizes.
 
         Parameters
         ----------
@@ -129,8 +127,7 @@ class Regrid2Regridder(BaseRegridder):
         axis_sizes: Dict[str, int],
         ordered_axis_names: List[str],
     ) -> np.ndarray:
-        """
-        Applies regridding to input data.
+        """Applies regridding to input data.
 
         Parameters
         ----------
@@ -139,7 +136,7 @@ class Regrid2Regridder(BaseRegridder):
         axis_sizes : Dict[str, int]
             Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
         ordered_axis_names : List[str]
-            List of axis name in order of dimenions of ``input_data``.
+            List of axis name in order of dimensions of ``input_data``.
 
         Returns
         -------
@@ -244,8 +241,7 @@ class Regrid2Regridder(BaseRegridder):
         return xr.Dataset(data_vars)
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """
-        Regrid ``data_var`` in ``ds`` to output grid.
+        """Regrid ``data_var`` in ``ds`` to output grid.
 
         Mappings and weights between input and output grid are calculated
         on the first call, allowing a regridder to be applied to many input
@@ -268,19 +264,8 @@ class Regrid2Regridder(BaseRegridder):
         KeyError
             If data variable does not exist in the Dataset.
 
-        Notes
-        -----
-
         Examples
         --------
-        Import xCDAT:
-
-        >>> import xcdat
-        >>> from xcdat.regridder import regrid2
-
-        Open a dataset:
-
-        >>> ds = xcdat.open_dataset("ts.nc")
 
         Create output grid:
 
