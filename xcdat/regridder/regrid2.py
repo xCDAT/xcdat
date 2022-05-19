@@ -308,7 +308,7 @@ class Regrid2Regridder(BaseRegridder):
             )
 
         if self._lon_mapping is None and self._lon_weights is None:
-            self._lon_mapping, self._lon_weights = map_longitude(
+            self._lon_mapping, self._lon_weights = _map_longitude(
                 self._src_lon, self._dst_lon
             )
 
@@ -411,7 +411,9 @@ def _map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
     src_west, src_east = _extract_bounds(src)
     dst_west, dst_east = _extract_bounds(dst)
 
-    shifted_src_west, shifted_src_east, shift = _align_axis(src_west, src_east, dst_west)
+    shifted_src_west, shifted_src_east, shift = _align_axis(
+        src_west, src_east, dst_west
+    )
 
     mapping = []
     weights = []

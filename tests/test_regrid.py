@@ -154,11 +154,11 @@ class TestRegrid2Regridder:
 
         dst = gen_uniform_axis(-0.5, 360, 60, "lon", "X")
 
-        src_west, src_east = regrid2.extract_bounds(src)
+        src_west, src_east = regrid2._extract_bounds(src)
 
-        dst_west, _ = regrid2.extract_bounds(dst)
+        dst_west, _ = regrid2._extract_bounds(dst)
 
-        shifted_west, shifted_east, shift = regrid2.align_axis(
+        shifted_west, shifted_east, shift = regrid2._align_axis(
             src_west, src_east, dst_west
         )
 
@@ -166,9 +166,9 @@ class TestRegrid2Regridder:
 
         src_neg = xr.DataArray(np.roll(src, -2))
 
-        src_neg_west, src_neg_east = regrid2.extract_bounds(src_neg)
+        src_neg_west, src_neg_east = regrid2._extract_bounds(src_neg)
 
-        shifted_west, shifted_east, shift = regrid2.align_axis(
+        shifted_west, shifted_east, shift = regrid2._align_axis(
             src_neg_west, src_neg_east, dst_west
         )
 
@@ -176,9 +176,9 @@ class TestRegrid2Regridder:
 
         src_180 = gen_uniform_axis(-180, 180, 30, "lon", "X")
 
-        src_180_west, src_180_east = regrid2.extract_bounds(src_180)
+        src_180_west, src_180_east = regrid2._extract_bounds(src_180)
 
-        shifted_west, shifted_east, shift = regrid2.align_axis(
+        shifted_west, shifted_east, shift = regrid2._align_axis(
             src_180_west, src_180_east, dst_west
         )
 
@@ -270,7 +270,7 @@ class TestRegrid2Regridder:
         assert np.all(output_data.ts == 1)
 
     def test_map_longitude_coarse_to_fine(self):
-        mapping, weights = regrid2.map_longitude(
+        mapping, weights = regrid2._map_longitude(
             self.coarse_lon_bnds, self.fine_lon_bnds
         )
 
@@ -292,7 +292,7 @@ class TestRegrid2Regridder:
         np.testing.assert_allclose(weights, expected_weigths)
 
     def test_map_longitude_fine_to_coarse(self):
-        mapping, weights = regrid2.map_longitude(
+        mapping, weights = regrid2._map_longitude(
             self.fine_lon_bnds, self.coarse_lon_bnds
         )
 
@@ -307,7 +307,7 @@ class TestRegrid2Regridder:
         np.testing.assert_allclose(weights, expected_weigths)
 
     def test_map_latitude_coarse_to_fine(self):
-        mapping, weights = regrid2.map_latitude(
+        mapping, weights = regrid2._map_latitude(
             self.coarse_lat_bnds, self.fine_lat_bnds
         )
 
@@ -336,7 +336,7 @@ class TestRegrid2Regridder:
             np.testing.assert_allclose(x, y)
 
     def test_map_latitude_fine_to_coarse(self):
-        mapping, weights = regrid2.map_latitude(
+        mapping, weights = regrid2._map_latitude(
             self.fine_lat_bnds, self.coarse_lat_bnds
         )
 
@@ -356,7 +356,7 @@ class TestRegrid2Regridder:
         np.testing.assert_allclose(weights, expected_weigths)
 
     def test_extract_bounds(self):
-        south, north = regrid2.extract_bounds(self.coarse_lat_bnds)
+        south, north = regrid2._extract_bounds(self.coarse_lat_bnds)
 
         assert south.shape == (3,)
         assert south[0], south[-1] == (-90, 60)
@@ -365,7 +365,7 @@ class TestRegrid2Regridder:
         assert north[0], north[-1] == (60, 90)
 
     def test_reversed_extract_bounds(self):
-        south, north = regrid2.extract_bounds(self.reversed_lat_bnds)
+        south, north = regrid2._extract_bounds(self.reversed_lat_bnds)
 
         assert south.shape == (3,)
         assert south[0], south[-1] == (-90, 60)
