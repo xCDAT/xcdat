@@ -105,6 +105,7 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
 
     return grid
 
+
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
     """Create Gaussian axis.
 
@@ -167,7 +168,7 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
 
 def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
     """Calculates the bounds and weights for a Guassian axis.
-    
+
 
     Math is based on CDAT implementation in regrid2 module.
 
@@ -346,7 +347,7 @@ def create_uniform_grid(
     lon_delta: float,
 ) -> xr.Dataset:
     """
-    Creates a uniform rectilinear grid and sets appropriate 
+    Creates a uniform rectilinear grid and sets appropriate
     the attributes for the lat/lon axis.
 
     Parameters

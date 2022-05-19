@@ -53,10 +53,10 @@ class XESMFRegridder(BaseRegridder):
                - inverse_dist
                - nearest_s2d
         extrap_dist_exponent : float
-            The exponent to raise the distance to when calculating weights for 
+            The exponent to raise the distance to when calculating weights for
             the extrapolation method.
         extrap_num_src_pnts : int
-            The number of source points to use for the extrapolation methods 
+            The number of source points to use for the extrapolation methods
             that use more than one source point.
 
         Raises

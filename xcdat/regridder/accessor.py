@@ -196,7 +196,7 @@ class RegridderAccessor:
         **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
-        Apply horizontal regridding to ``data_var`` of the current 
+        Apply horizontal regridding to ``data_var`` of the current
         ``xr.Dataset`` to ``output_grid``.
 
         Supported tools:
