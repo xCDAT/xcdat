@@ -1468,7 +1468,7 @@ class TemporalAccessor:
         """
         data_var.attrs.update(
             {
-                "operation": "temporal average",
+                "operation": "temporal_avg",
                 "mode": self._mode,
                 "freq": self._freq,
                 "weighted": str(self._weighted),
