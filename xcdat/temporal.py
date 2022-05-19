@@ -34,7 +34,6 @@ DateTimeComponent = Literal["year", "season", "month", "day", "hour"]
 TIME_GROUPS: Dict[Mode, Dict[Frequency, Tuple[DateTimeComponent, ...]]] = {
     "average": {
         "year": ("year",),
-        "season": ("season",),
         "month": ("month",),
         "day": ("day",),
         "hour": ("hour",),
@@ -161,89 +160,43 @@ class TemporalAccessor:
     def average(
         self,
         data_var: str,
-        freq: Frequency,
+        weighted: bool = True,
         center_times: bool = False,
-        season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """
-        Returns a Dataset with the time weighted average of a data variable
-        and the time dimension removed.
+        Returns a Dataset with the average of a data variable and the time
+        dimension removed.
 
-        This method is particularly useful for monthly or yearly time series
-        data since the number of days per month can vary based on the calendar
-        type, which can affect weighting. For unweighted time averages or other
-        frequencies, call xarray's native ``.mean()`` method on the data
-        variable instead.
-
-        Weights are calculated by first determining the length of time for
-        each coordinate point using the difference of its upper and lower
-        bounds. The time lengths are grouped, then each time length is
-        divided by the total sum of the time lengths to get the weight of
-        each coordinate point.
+        This method is particularly useful for calculating the weighted averages
+        of monthly or yearly time series data because the number of days per
+        month/year can vary based on the calendar type, which can affect
+        weighting. For unweighted time averages or other frequencies, you can
+        set ``weighted=False``.
 
         Parameters
         ----------
         data_var: str
             The key of the data variable for calculating averages
-        freq : Frequency
-            The time frequency for calculating weights.
 
-            * "year": weights by year
-            * "season": weights by season
-            * "month": weights by month
-            * "day": weights by day
-            * "hour": weights by hour
+        weighted : bool, optional
+            Calculate averages using weights, by default True.
+
+            Weights are calculated by first determining the length of time for
+            each coordinate point using the difference of its upper and lower
+            bounds. The time lengths are grouped, then each time length is
+            divided by the total sum of the time lengths to get the weight of
+            each coordinate point.
 
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time
             coordinates by default False.
 
-        season_config: SeasonConfigInput, optional
-            A dictionary for "season" frequency configurations. If configs for
-            predefined seasons are passed, configs for custom seasons are
-            ignored and vice versa.
-
-            Configs for predefined seasons:
-
-            * "dec_mode" (Literal["DJF", "JFD"], by default "DJF")
-                The mode for the season that includes December.
-
-                * "DJF": season includes the previous year December.
-                * "JFD": season includes the same year December.
-                    Xarray labels the season with December as "DJF", but it is
-                    actually "JFD".
-
-            * "drop_incomplete_djf" (bool, by default False)
-                If the "dec_mode" is "DJF", this flag drops (True) or keeps
-                (False) time coordinates that fall under incomplete DJF seasons
-                Incomplete DJF seasons include the start year Jan/Feb and the
-                end year Dec.
-
-            Configs for custom seasons:
-
-            * "custom_seasons" ([List[List[str]]], by default None)
-                List of sublists containing month strings, with each sublist
-                representing a custom season.
-
-                * Month strings must be in the three letter format (e.g., 'Jan')
-                * Each month must be included once in a custom season
-                * Order of the months in each custom season does not matter
-                * Custom seasons can vary in length
-
-                >>> # Example of custom seasons in a three month format:
-                >>> custom_seasons = [
-                >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
-                >>>     ["Apr", "May", "Jun"],  # "AprMayJun"
-                >>>     ["Jul", "Aug", "Sep"],  # "JunJulAug"
-                >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
-                >>> ]
-
         Returns
         -------
         xr.Dataset
-            Dataset with the time weighted average of the data variable and the
-            time dimension removed.
+            Dataset with the average of the data variable and the time dimension
+            removed.
 
         Examples
         --------
@@ -253,9 +206,37 @@ class TemporalAccessor:
         >>> ds_month = ds.temporal.average("ts", freq="month", center_times=False)
         >>> ds_month.ts
         """
-        return self._averager(
-            data_var, "average", freq, True, center_times, season_config
-        )
+        freq = self._infer_freq()
+
+        return self._averager(data_var, "average", freq, weighted, center_times)
+
+    def _infer_freq(self) -> Frequency:
+        """Infers the time frequency from the coordinates.
+
+        This method infers the time frequency from the coordinates by
+        calculating the minimum delta and comparing it against a set of
+        conditionals.
+
+        The native ``xr.infer_freq()`` method does not work for all cases
+        because the frequency can be irregular (e.g., different hour
+        measurements), which ends up returning None.
+
+        Returns
+        -------
+        Frequency
+            The time frequency.
+        """
+        time_coords = self._dataset[self._dim_name]
+        min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
+
+        if min_delta < pd.Timedelta(days=1):
+            return "hour"
+        elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=28):
+            return "day"
+        elif min_delta >= pd.Timedelta(days=28) and min_delta < pd.Timedelta(days=365):
+            return "month"
+        else:
+            return "year"
 
     def group_average(
         self,
@@ -977,8 +958,13 @@ class TemporalAccessor:
         dv = data_var.copy()
 
         with xr.set_options(keep_attrs=True):
-            self._weights = self._get_weights()
-            dv = dv.weighted(self._weights).mean(dim=self._dim_name)
+            if self._weighted:
+                self._weights = self._get_weights()
+                dv = dv.weighted(self._weights).mean(dim=self._dim_name)
+            else:
+                dv = dv.mean(dim=self._dim_name)
+
+        dv = self._add_operation_attrs(dv)
 
         return dv
 
@@ -1397,9 +1383,6 @@ class TemporalAccessor:
         ----------
         .. [5] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
-        # FIXME: This takes awhile ~1.5-2.2 seconds, not sure if there is a way
-        # around this because this is a vectorized operation already (to my
-        # knowledge)
         with xr.set_options(keep_attrs=True):
             time_lengths: xr.DataArray = (
                 self._time_bounds[:, 1] - self._time_bounds[:, 0]
@@ -1485,7 +1468,7 @@ class TemporalAccessor:
         """
         data_var.attrs.update(
             {
-                "operation": "temporal_avg",
+                "operation": "temporal average",
                 "mode": self._mode,
                 "freq": self._freq,
                 "weighted": str(self._weighted),
