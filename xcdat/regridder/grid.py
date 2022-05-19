@@ -62,9 +62,8 @@ ESTIMATE_CONST = 0.25 * (1.0 - np.power(2.0 / np.pi, 2))
 
 
 def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, float]:
-    """Legendre_polynomials.
+    """Calculates the third legendre polynomial.
 
-    Calculates the third legendre polynomial.
 
     Math is based on CDAT implementation in regrid2 module.
 
@@ -113,9 +112,8 @@ def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, fl
 
 
 def _bessel_function_zeros(n: int) -> np.ndarray:
-    """Zeros of Bessel function.
+    """Calculates `n` zeros of the Bessel function.
 
-    Calculates `n` zeros of the Bessel function.
 
     Math is based on CDAT implementation in regrid2 module.
 
@@ -149,9 +147,8 @@ def _bessel_function_zeros(n: int) -> np.ndarray:
 
 
 def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
-    """Gaussian axis.
-
-    Calculates the bounds and weights for a Guassian axis.
+    """Calculates the bounds and weights for a Guassian axis.
+    
 
     Math is based on CDAT implementation in regrid2 module.
 
@@ -168,7 +165,7 @@ def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
-        First `np.ndarray` contains the angels of the bounds and the second contains the weights.
+        First `np.ndarray` contains the angles of the bounds and the second contains the weights.
     """
     points = _bessel_function_zeros(mid + 1)
 
@@ -207,10 +204,7 @@ def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
-    """Create Gaussian axis.
-
-    Creates a Gaussian axis of `nlats`.
-
+    """Creates a Gaussian axis of `nlats`.
     Parameters
     ----------
     nlats : int
@@ -218,11 +212,8 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
 
     Returns
     -------
-    xr.DataArray
-        Containing the latitude bounds.
-
-    xr.DataArray
-        Containing the latitude axis.
+    Tuple[xr.DataArray, xr.DataArray]
+        Tuple containing the latitude bounds and axis.
     """
     mid = int(np.floor(nlats / 2))
 
@@ -320,7 +311,7 @@ def create_uniform_axis(
     start : float
         Starting latitude point.
     stop : float
-        Stoping latitude point.
+        Stopping latitude point.
     delta : float
         Distance between points.
     name : str
@@ -347,8 +338,8 @@ def create_uniform_grid(
     lon_delta: float,
 ) -> xr.Dataset:
     """
-    Creates a uniform rectilinear grid. Sets appropriate attributes
-    for lat/lon axis.
+    Creates a uniform rectilinear grid and sets appropriate 
+    the attributes for the lat/lon axis.
 
     Parameters
     ----------
@@ -401,8 +392,7 @@ def create_uniform_grid(
 
 
 def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
-    """
-    Creates a global mean grid.
+    """Creates a global mean grid.
 
     Parameters
     ----------
@@ -469,8 +459,7 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
 
 
 def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
-    """
-    Creates a zonal grid.
+    """Creates a zonal grid.
 
     Parameters
     ----------

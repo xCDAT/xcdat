@@ -30,10 +30,8 @@ class XESMFRegridder(BaseRegridder):
         extrap_num_src_pnts: int = None,
         **options,
     ):
-        """
-        Wrapper class for xESMF regridder class.
+        """Wrapper class for xESMF regridder class.
 
-        Available options: ``method``, ``periodic``, ``extrap_method``, ``extrap_dist_exponent``, ``extrap_num_src_pnts``
 
         Parameters
         ----------
@@ -56,9 +54,11 @@ class XESMFRegridder(BaseRegridder):
                - inverse_dist
                - nearest_s2d
         extrap_dist_exponent : float
-            The exponent to raise the distance to when calculating weights for the extrapolation method.
+            The exponent to raise the distance to when calculating weights for 
+            the extrapolation method.
         extrap_num_src_pnts : int
-            The number of source points to use for the extrapolation methods that use more than one source point.
+            The number of source points to use for the extrapolation methods 
+            that use more than one source point.
 
         Raises
         ------
@@ -115,8 +115,7 @@ class XESMFRegridder(BaseRegridder):
         )
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """
-        Regrid ``data_var`` in ``ds`` to output grid.
+        """Regrid ``data_var`` in ``ds`` to output grid.
 
         Parameters
         ----------
@@ -135,19 +134,8 @@ class XESMFRegridder(BaseRegridder):
         KeyError
             If data variable does not exist in the Dataset.
 
-        Notes
-        -----
-
         Examples
         --------
-        Import xCDAT:
-
-        >>> import xcdat
-        >>> from xcdat.regridder import xesmf
-
-        Open a dataset:
-
-        >>> ds = xcdat.open_dataset("ts.nc")
 
         Create output grid:
 
