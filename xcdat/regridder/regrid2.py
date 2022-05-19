@@ -6,212 +6,6 @@ import xarray as xr
 from xcdat.regridder.base import BaseRegridder
 
 
-def extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
-    """
-     Extract lower and upper bounds from an axis.
-
-     Parameters
-     ----------
-     bounds : xr.DataArray
-         Dataset containing axis with bounds.
-
-     Returns
-     -------
-    Tuple[xr.DataArray, xr.DataArray]
-         A tuple containing the lower and upper bounds for the axis.
-    """
-    if bounds[0, 0] < bounds[0, 1]:
-        lower = bounds[:, 0]
-        upper = bounds[:, 1]
-    else:
-        lower = bounds[:, 1]
-        upper = bounds[:, 0]
-
-    return lower, upper
-
-
-def map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    """
-    Map source to destination latitude.
-
-    Parameters
-    ----------
-    src : xr.DataArray
-        DataArray containing the source latitude bounds.
-    dst : xr.DataArray
-        DataArray containing the destination latitude bounds.
-
-    Returns
-    -------
-    Tuple[List, List]
-        A tuple of cell mappings and cell weights.
-    """
-    src_south, src_north = extract_bounds(src)
-    dst_south, dst_north = extract_bounds(dst)
-
-    mapping = []
-    weights = []
-
-    for i in range(dst.shape[0]):
-        contrib = np.where(
-            np.logical_and(src_south < dst_north[i], src_north > dst_south[i])
-        )[0]
-
-        mapping.append(contrib)
-
-        north_bounds = np.minimum(dst_north[i], src_north[contrib])
-        south_bounds = np.maximum(dst_south[i], src_south[contrib])
-
-        weight = np.sin(np.deg2rad(north_bounds)) - np.sin(np.deg2rad(south_bounds))
-
-        weights.append(weight.values.reshape(contrib.shape[0], 1))
-
-    return mapping, weights
-
-
-def pertub(value):
-    """
-    Pertub a value.
-
-    Parameters
-    ----------
-    value :
-        Value to pertub.
-    """
-    if value >= 0.0:
-        offset = np.ceil(value + 0.000001)
-    else:
-        offset = np.floor(value - 0.000001) + 1.0
-
-    return offset
-
-
-# vectorize version of pertub
-vpertub = np.vectorize(pertub)
-
-
-def align_axis(
-    src_west: xr.DataArray, src_east: xr.DataArray, dst_west: xr.DataArray
-) -> Tuple[xr.DataArray, xr.DataArray, int]:
-    """
-    Aligns a longitudinal source axis to the destination axis.
-
-    Parameters
-    ----------
-    src_west : xr.DataArray
-        DataArray containing the western source bounds.
-    src_east : xr.DataArray
-        DataArray containing the eastern source bounds.
-    dst_west : xr.DataArray
-        DataArray containing the western destination bounds.
-
-    Returns
-    -------
-    Tuple[xr.DataArray, xr.DataArray, int]
-        A tuple containing the shifted western source bounds, the shifted eastern
-        source bounds, and the number of places shifted to align axis.
-    """
-    west_most = np.minimum(dst_west[0], dst_west[-1])
-
-    alignment_index = pertub((west_most - src_west[-1]) / 360.0).values
-
-    if src_west[0] < src_west[-1]:
-        alignment_index += 1
-    else:
-        alignment_index -= 1
-
-    src_alignment_index = np.where(
-        vpertub((west_most - src_west) / 360.0) != alignment_index
-    )[0][0]
-
-    if src_west[0] < src_west[-1]:
-        if west_most == src_west[src_alignment_index]:
-            shift = src_alignment_index
-        else:
-            shift = src_alignment_index - 1
-
-            if shift < 0:
-                shift = src_west.shape[0] - 1
-    else:
-        shift = src_alignment_index
-
-    src_length = src_west.shape[0]
-
-    shifted_indexes = np.arange(src_length + 1) + shift
-
-    wrapped = np.where(shifted_indexes > src_length - 1)
-
-    shifted_indexes[wrapped] -= src_length
-
-    shifted_src_west = src_west[shifted_indexes] + 360.0 * vpertub(
-        (west_most - src_west[shifted_indexes]) / 360.0
-    )
-
-    shifted_src_east = src_east[shifted_indexes] + 360.0 * vpertub(
-        (west_most - src_west[shifted_indexes]) / 360.0
-    )
-
-    if src_west[-1] > src_west[0]:
-        if shifted_src_west[0] > west_most:
-            shifted_src_west[0] += -360.0
-            shifted_src_east[0] += -360.0
-    else:
-        if shifted_src_west[-1] > west_most:
-            shifted_src_west[-1] += -360.0
-            shifted_src_east[-1] += -360.0
-
-    return shifted_src_west, shifted_src_east, shift
-
-
-def map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
-    """
-    Map source to destination longitude.
-
-    Parameters
-    ----------
-    src : xr.DataArray
-        DataArray containing source longitude bounds.
-    dst : xr.DataArray
-        DataArray containing destination longitude bounds.
-
-    Returns
-    -------
-    Tuple[List, List]
-        A tuple of cell mappings and cell weights.
-    """
-    src_west, src_east = extract_bounds(src)
-    dst_west, dst_east = extract_bounds(dst)
-
-    shifted_src_west, shifted_src_east, shift = align_axis(src_west, src_east, dst_west)
-
-    mapping = []
-    weights = []
-    src_length = src_west.shape[0]
-
-    for i in range(dst_west.shape[0]):
-        contrib = np.where(
-            np.logical_and(
-                shifted_src_west < dst_east[i], shifted_src_east > dst_west[i]
-            )
-        )[0]
-
-        weight = np.minimum(dst_east[i], shifted_src_east[contrib]) - np.maximum(
-            dst_west[i], shifted_src_west[contrib]
-        )
-
-        weights.append(weight.values.reshape(1, contrib.shape[0]))
-
-        contrib += shift
-
-        wrapped = np.where(contrib > src_length - 1)
-
-        contrib[wrapped] -= src_length
-
-        mapping.append(contrib)
-
-    return mapping, weights
-
-
 class Regrid2Regridder(BaseRegridder):
     def __init__(
         self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Dict[str, Any]
@@ -509,7 +303,7 @@ class Regrid2Regridder(BaseRegridder):
 
         # Do initial mapping between src/dst latitude and longitude.
         if self._lat_mapping is None and self._lat_weights is None:
-            self._lat_mapping, self._lat_weights = map_latitude(
+            self._lat_mapping, self._lat_weights = _map_latitude(
                 self._src_lat, self._dst_lat
             )
 
@@ -557,3 +351,209 @@ class Regrid2Regridder(BaseRegridder):
                 output_ds[dim_bounds.name] = dim_bounds
 
         return output_ds
+
+
+def _map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
+    """
+    Map source to destination latitude.
+
+    Parameters
+    ----------
+    src : xr.DataArray
+        DataArray containing the source latitude bounds.
+    dst : xr.DataArray
+        DataArray containing the destination latitude bounds.
+
+    Returns
+    -------
+    Tuple[List, List]
+        A tuple of cell mappings and cell weights.
+    """
+    src_south, src_north = _extract_bounds(src)
+    dst_south, dst_north = _extract_bounds(dst)
+
+    mapping = []
+    weights = []
+
+    for i in range(dst.shape[0]):
+        contrib = np.where(
+            np.logical_and(src_south < dst_north[i], src_north > dst_south[i])
+        )[0]
+
+        mapping.append(contrib)
+
+        north_bounds = np.minimum(dst_north[i], src_north[contrib])
+        south_bounds = np.maximum(dst_south[i], src_south[contrib])
+
+        weight = np.sin(np.deg2rad(north_bounds)) - np.sin(np.deg2rad(south_bounds))
+
+        weights.append(weight.values.reshape(contrib.shape[0], 1))
+
+    return mapping, weights
+
+
+def _map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
+    """
+    Map source to destination longitude.
+
+    Parameters
+    ----------
+    src : xr.DataArray
+        DataArray containing source longitude bounds.
+    dst : xr.DataArray
+        DataArray containing destination longitude bounds.
+
+    Returns
+    -------
+    Tuple[List, List]
+        A tuple of cell mappings and cell weights.
+    """
+    src_west, src_east = _extract_bounds(src)
+    dst_west, dst_east = _extract_bounds(dst)
+
+    shifted_src_west, shifted_src_east, shift = _align_axis(src_west, src_east, dst_west)
+
+    mapping = []
+    weights = []
+    src_length = src_west.shape[0]
+
+    for i in range(dst_west.shape[0]):
+        contrib = np.where(
+            np.logical_and(
+                shifted_src_west < dst_east[i], shifted_src_east > dst_west[i]
+            )
+        )[0]
+
+        weight = np.minimum(dst_east[i], shifted_src_east[contrib]) - np.maximum(
+            dst_west[i], shifted_src_west[contrib]
+        )
+
+        weights.append(weight.values.reshape(1, contrib.shape[0]))
+
+        contrib += shift
+
+        wrapped = np.where(contrib > src_length - 1)
+
+        contrib[wrapped] -= src_length
+
+        mapping.append(contrib)
+
+    return mapping, weights
+
+
+def _extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
+    """
+     Extract lower and upper bounds from an axis.
+
+     Parameters
+     ----------
+     bounds : xr.DataArray
+         Dataset containing axis with bounds.
+
+     Returns
+     -------
+    Tuple[xr.DataArray, xr.DataArray]
+         A tuple containing the lower and upper bounds for the axis.
+    """
+    if bounds[0, 0] < bounds[0, 1]:
+        lower = bounds[:, 0]
+        upper = bounds[:, 1]
+    else:
+        lower = bounds[:, 1]
+        upper = bounds[:, 0]
+
+    return lower, upper
+
+
+def _align_axis(
+    src_west: xr.DataArray, src_east: xr.DataArray, dst_west: xr.DataArray
+) -> Tuple[xr.DataArray, xr.DataArray, int]:
+    """
+    Aligns a longitudinal source axis to the destination axis.
+
+    Parameters
+    ----------
+    src_west : xr.DataArray
+        DataArray containing the western source bounds.
+    src_east : xr.DataArray
+        DataArray containing the eastern source bounds.
+    dst_west : xr.DataArray
+        DataArray containing the western destination bounds.
+
+    Returns
+    -------
+    Tuple[xr.DataArray, xr.DataArray, int]
+        A tuple containing the shifted western source bounds, the shifted eastern
+        source bounds, and the number of places shifted to align axis.
+    """
+    west_most = np.minimum(dst_west[0], dst_west[-1])
+
+    alignment_index = _pertub((west_most - src_west[-1]) / 360.0).values
+
+    if src_west[0] < src_west[-1]:
+        alignment_index += 1
+    else:
+        alignment_index -= 1
+
+    src_alignment_index = np.where(
+        _vpertub((west_most - src_west) / 360.0) != alignment_index
+    )[0][0]
+
+    if src_west[0] < src_west[-1]:
+        if west_most == src_west[src_alignment_index]:
+            shift = src_alignment_index
+        else:
+            shift = src_alignment_index - 1
+
+            if shift < 0:
+                shift = src_west.shape[0] - 1
+    else:
+        shift = src_alignment_index
+
+    src_length = src_west.shape[0]
+
+    shifted_indexes = np.arange(src_length + 1) + shift
+
+    wrapped = np.where(shifted_indexes > src_length - 1)
+
+    shifted_indexes[wrapped] -= src_length
+
+    shifted_src_west = src_west[shifted_indexes] + 360.0 * _vpertub(
+        (west_most - src_west[shifted_indexes]) / 360.0
+    )
+
+    shifted_src_east = src_east[shifted_indexes] + 360.0 * _vpertub(
+        (west_most - src_west[shifted_indexes]) / 360.0
+    )
+
+    if src_west[-1] > src_west[0]:
+        if shifted_src_west[0] > west_most:
+            shifted_src_west[0] += -360.0
+            shifted_src_east[0] += -360.0
+    else:
+        if shifted_src_west[-1] > west_most:
+            shifted_src_west[-1] += -360.0
+            shifted_src_east[-1] += -360.0
+
+    return shifted_src_west, shifted_src_east, shift
+
+
+def _pertub(value):
+    """
+    Pertub a value.
+
+    Parameters
+    ----------
+    value :
+        Value to pertub.
+    """
+    if value >= 0.0:
+        offset = np.ceil(value + 0.000001)
+    else:
+        offset = np.floor(value - 0.000001) + 1.0
+
+    return offset
+
+
+# vectorize version of pertub
+_vpertub = np.vectorize(_pertub)

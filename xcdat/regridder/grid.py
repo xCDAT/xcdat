@@ -4,6 +4,7 @@ import numpy as np
 import xarray as xr
 
 # First 50 zeros for the bessel function
+# Taken from https://github.com/CDAT/cdms/blob/dd41a8dd3b5bac10a4bfdf6e56f6465e11efc51d/regrid2/Src/_regridmodule.c#L3390-L3402
 BESSEL_LOOKUP = [
     2.4048255577,
     5.5200781103,
@@ -61,149 +62,48 @@ EPS = 1e-14
 ESTIMATE_CONST = 0.25 * (1.0 - np.power(2.0 / np.pi, 2))
 
 
-def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, float]:
-    """Legendre_polynomials.
-
-    Calculates the third legendre polynomial.
-
-    Math is based on CDAT implementation in regrid2 module.
-
-    Related documents:
-        - https://en.wikipedia.org/wiki/Legendre_polynomials
-        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3291
+def create_gaussian_grid(nlats: int) -> xr.Dataset:
+    """
+    Creates a grid with Gaussian latitudes and uniform longitudes.
 
     Parameters
     ----------
-    bessel_zero : int
-        Bessel zero used to calculate the third legendre polynomial.
     nlats : int
-        Number of lats.
+        Number of latitudes.
 
     Returns
     -------
-    Tuple[float, float, float]
-        First, second and third legendre polynomial.
+    xr.Dataset
+        Dataset with new grid, containing Gaussian latitudes.
+
+    Examples
+    --------
+    Create grid with 32 latitudes:
+
+    >>> xcdat.regridder.grid.create_gaussian_grid(32)
     """
-    # TODO figure out why this is different compared to numpy.polynomial.legendre, is this wrong?
-    zero_poly = np.cos(bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST))
+    lat_bounds, lat_axis = _create_gaussian_axis(nlats)
 
-    for _ in range(10):
-        second_poly = 1.0
-        first_poly = zero_poly
+    lon_axis = create_uniform_axis(
+        0.0,
+        360.0,
+        (360.0 / (2.0 * nlats)),
+        "lon",
+        {"units": "degrees_east", "axis": "X"},
+    )
 
-        for y in range(2, nlats + 1):
-            new_poly = (
-                (2.0 * y - 1.0) * zero_poly * first_poly - (y - 1.0) * second_poly
-            ) / y
-            second_poly = first_poly
-            first_poly = new_poly
+    grid = xr.Dataset(
+        {
+            "lat": lat_axis,
+            "lon": lon_axis,
+        }
+    )
 
-        first_poly = second_poly
-        poly_change = (nlats * (first_poly - zero_poly * new_poly)) / (
-            1.0 - zero_poly * zero_poly
-        )
-        poly_slope = new_poly / poly_change
-        zero_poly -= poly_slope
-        abs_poly_change = np.fabs(poly_slope)
+    grid = grid.bounds.add_missing_bounds()
 
-        if abs_poly_change <= EPS:
-            break
+    grid["lat_bnds"] = lat_bounds
 
-    return zero_poly, first_poly, second_poly
-
-
-def _bessel_function_zeros(n: int) -> np.ndarray:
-    """Zeros of Bessel function.
-
-    Calculates `n` zeros of the Bessel function.
-
-    Math is based on CDAT implementation in regrid2 module.
-
-    Related documents:
-        - https://en.wikipedia.org/wiki/Bessel_function
-        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3387
-        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3251
-
-    Parameters
-    ----------
-    n : int
-        Number of zeros to calculate.
-
-    Returns
-    -------
-    np.ndarray
-        Array containing `n` zeros of the Bessel function.
-    """
-    values = np.zeros(n)
-
-    lookup_n = min(n, 50)
-
-    values[:lookup_n] = BESSEL_LOOKUP[:lookup_n]
-
-    # interpolate remaining values
-    if n > 50:
-        for x in range(50, n):
-            values[x] = values[x - 1] + np.pi
-
-    return values
-
-
-def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
-    """Gaussian axis.
-
-    Calculates the bounds and weights for a Guassian axis.
-
-    Math is based on CDAT implementation in regrid2 module.
-
-    Related documents:
-        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3310
-
-    Parameters
-    ----------
-    mid : int
-        mid
-    nlats : int
-        Number of latitude points to calculate.
-
-    Returns
-    -------
-    Tuple[np.ndarray, np.ndarray]
-        First `np.ndarray` contains the angels of the bounds and the second contains the weights.
-    """
-    points = _bessel_function_zeros(mid + 1)
-
-    points = np.pad(points, (0, nlats - len(points)))
-
-    weights = np.zeros_like(points)
-
-    for x in range(int(nlats / 2 + 1)):
-        zero_poly, first_poly, second_poly = _legendre_polinomial(points[x], nlats)
-
-        points[x] = zero_poly
-
-        weights[x] = (
-            (1.0 - zero_poly * zero_poly)
-            * 2.0
-            / ((nlats * first_poly) * (nlats * first_poly))
-        )
-
-    points[mid if nlats % 2 == 0 else mid + 1 :] = -1.0 * np.flip(points[:mid])
-
-    weights[mid if nlats % 2 == 0 else mid + 1 :] = np.flip(weights[:mid])
-
-    if nlats % 2 != 0:
-        weights[mid + 1] = 0.0
-
-        mid_weight = 2.0 / np.power(nlats, 2)
-
-        for x in range(2, nlats + 1, 2):
-            mid_weight = (mid_weight * np.power(nlats, 2)) / np.power(x - 1, 2)
-
-            weights[mid + 1] = mid_weight
-
-    # bounds = (180.0 / np.pi) * np.arcsin(bessel_zeros)
-
-    return points, weights
+    return grid
 
 
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
@@ -266,48 +166,149 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
     return bounds_da, points_da
 
 
-def create_gaussian_grid(nlats: int) -> xr.Dataset:
-    """
-    Creates a grid with Gaussian latitudes and uniform longitudes.
+def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
+    """Gaussian axis.
+
+    Calculates the bounds and weights for a Guassian axis.
+
+    Math is based on CDAT implementation in regrid2 module.
+
+    Related documents:
+        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3310
 
     Parameters
     ----------
+    mid : int
+        mid
     nlats : int
-        Number of latitudes.
+        Number of latitude points to calculate.
 
     Returns
     -------
-    xr.Dataset
-        Dataset with new grid, containing Gaussian latitudes.
-
-    Examples
-    --------
-    Create grid with 32 latitudes:
-
-    >>> xcdat.regridder.grid.create_gaussian_grid(32)
+    Tuple[np.ndarray, np.ndarray]
+        First `np.ndarray` contains the angels of the bounds and the second contains the weights.
     """
-    lat_bounds, lat_axis = _create_gaussian_axis(nlats)
+    points = _bessel_function_zeros(mid + 1)
 
-    lon_axis = create_uniform_axis(
-        0.0,
-        360.0,
-        (360.0 / (2.0 * nlats)),
-        "lon",
-        {"units": "degrees_east", "axis": "X"},
-    )
+    points = np.pad(points, (0, nlats - len(points)))
 
-    grid = xr.Dataset(
-        {
-            "lat": lat_axis,
-            "lon": lon_axis,
-        }
-    )
+    weights = np.zeros_like(points)
 
-    grid = grid.bounds.add_missing_bounds()
+    for x in range(int(nlats / 2 + 1)):
+        zero_poly, first_poly, second_poly = _legendre_polinomial(points[x], nlats)
 
-    grid["lat_bnds"] = lat_bounds
+        points[x] = zero_poly
 
-    return grid
+        weights[x] = (
+            (1.0 - zero_poly * zero_poly)
+            * 2.0
+            / ((nlats * first_poly) * (nlats * first_poly))
+        )
+
+    points[mid if nlats % 2 == 0 else mid + 1 :] = -1.0 * np.flip(points[:mid])
+
+    weights[mid if nlats % 2 == 0 else mid + 1 :] = np.flip(weights[:mid])
+
+    if nlats % 2 != 0:
+        weights[mid + 1] = 0.0
+
+        mid_weight = 2.0 / np.power(nlats, 2)
+
+        for x in range(2, nlats + 1, 2):
+            mid_weight = (mid_weight * np.power(nlats, 2)) / np.power(x - 1, 2)
+
+            weights[mid + 1] = mid_weight
+
+    # bounds = (180.0 / np.pi) * np.arcsin(bessel_zeros)
+
+    return points, weights
+
+
+def _bessel_function_zeros(n: int) -> np.ndarray:
+    """Zeros of Bessel function.
+
+    Calculates `n` zeros of the Bessel function.
+
+    Math is based on CDAT implementation in regrid2 module.
+
+    Related documents:
+        - https://en.wikipedia.org/wiki/Bessel_function
+        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3387
+        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3251
+
+    Parameters
+    ----------
+    n : int
+        Number of zeros to calculate.
+
+    Returns
+    -------
+    np.ndarray
+        Array containing `n` zeros of the Bessel function.
+    """
+    values = np.zeros(n)
+
+    lookup_n = min(n, 50)
+
+    values[:lookup_n] = BESSEL_LOOKUP[:lookup_n]
+
+    # interpolate remaining values
+    if n > 50:
+        for x in range(50, n):
+            values[x] = values[x - 1] + np.pi
+
+    return values
+
+
+def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, float]:
+    """Legendre_polynomials.
+
+    Calculates the third legendre polynomial.
+
+    Math is based on CDAT implementation in regrid2 module.
+
+    Related documents:
+        - https://en.wikipedia.org/wiki/Legendre_polynomials
+        - https://github.com/CDAT/cdms/blob/cda99c21098ad01d88c27c6010d4affc8f621863/regrid2/Src/_regridmodule.c#L3291
+
+    Parameters
+    ----------
+    bessel_zero : int
+        Bessel zero used to calculate the third legendre polynomial.
+    nlats : int
+        Number of lats.
+
+    Returns
+    -------
+    Tuple[float, float, float]
+        First, second and third legendre polynomial.
+    """
+    # TODO figure out why this is different compared to numpy.polynomial.legendre, is this wrong?
+    zero_poly = np.cos(bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST))
+
+    for _ in range(10):
+        second_poly = 1.0
+        first_poly = zero_poly
+
+        for y in range(2, nlats + 1):
+            new_poly = (
+                (2.0 * y - 1.0) * zero_poly * first_poly - (y - 1.0) * second_poly
+            ) / y
+            second_poly = first_poly
+            first_poly = new_poly
+
+        first_poly = second_poly
+        poly_change = (nlats * (first_poly - zero_poly * new_poly)) / (
+            1.0 - zero_poly * zero_poly
+        )
+        poly_slope = new_poly / poly_change
+        zero_poly -= poly_slope
+        abs_poly_change = np.fabs(poly_slope)
+
+        if abs_poly_change <= EPS:
+            break
+
+    return zero_poly, first_poly, second_poly
 
 
 def create_uniform_axis(

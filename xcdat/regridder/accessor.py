@@ -42,23 +42,6 @@ class RegridderAccessor:
     def __init__(self, dataset: xr.Dataset):
         self._ds: xr.Dataset = dataset
 
-    def _get_axis_data(
-        self, name: str, standard_name: str
-    ) -> Tuple[xr.DataArray, xr.DataArray]:
-        try:
-            axis = self._ds.cf[name]
-        except KeyError:
-            raise KeyError(
-                f"{standard_name} axis could not be correctly identified in the Dataset"
-            )
-
-        try:
-            axis_bnds = self._ds.bounds.get_bounds(axis.name)
-        except KeyError:
-            axis_bnds = None
-
-        return axis, axis_bnds
-
     @property
     def grid(self) -> xr.Dataset:
         """
@@ -92,6 +75,23 @@ class RegridderAccessor:
         ds = ds.bounds.add_missing_bounds()
 
         return ds
+
+    def _get_axis_data(
+        self, name: str, standard_name: str
+    ) -> Tuple[xr.DataArray, xr.DataArray]:
+        try:
+            axis = self._ds.cf[name]
+        except KeyError:
+            raise KeyError(
+                f"{standard_name} axis could not be correctly identified in the Dataset"
+            )
+
+        try:
+            axis_bnds = self._ds.bounds.get_bounds(axis.name)
+        except KeyError:
+            axis_bnds = None
+
+        return axis, axis_bnds
 
     def horizontal_xesmf(
         self,
