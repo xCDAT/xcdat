@@ -544,4 +544,16 @@ class Regrid2Regridder(BaseRegridder):
         if dst_mask is not None:
             output_ds[data_var] = output_ds[data_var].where(dst_mask == 0.0)
 
+        for dim_name, var_names in ds.cf.axes.items():
+            if dim_name in ("X", "Y"):
+                continue
+
+            # handle "Z" and "T" bounds, pass from input or generate
+            try:
+                dim_bounds = ds.cf.get_bounds(dim_name)
+            except KeyError:
+                output_ds = output_ds.bounds.add_bounds(var_names[0])
+            else:
+                output_ds[dim_bounds.name] = dim_bounds
+
         return output_ds

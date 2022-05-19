@@ -136,6 +136,19 @@ class TestRegrid2Regridder:
             }
         )
 
+    def test_output_bounds(self):
+        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+
+        output_grid = grid.create_gaussian_grid(32)
+
+        regridder = regrid2.Regrid2Regridder(ds, output_grid)
+
+        output_ds = regridder.horizontal("ts", ds)
+
+        assert "lat_bnds" in output_ds
+        assert "lon_bnds" in output_ds
+        assert "time_bnds" in output_ds
+
     def test_align_axis(self):
         src = gen_uniform_axis(-0.5, 360, 30, "lon", "X")
 
