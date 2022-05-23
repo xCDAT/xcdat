@@ -170,8 +170,8 @@ class TemporalAccessor:
         This method is particularly useful for calculating the weighted averages
         of monthly or yearly time series data because the number of days per
         month/year can vary based on the calendar type, which can affect
-        weighting. For unweighted time averages or other frequencies, you can
-        set ``weighted=False``.
+        weighting. For other frequencies, the distribution of weights will be
+        equal so ``weighted=True`` is the same as ``weighted=False``.
 
         Parameters
         ----------
@@ -321,7 +321,7 @@ class TemporalAccessor:
         Examples
         --------
 
-        Get a data variable's seasonal averages:
+        Get seasonal averages for a data variable:
 
         >>> ds_season = ds.temporal.group_average(
         >>>     "ts",
@@ -340,7 +340,7 @@ class TemporalAccessor:
         >>> )
         >>> ds_season_with_jfd.ts
 
-        Get a data variable seasonal averages with custom seasons:
+        Get seasonal averages with custom seasons for a data variable:
 
         >>> custom_seasons = [
         >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
@@ -385,7 +385,7 @@ class TemporalAccessor:
         Parameters
         ----------
         data_var: str
-            The key of the data variable to calculate climatology for.
+            The key of the data variable for calculating climatology.
         freq : Frequency
             The time frequency to group by.
 
@@ -513,8 +513,8 @@ class TemporalAccessor:
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """
-        Returns a Dataset with the climatological departures ("anomalies") for
-        a data variable.
+        Returns a Dataset with the climatological departures (anomalies) for a
+        data variable.
 
         In climatology, “anomalies” refer to the difference between the value
         during a given time interval (e.g., the January average surface air
@@ -536,7 +536,7 @@ class TemporalAccessor:
         Parameters
         ----------
         data_var: str
-            The key of the data variable to calculate departures for.
+            The key of the data variable for calculating departures.
 
         freq : Frequency
             The frequency of time to group by.
@@ -670,9 +670,9 @@ class TemporalAccessor:
             ds_departs[data_var] = dv_obs_grouped - dv_climo
             ds_departs[data_var] = self._add_operation_attrs(ds_departs[data_var])
 
-            # After performing grouped arithmetic, the original time coordinates
-            # restored so the grouped time coordinates are dropped because they
-            # are no longer needed.
+            # The original time coordinates are restored after performing
+            # grouped arithmethic on the data variable. As a result, the grouped
+            # time coordinates are no longer used and are dropped.
             ds_departs = ds_departs.drop_vars(self._labeled_time.name)
 
         return ds_departs
@@ -832,10 +832,15 @@ class TemporalAccessor:
             self._season_config["custom_seasons"] = self._form_seasons(custom_seasons)
 
     def _process_dataset(self) -> xr.Dataset:
+        """Processes a dataset based on the set values of the object attributes.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset object.
+        """
         ds = self._dataset.copy()
-        # Since time coordinates are shared across the variables in the
-        # Dataset, perform Dataset level operations first to cascade the
-        # resulting time coordinates down to the data variable.
+
         if self._center_times:
             ds = self.center_times(ds)
 
@@ -860,12 +865,12 @@ class TemporalAccessor:
         Parameters
         ----------
         data_var : xr.DataArray
-            The data variable with some incomplete DJF seasons.
+            The data variable with some possibly incomplete DJF seasons.
 
         Returns
         -------
         xr.DataArray
-            The data variable with all complete DJF seasons.
+            The data variable with only complete DJF seasons.
         """
         # Separate the dataset into two datasets, one with and one without
         # the time dimension. This is necessary because the xarray .where()
@@ -940,9 +945,7 @@ class TemporalAccessor:
         return c_seasons
 
     def _average(self, data_var: xr.DataArray) -> xr.DataArray:
-        """
-        Returns the weighted averages for a data variable with the time
-        dimension removed.
+        """Averages a data variable with the time dimension removed.
 
         Parameters
         ----------
@@ -952,8 +955,7 @@ class TemporalAccessor:
         Returns
         -------
         xr.DataArray
-        The weighted averages for a data variable with the time dimension
-        removed.
+            The averages for a data variable with the time dimension removed.
         """
         dv = data_var.copy()
 
@@ -969,7 +971,7 @@ class TemporalAccessor:
         return dv
 
     def _group_average(self, data_var: xr.DataArray) -> xr.DataArray:
-        """Returns the data variable averaged by time group.
+        """Averages a data variable by time group.
 
         Parameters
         ----------
@@ -995,14 +997,13 @@ class TemporalAccessor:
         # For example, grouping on "year_season" replaces the "time" dimension
         # with "year_season". This dimension needs to be renamed back to
         # the original time dimension name before the data variable is added
-        # back to the dataset.
+        # back to the dataset so that the CF compliant name is maintained.
         dv = dv.rename({self._labeled_time.name: self._dim_name})  # type: ignore
 
         # After grouping and aggregating, the grouped time dimension's
-        # attributes are removed. Unfortunately, `xr.set_options(keep_attrs=True)`,
-        # `.sum(keep_attrs=True)`, and `.mean(keep_attrs=True)` only keeps
-        # attributes for data variables and not their coordinates so they need
-        # to be restored manually
+        # attributes are removed. Xarray's `keep_attrs=True` option only keeps
+        # attributes for data variables and not their coordinates, so the
+        # coordinate attributes have to be restored manually.
         dv[self._dim_name].attrs = self._labeled_time.attrs
         dv[self._dim_name].encoding = self._labeled_time.encoding
 
@@ -1112,10 +1113,9 @@ class TemporalAccessor:
 
         # The season frequency requires additional datetime components for
         # processing, which are later removed before time coordinates are
-        # labeled for grouping. These components weren't included for the
-        # "season" frequency in the TIME_GROUPS dictionary because it might
-        # cause confusion, since TIME_GROUPS represents the final grouping
-        # labels.
+        # labeled for grouping. These components weren't included in the
+        # `TIME_GROUPS` dictionary for the "season" frequency because
+        # `TIME_GROUPS` represents the final grouping labels.
         if self._freq == "season":
             if self._mode in ["climatology", "departures"]:
                 df["year"] = time_coords[f"{self._dim_name}.year"].values
@@ -1129,7 +1129,8 @@ class TemporalAccessor:
         return df
 
     def _process_season_df(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Processes a DataFrame of datetime components for the season frequency.
+        """
+        Processes a DataFrame of datetime components for the season frequency.
 
         Parameters
         ----------
@@ -1156,12 +1157,12 @@ class TemporalAccessor:
         return df_new
 
     def _map_months_to_custom_seasons(self, df: pd.DataFrame) -> pd.DataFrame:
-        """Maps months to custom seasons.
+        """Maps the month column in the DataFrame to a custom season.
 
         This method maps each integer value in the "month" column to its string
         represention, which then maps to a custom season that is stored in the
-        "season" column. For example, 1 maps to "Jan" and "Jan" maps to the
-        "JanFebMar" custom season.
+        "season" column. For example, the month of 1 maps to "Jan" and "Jan"
+        maps to the "JanFebMar" custom season.
 
         Parameters
         ----------
@@ -1176,7 +1177,8 @@ class TemporalAccessor:
         """
         custom_seasons = self._season_config["custom_seasons"]
 
-        # Time complexity of O(n^2), but okay with these small data structures.
+        # NOTE: This for loop has a time complexity of O(n^2), but it is fine
+        # because these data structures are small.
         seasons_map = {}
         for mon_int, mon_str in MONTH_INT_TO_STR.items():
             for season in custom_seasons:  # type: ignore
@@ -1189,12 +1191,13 @@ class TemporalAccessor:
         return df_new
 
     def _shift_decembers(self, df_season: pd.DataFrame) -> pd.DataFrame:
-        """Shifts Decembers over to the next year for "DJF" seasons.
+        """Shifts Decembers over to the next year for "DJF" seasons in-place.
 
         For "DJF" seasons, Decembers must be shifted over to the next year in
-        order for the xarray groupby operation to correctly group the time
-        coordinates. Otherwise, grouping is incorrectly performed with the
-        native xarray "DJF" season, which is actually "JFD".
+        order for the xarray groupby operation to correctly label and group the
+        corresponding time coordinates. If the aren't shifted over, grouping is
+        incorrectly performed with the native xarray "DJF" season (which is
+        actually "JFD").
 
         Parameters
         ----------
@@ -1211,15 +1214,16 @@ class TemporalAccessor:
         Examples
         --------
 
-        Comparison of "DJF" and "JFD" seasons:
-
-        >>> # "DJF" (shifted Decembers)
-        >>> [(2000, "DJF", 1), (2000, "DJF", 2), (2001, "DJF", 12),
-        >>>  (2001, "DJF", 1), (2001, "DJF", 2), (2002, "DJF", 12)]
+        Comparison of "JFD" and "DJF" seasons:
 
         >>> # "JFD" (native xarray behavior)
         >>> [(2000, "DJF", 1), (2000, "DJF", 2), (2000, "DJF", 12),
-        >>>  (2001, "DJF", 1), (2001, "DJF", 2), (2001, "DJF", 12)]
+        >>>  (2001, "DJF", 1), (2001, "DJF", 2)]
+
+        >>> # "DJF" (shifted Decembers)
+        >>> [(2000, "DJF", 1), (2000, "DJF", 2), (2001, "DJF", 12),
+        >>>  (2001, "DJF", 1), (2001, "DJF", 2)]
+
         """
         df_season.loc[df_season["month"] == 12, "year"] = df_season["year"] + 1
 
@@ -1229,8 +1233,8 @@ class TemporalAccessor:
         """Maps the season column values to the integer of its middle month.
 
         DateTime objects don't support storing seasons as strings, so the middle
-        month is used to represent the season. For example, for the pre-defined
-        season "DJF", the middle month "J" is mapped to the integer value 1.
+        months are used to represent the season. For example, for the season
+        "DJF", the middle month "J" is mapped to the integer value 1.
 
         The middle month of a custom season is extracted using the ceiling of
         the middle index from its list of months. For example, for the custom
@@ -1238,7 +1242,8 @@ class TemporalAccessor:
         "May"], the index 3 is used to get the month "Apr". "Apr" is then mapped
         to the integer value 4.
 
-        After mapping, the "season" column is renamed to "month".
+        After mapping the season to its month, the "season" column is renamed to
+        "month".
 
         Parameters
         ----------
@@ -1422,11 +1427,8 @@ class TemporalAccessor:
     def _group_data(self, data_var: xr.DataArray) -> DataArrayGroupBy:
         """Groups a data variable.
 
-        This method groups a data variable either by a single datetime component
-        for "average" mode, or labeled time coordinates for all other modes.
-
-        It returns a DataArrayGroupBy object, which enables support for xarray's
-        grouped arithmetic as a shortcut for mapping over all unique labels.
+        This method groups a data variable by a single datetime component for
+        the "average" mode or labeled time coordinates for all other modes.
 
         Parameters
         ----------
