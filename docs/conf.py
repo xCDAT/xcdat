@@ -41,6 +41,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinxcontrib.napoleon",
+    "nbsphinx",
 ]
 
 # autosummary and autodoc configurations

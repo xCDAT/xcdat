@@ -97,7 +97,8 @@ See `LICENSE <LICENSE>`_ for details
    :hidden:
    :caption: For users
 
-   Getting Started <getting_started>
+   Getting Started <getting-started>
+   Gallery <gallery>
    API Reference <api>
    Frequently Asked Questions <faqs>
 
@@ -107,7 +108,7 @@ See `LICENSE <LICENSE>`_ for details
    :caption: For developers/contributors
 
    Contributing Guide <contributing>
-   Project Maintenance <project_maintenance>
+   Project Maintenance <project-maintenance>
    What’s New <history>
    Team <authors>
 
