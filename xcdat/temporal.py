@@ -677,7 +677,7 @@ class TemporalAccessor:
 
         return ds_departs
 
-    def center_times(self, dataset: xr.Dataset) -> xr.Dataset:
+    def center_times(self) -> xr.Dataset:
         """Centers the time coordinates using the midpoint between time bounds.
 
         Time coordinates can be recorded using different intervals, including
@@ -695,12 +695,9 @@ class TemporalAccessor:
         xr.Dataset
             The Dataset with centered time coordinates.
         """
-        ds = dataset.copy()
+        ds = self._dataset.copy()
+        time_bounds = ds.bounds.get_bounds("time")
 
-        if hasattr(self, "_time_bounds") is False:
-            self._time_bounds = ds.bounds.get_bounds("time")
-
-        time_bounds = self._time_bounds.copy()
         lower_bounds, upper_bounds = (time_bounds[:, 0].data, time_bounds[:, 1].data)
         bounds_diffs: np.timedelta64 = (upper_bounds - lower_bounds) / 2
         bounds_mids: np.ndarray = lower_bounds + bounds_diffs
@@ -842,7 +839,7 @@ class TemporalAccessor:
         ds = self._dataset.copy()
 
         if self._center_times:
-            ds = self.center_times(ds)
+            ds = self.center_times()
 
         if (
             self._freq == "season"

@@ -1584,7 +1584,7 @@ class TestCenterTimes:
         ds = ds.drop_dims("time")
 
         with pytest.raises(KeyError):
-            ds.temporal.center_times(ds)
+            ds.temporal.center_times()
 
     def test_gets_time_as_the_midpoint_between_time_bounds(self):
         ds = self.ds.copy()
@@ -1658,7 +1658,7 @@ class TestCenterTimes:
         time_bounds["time"] = expected.time
         expected["time_bnds"] = time_bounds
 
-        result = ds.temporal.center_times(ds)
+        result = ds.temporal.center_times()
         assert result.identical(expected)
 
 
