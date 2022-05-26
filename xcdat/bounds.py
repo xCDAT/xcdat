@@ -4,6 +4,7 @@ import warnings
 from typing import Dict, List, Literal, Optional
 
 import cf_xarray as cfxr  # noqa: F401
+import cftime
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -264,10 +265,12 @@ class BoundsAccessor:
         # `cftime` objects instead of `datetime` objects. `cftime` objects only
         # support arithmetic using `timedelta` objects, so the values of `diffs`
         # must be casted from `dtype="timedelta64[ns]"` to `timedelta`.
-        if da_coord.name in ("T", "time"):
+        if da_coord.name in ("T", "time") and issubclass(
+            type(da_coord.values[0]), cftime.datetime
+        ):
             diffs = pd.to_timedelta(diffs)
 
-        # FIXME: These line produces the warning: `PerformanceWarning:
+        # FIXME: These lines produces the warning: `PerformanceWarning:
         # Adding/subtracting object-dtype array to TimedeltaArray not
         # vectorized` after converting diffs to `timedelta`. I (Tom) was not
         # able to find an alternative, vectorized solution at the time of this
