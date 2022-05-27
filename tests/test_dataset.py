@@ -264,7 +264,7 @@ class TestOpenMfDataset:
         assert result.identical(expected)
 
 
-class TestHasCFCompliantTime:
+class Test_HasCFCompliantTime:
     @pytest.fixture(autouse=True)
     def setUp(self, tmp_path):
         # Create temporary directory to save files.
@@ -668,7 +668,7 @@ class TestDecodeNonCFTimeUnits:
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
 
-class TestPostProcessDataset:
+class Test_PostProcessDataset:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -868,7 +868,7 @@ class TestPostProcessDataset:
             _postprocess_dataset(ds, lon_orient=(0, 360))
 
 
-class TestKeepSingleVar:
+class Test_KeepSingleVar:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
@@ -909,7 +909,7 @@ class TestKeepSingleVar:
         assert ds.get("time_bnds") is not None
 
 
-class TestPreProcessNonCFDataset:
+class Test_PreProcessNonCFDataset:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=False, has_bounds=True)
@@ -944,7 +944,7 @@ class TestPreProcessNonCFDataset:
         assert result.identical(expected)
 
 
-class TestSplitTimeUnitsAttr:
+class Test_SplitTimeUnitsAttr:
     def test_raises_error_if_units_attr_is_none(self):
         with pytest.raises(KeyError):
             _split_time_units_attr(None)  # type: ignore

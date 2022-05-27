@@ -1,3 +1,4 @@
+import cftime
 import numpy as np
 import pytest
 import xarray as xr
@@ -115,7 +116,7 @@ class TestAddBounds:
         with pytest.raises(ValueError):
             ds.bounds.add_bounds("lat")
 
-    def test__add_bounds_raises_errors_for_data_dim_and_length(self):
+    def test_add_bounds_raises_errors_for_data_dim_and_length(self):
         # Multidimensional
         lat = xr.DataArray(
             data=np.array([[0, 1, 2], [3, 4, 5]]),
@@ -132,23 +133,23 @@ class TestAddBounds:
 
         # If coords dimensions does not equal 1.
         with pytest.raises(ValueError):
-            ds.bounds._add_bounds("lat")
+            ds.bounds.add_bounds("lat")
         # If coords are length of <=1.
         with pytest.raises(ValueError):
-            ds.bounds._add_bounds("lon")
+            ds.bounds.add_bounds("lon")
 
-    def test__add_bounds_returns_dataset_with_bounds_added(self):
+    def test_add_bounds_for_dataset_with_coords_as_datetime_objects(self):
         ds = self.ds.copy()
 
-        ds = ds.bounds._add_bounds("lat")
-        assert ds.lat_bnds.equals(lat_bnds)
-        assert ds.lat_bnds.is_generated == "True"
+        result = ds.bounds.add_bounds("lat")
+        assert result.lat_bnds.equals(lat_bnds)
+        assert result.lat_bnds.is_generated == "True"
 
-        ds = ds.bounds._add_bounds("lon")
-        assert ds.lon_bnds.equals(lon_bnds)
-        assert ds.lon_bnds.is_generated == "True"
+        result = result.bounds.add_bounds("lon")
+        assert result.lon_bnds.equals(lon_bnds)
+        assert result.lon_bnds.is_generated == "True"
 
-        ds = ds.bounds._add_bounds("time")
+        result = ds.bounds.add_bounds("time")
         # NOTE: The algorithm for generating time bounds doesn't extend the
         # upper bound into the next month.
         expected_time_bnds = xr.DataArray(
@@ -173,16 +174,61 @@ class TestAddBounds:
                 ],
                 dtype="datetime64[ns]",
             ),
-            coords={"time": ds.time},
+            coords={"time": ds.time.assign_attrs({"bounds": "time_bnds"})},
             dims=["time", "bnds"],
-            attrs=ds.time_bnds.attrs,
+            attrs={"is_generated": "True"},
         )
 
-        assert ds.time_bnds.equals(expected_time_bnds)
-        assert ds.time_bnds.is_generated == "True"
+        assert result.time_bnds.identical(expected_time_bnds)
+
+    def test_returns_bounds_for_dataset_with_coords_as_cftime_objects(self):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+        ds["time"] = xr.DataArray(
+            name="time",
+            data=np.array(
+                [
+                    cftime.DatetimeNoLeap(1850, 1, 1),
+                    cftime.DatetimeNoLeap(1850, 2, 1),
+                    cftime.DatetimeNoLeap(1850, 3, 1),
+                ],
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+            },
+        )
+
+        result = ds.bounds.add_bounds("time")
+        expected_time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        cftime.DatetimeNoLeap(1849, 12, 16, 12),
+                        cftime.DatetimeNoLeap(1850, 1, 16, 12),
+                    ],
+                    [
+                        cftime.DatetimeNoLeap(1850, 1, 16, 12),
+                        cftime.DatetimeNoLeap(1850, 2, 15, 0),
+                    ],
+                    [
+                        cftime.DatetimeNoLeap(1850, 2, 15, 0),
+                        cftime.DatetimeNoLeap(1850, 3, 15, 0),
+                    ],
+                ],
+            ),
+            coords={"time": ds.time.assign_attrs({"bounds": "time_bnds"})},
+            dims=["time", "bnds"],
+            attrs={"is_generated": "True"},
+        )
+
+        assert result.time_bnds.identical(expected_time_bnds)
 
 
-class TestGetCoord:
+class Test_GetCoord:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=False)

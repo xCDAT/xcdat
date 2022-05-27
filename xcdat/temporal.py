@@ -677,7 +677,7 @@ class TemporalAccessor:
 
         return ds_departs
 
-    def center_times(self, dataset: xr.Dataset) -> xr.Dataset:
+    def center_times(self) -> xr.Dataset:
         """Centers the time coordinates using the midpoint between time bounds.
 
         Time coordinates can be recorded using different intervals, including
@@ -695,12 +695,9 @@ class TemporalAccessor:
         xr.Dataset
             The Dataset with centered time coordinates.
         """
-        ds = dataset.copy()
+        ds = self._dataset.copy()
+        time_bounds = ds.bounds.get_bounds("time")
 
-        if hasattr(self, "_time_bounds") is False:
-            self._time_bounds = ds.bounds.get_bounds("time")
-
-        time_bounds = self._time_bounds.copy()
         lower_bounds, upper_bounds = (time_bounds[:, 0].data, time_bounds[:, 1].data)
         bounds_diffs: np.timedelta64 = (upper_bounds - lower_bounds) / 2
         bounds_mids: np.ndarray = lower_bounds + bounds_diffs
@@ -842,7 +839,7 @@ class TemporalAccessor:
         ds = self._dataset.copy()
 
         if self._center_times:
-            ds = self.center_times(ds)
+            ds = self.center_times()
 
         if (
             self._freq == "season"
@@ -1393,14 +1390,14 @@ class TemporalAccessor:
                 self._time_bounds[:, 1] - self._time_bounds[:, 0]
             )
 
-        # Must be convert dtype from timedelta64[ns] to float64, specifically
-        # when chunking DataArrays using Dask. Otherwise, the numpy warning
-        # below is thrown: `DeprecationWarning: The `dtype` and `signature`
-        # arguments to ufuncs only select the general DType and not details such
-        # as the byte order or time unit (with rare exceptions see release
-        # notes). To avoid this warning please use the scalar types
-        # `np.float64`, or string notation.`
+        # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
+        # when using Dask arrays. Otherwise, the numpy warning below is thrown:
+        # `DeprecationWarning: The `dtype` and `signature` arguments to ufuncs
+        # only select the general DType and not details such as the byte order
+        # or time unit (with rare exceptions see release notes). To avoid this
+        # warning please use the scalar types `np.float64`, or string notation.`
         time_lengths = time_lengths.astype(np.float64)
+
         grouped_time_lengths = self._group_data(time_lengths)
         weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()  # type: ignore
 
