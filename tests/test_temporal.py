@@ -64,7 +64,7 @@ class TestAverage:
             attrs={"is_generated": "True"},
         )
         ds["ts"] = xr.DataArray(
-            data=np.array([[[2]], [[1]], [[1]], [[1]], [[2]]]),
+            data=np.array([[[2]], [[np.nan]], [[1]], [[1]], [[2]]]),
             coords={"lat": ds.lat, "lon": ds.lon, "time": ds.time},
             dims=["time", "lat", "lon"],
         )
@@ -74,7 +74,7 @@ class TestAverage:
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.4]]),
+            data=np.array([[1.5]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
             attrs={
@@ -93,7 +93,7 @@ class TestAverage:
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.4]]),
+            data=np.array([[1.5]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
             attrs={
@@ -120,7 +120,7 @@ class TestAverage:
                             "2000-02-01T00:00:00.000000000",
                             "2000-03-01T00:00:00.000000000",
                             "2000-04-01T00:00:00.000000000",
-                            "2000-05-01T00:00:00.000000000",
+                            "2001-02-01T00:00:00.000000000",
                         ],
                         dtype="datetime64[ns]",
                     ),
@@ -142,7 +142,7 @@ class TestAverage:
                     ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
                     ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
                     ["2000-04-01T00:00:00.000000000", "2000-05-01T00:00:00.000000000"],
-                    ["2000-05-01T00:00:00.000000000", "2000-06-01T00:00:00.000000000"],
+                    ["2001-01-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
                 ],
                 dtype="datetime64[ns]",
             ),
@@ -151,7 +151,7 @@ class TestAverage:
             attrs={"is_generated": "True"},
         )
         ds["ts"] = xr.DataArray(
-            data=np.array([[[2]], [[1]], [[1]], [[1]], [[1]]]),
+            data=np.array([[[2]], [[np.nan]], [[1]], [[1]], [[1]]]),
             coords={"lat": ds.lat, "lon": ds.lon, "time": ds.time},
             dims=["time", "lat", "lon"],
         )
@@ -161,7 +161,7 @@ class TestAverage:
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.2]]),
+            data=np.array([[1.24362357]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
             attrs={
@@ -173,14 +173,14 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_allclose(result, expected)
 
         # Test unweighted averages
         result = ds.temporal.average("ts", weighted=False)
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
-            data=np.array([[1.2]]),
+            data=np.array([[1.25]]),
             coords={"lat": expected.lat, "lon": expected.lon},
             dims=["lat", "lon"],
             attrs={
@@ -191,7 +191,7 @@ class TestAverage:
                 "center_times": "False",
             },
         )
-        assert result.identical(expected)
+        xr.testing.assert_allclose(result, expected)
 
     def test_averages_for_daily_time_series(self):
         ds = xr.Dataset(
@@ -791,6 +791,57 @@ class TestGroupAverage:
         expected["ts"] = xr.DataArray(
             name="ts",
             data=np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-01T00:00:00.000000000",
+                            "2000-03-01T00:00:00.000000000",
+                            "2000-06-01T00:00:00.000000000",
+                            "2000-09-01T00:00:00.000000000",
+                            "2001-02-01T00:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "month",
+                "weighted": "True",
+                "center_times": "False",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_monthly_averages_with_masked_data(self):
+        ds = self.ds.copy()
+        ds["ts"] = xr.DataArray(
+            data=np.array(
+                [[[2.0]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]], dtype="float64"
+            ),
+            coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
+            dims=["time", "lat", "lon"],
+        )
+
+        result = ds.temporal.group_average("ts", "month")
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[2.0]], [[0.0]], [[1.0]], [[1.0]], [[2.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,

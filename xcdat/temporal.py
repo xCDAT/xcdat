@@ -1390,14 +1390,14 @@ class TemporalAccessor:
                 self._time_bounds[:, 1] - self._time_bounds[:, 0]
             )
 
-        # Must be convert dtype from timedelta64[ns] to float64, specifically
-        # when chunking DataArrays using Dask. Otherwise, the numpy warning
-        # below is thrown: `DeprecationWarning: The `dtype` and `signature`
-        # arguments to ufuncs only select the general DType and not details such
-        # as the byte order or time unit (with rare exceptions see release
-        # notes). To avoid this warning please use the scalar types
-        # `np.float64`, or string notation.`
+        # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
+        # when using Dask arrays. Otherwise, the numpy warning below is thrown:
+        # `DeprecationWarning: The `dtype` and `signature` arguments to ufuncs
+        # only select the general DType and not details such as the byte order
+        # or time unit (with rare exceptions see release notes). To avoid this
+        # warning please use the scalar types `np.float64`, or string notation.`
         time_lengths = time_lengths.astype(np.float64)
+
         grouped_time_lengths = self._group_data(time_lengths)
         weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()  # type: ignore
 
