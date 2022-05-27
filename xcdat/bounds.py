@@ -277,9 +277,11 @@ class BoundsAccessor:
         # implementation.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+            # Get lower and upper bounds by using the width relative to nearest point.
             lower_bounds = da_coord - diffs[:-1] * width
             upper_bounds = da_coord + diffs[1:] * (1 - width)
 
+        # Transpose both bound arrays into a 2D array.
         bounds = np.array([lower_bounds, upper_bounds]).transpose()
 
         # Clip latitude bounds at (-90, 90)
