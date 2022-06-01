@@ -1,6 +1,6 @@
 name: Documentation Update
 description: Update xCDAT documentation
-title: "[DOC]: "
+title: "[Doc]: "
 labels: ["Type: Documentation"]
 assignees: []
 body:
