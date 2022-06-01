@@ -12,7 +12,6 @@ from xarray.core.groupby import DataArrayGroupBy
 from xcdat import bounds  # noqa: F401
 from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
-from xcdat.utils import str_to_bool
 
 logger = setup_custom_logger(__name__)
 
@@ -187,6 +186,8 @@ class TemporalAccessor:
             divided by the total sum of the time lengths to get the weight of
             each coordinate point.
 
+            The weight of masked (missing) data is excluded when averages are
+            taken. This is the same as giving them a weight of 0.
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time
@@ -269,6 +270,9 @@ class TemporalAccessor:
             bounds. The time lengths are grouped, then each time length is
             divided by the total sum of the time lengths to get the weight of
             each coordinate point.
+
+            The weight of masked (missing) data is excluded when averages are
+            calculated. This is the same as giving them a weight of 0.
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time
@@ -401,6 +405,9 @@ class TemporalAccessor:
             bounds. The time lengths are grouped, then each time length is
             divided by the total sum of the time lengths to get the weight of
             each coordinate point.
+
+            The weight of masked (missing) data is excluded when averages are
+            taken. This is the same as giving them a weight of 0.
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time
@@ -553,6 +560,9 @@ class TemporalAccessor:
             bounds. The time lengths are grouped, then each time length is
             divided by the total sum of the time lengths to get the weight of
             each coordinate point.
+
+            The weight of masked (missing) data is excluded when averages are
+            taken. This is the same as giving them a weight of 0.
         center_times: bool, optional
             If True, center time coordinates using the midpoint between its
             upper and lower bounds. Otherwise, use the provided time coordinates,
@@ -629,50 +639,36 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
+        self._set_obj_attrs("departures", freq, weighted, center_times, season_config)
+
         ds = self._dataset.copy()
 
-        # Calculate the climatology data variable and set the object attributes
-        # using the method arguments.
+        # Group the observation data variable.
+        dv_obs = _get_data_var(ds, data_var)
+        dv_obs_grouped = self._group_data(dv_obs)
+
+        # Calculate the climatology of the data variable.
         dv_climo = ds.temporal.climatology(
             data_var, freq, weighted, center_times, season_config
         )[data_var]
 
-        self._set_obj_attrs(
-            "departures",
-            dv_climo.attrs["freq"],
-            str_to_bool(dv_climo.attrs["weighted"]),
-            str_to_bool(dv_climo.attrs["center_times"]),
-            {
-                "dec_mode": dv_climo.attrs.get("dec_mode", "DJF"),
-                "drop_incomplete_djf": str_to_bool(
-                    dv_climo.attrs.get("drop_incomplete_djf", "False")
-                ),
-                "custom_seasons": dv_climo.attrs.get("custom_seasons", None),
-            },
-        )
-
-        # Get the observation data and group it using the time coordinates.
-        dv_obs = _get_data_var(ds, data_var)
-        dv_obs_grouped = self._group_data(dv_obs)
-
-        # Rename the climatology data var's time dimension to align with the
-        # grouped observation data var's time dimension so that xarray's
-        # grouped subtraction arithmetic works. Otherwise, the error below
-        # is thrown: `ValueError: incompatible dimensions for a grouped
-        # binary operation: the group variable '<CHOSEN_FREQ>' is not a
-        # dimension on the other argument`
+        # Rename the time dimension using the name from the grouped observation
+        # data. The dimension names must align for xarray's grouped arithmetic
+        # to work. Otherwise, the error below is thrown: `ValueError:
+        # incompatible dimensions for a grouped binary operation: the group
+        # variable '<CHOSEN_FREQ>' is not a dimension on the other argument`
         dv_climo = dv_climo.rename({self._dim_name: self._labeled_time.name})
 
+        # Use xarray's grouped arithmetic to calculate the departures, which is
+        # the difference grouped observation data variable and its climatology.
         with xr.set_options(keep_attrs=True):
-            # Use xarray's grouped arithmetic to subtract the climatology
-            # from the observation data based on the groups.
             ds_departs = self._dataset.copy()
             ds_departs[data_var] = dv_obs_grouped - dv_climo
             ds_departs[data_var] = self._add_operation_attrs(ds_departs[data_var])
 
-            # The original time coordinates are restored after performing
-            # grouped arithmethic on the data variable. As a result, the grouped
-            # time coordinates are no longer used and are dropped.
+            # The original time coordinates are restored after grouped
+            # subtraction. The grouped time coordinates are dropped since they
+            # are no longer required.
             ds_departs = ds_departs.drop_vars(self._labeled_time.name)
 
         return ds_departs
@@ -984,6 +980,7 @@ class TemporalAccessor:
 
         if self._weighted:
             self._weights = self._get_weights()
+
             dv *= self._weights
             dv = self._group_data(dv).sum()  # type: ignore
         else:

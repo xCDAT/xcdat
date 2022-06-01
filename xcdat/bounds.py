@@ -117,12 +117,18 @@ class BoundsAccessor:
             )
         )
 
-    def add_missing_bounds(self) -> xr.Dataset:
+    def add_missing_bounds(self, width: float = 0.5) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
         This function loops through the Dataset's axes and adds bounds for an
         axis if it doesn't exist. Currently, the supported axes are T (time), X
         (longitude), and Y (latitude).
+
+        Parameters
+        ----------
+        width : float, optional
+            Width of the bounds relative to the position of the nearest points,
+            by default 0.5.
 
         Returns
         -------
@@ -137,7 +143,7 @@ class BoundsAccessor:
                 self.get_bounds(axis)
             except KeyError:
                 try:
-                    self._dataset = self.add_bounds(axis)
+                    self._dataset = self.add_bounds(axis, width)
                 except ValueError as err:
                     logger.debug(f"{err}")
 
