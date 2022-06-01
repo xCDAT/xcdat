@@ -660,8 +660,7 @@ class TemporalAccessor:
         dv_climo = dv_climo.rename({self._dim_name: self._labeled_time.name})
 
         # Use xarray's grouped arithmetic to calculate the departures, which is
-        # the difference of the data variable's grouped observation data and
-        # its climatology.
+        # the difference grouped observation data variable and its climatology.
         with xr.set_options(keep_attrs=True):
             ds_departs = self._dataset.copy()
             ds_departs[data_var] = dv_obs_grouped - dv_climo
