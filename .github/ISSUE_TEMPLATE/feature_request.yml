@@ -4,23 +4,6 @@ title: "[Feature]: "
 labels: ["Type: Enhancement"]
 assignees: []
 body:
-    - type: checkboxes
-      id: feature-request-criteria
-      attributes:
-        label: Feature Request Criteria
-        description: First, please make sure your feature request meets the following criteria.
-        options:
-          - label: Feature is not implemented by ``xarray``
-            required: true
-          - label: Feature is not implemented by another actively developed xarray-based package
-            required: true
-          - label: Feature is not limited to specific use cases (e.g., data quality issues)
-            required: true
-          - label: Feature is generally reusable
-            required: true
-          - label: Feature is relatively simple and lightweight to implement and use
-            required: true
-
     - type: textarea
       id: description
       attributes:
@@ -37,6 +20,8 @@ body:
           label: Describe the solution you'd like
           description: |
               A clear and concise description of what you want to happen.
+      validations:
+        required: false
 
     - type: textarea
       id: alternatives
