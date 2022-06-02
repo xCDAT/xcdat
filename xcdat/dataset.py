@@ -457,7 +457,7 @@ def _postprocess_dataset(
 
     if center_times:
         if dataset.cf.dims.get("T") is not None:
-            dataset = dataset.temporal.center_times(dataset)
+            dataset = dataset.temporal.center_times()
         else:
             raise ValueError("This dataset does not have a time coordinates to center.")
 

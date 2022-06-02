@@ -1,9 +1,12 @@
 """Bounds module for functions related to coordinate bounds."""
 import collections
+import warnings
 from typing import Dict, List, Literal, Optional
 
 import cf_xarray as cfxr  # noqa: F401
+import cftime
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 from xcdat.axis import GENERIC_AXIS_MAP
@@ -126,12 +129,18 @@ class BoundsAccessor:
             )
         )
 
-    def add_missing_bounds(self) -> xr.Dataset:
+    def add_missing_bounds(self, width: float = 0.5) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
         This function loops through the Dataset's axes and adds bounds for an
         axis if it doesn't exist. Currently, the supported axes are T (time), X
         (longitude), and Y (latitude).
+
+        Parameters
+        ----------
+        width : float, optional
+            Width of the bounds relative to the position of the nearest points,
+            by default 0.5.
 
         Returns
         -------
@@ -146,7 +155,7 @@ class BoundsAccessor:
                 self.get_bounds(axis)
             except KeyError:
                 try:
-                    self._dataset = self.add_bounds(axis)
+                    self._dataset = self.add_bounds(axis, width)
                 except ValueError as err:
                     logger.debug(f"{err}")
 
@@ -265,13 +274,32 @@ class BoundsAccessor:
         diffs = da_coord.diff(dim).values
 
         # Add beginning and end points to account for lower and upper bounds.
+        # np.array of string values with `dtype="timedelta64[ns]"`
         diffs = np.insert(diffs, 0, diffs[0])
         diffs = np.append(diffs, diffs[-1])
 
-        # Get lower and upper bounds by using the width relative to nearest point.
+        # In xarray and xCDAT, time coordinates with non-CF compliant calendars
+        # (360-day, noleap) and/or units ("months", "years") are decoded using
+        # `cftime` objects instead of `datetime` objects. `cftime` objects only
+        # support arithmetic using `timedelta` objects, so the values of `diffs`
+        # must be casted from `dtype="timedelta64[ns]"` to `timedelta`.
+        if da_coord.name in ("T", "time") and issubclass(
+            type(da_coord.values[0]), cftime.datetime
+        ):
+            diffs = pd.to_timedelta(diffs)
+
+        # FIXME: These lines produces the warning: `PerformanceWarning:
+        # Adding/subtracting object-dtype array to TimedeltaArray not
+        # vectorized` after converting diffs to `timedelta`. I (Tom) was not
+        # able to find an alternative, vectorized solution at the time of this
+        # implementation.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+            # Get lower and upper bounds by using the width relative to nearest point.
+            lower_bounds = da_coord - diffs[:-1] * width
+            upper_bounds = da_coord + diffs[1:] * (1 - width)
+
         # Transpose both bound arrays into a 2D array.
-        lower_bounds = da_coord - diffs[:-1] * width
-        upper_bounds = da_coord + diffs[1:] * (1 - width)
         bounds = np.array([lower_bounds, upper_bounds]).transpose()
 
         # Clip latitude bounds at (-90, 90)

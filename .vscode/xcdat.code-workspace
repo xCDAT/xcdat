@@ -5,6 +5,7 @@
         }
     ],
     "settings": {
-        "autoDocstring.docstringFormat": "numpy"
+        "autoDocstring.docstringFormat": "numpy",
+        "editor.formatOnSave": true
     }
 }
