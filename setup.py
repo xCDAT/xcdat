@@ -2,8 +2,6 @@
 
 """The setup script."""
 
-from typing import List
-
 from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
@@ -28,7 +26,6 @@ setup(
         "Programming Language :: Python :: 3.10",
     ],
     description="Xarray Extended with Climate Data Analysis Tools",
-    install_requires=install_requires,
     license="Apache-2.0",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
