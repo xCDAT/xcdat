@@ -388,7 +388,7 @@ class TestXESMFRegridder:
 
         output = regridder.horizontal("ts", ds)
 
-        assert output.ts.shape == (15, 45, 72)
+        assert output.ts.shape == (15, 46, 73)
 
     def test_no_variable(self):
         ds = self.ds.copy()
@@ -429,28 +429,28 @@ class TestGrid:
         new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
         assert new_grid.lat[0] == -90.0
-        assert new_grid.lat[-1] == 86
+        assert new_grid.lat[-1] == 90.0
         assert new_grid.lat.units == "degrees_north"
 
         assert new_grid.lon[0] == -180
-        assert new_grid.lon[-1] == 175
+        assert new_grid.lon[-1] == 180
         assert new_grid.lon.units == "degrees_east"
 
     def test_gaussian_grid(self):
         small_grid = grid.create_gaussian_grid(32)
 
         assert small_grid.lat.shape == (32,)
-        assert small_grid.lon.shape == (64,)
+        assert small_grid.lon.shape == (65,)
 
         large_grid = grid.create_gaussian_grid(128)
 
         assert large_grid.lat.shape == (128,)
-        assert large_grid.lon.shape == (256,)
+        assert large_grid.lon.shape == (257,)
 
         uneven_grid = grid.create_gaussian_grid(33)
 
         assert uneven_grid.lat.shape == (33,)
-        assert uneven_grid.lon.shape == (66,)
+        assert uneven_grid.lon.shape == (67,)
 
     def test_global_mean_grid(self):
         new_grid = grid.create_gaussian_grid(32)
@@ -464,7 +464,7 @@ class TestGrid:
         )
         assert mean_grid.cf["lon"].data == np.array(
             [
-                177.1875,
+                180.0,
             ]
         )
 

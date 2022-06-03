@@ -334,7 +334,10 @@ def create_uniform_axis(
         Containing uniform axis.
     """
     return xr.DataArray(
-        name=name, data=np.arange(start, stop, delta), dims=[name], attrs=attrs
+        name=name,
+        data=np.arange(start, stop + delta / 2.0, delta),
+        dims=[name],
+        attrs=attrs,
     )
 
 
