@@ -252,10 +252,14 @@ class RegridderAccessor:
         >>> ds.regridder.horizontal_regrid2("ts", output_grid)
         """
         try:
-            regridder = REGRID_TOOLS[tool](self._ds, output_grid, **options)
+            regrid_tool = REGRID_TOOLS[tool]
         except KeyError as e:
             raise ValueError(
                 f"Tool {e!s} does not exist, valid choices {list(REGRID_TOOLS)}"
             )
 
-        return regridder.horizontal(data_var, self._ds)
+        regridder = regrid_tool(self._ds, output_grid, **options)
+
+        output_ds = regridder.horizontal(data_var, self._ds)
+
+        return output_ds
