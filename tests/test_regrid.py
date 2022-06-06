@@ -412,15 +412,15 @@ class TestXESMFRegridder:
                 ds, self.new_grid, "bilinear", extrap_method="bad value"
             )
 
-    def test_output_bounds(self):
-        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=False)
+    def test_preserve_bounds(self):
+        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+
+        ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
         regridder = xesmf.XESMFRegridder(ds, self.new_grid, method="bilinear")
 
         output = regridder.horizontal("ts", ds)
 
-        assert "lat_bnds" in output
-        assert "lon_bnds" in output
         assert "time_bnds" in output
 
 

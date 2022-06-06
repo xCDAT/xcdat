@@ -1,8 +1,7 @@
 import xarray as xr
 import xesmf as xe
 
-from xcdat.regridder.base import BaseRegridder
-
+from xcdat.regridder.base import BaseRegridder, preserve_bounds
 
 VALID_METHODS = [
     "bilinear",
@@ -165,15 +164,7 @@ class XESMFRegridder(BaseRegridder):
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
 
-        for dim_name, var_names in ds.cf.axes.items():
-            if dim_name in ("X", "Y"):
-                output_ds = output_ds.bounds.add_bounds(var_names[0])
-            else:
-                try:
-                    dim_bounds = ds.cf.get_bounds(dim_name)
-                except KeyError:
-                    output_ds = output_ds.bounds.add_bounds(var_names[0])
-                else:
-                    output_ds[dim_bounds.name] = dim_bounds
+        # preserve non-spatial bounds
+        output_ds = preserve_bounds(ds, output_ds)
 
         return output_ds
