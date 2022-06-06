@@ -203,10 +203,10 @@ class RegridderAccessor:
 
         - xESMF (https://pangeo-xesmf.readthedocs.io/en/latest/)
            - Rectilinear and curvilinear grids
-           - Find options at :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`
+           - Find options at :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
         - Regrid2
            - Rectilinear grids
-           - Find options at :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
+           - Find options at :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`
 
         Parameters
         ----------
