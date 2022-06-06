@@ -1421,8 +1421,8 @@ class TestDepartures:
         self.seasons = ["JJA", "MAM", "SON", "DJF"]
 
     def test_weighted_seasonal_departures_with_DJF(self):
-        # Create a post-climatology dataset.
         ds = self.ds.copy()
+
         # Drop incomplete DJF seasons
         ds = ds.isel(time=slice(2, -1))
 
@@ -1452,6 +1452,62 @@ class TestDepartures:
         )
 
         assert result.identical(expected)
+
+    def test_weighted_seasonal_departures_with_DJF_and_keep_weights(self):
+        ds = self.ds.copy()
+
+        # Drop incomplete DJF seasons
+        ds = ds.isel(time=slice(2, -1))
+
+        # Compare result of the method against the expected.
+        result = ds.temporal.departures(
+            "ts",
+            "season",
+            weighted=True,
+            keep_weights=True,
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+        )
+        expected = ds.copy()
+        expected["ts"] = xr.DataArray(
+            data=np.zeros((12, 4, 4)),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": ds.time,
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "season",
+                "weighted": "True",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "True",
+            },
+        )
+        expected["time_wts"] = xr.DataArray(
+            data=np.array(
+                [
+                    0.33695652,
+                    0.32608696,
+                    0.33695652,
+                    0.32608696,
+                    0.33695652,
+                    0.33695652,
+                    0.32967033,
+                    0.34065934,
+                    0.32967033,
+                    0.34444444,
+                    0.34444444,
+                    0.31111111,
+                ]
+            ),
+            coords={"time": ds.time},
+            dims=["time"],
+        )
+
+        xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
 
     def test_unweighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
@@ -1517,133 +1573,7 @@ class TestDepartures:
         assert result.identical(expected)
 
 
-class Test_SetObjAttrs:
-    # NOTE: Testing this private method directly instead of through the public
-    # methods because it eliminates redundancy.
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
-
-    def test_raises_error_if_operation_is_not_supported(self):
-        with pytest.raises(ValueError):
-            self.ds.temporal._set_obj_attrs(
-                "unsupported",
-                freq="season",
-                weighted=True,
-                season_config={
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
-                    "custom_seasons": None,
-                },
-            )
-
-    def test_raises_error_if_freq_arg_is_not_supported_by_operation(self):
-        ds = self.ds.copy()
-
-        with pytest.raises(ValueError):
-            ds.temporal._set_obj_attrs(
-                "group_average",
-                freq="unsupported",
-                weighted=True,
-                season_config={
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
-                    "custom_seasons": None,
-                },
-            )
-        with pytest.raises(ValueError):
-            ds.temporal._set_obj_attrs(
-                "climatology",
-                freq="unsupported",
-                weighted=True,
-                season_config={
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
-                    "custom_seasons": None,
-                },
-            )
-        with pytest.raises(ValueError):
-            ds.temporal._set_obj_attrs(
-                "departures",
-                freq="unsupported",
-                weighted=True,
-                season_config={
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
-                    "custom_seasons": None,
-                },
-            )
-
-    def test_does_not_raise_error_if_freq_arg_is_supported_by_operation(self):
-        ds = self.ds.copy()
-        climatology_freqs = ["season", "month", "day"]
-        departure_freqs = ["season", "month", "day"]
-        time_series_freqs = ["year", "season", "month", "day", "hour"]
-
-        for freq in time_series_freqs:
-            ds.temporal._set_obj_attrs(
-                "group_average",
-                freq=freq,
-                weighted=True,
-                season_config={
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
-                    "custom_seasons": None,
-                },
-            )
-
-        for freq in climatology_freqs:
-            ds.temporal._set_obj_attrs(
-                "climatology",
-                freq=freq,
-                weighted=True,
-                season_config={
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
-                    "custom_seasons": None,
-                },
-            )
-
-        for freq in departure_freqs:
-            ds.temporal._set_obj_attrs(
-                "departures",
-                freq=freq,
-                weighted=True,
-                season_config={
-                    "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
-                    "custom_seasons": None,
-                },
-            )
-
-    def test_raises_error_if_season_config_key_is_not_supported(self):
-        with pytest.raises(KeyError):
-            self.ds.temporal._set_obj_attrs(
-                "climatology",
-                freq="season",
-                weighted=True,
-                season_config={
-                    "not_supported": "invalid",
-                },
-            )
-
-    def test_raises_error_if_december_mode_is_not_supported(self):
-        with pytest.raises(ValueError):
-            self.ds.temporal._set_obj_attrs(
-                "climatology",
-                freq="season",
-                weighted=True,
-                season_config={
-                    "dec_mode": "unsupported",
-                    "drop_incomplete_djf": False,
-                    "custom_seasons": None,
-                },
-            )
-
-
 class Test_GetWeights:
-    # NOTE: Testing this private method directly instead of through the public
-    # methods because there is potential for this method to become public.
     class TestWeightsForAverageMode:
         @pytest.fixture(autouse=True)
         def setup(self):
@@ -1653,7 +1583,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
@@ -1716,7 +1645,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
@@ -1783,7 +1711,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
@@ -1846,7 +1773,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
@@ -1917,6 +1843,7 @@ class Test_GetWeights:
                     "axis": "T",
                     "long_name": "time",
                     "standard_name": "time",
+                    "bounds": "time_bnds",
                 },
             )
             ds["ts"] = xr.DataArray(
@@ -1988,7 +1915,6 @@ class Test_GetWeights:
             )
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2050,7 +1976,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2120,7 +2045,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2197,7 +2121,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "day"
             ds.temporal._weighted = "True"
@@ -2242,7 +2165,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "hour"
             ds.temporal._weighted = "True"
@@ -2317,6 +2239,7 @@ class Test_GetWeights:
                     "axis": "T",
                     "long_name": "time",
                     "standard_name": "time",
+                    "bounds": "time_bnds",
                 },
             )
             ds["ts"] = xr.DataArray(
@@ -2388,7 +2311,6 @@ class Test_GetWeights:
             )
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2445,7 +2367,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2510,7 +2431,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
@@ -2573,7 +2493,6 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
-            ds.temporal._time_bounds = ds.time_bnds.copy()
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "day"
             ds.temporal._weighted = "True"
@@ -2629,3 +2548,91 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+
+class Test_Averager:
+    # NOTE: This private method is tested because it is more redundant to
+    # test these cases for the public methods that call this private method.
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+
+    def test_raises_error_with_incorrect_mode_arg(self):
+        with pytest.raises(ValueError):
+            self.ds.temporal._averager(
+                "ts",
+                "unsupported",
+                freq="season",
+                weighted=True,
+                season_config={
+                    "dec_mode": "DJF",
+                    "drop_incomplete_djf": False,
+                    "custom_seasons": None,
+                },
+            )
+
+    def test_raises_error_if_freq_arg_is_not_supported_by_operation(self):
+        ds = self.ds.copy()
+
+        with pytest.raises(ValueError):
+            ds.temporal._averager(
+                "ts",
+                "group_average",
+                freq="unsupported",
+                weighted=True,
+                season_config={
+                    "dec_mode": "DJF",
+                    "drop_incomplete_djf": False,
+                    "custom_seasons": None,
+                },
+            )
+        with pytest.raises(ValueError):
+            ds.temporal._averager(
+                "ts",
+                "climatology",
+                freq="unsupported",
+                weighted=True,
+                season_config={
+                    "dec_mode": "DJF",
+                    "drop_incomplete_djf": False,
+                    "custom_seasons": None,
+                },
+            )
+        with pytest.raises(ValueError):
+            ds.temporal._averager(
+                "ts",
+                "departures",
+                freq="unsupported",
+                weighted=True,
+                season_config={
+                    "dec_mode": "DJF",
+                    "drop_incomplete_djf": False,
+                    "custom_seasons": None,
+                },
+            )
+
+    def test_raises_error_if_season_config_key_is_not_supported(self):
+        with pytest.raises(KeyError):
+            self.ds.temporal._averager(
+                "ts",
+                "climatology",
+                freq="season",
+                weighted=True,
+                season_config={
+                    "not_supported": "invalid",
+                },
+            )
+
+    def test_raises_error_if_december_mode_is_not_supported(self):
+        with pytest.raises(ValueError):
+            self.ds.temporal._averager(
+                "ts",
+                "climatology",
+                freq="season",
+                weighted=True,
+                season_config={
+                    "dec_mode": "unsupported",
+                    "drop_incomplete_djf": False,
+                    "custom_seasons": None,
+                },
+            )
