@@ -1,10 +1,8 @@
 import xarray as xr
 import xesmf as xe
 
-from xcdat.logger import setup_custom_logger
 from xcdat.regridder.base import BaseRegridder
 
-logger = setup_custom_logger(__name__)
 
 VALID_METHODS = [
     "bilinear",
