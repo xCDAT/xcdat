@@ -14,58 +14,43 @@ The goal of xCDAT is to provide climate domain specific features and general uti
 
 Initial features include:
 
-- Support for CF compliant, E3SM non-CF compliant, and common metadata
+* Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` with post-processing options
 
-  - Leverage `cf_xarray`_ to interpret `CF convention`_ attributes on ``xarray`` objects
+  * Generate bounds for axes supported by ``xcdat`` if they don't exist in the Dataset
+  * Optional decoding non-CF time units, in addition to CF time units (already supported in ``xarray``)
+  * Optional centering of time coordinate using time bounds
+  * Optional conversion of longitudinal axis orientation between [0, 360) and [-180, 180)
 
-- Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` with post-processing options
+* Temporal averaging
 
-  - Generate bounds for axes supported by ``xcdat`` if they don't exist in the Dataset
-  - Optional decoding non-CF time units, in addition to CF time units (already supported in ``xarray``)
-  - Optional centering of time coordinate using time bounds
-  - Optional conversion of longitudinal axis orientation between [0, 360) and [-180, 180)
+  * Time series averages, climatologies, and departures
+  * Weighted or unweighted
+  * Optional centering of time coordinates using time bounds
+  * Optional seasonal configuration
 
-- Temporal averaging
+* Geospatial weighted averaging
 
-  - Time series averages, climatologies, and departures
-  - Weighted or unweighted
-  - Optional centering of time coordinates using time bounds
-  - Optional seasonal configuration
+  * Support rectilinear grid
+  * Optional specification of regional domain
 
-- Geospatial weighted averaging
+* Horizontal and vertical structured regridding
 
-  - Support rectilinear grid
-  - Optional specification of regional domain
-
-- Horizontal and vertical structured regridding
-
-  - Support rectilinear and cuvilinear grids
+  * Support rectilinear and cuvilinear grids
 
 Things we keep in mind:
 
-- Robust handling of coordinates and its associated bounds
+* Support for CF compliant, E3SM non-CF compliant, and common metadata
 
-  - Coordinates and bounds are retrieved with ``cf_xarray`` using the standard ``axis`` and ``coordinate`` attributes
-  - Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
+  * Leverage `cf_xarray`_ to interpret `CF convention`_ attributes on ``xarray`` objects
 
-- Support for parallelism using `dask`_ where it is both possible and makes sense
+* Robust handling of coordinates and its associated bounds
+
+  * Coordinates and bounds are retrieved with ``cf_xarray`` using the standard ``axis`` and ``coordinate`` attributes
+  * Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
+
+* Support for parallelism using `dask`_ where it is both possible and makes sense
 
 .. _dask: https://dask.org/
-
-Feature Criteria
-~~~~~~~~~~~~~~~~
-
-Features must meet the following criteria before they are considered for implementation:
-
-1. Feature is not implemented by ``xarray``
-2. Feature is not implemented in another actively developed xarray-based package
-
-   - For example, ``cf_xarray`` already handles interpretation of CF convention attributes on xarray objects
-
-3. Feature is not limited to specific use cases (e.g., data quality issues)
-4. Feature is generally reusable
-5. Feature is relatively simple and lightweight to implement and use
-
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 .. _CF convention: http://cfconventions.org/
 
