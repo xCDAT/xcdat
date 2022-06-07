@@ -611,6 +611,19 @@ class TestAccessor:
         ):
             self.ac.horizontal("ts", mock.MagicMock(), "test")  # type: ignore
 
+    def test_convenience_methods(self):
+        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+
+        out_grid = grid.create_gaussian_grid(32)
+
+        output_xesmf = ds.regridder.horizontal_xesmf("ts", out_grid, method="bilinear")
+
+        assert output_xesmf.ts.shape == (15, 32, 65)
+
+        output_regrid2 = ds.regridder.horizontal_regrid2("ts", out_grid)
+
+        assert output_regrid2.ts.shape == (15, 32, 65)
+
 
 class TestBase:
     def test_regridder_implementation(self):
