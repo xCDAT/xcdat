@@ -218,8 +218,6 @@ def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
 
             weights[mid + 1] = mid_weight
 
-    # bounds = (180.0 / np.pi) * np.arcsin(bessel_zeros)
-
     return points, weights
 
 
