@@ -58,7 +58,11 @@ BESSEL_LOOKUP = [
     156.2950342685,
 ]
 
+# Error used for legendre polinomial
+# Taken from CDAT's regrid2 module https://github.com/CDAT/cdms/blob/3f8c7baa359f428628a666652ecf361764dc7b7a/regrid2/Src/_regridmodule.c#L3229
 EPS = 1e-14
+# Constant used in first estimate for legendre polinomial
+# Taken from CDAT's regrid2 module https://github.com/CDAT/cdms/blob/3f8c7baa359f428628a666652ecf361764dc7b7a/regrid2/Src/_regridmodule.c#L3254-L3256
 ESTIMATE_CONST = 0.25 * (1.0 - np.power(2.0 / np.pi, 2))
 
 
@@ -280,7 +284,6 @@ def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, fl
     Tuple[float, float, float]
         First, second and third legendre polynomial.
     """
-    # TODO figure out why this is different compared to numpy.polynomial.legendre, is this wrong?
     zero_poly = np.cos(bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST))
 
     for _ in range(10):

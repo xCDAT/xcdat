@@ -466,7 +466,10 @@ def _align_axis(
     """
     west_most = np.minimum(dst_west[0], dst_west[-1])
 
-    alignment_index = _pertub((west_most - src_west[-1]) / 360.0).values
+    west_most_positions: xr.DataArray = (west_most - src_west[-1]) / xr.DataArray(360.0)
+
+    # grab raw np.ndarray from xr.DataArray
+    alignment_index = _pertub(west_most_positions).values
 
     if src_west[0] < src_west[-1]:
         alignment_index += 1
@@ -516,21 +519,29 @@ def _align_axis(
     return shifted_src_west, shifted_src_east, shift
 
 
-def _pertub(value):
+def _pertub(value: xr.DataArray) -> xr.DataArray:
     """
     Pertub a value.
 
+    Modifies value with a small constant and returns nearest whole
+    number.
+
     Parameters
     ----------
-    value :
+    value : xr.DataArray
         Value to pertub.
+
+    Returns
+    -------
+    xr.DataArray
+        Value that's been pertubed.
     """
     if value >= 0.0:
         offset = np.ceil(value + 0.000001)
     else:
         offset = np.floor(value - 0.000001) + 1.0
 
-    return offset
+    return xr.DataArray(offset)
 
 
 # vectorize version of pertub
