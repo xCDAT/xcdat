@@ -466,10 +466,7 @@ def _align_axis(
     """
     west_most = np.minimum(dst_west[0], dst_west[-1])
 
-    west_most_positions: xr.DataArray = (west_most - src_west[-1]) / xr.DataArray(360.0)
-
-    # grab raw np.ndarray from xr.DataArray
-    alignment_index = _pertub(west_most_positions).values
+    alignment_index = _vpertub((west_most - src_west[-1]) / 360.0)
 
     if src_west[0] < src_west[-1]:
         alignment_index += 1

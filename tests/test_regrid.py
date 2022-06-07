@@ -149,40 +149,71 @@ class TestRegrid2Regridder:
         assert "lon_bnds" in output_ds
         assert "time_bnds" in output_ds
 
-    def test_align_axis(self):
-        src = gen_uniform_axis(-0.5, 360, 30, "lon", "X")
-
-        dst = gen_uniform_axis(-0.5, 360, 60, "lon", "X")
-
-        src_west, src_east = regrid2._extract_bounds(src)
-
-        dst_west, _ = regrid2._extract_bounds(dst)
+    @pytest.mark.parametrize(
+        "src,dst,expected_west,expected_east,expected_shift",
+        [
+            (
+                np.arange(-180, 180.1, 180),
+                np.arange(-180, 180.1, 90),
+                np.array([-180, 0, 180]),
+                np.array([0, 180, 360]),
+                0,
+            ),
+            (
+                np.arange(-180, 180.1, 180),
+                np.arange(0, 360.1, 90),
+                np.array([0, 180, 360]),
+                np.array([180, 360, 540]),
+                1,
+            ),
+            (
+                np.arange(0, 360.1, 180),
+                np.arange(-180, 180.1, 90),
+                np.array([-360, -180, 0]),
+                np.array([-180, 0, 180]),
+                0,
+            ),
+            (
+                np.arange(0, 360.1, 180),
+                np.arange(0, 360.1, 90),
+                np.array([0, 180, 360]),
+                np.array([180, 360, 540]),
+                0,
+            ),
+            (
+                np.arange(180.0, -180.1, -180),
+                np.arange(-180, 180.1, 90),
+                np.array([0, -180, -360]),
+                np.array([-180, -360, -540]),
+                1,
+            ),
+            (
+                np.arange(-180.0, 180.1, 180),
+                np.arange(180, -180.1, -90),
+                np.array([-180, 0, 180]),
+                np.array([0, 180, 360]),
+                0,
+            ),
+            (
+                np.arange(-360, 360.1, 90),
+                np.arange(360, -540.1, -180),
+                np.array([-360, -270, -180, -90, -360, -270, -180, -90, 0]),
+                np.array([-270, -180, -90, 0, -270, -180, -90, 0, 90]),
+                0,
+            ),
+        ],
+    )
+    def test_align_axis(self, src, dst, expected_west, expected_east, expected_shift):
+        src_west, src_east = src[:-1], src[1:]
+        dst_west = dst[:-1]
 
         shifted_west, shifted_east, shift = regrid2._align_axis(
             src_west, src_east, dst_west
         )
 
-        assert shift == 0
-
-        src_neg = xr.DataArray(np.roll(src, -2))
-
-        src_neg_west, src_neg_east = regrid2._extract_bounds(src_neg)
-
-        shifted_west, shifted_east, shift = regrid2._align_axis(
-            src_neg_west, src_neg_east, dst_west
-        )
-
-        assert shift == 11
-
-        src_180 = gen_uniform_axis(-180, 180, 30, "lon", "X")
-
-        src_180_west, src_180_east = regrid2._extract_bounds(src_180)
-
-        shifted_west, shifted_east, shift = regrid2._align_axis(
-            src_180_west, src_180_east, dst_west
-        )
-
-        assert shift == 5
+        assert np.all(shifted_west == expected_west)
+        assert np.all(shifted_east == expected_east)
+        assert shift == expected_shift
 
     def test_unknown_variable(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
