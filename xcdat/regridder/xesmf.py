@@ -174,6 +174,8 @@ class XESMFRegridder(BaseRegridder):
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
 
         # preserve non-spatial bounds
-        output_ds = preserve_bounds(ds, output_ds)
+        output_ds = preserve_bounds(ds, self._output_grid, output_ds)
+
+        output_ds = output_ds.bounds.add_missing_bounds()
 
         return output_ds

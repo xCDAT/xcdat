@@ -8,16 +8,21 @@ from xcdat.logger import setup_custom_logger
 logger = setup_custom_logger(__name__)
 
 
-def preserve_bounds(source: xr.Dataset, target: xr.Dataset) -> xr.Dataset:
-    """Preserves bounds from source.
+def preserve_bounds(
+    source: xr.Dataset, source_grid: xr.Dataset, target: xr.Dataset
+) -> xr.Dataset:
+    """Preserves bounds from sources to target.
 
-    This function will take bounds from the `source` Dataset and add to
-    `target` Dataset if not already present.
+    Preserve the lat/lon bounds from `source_grid` to `target`.
+
+    Preserve any additional bounds e.g. time, vertical from `source` to `target`.
 
     Parameters
     ----------
     source : xr.Dataset
-        Source Dataset to retrieve bounds from.
+        Source Dataset.
+    source_grid : xr.Dataset
+        Source grid Dataset.
     target : xr.Dataset
         Target Dataset to preserve bounds to.
 
@@ -26,6 +31,20 @@ def preserve_bounds(source: xr.Dataset, target: xr.Dataset) -> xr.Dataset:
     xr.Dataset
         Target Dataset with preserved bounds.
     """
+    try:
+        lat_bnds = source_grid.cf.get_bounds("lat")
+    except KeyError:
+        pass
+    else:
+        target[lat_bnds.name] = lat_bnds.copy()
+
+    try:
+        lon_bnds = source_grid.cf.get_bounds("lon")
+    except KeyError:
+        pass
+    else:
+        target[lon_bnds.name] = lon_bnds.copy()
+
     for dim_name in source.cf.axes:
         try:
             source_bnds = source.cf.get_bounds(dim_name)

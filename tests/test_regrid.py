@@ -624,6 +624,27 @@ class TestAccessor:
 
 
 class TestBase:
+    def test_preserve_bounds(self):
+        ds_with_bounds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+
+        ds_without_bounds = ds_with_bounds.drop_vars(["lat_bnds", "lon_bnds"])
+
+        target = xr.Dataset()
+
+        output_ds = base.preserve_bounds(ds_with_bounds, ds_without_bounds, target)
+
+        assert "lat_bnds" in output_ds
+        assert "lon_bnds" in output_ds
+        assert "time_bnds" in output_ds
+
+        target = xr.Dataset()
+
+        output_ds = base.preserve_bounds(ds_without_bounds, ds_without_bounds, target)
+
+        assert "lat_bnds" not in output_ds
+        assert "lon_bnds" not in output_ds
+        assert "time_bnds" in output_ds
+
     def test_regridder_implementation(self):
         class NewRegridder(base.BaseRegridder):
             def __init__(self, src_grid, dst_grid, **options):

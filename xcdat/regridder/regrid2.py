@@ -64,35 +64,95 @@ class Regrid2Regridder(BaseRegridder):
         self._lat_weights: Any = None
         self._lon_weights: Any = None
 
-    def _base_put_indexes(self, axis_sizes: Dict[str, int]) -> np.ndarray:
-        """Calculates the base indexes to place cell (0, 0).
+    def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+        """Regrid ``data_var`` in ``ds`` to output grid.
 
-        Example:
-        For a 3D array (time, lat, lon) with the shape (2, 2, 2) the offsets to
-        place cell (0, 0) in each time step would be [0, 4].
-
-        For a 4D array (time, plev, lat, lon) with shape (2, 2, 2, 2) the offsets
-        to place cell (0, 0) in each time step would be [0, 4, 8, 16].
+        Mappings and weights between input and output grid are calculated
+        on the first call, allowing a regridder to be applied to many input
+        datasets.
 
         Parameters
         ----------
-        axis_sizes : Dict[str, int]
-            Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
+        data_var : str
+            The name of the data variable inside the dataset to regrid.
+        ds : xr.Dataset
+            The dataset containing ``data_var``.
 
         Returns
         -------
-        np.ndarray
-            Array containing the base indexes to be used in np.put operations.
+        xr.Dataset
+            Dataset with variable on the destination grid.
+
+        Raises
+        ------
+        KeyError
+            If data variable does not exist in the Dataset.
+
+        Examples
+        --------
+
+        Create output grid:
+
+        >>> output_grid = xcdat.create_gaussian_grid(32)
+
+        Create regridder:
+
+        >>> regridder = regrid2.Regrid2Regridder(ds, output_grid)
+
+        Regrid data:
+
+        >>> data_new_grid = regridder.horizontal("ts", ds)
         """
-        extra_dims = set(axis_sizes) - set(["X", "Y"])
+        input_data_var = ds.get(data_var, None)
 
-        number_of_offsets = np.multiply.reduce([axis_sizes[x] for x in extra_dims])
+        if input_data_var is None:
+            raise KeyError(
+                f"The data variable '{data_var}' does not exist in the dataset."
+            )
 
-        offset = np.multiply.reduce(
-            [axis_sizes[x] for x in extra_dims ^ set(axis_sizes)]
+        # Do initial mapping between src/dst latitude and longitude.
+        if self._lat_mapping is None and self._lat_weights is None:
+            self._lat_mapping, self._lat_weights = _map_latitude(
+                self._src_lat, self._dst_lat
+            )
+
+        if self._lon_mapping is None and self._lon_weights is None:
+            self._lon_mapping, self._lon_weights = _map_longitude(
+                self._src_lon, self._dst_lon
+            )
+
+        src_mask = self._input_grid.get("mask", None)
+
+        # apply source mask to input data
+        if src_mask is not None:
+            input_data_var = input_data_var.where(src_mask == 0.0)
+
+        # operate on pure numpy
+        input_data = input_data_var.values
+
+        axis_variable_name_map = {x: y[0] for x, y in input_data_var.cf.axes.items()}
+
+        output_axis_sizes = self._output_axis_sizes(input_data_var)
+
+        ordered_axis_names = list(output_axis_sizes)
+
+        output_data = self._regrid(input_data, output_axis_sizes, ordered_axis_names)
+
+        output_ds = self._create_output_dataset(
+            ds, data_var, output_data, axis_variable_name_map, ordered_axis_names
         )
 
-        return (np.arange(number_of_offsets) * offset).astype(np.int64)
+        dst_mask = self._output_grid.get("mask", None)
+
+        if dst_mask is not None:
+            output_ds[data_var] = output_ds[data_var].where(dst_mask == 0.0)
+
+        # preserve non-spatial bounds
+        output_ds = preserve_bounds(ds, self._output_grid, output_ds)
+
+        output_ds = output_ds.bounds.add_missing_bounds()
+
+        return output_ds
 
     def _output_axis_sizes(self, da: xr.DataArray) -> Dict[str, int]:
         """Maps axes to output array sizes.
@@ -183,6 +243,36 @@ class Regrid2Regridder(BaseRegridder):
 
         return output_data
 
+    def _base_put_indexes(self, axis_sizes: Dict[str, int]) -> np.ndarray:
+        """Calculates the base indexes to place cell (0, 0).
+
+        Example:
+        For a 3D array (time, lat, lon) with the shape (2, 2, 2) the offsets to
+        place cell (0, 0) in each time step would be [0, 4].
+
+        For a 4D array (time, plev, lat, lon) with shape (2, 2, 2, 2) the offsets
+        to place cell (0, 0) in each time step would be [0, 4, 8, 16].
+
+        Parameters
+        ----------
+        axis_sizes : Dict[str, int]
+            Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
+
+        Returns
+        -------
+        np.ndarray
+            Array containing the base indexes to be used in np.put operations.
+        """
+        extra_dims = set(axis_sizes) - set(["X", "Y"])
+
+        number_of_offsets = np.multiply.reduce([axis_sizes[x] for x in extra_dims])
+
+        offset = np.multiply.reduce(
+            [axis_sizes[x] for x in extra_dims ^ set(axis_sizes)]
+        )
+
+        return (np.arange(number_of_offsets) * offset).astype(np.int64)
+
     def _create_output_dataset(
         self,
         input_ds: xr.Dataset,
@@ -215,20 +305,13 @@ class Regrid2Regridder(BaseRegridder):
         variable_axis_name_map = {y: x for x, y in axis_variable_name_map.items()}
 
         coords = {}
-        data_vars = {}
 
         # Grab coords and bounds from appropriate dataset.
         for variable_name, axis_name in variable_axis_name_map.items():
             if axis_name in ["X", "Y"]:
                 coords[variable_name] = self._output_grid[variable_name].copy()
-
-                bounds = self._output_grid.bounds.get_bounds(variable_name)
             else:
                 coords[variable_name] = input_ds[variable_name].copy()
-
-                bounds = input_ds.bounds.get_bounds(variable_name)
-
-            data_vars[bounds.name] = bounds.copy()
 
         output_da = xr.DataArray(
             output_data,
@@ -236,97 +319,9 @@ class Regrid2Regridder(BaseRegridder):
             coords=coords,
         )
 
-        data_vars[data_var] = output_da
+        data_vars = {data_var: output_da}
 
         return xr.Dataset(data_vars)
-
-    def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """Regrid ``data_var`` in ``ds`` to output grid.
-
-        Mappings and weights between input and output grid are calculated
-        on the first call, allowing a regridder to be applied to many input
-        datasets.
-
-        Parameters
-        ----------
-        data_var : str
-            The name of the data variable inside the dataset to regrid.
-        ds : xr.Dataset
-            The dataset containing ``data_var``.
-
-        Returns
-        -------
-        xr.Dataset
-            Dataset with variable on the destination grid.
-
-        Raises
-        ------
-        KeyError
-            If data variable does not exist in the Dataset.
-
-        Examples
-        --------
-
-        Create output grid:
-
-        >>> output_grid = xcdat.create_gaussian_grid(32)
-
-        Create regridder:
-
-        >>> regridder = regrid2.Regrid2Regridder(ds, output_grid)
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.horizontal("ts", ds)
-        """
-        input_data_var = ds.get(data_var, None)
-
-        if input_data_var is None:
-            raise KeyError(
-                f"The data variable '{data_var}' does not exist in the dataset."
-            )
-
-        # Do initial mapping between src/dst latitude and longitude.
-        if self._lat_mapping is None and self._lat_weights is None:
-            self._lat_mapping, self._lat_weights = _map_latitude(
-                self._src_lat, self._dst_lat
-            )
-
-        if self._lon_mapping is None and self._lon_weights is None:
-            self._lon_mapping, self._lon_weights = _map_longitude(
-                self._src_lon, self._dst_lon
-            )
-
-        src_mask = self._input_grid.get("mask", None)
-
-        # apply source mask to input data
-        if src_mask is not None:
-            input_data_var = input_data_var.where(src_mask == 0.0)
-
-        # operate on pure numpy
-        input_data = input_data_var.values
-
-        axis_variable_name_map = {x: y[0] for x, y in input_data_var.cf.axes.items()}
-
-        output_axis_sizes = self._output_axis_sizes(input_data_var)
-
-        ordered_axis_names = list(output_axis_sizes)
-
-        output_data = self._regrid(input_data, output_axis_sizes, ordered_axis_names)
-
-        output_ds = self._create_output_dataset(
-            ds, data_var, output_data, axis_variable_name_map, ordered_axis_names
-        )
-
-        dst_mask = self._output_grid.get("mask", None)
-
-        if dst_mask is not None:
-            output_ds[data_var] = output_ds[data_var].where(dst_mask == 0.0)
-
-        # preserve non-spatial bounds
-        output_ds = preserve_bounds(ds, output_ds)
-
-        return output_ds
 
 
 def _map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
