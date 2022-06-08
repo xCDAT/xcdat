@@ -25,6 +25,7 @@ class XESMFRegridder(BaseRegridder):
         extrap_method: str = None,
         extrap_dist_exponent: float = None,
         extrap_num_src_pnts: int = None,
+        **options,
     ):
         """Wrapper class for xESMF regridder class.
 
@@ -106,6 +107,7 @@ class XESMFRegridder(BaseRegridder):
         self._extrap_dist_exponent = extrap_dist_exponent
         self._extrap_num_src_pnts = extrap_num_src_pnts
         self._regridder: xe.XESMFRegridder = None
+        self._extra_options = options
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Regrid ``data_var`` in ``ds`` to output grid.
@@ -158,6 +160,7 @@ class XESMFRegridder(BaseRegridder):
                 extrap_method=self._extrap_method,
                 extrap_dist_exponent=self._extrap_dist_exponent,
                 extrap_num_src_pnts=self._extrap_num_src_pnts,
+                **self._extra_options,
             )
 
         output_da = self._regridder(input_da, keep_attrs=True)
