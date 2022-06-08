@@ -25,10 +25,10 @@ class XESMFRegridder(BaseRegridder):
         extrap_method: str = None,
         extrap_dist_exponent: float = None,
         extrap_num_src_pnts: int = None,
+        ignore_degenerate: bool = True,
         **options,
     ):
         """Wrapper class for xESMF regridder class.
-
 
         Parameters
         ----------
@@ -56,6 +56,12 @@ class XESMFRegridder(BaseRegridder):
         extrap_num_src_pnts : int
             The number of source points to use for the extrapolation methods
             that use more than one source point.
+        ignore_degenerate : bool
+            Ignore degenerate cells when checking the `input_grid` for errors.
+            If set False, a degenerate cell produces an error.
+
+            This only applies to "conservative" and "conservative_normed"
+            regridding methods.
 
         Raises
         ------
