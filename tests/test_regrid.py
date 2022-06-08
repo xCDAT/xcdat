@@ -456,18 +456,57 @@ class TestXESMFRegridder:
 
 
 class TestGrid:
+    def test_create_grid(self):
+        lat = np.array([-45, 0, 45])
+        lon = np.array([30, 60, 90, 120, 150])
+        lat_bnds = np.array([[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
+        lon_bnds = np.array([[15, 45], [45, 75], [75, 105], [105, 135], [135, 165]])
+
+        new_grid = grid.create_grid(lat, lon)
+
+        assert np.array_equal(new_grid.lat, lat)
+        assert np.array_equal(new_grid.lat_bnds, lat_bnds)
+        assert new_grid.lat.units == "degrees_north"
+        assert np.array_equal(new_grid.lon, lon)
+        assert np.array_equal(new_grid.lon_bnds, lon_bnds)
+        assert new_grid.lon.units == "degrees_east"
+
+        da_lat = xr.DataArray(
+            name="lat",
+            data=lat,
+            dims=["lat"],
+            attrs={"units": "degrees_north", "axis": "Y"},
+        )
+        da_lon = xr.DataArray(
+            name="lon",
+            data=lon,
+            dims=["lon"],
+            attrs={"units": "degrees_east", "axis": "X"},
+        )
+        da_lat_bnds = xr.DataArray(name="lat_bnds", data=lat_bnds, dims=["lat", "bnds"])
+        da_lon_bnds = xr.DataArray(name="lon_bnds", data=lon_bnds, dims=["lon", "bnds"])
+
+        new_grid = grid.create_grid(
+            da_lat, da_lon, lat_bnds=da_lat_bnds, lon_bnds=da_lon_bnds
+        )
+
+        assert np.array_equal(new_grid.lat, lat)
+        assert np.array_equal(new_grid.lat_bnds, lat_bnds)
+        assert new_grid.lat.units == "degrees_north"
+        assert np.array_equal(new_grid.lon, lon)
+        assert np.array_equal(new_grid.lon_bnds, lon_bnds)
+        assert new_grid.lon.units == "degrees_east"
+
     def test_uniform_grid(self):
         new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
         assert new_grid.lat[0] == -90.0
         assert new_grid.lat[-1] == 90.0
         assert new_grid.lat.shape == (46,)
-        assert new_grid.lat.units == "degrees_north"
 
         assert new_grid.lon[0] == -180
         assert new_grid.lon[-1] == 180
         assert new_grid.lon.shape == (73,)
-        assert new_grid.lon.units == "degrees_east"
 
     def test_gaussian_grid(self):
         small_grid = grid.create_gaussian_grid(32)
@@ -492,8 +531,10 @@ class TestGrid:
 
         mean_grid = grid.create_global_mean_grid(source_grid)
 
-        assert np.all(mean_grid.lat == [0.0])
-        assert np.all(mean_grid.lon == [180.0])
+        assert np.all(mean_grid.lat == np.array([0.0]))
+        assert np.all(mean_grid.lat_bnds == np.array([[-90, 90]]))
+        assert np.all(mean_grid.lon == np.array([180.0]))
+        assert np.all(mean_grid.lon_bnds == np.array([[-22.5, 405]]))
 
     def test_zonal_grid(self):
         source_grid = grid.create_grid(
@@ -502,8 +543,13 @@ class TestGrid:
 
         zonal_grid = grid.create_zonal_grid(source_grid)
 
-        assert np.all(zonal_grid.lat == [-80, -40, 0, 40, 80])
-        assert np.all(zonal_grid.lon == [0])
+        assert np.all(zonal_grid.lat == np.array([-80, -40, 0, 40, 80]))
+        assert np.all(
+            zonal_grid.lat_bnds
+            == np.array([[-90, -60], [-60, -20], [-20, 20], [20, 60], [60, 90]])
+        )
+        assert np.all(zonal_grid.lon == np.array([0.0]))
+        assert np.all(zonal_grid.lon_bnds == np.array([-200, 200]))
 
 
 class TestAccessor:

@@ -1,4 +1,4 @@
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
@@ -86,28 +86,11 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
 
     >>> xcdat.regridder.grid.create_gaussian_grid(32)
     """
-    lat_bounds, lat_axis = _create_gaussian_axis(nlats)
+    lat_bnds, lat = _create_gaussian_axis(nlats)
 
-    lon_axis = create_uniform_axis(
-        0.0,
-        360.0,
-        (360.0 / (2.0 * nlats)),
-        "lon",
-        {"units": "degrees_east", "axis": "X"},
-    )
+    lon = _create_uniform_axis(0.0, 360.0, (360.0 / (2.0 * nlats)))
 
-    grid = xr.Dataset(
-        {
-            "lat": lat_axis,
-            "lon": lon_axis,
-        }
-    )
-
-    grid = grid.bounds.add_missing_bounds()
-
-    grid["lat_bnds"] = lat_bounds
-
-    return grid
+    return create_grid(lat, lon, lat_bnds=lat_bnds)
 
 
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
@@ -311,37 +294,6 @@ def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, fl
     return zero_poly, first_poly, second_poly
 
 
-def create_uniform_axis(
-    start: float, stop: float, delta: float, name: str, attrs: dict
-) -> xr.DataArray:
-    """Create a uniform axis.
-
-    Parameters
-    ----------
-    start : float
-        Starting latitude point.
-    stop : float
-        Stopping latitude point.
-    delta : float
-        Distance between points.
-    name : str
-        Name of the axis.
-    attrs : dict
-        Axis attributes.
-
-    Returns
-    -------
-    xr.DataArray
-        Containing uniform axis.
-    """
-    return xr.DataArray(
-        name=name,
-        data=np.arange(start, stop + 0.0001, delta),
-        dims=[name],
-        attrs=attrs,
-    )
-
-
 def create_uniform_grid(
     lat_start: float,
     lat_stop: float,
@@ -380,32 +332,39 @@ def create_uniform_grid(
 
     >>> xcdat.regridder.grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
     """
-    grid = xr.Dataset(
-        coords={
-            "lat": create_uniform_axis(
-                lat_start,
-                lat_stop,
-                lat_delta,
-                "lat",
-                {"units": "degrees_north", "axis": "Y"},
-            ),
-            "lon": create_uniform_axis(
-                lon_start,
-                lon_stop,
-                lon_delta,
-                "lon",
-                {"units": "degrees_east", "axis": "X"},
-            ),
-        },
-    )
+    lat = _create_uniform_axis(lat_start, lat_stop + 0.0001, lat_delta)
 
-    grid = grid.bounds.add_missing_bounds()
+    lon = _create_uniform_axis(lon_start, lon_stop + 0.0001, lon_delta)
 
-    return grid
+    return create_grid(lat, lon)
+
+
+def _create_uniform_axis(start: float, stop: float, delta: float) -> np.ndarray:
+    """Create a uniform axis.
+
+    Start and stop are inclusive.
+
+    Parameters
+    ----------
+    start : float
+        Start value of the array.
+    stop : float
+        Stop value of the array.
+    delta : float
+        Change between each value in the array.
+
+    Returns
+    -------
+    np.ndarray
+        Array containing axis values.
+    """
+    return np.arange(start, stop + 0.0001, delta)
 
 
 def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
     """Creates a global mean grid.
+
+    Bounds are expected to be present in `grid`.
 
     Parameters
     ----------
@@ -418,61 +377,24 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
         A dataset containing the global mean grid.
     """
     lat = grid.cf["lat"]
-    lat_bnd = grid.bounds.get_bounds("lat")
+    lat_data = np.array([(lat[0] + lat[-1]) / 2.0])
 
-    out_lat_data = np.array([(lat[0] + lat[-1]) / 2.0])
-    out_lat_bnds = np.array([[lat_bnd[0, 0], lat_bnd[-1, 1]]])
+    lat_bnds = grid.cf.get_bounds("lat")
+    lat_bnds = np.array([[lat_bnds[0, 0], lat_bnds[-1, 1]]])
 
     lon = grid.cf["lon"]
-    lon_bnd = grid.bounds.get_bounds("lon")
+    lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
 
-    out_lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
-    out_lon_bnds = np.array([[lon_bnd[0, 0], lon_bnd[-1, 1]]])
+    lon_bnds = grid.cf.get_bounds("lon")
+    lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
-    lat_dataarray = xr.DataArray(
-        name="lat",
-        data=out_lat_data,
-        dims=["lat"],
-        attrs=grid.cf["lat"].attrs.copy(),
-    )
-
-    lon_dataarray = xr.DataArray(
-        name="lon",
-        data=out_lon_data,
-        dims=["lon"],
-        attrs=grid.cf["lon"].attrs.copy(),
-    )
-
-    return xr.Dataset(
-        coords={
-            "lat": lat_dataarray,
-            "lon": lon_dataarray,
-        },
-        data_vars={
-            "lat_bnds": xr.DataArray(
-                name="lat_bnds",
-                data=out_lat_bnds,
-                dims=["lat", "bnds"],
-                coords={
-                    "lat": lat_dataarray,
-                },
-                attrs=grid.bounds.get_bounds("lat").attrs.copy(),
-            ),
-            "lon_bnds": xr.DataArray(
-                name="lon_bnds",
-                data=out_lon_bnds,
-                dims=["lon", "bnds"],
-                coords={
-                    "lon": lon_dataarray,
-                },
-                attrs=grid.bounds.get_bounds("lon").attrs.copy(),
-            ),
-        },
-    )
+    return create_grid(lat_data, lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds)
 
 
 def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     """Creates a zonal grid.
+
+    Bounds are expected to be present in `grid`.
 
     Parameters
     ----------
@@ -485,55 +407,23 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
         A dataset containing a zonal grid.
     """
     lon = grid.cf["lon"]
-    lon_bnds = grid.bounds.get_bounds("lon")
-
     out_lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
-    out_lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
-    lat_dataarray = xr.DataArray(
-        name="lat",
-        data=grid.cf["lat"],
-        dims=["lat"],
-        attrs=grid.cf["lat"].attrs.copy(),
-    )
+    lon_bnds = grid.cf.get_bounds("lon")
+    lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
-    lon_dataarray = xr.DataArray(
-        name="lon",
-        data=out_lon_data,
-        dims=["lon"],
-        attrs=grid.cf["lon"].attrs.copy(),
-    )
+    lat_bnds = grid.cf.get_bounds("lat")
 
-    return xr.Dataset(
-        coords={
-            "lat": lat_dataarray,
-            "lon": lon_dataarray,
-        },
-        data_vars={
-            "lat_bnds": xr.DataArray(
-                name="lat_bnds",
-                data=grid.bounds.get_bounds("lat"),
-                dims=["lat", "bnds"],
-                coords={
-                    "lat": lat_dataarray,
-                },
-                attrs=grid.bounds.get_bounds("lat").attrs.copy(),
-            ),
-            "lon_bnds": xr.DataArray(
-                name="lon_bnds",
-                data=out_lon_bnds,
-                dims=["lon", "bnds"],
-                coords={
-                    "lon": lon_dataarray,
-                },
-                attrs=grid.bounds.get_bounds("lon").attrs.copy(),
-            ),
-        },
+    return create_grid(
+        grid.cf["lat"], out_lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds
     )
 
 
 def create_grid(
-    lat: Union[np.ndarray, xr.DataArray], lon: Union[np.ndarray, xr.DataArray]
+    lat: Union[np.ndarray, xr.DataArray],
+    lon: Union[np.ndarray, xr.DataArray],
+    lat_bnds: Optional[Union[np.ndarray, xr.DataArray]] = None,
+    lon_bnds: Optional[Union[np.ndarray, xr.DataArray]] = None,
 ) -> xr.Dataset:
     """Creates a grid for a give latitude and longitude array.
 
@@ -543,6 +433,10 @@ def create_grid(
         Array of latitude values.
     lon : Union[np.ndarray, xr.DataArray]
         Array of longitude values.
+    lat_bnds : Optional[Union[np.ndarray, xr.DataArray]]
+        Array of bounds for latitude values.
+    lon_bnds : Optional[Union[np.ndarray, xr.DataArray]]
+        Array of bounds for longitude values.
 
     Returns
     -------
@@ -558,23 +452,49 @@ def create_grid(
     >>> lon = np.arange(1.25, 360, 2.5)
     >>> xcdat.create_grid(lat, lon)
     """
+    data_vars = {}
+
     if isinstance(lat, np.ndarray):
         lat = xr.DataArray(
             name="lat",
-            data=lat,
+            data=lat.copy(),
             dims=["lat"],
             attrs={"units": "degrees_north", "axis": "Y"},
         )
+    else:
+        lat = lat.copy()
 
     if isinstance(lon, np.ndarray):
         lon = xr.DataArray(
             name="lon",
-            data=lon,
+            data=lon.copy(),
             dims=["lon"],
             attrs={"units": "degrees_east", "axis": "X"},
         )
+    else:
+        lon = lon.copy()
 
-    grid = xr.Dataset(coords={"lat": lat, "lon": lon})
+    if lat_bnds is not None:
+        if isinstance(lat_bnds, np.ndarray):
+            lat_bnds = xr.DataArray(
+                name="lat_bnds", data=lat_bnds.copy(), dims=["lat", "bnds"]
+            )
+        else:
+            lat_bnds = lat_bnds.copy()
+
+        data_vars["lat_bnds"] = lat_bnds
+
+    if lon_bnds is not None:
+        if isinstance(lon_bnds, np.ndarray):
+            lon_bnds = xr.DataArray(
+                name="lon_bnds", data=lon_bnds.copy(), dims=["lon", "bnds"]
+            )
+        else:
+            lon_bnds = lon_bnds.copy()
+
+        data_vars["lon_bnds"] = lon_bnds
+
+    grid = xr.Dataset(data_vars=data_vars, coords={"lat": lat, "lon": lon})
 
     grid = grid.bounds.add_missing_bounds()
 
