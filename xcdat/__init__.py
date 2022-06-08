@@ -6,6 +6,7 @@ from xcdat.regridder.accessor import RegridderAccessor  # noqa: F401
 from xcdat.regridder.grid import (  # noqa: F401
     create_gaussian_grid,
     create_global_mean_grid,
+    create_grid,
     create_uniform_grid,
     create_zonal_grid,
 )

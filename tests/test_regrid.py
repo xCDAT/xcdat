@@ -461,10 +461,12 @@ class TestGrid:
 
         assert new_grid.lat[0] == -90.0
         assert new_grid.lat[-1] == 90.0
+        assert new_grid.lat.shape == (46,)
         assert new_grid.lat.units == "degrees_north"
 
         assert new_grid.lon[0] == -180
         assert new_grid.lon[-1] == 180
+        assert new_grid.lon.shape == (73,)
         assert new_grid.lon.units == "degrees_east"
 
     def test_gaussian_grid(self):
@@ -484,105 +486,24 @@ class TestGrid:
         assert uneven_grid.lon.shape == (67,)
 
     def test_global_mean_grid(self):
-        new_grid = grid.create_gaussian_grid(32)
-
-        mean_grid = grid.create_global_mean_grid(new_grid)
-
-        assert mean_grid.cf["lat"].data == np.array(
-            [
-                0.0,
-            ]
+        source_grid = grid.create_grid(
+            np.array([-80, -40, 0, 40, 80]), np.array([0, 45, 90, 180, 270, 360])
         )
-        assert mean_grid.cf["lon"].data == np.array(
-            [
-                180.0,
-            ]
-        )
+
+        mean_grid = grid.create_global_mean_grid(source_grid)
+
+        assert np.all(mean_grid.lat == [0.0])
+        assert np.all(mean_grid.lon == [180.0])
 
     def test_zonal_grid(self):
-        new_grid = xr.Dataset(
-            coords={
-                "lat": xr.DataArray(
-                    name="lat",
-                    data=np.array([-80, -40, 0, 40, 80]),
-                    dims=["lat"],
-                    attrs={
-                        "units": "degrees_north",
-                        "axis": "Y",
-                        "bounds": "lat_bnds",
-                    },
-                ),
-                "lon": xr.DataArray(
-                    name="lon",
-                    data=np.array([-160, -80, 0, 80, 160]),
-                    dims=["lon"],
-                    attrs={
-                        "units": "degrees_east",
-                        "axis": "X",
-                        "bounds": "lon_bnds",
-                    },
-                ),
-            },
-            data_vars={
-                "lat_bnds": xr.DataArray(
-                    name="lat_bnds",
-                    data=np.array(
-                        [[-90, -60], [-60, -20], [-20, 20], [20, 60], [60, 90]]
-                    ),
-                    dims=["lat", "bnds"],
-                ),
-                "lon_bnds": xr.DataArray(
-                    name="lon_bnds",
-                    data=np.array(
-                        [[-180, -120], [-120, -40], [-40, 40], [40, 120], [120, 180]]
-                    ),
-                    dims=["lon", "bnds"],
-                ),
-            },
+        source_grid = grid.create_grid(
+            np.array([-80, -40, 0, 40, 80]), np.array([-160, -80, 80, 160])
         )
 
-        zonal_grid = grid.create_zonal_grid(new_grid)
+        zonal_grid = grid.create_zonal_grid(source_grid)
 
-        expected_grid = xr.Dataset(
-            coords={
-                "lat": xr.DataArray(
-                    name="lat",
-                    data=np.array([-80, -40, 0, 40, 80]),
-                    dims=["lat"],
-                    attrs={
-                        "units": "degrees_north",
-                        "axis": "Y",
-                        "bounds": "lat_bnds",
-                    },
-                ),
-                "lon": xr.DataArray(
-                    name="lon",
-                    data=np.array([0.0]),
-                    dims=["lon"],
-                    attrs={
-                        "units": "degrees_east",
-                        "axis": "X",
-                        "bounds": "lon_bnds",
-                    },
-                ),
-            },
-            data_vars={
-                "lat_bnds": xr.DataArray(
-                    name="lat_bnds",
-                    data=np.array(
-                        [[-90, -60], [-60, -20], [-20, 20], [20, 60], [60, 90]]
-                    ),
-                    dims=["lat", "bnds"],
-                ),
-                "lon_bnds": xr.DataArray(
-                    name="lon_bnds",
-                    data=np.array([[-180, 180]]),
-                    dims=["lon", "bnds"],
-                ),
-            },
-        )
-
-        assert zonal_grid.identical(expected_grid)
+        assert np.all(zonal_grid.lat == [-80, -40, 0, 40, 80])
+        assert np.all(zonal_grid.lon == [0])
 
 
 class TestAccessor:

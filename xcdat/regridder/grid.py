@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Tuple, Union
 
 import numpy as np
 import xarray as xr
@@ -530,3 +530,52 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
             ),
         },
     )
+
+
+def create_grid(
+    lat: Union[np.ndarray, xr.DataArray], lon: Union[np.ndarray, xr.DataArray]
+) -> xr.Dataset:
+    """Creates a grid for a give latitude and longitude array.
+
+    Parameters
+    ----------
+    lat : Union[np.ndarray, xr.DataArray]
+        Array of latitude values.
+    lon : Union[np.ndarray, xr.DataArray]
+        Array of longitude values.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset with lat/lon grid.
+
+    Examples
+    --------
+    Create uniform 2.5 x 2.5 degree grid
+    >>> import xcdat
+    >>> import numpy as np
+    >>> lat = np.arange(-90, 90, 2.5)
+    >>> lon = np.arange(1.25, 360, 2.5)
+    >>> xcdat.create_grid(lat, lon)
+    """
+    if isinstance(lat, np.ndarray):
+        lat = xr.DataArray(
+            name="lat",
+            data=lat,
+            dims=["lat"],
+            attrs={"units": "degrees_north", "axis": "Y"},
+        )
+
+    if isinstance(lon, np.ndarray):
+        lon = xr.DataArray(
+            name="lon",
+            data=lon,
+            dims=["lon"],
+            attrs={"units": "degrees_east", "axis": "X"},
+        )
+
+    grid = xr.Dataset(coords={"lat": lat, "lon": lon})
+
+    grid = grid.bounds.add_missing_bounds()
+
+    return grid
