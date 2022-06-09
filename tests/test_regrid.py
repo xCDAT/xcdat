@@ -292,6 +292,9 @@ class TestRegrid2Regridder:
         output_data = regridder.horizontal("ts", self.coarse_3d_ds)
 
         assert np.all(output_data.ts == 1)
+        assert "lat_bnds" in output_data
+        assert "lon_bnds" in output_data
+        assert "time_bnds" in output_data
 
     def test_regrid_4d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_4d_ds, self.fine_2d_ds)
@@ -420,6 +423,9 @@ class TestXESMFRegridder:
         output = regridder.horizontal("ts", ds)
 
         assert output.ts.shape == (15, 46, 73)
+        assert "lat_bnds" in output
+        assert "lon_bnds" in output
+        assert "time_bnds" in output
 
     def test_no_variable(self):
         ds = self.ds.copy()
