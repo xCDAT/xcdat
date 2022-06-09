@@ -644,11 +644,17 @@ class TemporalAccessor:
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
+        ds = self._dataset.copy()
         self._set_obj_attrs(mode, freq, weighted, season_config)
-        ds = self._process_dataset()
+
+        if (
+            self._freq == "season"
+            and self._season_config.get("dec_mode") == "DJF"
+            and self._season_config.get("drop_incomplete_djf") is True
+        ):
+            ds = self._drop_incomplete_djf(ds)
 
         dv = _get_data_var(ds, data_var)
-
         if self._mode == "average":
             dv = self._average(dv)
         elif self._mode in ["group_average", "climatology", "departures"]:
@@ -737,25 +743,6 @@ class TemporalAccessor:
                 self._season_config["drop_incomplete_djf"] = drop_incomplete_djf
         else:
             self._season_config["custom_seasons"] = self._form_seasons(custom_seasons)
-
-    def _process_dataset(self) -> xr.Dataset:
-        """Processes a dataset based on the set values of the object attributes.
-
-        Returns
-        -------
-        xr.Dataset
-            The dataset object.
-        """
-        ds = self._dataset.copy()
-
-        if (
-            self._freq == "season"
-            and self._season_config.get("dec_mode") == "DJF"
-            and self._season_config.get("drop_incomplete_djf") is True
-        ):
-            ds = self._drop_incomplete_djf(ds)
-
-        return ds
 
     def _drop_incomplete_djf(self, dataset: xr.Dataset) -> xr.Dataset:
         """Drops incomplete DJF seasons within a continuous time series.
