@@ -19,6 +19,7 @@ Below is a list of top-level API functions available in ``xcdat``.
 .. autosummary::
     :toctree: generated/
 
+    axis.center_times
     axis.swap_lon_axis
     dataset.open_dataset
     dataset.open_mfdataset
@@ -111,7 +112,6 @@ Methods
     Dataset.temporal.group_average
     Dataset.temporal.climatology
     Dataset.temporal.departures
-    Dataset.temporal.center_times
     Dataset.regridder.horizontal
     Dataset.regridder.horizontal_xesmf
     Dataset.regridder.horizontal_regrid2

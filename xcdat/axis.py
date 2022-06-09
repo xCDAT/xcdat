@@ -1,4 +1,7 @@
-"""Axis module for utilities related to axes."""
+"""
+Axis module for utilities related to axes, including functions to manipulate
+coordinates.
+"""
 
 from typing import Dict, Literal, Optional, Tuple
 
@@ -38,6 +41,47 @@ GENERIC_AXIS_MAP: Dict[CFAxis, GenericAxis] = {
     "pressure": "Z",
     "Z": "Z",
 }
+
+
+def center_times(dataset: xr.Dataset) -> xr.Dataset:
+    """Centers time coordinates using the midpoint between time bounds.
+
+    Time coordinates can be recorded using different intervals, including
+    the beginning, middle, or end of the interval. Centering time
+    coordinates, ensures calculations using these values are performed
+    reliably regardless of the recorded interval.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        The Dataset with original time coordinates.
+
+    Returns
+    -------
+    xr.Dataset
+        The Dataset with centered time coordinates.
+    """
+    ds = dataset.copy()
+    time: xr.DataArray = _get_coord_var(ds, "T")
+    time_bounds = ds.bounds.get_bounds("time")
+
+    lower_bounds, upper_bounds = (time_bounds[:, 0].data, time_bounds[:, 1].data)
+    bounds_diffs: np.timedelta64 = (upper_bounds - lower_bounds) / 2
+    bounds_mids: np.ndarray = lower_bounds + bounds_diffs
+
+    time_centered = xr.DataArray(
+        name=time.name,
+        data=bounds_mids,
+        coords={"time": bounds_mids},
+        attrs=time.attrs,
+    )
+    time_centered.encoding = time.encoding
+    ds = ds.assign_coords({"time": time_centered})
+
+    # Update time bounds with centered time coordinates.
+    time_bounds[time_centered.name] = time_centered
+    ds[time_bounds.name] = time_bounds
+    return ds
 
 
 def swap_lon_axis(
@@ -161,7 +205,7 @@ def _align_lon_to_360(dataset: xr.Dataset, p_meridian_index: np.ndarray) -> xr.D
     lon_name = lon.name
     lon_bounds: xr.DataArray = dataset.bounds.get_bounds("lon").copy()
 
-    # If chunking, must convert convert the xarray data structure from lazy
+    # If chunking, must convert the xarray data structure from lazy
     # Dask arrays into eager, in-memory NumPy arrays before performing
     # manipulations on the data. Otherwise, it raises `NotImplementedError
     # xarray can't set arrays with multiple array indices to dask yet`.
@@ -233,12 +277,6 @@ def _align_lon_bounds_to_360(
     ValueError
         If longitude bounds are inclusively between 0 and 360.
     """
-    if (bounds.values.min() < 0) | (bounds.values.max() > 360):
-        raise ValueError(
-            "Longitude bounds aren't inclusively between 0 and 360. "
-            "Use `_swap_lon_axis()` before calling `_align_longitude_to_360_axis()`."
-        )
-
     # Example array: [[359, 1], [1, 90], [90, 180], [180, 359]]
     # Reorient bound to span across zero (i.e., [359, 1] -> [-1, 1]).
     # Result: [[-1, 1], [1, 90], [90, 180], [180, 359]]
@@ -266,8 +304,8 @@ def _align_lon_bounds_to_360(
 def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> Optional[np.ndarray]:
     """Gets the index of the prime meridian cell in the longitude bounds.
 
-    A prime meridian cell can exist when converting from converting the axis
-    orientation from [-180, 180) to [0, 360).
+    A prime meridian cell can exist when converting the axis orientation
+    from [-180, 180) to [0, 360).
 
     Parameters
     ----------
@@ -287,8 +325,41 @@ def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> Optional[np.ndarray]:
     """
     p_meridian_index = np.where(lon_bounds[:, 1] - lon_bounds[:, 0] < 0)[0]
 
-    if p_meridian_index.size == 0:
+    # FIXME: When does this conditional return true? It seems like swapping from
+    # (-180, to 180) to (0, 360) always produces a prime meridian cell?
+    if p_meridian_index.size == 0:  # pragma:no cover
         return None
     elif p_meridian_index.size > 1:
         raise ValueError("More than one grid cell spans prime meridian.")
     return p_meridian_index
+
+
+def _get_coord_var(dataset: xr.Dataset, axis: GenericAxis):
+    """Gets a coordinate variable using its "axis" attribute.
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        The dataset.
+    axis : GenericAxis
+        The axis.
+
+    Returns
+    -------
+    xr.DataArray
+        The coordinate variable.
+
+    Raises
+    ------
+    KeyError
+        If the coordinate variable was not found in the dataset.
+    """
+    try:
+        coord_var = dataset.cf[axis]
+    except KeyError:
+        raise KeyError(
+            f"A '{axis}' coordinate variable was found in the dataset. Make sure "
+            "the coordinate variable exists in the Dataset, and its 'axis' attribute "
+            "is set to '{axis}'."
+        )
+    return coord_var

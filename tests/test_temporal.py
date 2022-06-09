@@ -82,7 +82,6 @@ class TestAverage:
                 "mode": "average",
                 "freq": "year",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -101,7 +100,6 @@ class TestAverage:
                 "mode": "average",
                 "freq": "year",
                 "weighted": "False",
-                "center_times": "False",
             },
         )
 
@@ -169,7 +167,6 @@ class TestAverage:
                 "mode": "average",
                 "freq": "month",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -188,7 +185,6 @@ class TestAverage:
                 "mode": "average",
                 "freq": "month",
                 "weighted": "False",
-                "center_times": "False",
             },
         )
         xr.testing.assert_allclose(result, expected)
@@ -254,7 +250,6 @@ class TestAverage:
                 "mode": "average",
                 "freq": "day",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -273,7 +268,6 @@ class TestAverage:
                 "mode": "average",
                 "freq": "day",
                 "weighted": "False",
-                "center_times": "False",
             },
         )
         assert result.identical(expected)
@@ -339,7 +333,6 @@ class TestAverage:
                 "mode": "average",
                 "freq": "hour",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -358,7 +351,6 @@ class TestAverage:
                 "mode": "average",
                 "freq": "hour",
                 "weighted": "False",
-                "center_times": "False",
             },
         )
 
@@ -457,7 +449,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -509,7 +500,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -559,7 +549,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
-                "center_times": "False",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -611,7 +600,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
-                "center_times": "False",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "False",
             },
@@ -673,7 +661,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
-                "center_times": "False",
                 "dec_mode": "JFD",
             },
         )
@@ -733,7 +720,6 @@ class TestGroupAverage:
                     "OctNovDec",
                 ],
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -820,7 +806,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "month",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -871,7 +856,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "month",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -915,86 +899,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "day",
                 "weighted": "True",
-                "center_times": "False",
-            },
-        )
-
-        assert result.identical(expected)
-
-    def test_weighted_daily_averages_and_center_times(self):
-        ds = self.ds.copy()
-        ds["time"] = xr.DataArray(
-            data=np.array(
-                [
-                    "2000-01-01T12:00:00.000000000",
-                    "2000-03-01T12:00:00.000000000",
-                    "2000-06-01T00:00:00.000000000",
-                    "2000-09-01T00:00:00.000000000",
-                    "2001-02-01T12:00:00.000000000",
-                ],
-                dtype="datetime64[ns]",
-            ),
-            dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
-        )
-        ds["time_bnds"] = xr.DataArray(
-            name="time_bnds",
-            data=np.array(
-                [
-                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
-                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
-                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
-                    ["2000-09-01T00:00:00.000000000", "2000-10-01T00:00:00.000000000"],
-                    ["2001-02-01T00:00:00.000000000", "2001-03-01T00:00:00.000000000"],
-                ],
-                dtype="datetime64[ns]",
-            ),
-            coords={"time": ds.time},
-            dims=["time", "bnds"],
-            attrs={"is_generated": "True"},
-        )
-
-        result = ds.temporal.group_average("ts", "day", center_times=True)
-        expected = ds.copy()
-        expected = expected.drop_dims("time")
-        expected["ts"] = xr.DataArray(
-            name="ts",
-            data=np.array([[[2]], [[1]], [[1]], [[1]], [[2]]]),
-            coords={
-                "lat": expected.lat,
-                "lon": expected.lon,
-                "time": xr.DataArray(
-                    data=np.array(
-                        [
-                            "2000-01-16T00:00:00.000000000",
-                            "2000-03-16T00:00:00.000000000",
-                            "2000-06-16T00:00:00.000000000",
-                            "2000-09-16T00:00:00.000000000",
-                            "2001-02-15T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
-                    ),
-                    dims=["time"],
-                    attrs={
-                        "axis": "T",
-                        "long_name": "time",
-                        "standard_name": "time",
-                        "bounds": "time_bnds",
-                    },
-                ),
-            },
-            dims=["time", "lat", "lon"],
-            attrs={
-                "operation": "temporal_avg",
-                "mode": "group_average",
-                "freq": "day",
-                "weighted": "True",
-                "center_times": "True",
             },
         )
 
@@ -1021,7 +925,6 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "hour",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -1082,7 +985,6 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
-                "center_times": "False",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -1138,7 +1040,6 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
-                "center_times": "False",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -1191,7 +1092,6 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
-                "center_times": "False",
                 "dec_mode": "JFD",
             },
         )
@@ -1250,7 +1150,6 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
-                "center_times": "False",
                 "custom_seasons": [
                     "JanFebMar",
                     "AprMayJun",
@@ -1320,7 +1219,6 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "month",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -1383,7 +1281,6 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "month",
                 "weighted": "False",
-                "center_times": "False",
             },
         )
 
@@ -1446,7 +1343,6 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "day",
                 "weighted": "True",
-                "center_times": "False",
             },
         )
 
@@ -1509,7 +1405,6 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "day",
                 "weighted": "False",
-                "center_times": "False",
             },
         )
 
@@ -1551,7 +1446,6 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "True",
-                "center_times": "False",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -1585,7 +1479,6 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "False",
-                "center_times": "False",
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -1617,99 +1510,10 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "False",
-                "center_times": "False",
                 "dec_mode": "JFD",
             },
         )
 
-        assert result.identical(expected)
-
-
-class TestCenterTimes:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
-
-    def test_raises_error_if_time_dimension_does_not_exist_in_dataset(self):
-        ds = self.ds.copy()
-        ds = ds.drop_dims("time")
-
-        with pytest.raises(KeyError):
-            ds.temporal.center_times()
-
-    def test_gets_time_as_the_midpoint_between_time_bounds(self):
-        ds = self.ds.copy()
-
-        # Make the time coordinates uncentered.
-        uncentered_time = np.array(
-            [
-                "2000-01-31T12:00:00.000000000",
-                "2000-02-29T12:00:00.000000000",
-                "2000-03-31T12:00:00.000000000",
-                "2000-04-30T00:00:00.000000000",
-                "2000-05-31T12:00:00.000000000",
-                "2000-06-30T00:00:00.000000000",
-                "2000-07-31T12:00:00.000000000",
-                "2000-08-31T12:00:00.000000000",
-                "2000-09-30T00:00:00.000000000",
-                "2000-10-16T12:00:00.000000000",
-                "2000-11-30T00:00:00.000000000",
-                "2000-12-31T12:00:00.000000000",
-                "2001-01-31T12:00:00.000000000",
-                "2001-02-28T00:00:00.000000000",
-                "2001-12-31T12:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
-        ds.time.data[:] = uncentered_time
-
-        # Set object attrs required to test the method.
-        ds.temporal._time_bounds = ds.time_bnds.copy()
-
-        # Compare result of the method against the expected.
-        expected = ds.copy()
-        expected_time_data = np.array(
-            [
-                "2000-01-16T12:00:00.000000000",
-                "2000-02-15T12:00:00.000000000",
-                "2000-03-16T12:00:00.000000000",
-                "2000-04-16T00:00:00.000000000",
-                "2000-05-16T12:00:00.000000000",
-                "2000-06-16T00:00:00.000000000",
-                "2000-07-16T12:00:00.000000000",
-                "2000-08-16T12:00:00.000000000",
-                "2000-09-16T00:00:00.000000000",
-                "2000-10-16T12:00:00.000000000",
-                "2000-11-16T00:00:00.000000000",
-                "2000-12-16T12:00:00.000000000",
-                "2001-01-16T12:00:00.000000000",
-                "2001-02-15T00:00:00.000000000",
-                "2001-12-16T12:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
-        expected = expected.assign_coords(
-            {
-                "time": xr.DataArray(
-                    name="time",
-                    data=expected_time_data,
-                    coords={"time": expected_time_data},
-                    dims="time",
-                    attrs={
-                        "long_name": "time",
-                        "standard_name": "time",
-                        "axis": "T",
-                        "bounds": "time_bnds",
-                    },
-                )
-            }
-        )
-        # Update time bounds with centered time coordinates.
-        time_bounds = ds.time_bnds.copy()
-        time_bounds["time"] = expected.time
-        expected["time_bnds"] = time_bounds
-
-        result = ds.temporal.center_times()
         assert result.identical(expected)
 
 
@@ -1726,7 +1530,6 @@ class Test_SetObjAttrs:
                 "unsupported",
                 freq="season",
                 weighted=True,
-                center_times=True,
                 season_config={
                     "dec_mode": "DJF",
                     "drop_incomplete_djf": False,
@@ -1742,7 +1545,6 @@ class Test_SetObjAttrs:
                 "group_average",
                 freq="unsupported",
                 weighted=True,
-                center_times=True,
                 season_config={
                     "dec_mode": "DJF",
                     "drop_incomplete_djf": False,
@@ -1754,7 +1556,6 @@ class Test_SetObjAttrs:
                 "climatology",
                 freq="unsupported",
                 weighted=True,
-                center_times=True,
                 season_config={
                     "dec_mode": "DJF",
                     "drop_incomplete_djf": False,
@@ -1766,7 +1567,6 @@ class Test_SetObjAttrs:
                 "departures",
                 freq="unsupported",
                 weighted=True,
-                center_times=True,
                 season_config={
                     "dec_mode": "DJF",
                     "drop_incomplete_djf": False,
@@ -1785,7 +1585,6 @@ class Test_SetObjAttrs:
                 "group_average",
                 freq=freq,
                 weighted=True,
-                center_times=True,
                 season_config={
                     "dec_mode": "DJF",
                     "drop_incomplete_djf": False,
@@ -1798,7 +1597,6 @@ class Test_SetObjAttrs:
                 "climatology",
                 freq=freq,
                 weighted=True,
-                center_times=True,
                 season_config={
                     "dec_mode": "DJF",
                     "drop_incomplete_djf": False,
@@ -1811,7 +1609,6 @@ class Test_SetObjAttrs:
                 "departures",
                 freq=freq,
                 weighted=True,
-                center_times=True,
                 season_config={
                     "dec_mode": "DJF",
                     "drop_incomplete_djf": False,
@@ -1825,7 +1622,6 @@ class Test_SetObjAttrs:
                 "climatology",
                 freq="season",
                 weighted=True,
-                center_times=True,
                 season_config={
                     "not_supported": "invalid",
                 },
@@ -1837,7 +1633,6 @@ class Test_SetObjAttrs:
                 "climatology",
                 freq="season",
                 weighted=True,
-                center_times=True,
                 season_config={
                     "dec_mode": "unsupported",
                     "drop_incomplete_djf": False,
