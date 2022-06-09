@@ -8,6 +8,7 @@ import pandas as pd
 import xarray as xr
 
 from xcdat import bounds  # noqa: F401
+from xcdat.axis import center_times as center_times_func
 from xcdat.axis import swap_lon_axis
 from xcdat.logger import setup_custom_logger
 
@@ -457,7 +458,7 @@ def _postprocess_dataset(
 
     if center_times:
         if dataset.cf.dims.get("T") is not None:
-            dataset = dataset.temporal.center_times()
+            dataset = center_times_func(dataset)
         else:
             raise ValueError("This dataset does not have a time coordinates to center.")
 
