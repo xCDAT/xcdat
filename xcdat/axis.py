@@ -311,7 +311,7 @@ def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> Optional[np.ndarray]:
     p_meridian_index = np.where(lon_bounds[:, 1] - lon_bounds[:, 0] < 0)[0]
 
     # FIXME: When does this conditional return true? It seems like swapping from
-    # (-180, to 180) to (0, 360) always produces prime meridian cells?
+    # (-180, to 180) to (0, 360) always produces a prime meridian cell?
     if p_meridian_index.size == 0:  # pragma:no cover
         return None
     elif p_meridian_index.size > 1:
