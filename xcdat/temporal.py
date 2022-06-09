@@ -156,12 +156,7 @@ class TemporalAccessor:
         # The weights for time coordinates, which are based on a chosen frequency.
         self._weights: Optional[xr.DataArray] = None
 
-    def average(
-        self,
-        data_var: str,
-        weighted: bool = True,
-        center_times: bool = False,
-    ):
+    def average(self, data_var: str, weighted: bool = True):
         """
         Returns a Dataset with the average of a data variable and the time
         dimension removed.
@@ -188,10 +183,6 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
-        center_times: bool, optional
-            If True, center time coordinates using the midpoint between its
-            upper and lower bounds. Otherwise, use the provided time
-            coordinates by default False.
 
         Returns
         -------
@@ -204,12 +195,12 @@ class TemporalAccessor:
 
         Get weighted averages for a monthly time series data variable:
 
-        >>> ds_month = ds.temporal.average("ts", freq="month", center_times=False)
+        >>> ds_month = ds.temporal.average("ts", freq="month")
         >>> ds_month.ts
         """
         freq = self._infer_freq()
 
-        return self._averager(data_var, "average", freq, weighted, center_times)
+        return self._averager(data_var, "average", freq, weighted)
 
     def _infer_freq(self) -> Frequency:
         """Infers the time frequency from the coordinates.
@@ -244,7 +235,6 @@ class TemporalAccessor:
         data_var: str,
         freq: Frequency,
         weighted: bool = True,
-        center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with average of a data variable by time group.
@@ -273,10 +263,6 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             calculated. This is the same as giving them a weight of 0.
-        center_times: bool, optional
-            If True, center time coordinates using the midpoint between its
-            upper and lower bounds. Otherwise, use the provided time
-            coordinates, by default False.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -367,21 +353,17 @@ class TemporalAccessor:
             'mode': 'average',
             'freq': 'season',
             'weighted': 'True',
-            'center_times': 'False',
             'dec_mode': 'DJF',
             'drop_incomplete_djf': 'False'
         }
         """
-        return self._averager(
-            data_var, "group_average", freq, weighted, center_times, season_config
-        )
+        return self._averager(data_var, "group_average", freq, weighted, season_config)
 
     def climatology(
         self,
         data_var: str,
         freq: Frequency,
         weighted: bool = True,
-        center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with the climatology of a data variable.
@@ -408,10 +390,6 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
-        center_times: bool, optional
-            If True, center time coordinates using the midpoint between its
-            upper and lower bounds. Otherwise, use the provided time
-            coordinates, by default False.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -502,21 +480,17 @@ class TemporalAccessor:
             'mode': 'climatology',
             'freq': 'season',
             'weighted': 'True',
-            'center_times': 'False',
             'dec_mode': 'DJF',
             'drop_incomplete_djf': 'False'
         }
         """
-        return self._averager(
-            data_var, "climatology", freq, weighted, center_times, season_config
-        )
+        return self._averager(data_var, "climatology", freq, weighted, season_config)
 
     def departures(
         self,
         data_var: str,
         freq: Frequency,
         weighted: bool = True,
-        center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """
@@ -563,10 +537,6 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
-        center_times: bool, optional
-            If True, center time coordinates using the midpoint between its
-            upper and lower bounds. Otherwise, use the provided time coordinates,
-            by default False.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -634,12 +604,11 @@ class TemporalAccessor:
             'operation': 'departures',
             'frequency': 'season',
             'weighted': 'True',
-            'center_times': 'False',
             'dec_mode': 'DJF',
             'drop_incomplete_djf': 'False'
         }
         """
-        self._set_obj_attrs("departures", freq, weighted, center_times, season_config)
+        self._set_obj_attrs("departures", freq, weighted, season_config)
 
         ds = self._dataset.copy()
 
@@ -648,9 +617,9 @@ class TemporalAccessor:
         dv_obs_grouped = self._group_data(dv_obs)
 
         # Calculate the climatology of the data variable.
-        dv_climo = ds.temporal.climatology(
-            data_var, freq, weighted, center_times, season_config
-        )[data_var]
+        dv_climo = ds.temporal.climatology(data_var, freq, weighted, season_config)[
+            data_var
+        ]
 
         # Rename the time dimension using the name from the grouped observation
         # data. The dimension names must align for xarray's grouped arithmetic
@@ -720,11 +689,10 @@ class TemporalAccessor:
         mode: Mode,
         freq: Frequency,
         weighted: bool = True,
-        center_times: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
-        self._set_obj_attrs(mode, freq, weighted, center_times, season_config)
+        self._set_obj_attrs(mode, freq, weighted, season_config)
         ds = self._process_dataset()
 
         dv = _get_data_var(ds, data_var)
@@ -748,7 +716,6 @@ class TemporalAccessor:
         mode: Mode,
         freq: Frequency,
         weighted: bool,
-        center_times: bool,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Validates method arguments and sets them as object attributes.
@@ -761,10 +728,6 @@ class TemporalAccessor:
             The frequency of time to group by.
         weighted : bool
             Calculate averages using weights.
-        center_times: bool
-            If True, center time coordinates using the midpoint between of its
-            upper and lower bounds. Otherwise, use the provided time
-            coordinates, by default False.
         season_config: Optional[SeasonConfigInput]
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -797,7 +760,6 @@ class TemporalAccessor:
         self._mode = mode
         self._freq = freq
         self._weighted = weighted
-        self._center_times = center_times
 
         # "season" frequency specific configuration attributes.
         for key in season_config.keys():
@@ -833,9 +795,6 @@ class TemporalAccessor:
             The dataset object.
         """
         ds = self._dataset.copy()
-
-        if self._center_times:
-            ds = self.center_times()
 
         if (
             self._freq == "season"
@@ -1468,7 +1427,6 @@ class TemporalAccessor:
                 "mode": self._mode,
                 "freq": self._freq,
                 "weighted": str(self._weighted),
-                "center_times": str(self._center_times),
             }
         )
 
