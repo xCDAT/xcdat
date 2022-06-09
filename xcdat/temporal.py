@@ -10,6 +10,7 @@ import xarray as xr
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
+from xcdat.axis import _get_coord_var
 from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
 
@@ -143,15 +144,7 @@ class TemporalAccessor:
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
-
-        try:
-            self._dim_name = self._dataset.cf["T"].name
-        except KeyError:
-            raise KeyError(
-                "A 'T' axis dimension was not found in the dataset. Make sure the "
-                "dataset has time axis coordinates and its 'axis' attribute is set to "
-                "'T'."
-            )
+        self._dim_name = _get_coord_var(self._dataset, "T").name
 
         # The weights for time coordinates, which are based on a chosen frequency.
         self._weights: Optional[xr.DataArray] = None
@@ -641,47 +634,6 @@ class TemporalAccessor:
             ds_departs = ds_departs.drop_vars(self._labeled_time.name)
 
         return ds_departs
-
-    def center_times(self) -> xr.Dataset:
-        """Centers the time coordinates using the midpoint between time bounds.
-
-        Time coordinates can be recorded using different intervals, including
-        the beginning, middle, or end of the interval. Centering time
-        coordinates, ensures calculations using these values are performed
-        reliably regardless of the recorded interval.
-
-        Parameters
-        ----------
-        dataset : xr.Dataset
-            The Dataset with original time coordinates.
-
-        Returns
-        -------
-        xr.Dataset
-            The Dataset with centered time coordinates.
-        """
-        ds = self._dataset.copy()
-        time_bounds = ds.bounds.get_bounds("time")
-
-        lower_bounds, upper_bounds = (time_bounds[:, 0].data, time_bounds[:, 1].data)
-        bounds_diffs: np.timedelta64 = (upper_bounds - lower_bounds) / 2
-        bounds_mids: np.ndarray = lower_bounds + bounds_diffs
-
-        time: xr.DataArray = ds[self._dim_name].copy()
-        time_centered = xr.DataArray(
-            name=time.name,
-            data=bounds_mids,
-            coords={"time": bounds_mids},
-            attrs=time.attrs,
-        )
-        time_centered.encoding = time.encoding
-        ds = ds.assign_coords({"time": time_centered})
-
-        # Update time bounds with centered time coordinates.
-        time_bounds[time_centered.name] = time_centered
-        self._time_bounds = time_bounds
-        ds[time_bounds.name] = self._time_bounds
-        return ds
 
     def _averager(
         self,
