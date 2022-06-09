@@ -321,7 +321,7 @@ class Regrid2Regridder(BaseRegridder):
 
         data_vars = {data_var: output_da}
 
-        return xr.Dataset(data_vars)
+        return xr.Dataset(data_vars, attrs=input_ds.attrs.copy())
 
 
 def _map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
