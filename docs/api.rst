@@ -18,6 +18,7 @@ Below is a list of top-level API functions available in ``xcdat``.
 
 .. autosummary::
     :toctree: generated/
+
     center_times
     swap_lon_axis
     open_dataset
