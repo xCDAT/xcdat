@@ -41,6 +41,7 @@ extensions = [
     "sphinx.ext.viewcode",
     "sphinx_copybutton",
     "sphinxcontrib.napoleon",
+    "nbsphinx",
 ]
 
 # autosummary and autodoc configurations
@@ -78,7 +79,7 @@ master_doc = "index"
 
 # General information about the project.
 project = "xCDAT"
-copyright = "2021, xCDAT Developers"
+copyright = "2022, xCDAT Developers"
 author = "xCDAT Developers"
 
 # The version info for the project you're documenting, acts as replacement

@@ -19,12 +19,12 @@ Below is a list of top-level API functions available in ``xcdat``.
 .. autosummary::
     :toctree: generated/
 
-    axis.center_times
-    axis.swap_lon_axis
-    dataset.open_dataset
-    dataset.open_mfdataset
-    dataset.decode_non_cf_time
-    utils.compare_datasets
+    center_times
+    swap_lon_axis
+    open_dataset
+    open_mfdataset
+    decode_non_cf_time
+    compare_datasets
 
 Accessors
 ---------
@@ -110,3 +110,61 @@ Methods
     Dataset.temporal.departures
 
 .. _dsmeth_1:
+
+.. currentmodule:: xcdat
+
+.. _cdat-mapping:
+
+
+CDAT Mapping Table
+------------------
+
+The table below maps the supported xCDAT operations to the equivalent CDAT and xCDAT APIs.
+It is especially useful for those who are transitioning over from CDAT to xarray/xCDAT.
+
+.. list-table::
+   :widths: 20 40 40
+   :header-rows: 1
+
+   * - How do I...
+     - xCDAT
+     - CDAT
+   * - Open dataset files?
+     - ``xcdat.open_dataset()`` and ``xcdat.open_mfdataset()``
+     - ``cdms2.open()``
+   * - Get coordinate bounds?
+     - ``Dataset.bounds.get_bounds()``
+     - ``cdms2.tvariable.getBounds()``
+   * - Set coordinate bounds for a single axis?
+     - ``Dataset.bounds.add_bounds()``
+     - ``cdms2.tvariable.setBounds()``
+   * - Set coordinate bounds for all axes with missing bounds?
+     - ``Dataset.bounds.add_missing_bounds()``
+     - N/A
+   * - Center time coordinates using time bounds?
+     - ``xcdat.center_times()``
+     - N/A
+   * - Swap the longitude axis orientation between (-180 to 180) and (0 to 360)?
+     - ``axis.swap_lon_axis()``
+     - N/A
+   * - Spatially average over an optionally specified rectilinear grid?
+     - ``Dataset.spatial.average("VAR_KEY", axis=["X", "Y"])`` specifying ``lat_bounds`` and ``lon_bounds``
+     - ``cdutil.averager(TransientVariable, axis="xy")``, optionally subset ``TransientVariable`` with ``cdutil.region.domain()``
+   * - Decode time coordinates with CF/Non-CF units?
+     - ``xr.decode_cf()`` specifying ``decode_times=True``, or ``xcdat.decode_non_cf_time()``
+     - ``cdms2.axis.Axis.asComponentTime()``
+   * - Temporally averaging with a single time-averaged snapshot and time coordinates removed?
+     - ``Dataset.temporal.average("VAR_KEY")``
+     - ``cdutil.averager(TransientVariable, axis="t")``
+   * - Temporally average by time group?
+     - ``Dataset.temporal.group_average("VAR_KEY", freq=<"season"|"month"|"day"|"hour">)``, subset results for individual seasons, months, or hours
+     - ``cdutil.SEASONALCYCLE()``, ``cdutil.ANNUALCYCLE()``, ``cdutil.<DJF|MAM|JJA|SON>()``, ``cdutil.<JAN|FEB|...|DEC>()``
+   * - Calculate climatologies?
+     - ``Dataset.temporal.climatology("VAR_KEY", freq=<"season"|"month"|"day">)``, subset results for individual seasons, months, or days
+     - ``cdutil.SEASONALCYCLE.climatology()``, ``cdutil.ANNUALCYCLE.climatology()``, ``cdutil.<DJF|MAM|JJA|SON>.climatology()``, ``cdutil.<JAN|FEB|...|DEC>.climatology()``
+   * - Calculate climatological departures?
+     - ``Dataset.temporal.departures("VAR_KEY", freq=<"season"|"month"|"day">)``, subset results for individual seasons, months, or days
+     - ``cdutil.SEASONALCYCLE.departures()``, ``cdutil.ANNUALCYCLE.departures()``, ``cdutil.<DJF|MAM|JJA|SON>.departures()``, ``cdutil.<JAN|FEB|...|DEC>.departures()``
+   * - Regrid horizontally?
+     - ``Dataset.regridder.horizontal_regrid2()``, ``Dataset.regridder.horizontal_xesmf()``
+     - ``cdms2.regrid2()``
