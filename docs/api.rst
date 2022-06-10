@@ -142,8 +142,8 @@ It is especially useful for those who are transitioning over from CDAT to xarray
      - ``Dataset.bounds.add_missing_bounds()``
      - N/A
    * - Swap the longitude axis orientation between (-180 to 180) and (0 to 360)?
-     - N/A
      - ``axis.swap_lon_axis()``
+     - N/A
    * - Spatially average over an optionally specified rectilinear grid?
      - ``Dataset.spatial.average("VAR_KEY", axis=["X", "Y"])`` specifying ``lat_bounds`` and ``lon_bounds``
      - ``cdutil.averager(TransientVariable, axis="xy")``, optionally subset ``TransientVariable`` with ``cdutil.region.domain()``
