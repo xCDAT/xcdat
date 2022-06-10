@@ -64,7 +64,7 @@ Initial features include:
 
   * Time series averages (single snapshot and grouped), climatologies, and departures
   * Weighted or unweighted
-  * Optional seasonal configuration
+  * Optional seasonal configuration (e.g., DJF vs. JFD, custom seasons)
 
 * Geospatial weighted averaging
 
