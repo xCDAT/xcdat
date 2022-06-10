@@ -124,7 +124,7 @@ def swap_lon_axis(
                 "orientations."
             )
 
-    # If the current axis orientation is the same as the desired axis
+    # If the swapped axis orientation is the same as the existing axis
     # orientation, return the original Dataset.
     if new_lon.identical(lon):
         return dataset
