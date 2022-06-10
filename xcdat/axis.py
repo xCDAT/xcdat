@@ -125,7 +125,7 @@ def swap_lon_axis(
             )
 
     # If the current axis orientation is the same as the desired axis
-    # orientation, `pass` and return the same dataset.
+    # orientation, return the original Dataset.
     if new_lon.identical(lon):
         return dataset
 
