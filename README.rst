@@ -90,7 +90,7 @@ Things we keep in mind:
 
 * Robust handling of coordinates and its associated bounds
 
-  * Coordinates and bounds are retrieved with ``cf_xarray`` using the standard ``axis`` and ``coordinate`` attributes
+  * Coordinates and bounds are retrieved with ``cf_xarray`` using the standard ``axis`` and ``coordinate`` name attributes
   * Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
 
 * Support for parallelism using `dask`_ where it is both possible and makes sense
