@@ -51,7 +51,7 @@ Planned Features
 
 The goal of xCDAT is to provide climate domain specific features and general utilities with xarray.
 
-Initial features include:
+Initial planned features include:
 
 * Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` with post-processing options
 
