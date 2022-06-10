@@ -100,22 +100,22 @@ def swap_lon_axis(
         The Dataset with swapped lon axes orientation.
     """
     ds = dataset.copy()
-    lon: xr.DataArray = dataset.bounds._get_coords("lon").copy()
+    lon: xr.DataArray = _get_coord_var(ds, "X").copy()
     lon_bounds: xr.DataArray = dataset.bounds.get_bounds("lon").copy()
 
     with xr.set_options(keep_attrs=True):
         if to == (-180, 180):
-            lon = ((lon + 180) % 360) - 180
-            lon_bounds = ((lon_bounds + 180) % 360) - 180
-            ds = _reassign_lon(ds, lon, lon_bounds)
+            new_lon = ((lon + 180) % 360) - 180
+            new_lon_bounds = ((lon_bounds + 180) % 360) - 180
+            ds = _reassign_lon(ds, new_lon, new_lon_bounds)
         elif to == (0, 360):
-            lon = lon % 360
-            lon_bounds = lon_bounds % 360
-            ds = _reassign_lon(ds, lon, lon_bounds)
+            new_lon = lon % 360
+            new_lon_bounds = lon_bounds % 360
+            ds = _reassign_lon(ds, new_lon, new_lon_bounds)
 
             # Handle cases where a prime meridian cell exists, which can occur
             # after swapping to (0, 360).
-            p_meridian_index = _get_prime_meridian_index(lon_bounds)
+            p_meridian_index = _get_prime_meridian_index(new_lon_bounds)
             if p_meridian_index is not None:
                 ds = _align_lon_to_360(ds, p_meridian_index)
         else:
@@ -124,8 +124,13 @@ def swap_lon_axis(
                 "orientations."
             )
 
+    # If the swapped axis orientation is the same as the existing axis
+    # orientation, return the original Dataset.
+    if new_lon.identical(lon):
+        return dataset
+
     if sort_ascending:
-        ds = ds.sortby(lon.name, ascending=True)
+        ds = ds.sortby(new_lon.name, ascending=True)
 
     return ds
 
