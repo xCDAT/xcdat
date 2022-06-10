@@ -141,6 +141,9 @@ It is especially useful for those who are transitioning over from CDAT to xarray
    * - Set coordinate bounds for all axes with missing bounds?
      - ``Dataset.bounds.add_missing_bounds()``
      - N/A
+   * - Center time coordinates using time bounds?
+     - ``xcdat.center_times()``
+     - N/A
    * - Swap the longitude axis orientation between (-180 to 180) and (0 to 360)?
      - ``axis.swap_lon_axis()``
      - N/A
@@ -162,9 +165,6 @@ It is especially useful for those who are transitioning over from CDAT to xarray
    * - Calculate climatological departures?
      - ``Dataset.temporal.departures("VAR_KEY", freq=<"season"|"month"|"day">)``, subset results for individual seasons, months, or days
      - ``cdutil.SEASONALCYCLE.departures()``, ``cdutil.ANNUALCYCLE.departures()``, ``cdutil.<DJF|MAM|JJA|SON>.departures()``, ``cdutil.<JAN|FEB|...|DEC>.departures()``
-   * - Center time coordinates using time bounds?
-     - ``Dataset.temporal.center_times()``
-     - N/A
    * - Regrid horizontally?
      - ``Dataset.regridder.horizontal_regrid2()``, ``Dataset.regridder.horizontal_xesmf()``
      - ``cdms2.regrid2()``
