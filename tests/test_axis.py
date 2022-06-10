@@ -143,6 +143,32 @@ class TestSwapLonAxis:
         with pytest.raises(ValueError):
             swap_lon_axis(ds_180, to=(0, 360))
 
+    def test_does_not_swap_if_desired_orientation_is_the_same_as_the_existing_orientation(
+        self,
+    ):
+        ds_360 = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([60, 150, 271]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                )
+            },
+            data_vars={
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array([[0, 120], [120, 181], [181, 360]]),
+                    dims=["lon", "bnds"],
+                    attrs={"is_generated": "True"},
+                )
+            },
+        )
+
+        result = swap_lon_axis(ds_360, to=(0, 360))
+
+        assert result.identical(ds_360)
+
     def test_swap_from_360_to_180_and_sorts(self):
         ds_360 = xr.Dataset(
             coords={

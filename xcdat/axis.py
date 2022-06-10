@@ -107,7 +107,7 @@ def swap_lon_axis(
         if to == (-180, 180):
             new_lon = ((lon + 180) % 360) - 180
             new_lon_bounds = ((lon_bounds + 180) % 360) - 180
-            ds = _reassign_lon(ds, lon, lon_bounds)
+            ds = _reassign_lon(ds, new_lon, new_lon_bounds)
         elif to == (0, 360):
             new_lon = lon % 360
             new_lon_bounds = lon_bounds % 360
@@ -130,7 +130,7 @@ def swap_lon_axis(
         return dataset
 
     if sort_ascending:
-        ds = ds.sortby(lon.name, ascending=True)
+        ds = ds.sortby(new_lon.name, ascending=True)
 
     return ds
 
