@@ -18,14 +18,13 @@ Initial features include:
 
   * Generate bounds for axes supported by ``xcdat`` if they don't exist in the Dataset
   * Optional decoding non-CF time units, in addition to CF time units (already supported in ``xarray``)
-  * Optional centering of time coordinate using time bounds
+  * Optional centering of time coordinates using time bounds
   * Optional conversion of longitudinal axis orientation between [0, 360) and [-180, 180)
 
 * Temporal averaging
 
-  * Time series averages, climatologies, and departures
+  * Time series averages (single snapshot and grouped), climatologies, and departures
   * Weighted or unweighted
-  * Optional centering of time coordinates using time bounds
   * Optional seasonal configuration
 
 * Geospatial weighted averaging
@@ -37,13 +36,13 @@ Initial features include:
 
   * Support rectilinear and cuvilinear grids
   * Python implementation of `regrid2`_ for handling cartesian latitude longitude grids
-  * Utilize `xesmf`_ with utilities to handle edge cases
+  * API that wraps `xesmf`_ with utilities to handle edge cases
 
 * Vertical structured regridding
 
   * Support rectilinear and cuvilinear grids
 
-Things we keep in mind:
+Things we are striving for:
 
 * Support for CF compliant, E3SM non-CF compliant, and common metadata
 
