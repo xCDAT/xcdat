@@ -1,4 +1,4 @@
-xCDAT: Xarray Extended with Climate Data Analysis Tools
+xCDAT: Xarray Climate Data Analysis Tools
 =======================================================
 
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
@@ -33,7 +33,13 @@ Initial features include:
   * Support rectilinear grid
   * Optional specification of regional domain
 
-* Horizontal and vertical structured regridding
+* Horizontal structured regridding
+
+  * Support rectilinear and cuvilinear grids
+  * Python implementation of `regrid2_` for handling cartesian latitude longitude grids
+  * Utilize `xesmf_`` with utilities to handle edge cases
+
+* Vertical structured regridding
 
   * Support rectilinear and cuvilinear grids
 
@@ -50,6 +56,8 @@ Things we keep in mind:
 
 * Support for parallelism using `dask`_ where it is both possible and makes sense
 
+.. _regrid2: https://cdms.readthedocs.io/en/latest/regrid2.html
+.. _xesmf: https://pangeo-xesmf.readthedocs.io/en/latest/
 .. _dask: https://dask.org/
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 .. _CF convention: http://cfconventions.org/
