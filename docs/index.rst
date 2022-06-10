@@ -36,8 +36,8 @@ Initial features include:
 * Horizontal structured regridding
 
   * Support rectilinear and cuvilinear grids
-  * Python implementation of `regrid2_` for handling cartesian latitude longitude grids
-  * Utilize `xesmf_`` with utilities to handle edge cases
+  * Python implementation of `regrid2`_ for handling cartesian latitude longitude grids
+  * Utilize `xesmf`_ with utilities to handle edge cases
 
 * Vertical structured regridding
 
