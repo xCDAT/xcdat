@@ -144,6 +144,7 @@ class TemporalAccessor:
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
+        
         self._dim_name = _get_coord_var(self._dataset, "T").name
 
         self._time_bounds = self._dataset.bounds.get_bounds("time").copy()
