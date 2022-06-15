@@ -144,12 +144,12 @@ class TemporalAccessor:
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
+
         self._dim_name = _get_coord_var(self._dataset, "T").name
 
-        # The weights for time coordinates, which are based on a chosen frequency.
-        self._weights: Optional[xr.DataArray] = None
+        self._time_bounds = self._dataset.bounds.get_bounds("time").copy()
 
-    def average(self, data_var: str, weighted: bool = True):
+    def average(self, data_var: str, weighted: bool = True, keep_weights: bool = False):
         """
         Returns a Dataset with the average of a data variable and the time
         dimension removed.
@@ -176,6 +176,9 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+        keep_weights : bool, optional
+            If calculating averages using weights, keep the weights in the
+            final dataset output, by default False.
 
         Returns
         -------
@@ -193,41 +196,14 @@ class TemporalAccessor:
         """
         freq = self._infer_freq()
 
-        return self._averager(data_var, "average", freq, weighted)
-
-    def _infer_freq(self) -> Frequency:
-        """Infers the time frequency from the coordinates.
-
-        This method infers the time frequency from the coordinates by
-        calculating the minimum delta and comparing it against a set of
-        conditionals.
-
-        The native ``xr.infer_freq()`` method does not work for all cases
-        because the frequency can be irregular (e.g., different hour
-        measurements), which ends up returning None.
-
-        Returns
-        -------
-        Frequency
-            The time frequency.
-        """
-        time_coords = self._dataset[self._dim_name]
-        min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
-
-        if min_delta < pd.Timedelta(days=1):
-            return "hour"
-        elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=28):
-            return "day"
-        elif min_delta >= pd.Timedelta(days=28) and min_delta < pd.Timedelta(days=365):
-            return "month"
-        else:
-            return "year"
+        return self._averager(data_var, "average", freq, weighted, keep_weights)
 
     def group_average(
         self,
         data_var: str,
         freq: Frequency,
         weighted: bool = True,
+        keep_weights: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with average of a data variable by time group.
@@ -256,6 +232,9 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             calculated. This is the same as giving them a weight of 0.
+        keep_weights : bool, optional
+            If calculating averages using weights, keep the weights in the
+            final dataset output, by default False.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -350,13 +329,16 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
-        return self._averager(data_var, "group_average", freq, weighted, season_config)
+        return self._averager(
+            data_var, "group_average", freq, weighted, keep_weights, season_config
+        )
 
     def climatology(
         self,
         data_var: str,
         freq: Frequency,
         weighted: bool = True,
+        keep_weights: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with the climatology of a data variable.
@@ -383,6 +365,9 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+        keep_weights : bool, optional
+            If calculating averages using weights, keep the weights in the
+            final dataset output, by default False.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -477,13 +462,16 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
-        return self._averager(data_var, "climatology", freq, weighted, season_config)
+        return self._averager(
+            data_var, "climatology", freq, weighted, keep_weights, season_config
+        )
 
     def departures(
         self,
         data_var: str,
         freq: Frequency,
         weighted: bool = True,
+        keep_weights: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """
@@ -530,6 +518,9 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+        keep_weights : bool, optional
+            If calculating averages using weights, keep the weights in the
+            final dataset output, by default False.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -601,18 +592,18 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
-        self._set_obj_attrs("departures", freq, weighted, season_config)
-
         ds = self._dataset.copy()
+        self._set_obj_attrs("departures", freq, weighted, season_config)
 
         # Group the observation data variable.
         dv_obs = _get_data_var(ds, data_var)
         dv_obs_grouped = self._group_data(dv_obs)
 
         # Calculate the climatology of the data variable.
-        dv_climo = ds.temporal.climatology(data_var, freq, weighted, season_config)[
-            data_var
-        ]
+        ds_climo = ds.temporal.climatology(
+            data_var, freq, weighted, keep_weights, season_config
+        )
+        dv_climo = ds_climo[data_var]
 
         # Rename the time dimension using the name from the grouped observation
         # data. The dimension names must align for xarray's grouped arithmetic
@@ -633,7 +624,39 @@ class TemporalAccessor:
             # are no longer required.
             ds_departs = ds_departs.drop_vars(self._labeled_time.name)
 
+        if weighted and keep_weights:
+            self._weights = ds_climo.time_wts
+            ds_departs = self._keep_weights(ds_departs)
+
         return ds_departs
+
+    def _infer_freq(self) -> Frequency:
+        """Infers the time frequency from the coordinates.
+
+        This method infers the time frequency from the coordinates by
+        calculating the minimum delta and comparing it against a set of
+        conditionals.
+
+        The native ``xr.infer_freq()`` method does not work for all cases
+        because the frequency can be irregular (e.g., different hour
+        measurements), which ends up returning None.
+
+        Returns
+        -------
+        Frequency
+            The time frequency.
+        """
+        time_coords = self._dataset[self._dim_name]
+        min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
+
+        if min_delta < pd.Timedelta(days=1):
+            return "hour"
+        elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=28):
+            return "day"
+        elif min_delta >= pd.Timedelta(days=28) and min_delta < pd.Timedelta(days=365):
+            return "month"
+        else:
+            return "year"
 
     def _averager(
         self,
@@ -641,6 +664,7 @@ class TemporalAccessor:
         mode: Mode,
         freq: Frequency,
         weighted: bool = True,
+        keep_weights: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
@@ -660,12 +684,15 @@ class TemporalAccessor:
         elif self._mode in ["group_average", "climatology", "departures"]:
             dv = self._group_average(dv)
 
-        # The original time dimension is dropped from the Dataset because
-        # it becomes obsolete after the data variable is averaged. A new time
-        # dimension will be added to the Dataset when adding the averaged
-        # data variable.
+        # The original time dimension is dropped from the dataset because
+        # it becomes obsolete after the data variable is averaged. When the
+        # averaged data variable is added to the dataset, the new time dimension
+        # and its associated coordinates are also added.
         ds = ds.drop_dims("time")
         ds[dv.name] = dv
+
+        if keep_weights:
+            ds = self._keep_weights(ds)
 
         return ds
 
@@ -714,7 +741,6 @@ class TemporalAccessor:
                 f"include: {list(freq_keys)}."
             )
 
-        self._time_bounds = self._dataset.bounds.get_bounds("time").copy()
         self._mode = mode
         self._freq = freq
         self._weighted = weighted
@@ -878,7 +904,6 @@ class TemporalAccessor:
 
         if self._weighted:
             self._weights = self._get_weights()
-
             dv *= self._weights
             dv = self._group_data(dv).sum()  # type: ignore
         else:
@@ -902,6 +927,86 @@ class TemporalAccessor:
         dv = self._add_operation_attrs(dv)
 
         return dv
+
+    def _get_weights(self) -> xr.DataArray:
+        """Calculates weights for a data variable using time bounds.
+
+        This method gets the length of time for each coordinate point by using
+        the difference in the upper and lower time bounds. This approach ensures
+        that the correct time lengths are calculated regardless of how time
+        coordinates are recorded (e.g., monthly, daily, hourly) and the calendar
+        type used.
+
+        The time lengths are labeled and grouped, then each time length is
+        divided by the total sum of the time lengths in its group to get its
+        corresponding weight.
+
+        The sum of the weights for each group is validated to ensure it equals
+        1.0.
+
+        Returns
+        -------
+        xr.DataArray
+            The weights based on a specified frequency.
+
+        Notes
+        -----
+        Refer to [5]_ for the supported CF convention calendar types.
+
+        References
+        ----------
+        .. [5] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
+        """
+        with xr.set_options(keep_attrs=True):
+            time_lengths: xr.DataArray = (
+                self._time_bounds[:, 1] - self._time_bounds[:, 0]
+            )
+
+        # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
+        # when using Dask arrays. Otherwise, the numpy warning below is thrown:
+        # `DeprecationWarning: The `dtype` and `signature` arguments to ufuncs
+        # only select the general DType and not details such as the byte order
+        # or time unit (with rare exceptions see release notes). To avoid this
+        # warning please use the scalar types `np.float64`, or string notation.`
+        time_lengths = time_lengths.astype(np.float64)
+
+        grouped_time_lengths = self._group_data(time_lengths)
+        weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()  # type: ignore
+        weights.name = f"{self._dim_name}_wts"
+
+        # Validate the sum of weights for each group is 1.0.
+        actual_sum = self._group_data(weights).sum().values  # type: ignore
+        expected_sum = np.ones(len(grouped_time_lengths.groups))
+        np.testing.assert_allclose(actual_sum, expected_sum)
+
+        return weights
+
+    def _group_data(self, data_var: xr.DataArray) -> DataArrayGroupBy:
+        """Groups a data variable.
+
+        This method groups a data variable by a single datetime component for
+        the "average" mode or labeled time coordinates for all other modes.
+
+        Parameters
+        ----------
+        data_var : xr.DataArray
+            A data variable.
+
+        Returns
+        -------
+        DataArrayGroupBy
+            A data variable grouped by label.
+        """
+        dv = data_var.copy()
+
+        if self._mode == "average":
+            dv_gb = dv.groupby(f"{self._dim_name}.{self._freq}")
+        else:
+            self._labeled_time = self._label_time_coords(dv[self._dim_name])
+            dv.coords[self._labeled_time.name] = self._labeled_time
+            dv_gb = dv.groupby(self._labeled_time.name)
+
+        return dv_gb
 
     def _label_time_coords(self, time_coords: xr.DataArray) -> xr.DataArray:
         """Labels time coordinates with a group for grouping.
@@ -1251,97 +1356,40 @@ class TemporalAccessor:
 
         return np.array(dates)
 
-    def _get_weights(self) -> xr.DataArray:
-        """Calculates weights for a data variable using time bounds.
+    def _keep_weights(self, ds: xr.Dataset) -> xr.Dataset:
+        """Keep the weights in the dataset.
 
-        This method gets the length of time for each coordinate point by using
-        the difference in the upper and lower time bounds. This approach ensures
-        that the correct time lengths are calculated regardless of how time
-        coordinates are recorded (e.g., monthly, daily, hourly) and the calendar
-        type used.
-
-        The time lengths are labeled and grouped, then each time length is
-        divided by the total sum of the time lengths in its group to get its
-        corresponding weight.
-
-        The sum of the weights for each group is validated to ensure it equals
-        1.0.
+        Parameters
+        ----------
+        ds : xr.Dataset
+            The dataset.
 
         Returns
         -------
-        xr.DataArray
-            The weights based on a specified frequency.
-
-        Notes
-        -----
-        Refer to [5]_ for the supported CF convention calendar types.
-
-        References
-        ----------
-        .. [5] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
+        xr.Dataset
+            The dataset with the weights used for averaging.
         """
-        with xr.set_options(keep_attrs=True):
-            time_lengths: xr.DataArray = (
-                self._time_bounds[:, 1] - self._time_bounds[:, 0]
+        # Append "_original" to the name of the weights` time coordinates to
+        # avoid conflict with the grouped time coordinates in the Dataset (can
+        # have a different shape).
+        if self._mode in ["group_average", "climatology"]:
+            self._weights = self._weights.rename(
+                {self._dim_name: f"{self._dim_name}_original"}
+            )
+            # Only keep the original time coordinates, not the ones labeled
+            # by group.
+            self._weights = self._weights.drop_vars(self._labeled_time.name)
+        # Strip "_original" from the name of the weights` time coordinates
+        # because the final departures Dataset has the original time coordinates
+        # restored after performing grouped subtraction.
+        elif self._mode == "departures":
+            self._weights = self._weights.rename(
+                {f"{self._dim_name}_original": self._dim_name}
             )
 
-        # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
-        # when using Dask arrays. Otherwise, the numpy warning below is thrown:
-        # `DeprecationWarning: The `dtype` and `signature` arguments to ufuncs
-        # only select the general DType and not details such as the byte order
-        # or time unit (with rare exceptions see release notes). To avoid this
-        # warning please use the scalar types `np.float64`, or string notation.`
-        time_lengths = time_lengths.astype(np.float64)
+        ds[self._weights.name] = self._weights
 
-        grouped_time_lengths = self._group_data(time_lengths)
-        weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()  # type: ignore
-
-        num_groups = len(grouped_time_lengths.groups)
-        self._validate_weights(weights, num_groups)
-
-        return weights
-
-    def _validate_weights(self, weights: xr.DataArray, num_groups: int):
-        """Validates that the sum of the weights for each group equals 1.0.
-
-        Parameters
-        ----------
-        weights : xr.DataArray
-            The weights for the time coordinates.
-        num_groups : int
-            The number of groups.
-        """
-        actual_sum = self._group_data(weights).sum().values  # type: ignore
-        expected_sum = np.ones(num_groups)
-
-        np.testing.assert_allclose(actual_sum, expected_sum)
-
-    def _group_data(self, data_var: xr.DataArray) -> DataArrayGroupBy:
-        """Groups a data variable.
-
-        This method groups a data variable by a single datetime component for
-        the "average" mode or labeled time coordinates for all other modes.
-
-        Parameters
-        ----------
-        data_var : xr.DataArray
-            A data variable.
-
-        Returns
-        -------
-        DataArrayGroupBy
-            A data variable grouped by label.
-        """
-        dv = data_var.copy()
-
-        if self._mode == "average":
-            dv_gb = dv.groupby(f"{self._dim_name}.{self._freq}")
-        else:
-            self._labeled_time = self._label_time_coords(dv[self._dim_name])
-            dv.coords[self._labeled_time.name] = self._labeled_time
-            dv_gb = dv.groupby(self._labeled_time.name)
-
-        return dv_gb
+        return ds
 
     def _add_operation_attrs(self, data_var: xr.DataArray) -> xr.DataArray:
         """Adds attributes to the data variable describing the operation.

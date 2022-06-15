@@ -64,6 +64,7 @@ class SpatialAccessor:
         data_var: str,
         axis: List[SpatialAxis] = ["X", "Y"],
         weights: Union[Literal["generate"], xr.DataArray] = "generate",
+        keep_weights: bool = False,
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
     ) -> xr.Dataset:
@@ -101,6 +102,9 @@ class SpatialAccessor:
             averaging. ``weights`` must include the same spatial axis dimensions
             and have the same dimensional sizes as the data variable, by default
             "generate".
+        keep_weights : bool, optional
+            If calculating averages using weights, keep the weights in the
+            final dataset output, by default False.
         lat_bounds : Optional[RegionAxisBounds], optional
             A tuple of floats/ints for the regional latitude lower and upper
             boundaries. This arg is used when calculating axis weights, but is
@@ -169,8 +173,8 @@ class SpatialAccessor:
         >>> ts_global = ds.spatial.average("tas", axis=["X", "Y"],
         >>>     weights=weights)["tas"]
         """
-        dataset = self._dataset.copy()
-        dv = _get_data_var(dataset, data_var)
+        ds = self._dataset.copy()
+        dv = _get_data_var(ds, data_var)
         self._validate_axis_arg(axis)
 
         if isinstance(weights, str) and weights == "generate":
@@ -178,13 +182,100 @@ class SpatialAccessor:
                 self._validate_region_bounds("Y", lat_bounds)
             if lon_bounds is not None:
                 self._validate_region_bounds("X", lon_bounds)
-            dv_weights = self._get_weights(axis, lat_bounds, lon_bounds)
+            self._weights = self.get_weights(axis, lat_bounds, lon_bounds)
         elif isinstance(weights, xr.DataArray):
-            dv_weights = weights
+            self._weights = weights
 
-        self._validate_weights(dv, axis, dv_weights)
-        dataset[dv.name] = self._averager(dv, axis, dv_weights)
-        return dataset
+        self._validate_weights(dv, axis)
+        ds[dv.name] = self._averager(dv, axis)
+
+        if keep_weights:
+            ds[self._weights.name] = self._weights
+
+        return ds
+
+    def get_weights(
+        self,
+        axis: List[SpatialAxis],
+        lat_bounds: Optional[RegionAxisBounds] = None,
+        lon_bounds: Optional[RegionAxisBounds] = None,
+    ) -> xr.DataArray:
+        """
+        Get area weights for specified axis keys and an optional target domain.
+
+        This method first determines the weights for an individual axis based on
+        the difference between the upper and lower bound. For latitude the
+        weight is determined by the difference of sine(latitude). All axis
+        weights are then combined to form a DataArray of weights that can be
+        used to perform a weighted (spatial) average.
+
+        If ``lat_bounds`` or ``lon_bounds`` are supplied, then grid cells
+        outside this selected regional domain are given zero weight. Grid cells
+        that are partially in this domain are given partial weight.
+
+        Parameters
+        ----------
+        axis : List[SpatialAxis]
+            List of axis dimensions to average over.
+        lat_bounds : Optional[RegionAxisBounds]
+            Tuple of latitude boundaries for regional selection, by default
+            None.
+        lon_bounds : Optional[RegionAxisBounds]
+            Tuple of longitude boundaries for regional selection, by default
+            None.
+
+        Returns
+        -------
+        xr.DataArray
+           A DataArray containing the region weights to use during averaging.
+           ``weights`` are 1-D and correspond to the specified axes (``axis``)
+           in the region.
+
+        Notes
+        -----
+        This method was developed for rectilinear grids only. ``get_weights()``
+        recognizes and operate on latitude and longitude, but could be extended
+        to work with other standard geophysical dimensions (e.g., time, depth,
+        and pressure).
+        """
+        Bounds = TypedDict(
+            "Bounds",
+            {"domain": xr.DataArray, "region": Optional[RegionAxisBounds]},
+        )
+        axis_bounds: Dict[SpatialAxis, Bounds] = {
+            "X": {
+                "domain": self._dataset.bounds.get_bounds("lon").copy(),
+                "region": lon_bounds,
+            },
+            "Y": {
+                "domain": self._dataset.bounds.get_bounds("lat").copy(),
+                "region": lat_bounds,
+            },
+        }
+
+        axis_weights: AxisWeights = {}
+
+        for key in axis:
+            d_bounds = axis_bounds[key]["domain"]
+            self._validate_domain_bounds(d_bounds)
+
+            r_bounds: Union[Optional[RegionAxisBounds], np.ndarray] = axis_bounds[key][
+                "region"
+            ]
+            if r_bounds is not None:
+                r_bounds = np.array(r_bounds, dtype="float")
+
+            if key == "X":
+                weights = self._get_longitude_weights(d_bounds, r_bounds)
+            elif key == "Y":
+                weights = self._get_latitude_weights(d_bounds, r_bounds)
+
+            weights.attrs = d_bounds.attrs
+            axis_weights[key] = weights
+
+        weights = self._combine_weights(axis_weights)
+
+        return weights
 
     def _validate_axis_arg(self, axis: List[SpatialAxis]):
         """
@@ -293,88 +384,6 @@ class SpatialAccessor:
                 "The regional latitude lower bound is greater than the upper. "
                 "Pass a tuple with the format (lower, upper)."
             )
-
-    def _get_weights(
-        self,
-        axis: List[SpatialAxis],
-        lat_bounds: Optional[RegionAxisBounds],
-        lon_bounds: Optional[RegionAxisBounds],
-    ) -> xr.DataArray:
-        """
-        Get area weights for specified axis keys and an optional target domain.
-
-        This method first determines the weights for an individual axis based on
-        the difference between the upper and lower bound. For latitude the
-        weight is determined by the difference of sine(latitude). All axis
-        weights are then combined to form a DataArray of weights that can be
-        used to perform a weighted (spatial) average.
-
-        If ``lat_bounds`` or ``lon_bounds`` are supplied, then grid cells
-        outside this selected regional domain are given zero weight. Grid cells
-        that are partially in this domain are given partial weight.
-
-        Parameters
-        ----------
-        axis : List[SpatialAxis]
-            List of axis dimensions to average over.
-        lat_bounds : Optional[RegionAxisBounds]
-            Tuple of latitude boundaries for regional selection.
-        lon_bounds : Optional[RegionAxisBounds]
-            Tuple of longitude boundaries for regional selection.
-
-        Returns
-        -------
-        xr.DataArray
-           A DataArray containing the region weights to use during averaging.
-           ``weights`` are 1-D and correspond to the specified axes (``axis``)
-           in the region.
-
-        Notes
-        -----
-        This method was developed for rectilinear grids only. ``_get_weights()``
-        recognizes and operate on latitude and longitude, but could be extended
-        to work with other standard geophysical dimensions (e.g., time, depth,
-        and pressure).
-        """
-        Bounds = TypedDict(
-            "Bounds",
-            {"domain": xr.DataArray, "region": Optional[RegionAxisBounds]},
-        )
-        axis_bounds: Dict[SpatialAxis, Bounds] = {
-            "X": {
-                "domain": self._dataset.bounds.get_bounds("lon").copy(),
-                "region": lon_bounds,
-            },
-            "Y": {
-                "domain": self._dataset.bounds.get_bounds("lat").copy(),
-                "region": lat_bounds,
-            },
-        }
-
-        axis_weights: AxisWeights = {}
-
-        for key in axis:
-            d_bounds = axis_bounds[key]["domain"]
-            self._validate_domain_bounds(d_bounds)
-
-            r_bounds: Union[Optional[RegionAxisBounds], np.ndarray] = axis_bounds[key][
-                "region"
-            ]
-            if r_bounds is not None:
-                r_bounds = np.array(r_bounds, dtype="float")
-
-            if key == "X":
-                weights = self._get_longitude_weights(d_bounds, r_bounds)
-            elif key == "Y":
-                weights = self._get_latitude_weights(d_bounds, r_bounds)
-
-            weights.attrs = d_bounds.attrs
-            weights.name = key + "_wts"
-            axis_weights[key] = weights
-
-        weights = self._combine_weights(axis_weights)
-
-        return weights
 
     def _get_longitude_weights(
         self, domain_bounds: xr.DataArray, region_bounds: Optional[np.ndarray]
@@ -639,11 +648,11 @@ class SpatialAccessor:
             (``axis``) in the region.
         """
         region_weights = reduce((lambda x, y: x * y), axis_weights.values())
+        region_weights.name = "_".join(sorted(region_weights.coords.keys())) + "_wts"
+
         return region_weights
 
-    def _validate_weights(
-        self, data_var: xr.DataArray, axis: List[SpatialAxis], weights: xr.DataArray
-    ):
+    def _validate_weights(self, data_var: xr.DataArray, axis: List[SpatialAxis]):
         """Validates the ``weights`` arg based on a set of criteria.
 
         This methods checks for the dimensional alignment between the
@@ -676,13 +685,13 @@ class SpatialAccessor:
         x_key = data_var.cf.axes["X"][0]
         y_key = data_var.cf.axes["Y"][0]
 
-        if "X" in axis and x_key not in weights.dims:
+        if "X" in axis and x_key not in self._weights.dims:
             raise KeyError(
                 "The weights DataArray either does not include an X axis, "
                 "or the X axis coordinates does not have the 'axis' attribute "
                 "set to 'X'."
             )
-        if "Y" in axis and y_key not in weights.dims:
+        if "Y" in axis and y_key not in self._weights.dims:
             raise KeyError(
                 "The weights DataArray either does not include an Y axis, "
                 "or the Y axis coordinates does not have the 'axis' attribute "
@@ -690,17 +699,15 @@ class SpatialAccessor:
             )
 
         # Check the weight dim sizes equal data var dim sizes.
-        dim_sizes = {key: data_var.sizes[key] for key in weights.sizes.keys()}
-        for dim, size in weights.sizes.items():
+        dim_sizes = {key: data_var.sizes[key] for key in self._weights.sizes.keys()}
+        for dim, size in self._weights.sizes.items():
             if size != dim_sizes[dim]:
                 raise ValueError(
-                    f"The axis dimension sizes between supplied `weights` {dict(weights.sizes)} "
+                    f"The axis dimension sizes between supplied `weights` {dict(self._weights.sizes)} "
                     f"and the data variable {dim_sizes} are misaligned."
                 )
 
-    def _averager(
-        self, data_var: xr.DataArray, axis: List[SpatialAxis], weights: xr.DataArray
-    ):
+    def _averager(self, data_var: xr.DataArray, axis: List[SpatialAxis]):
         """Perform a weighted average of a data variable.
 
         This method assumes all specified keys in ``axis`` exists in the data
@@ -718,10 +725,6 @@ class SpatialAccessor:
             Data variable inside a Dataset.
         axis : List[SpatialAxis]
             List of axis dimensions to average over.
-        weights : xr.DataArray
-            A DataArray containing the region area weights for averaging.
-            ``weights`` must include the same spatial axis dimensions and have
-            the same sizes as the data variable.
 
         Returns
         -------
@@ -733,7 +736,7 @@ class SpatialAccessor:
         ``weights`` must be a DataArray and cannot contain missing values.
         Missing values are replaced with 0 using ``weights.fillna(0)``.
         """
-        weights = weights.fillna(0)
+        weights = self._weights.fillna(0)
 
         with xr.set_options(keep_attrs=True):
             weighted_mean = data_var.cf.weighted(weights).mean(axis)

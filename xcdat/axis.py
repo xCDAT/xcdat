@@ -350,6 +350,6 @@ def _get_coord_var(dataset: xr.Dataset, axis: GenericAxis):
         raise KeyError(
             f"A '{axis}' coordinate variable was found in the dataset. Make sure "
             "the coordinate variable exists in the Dataset, and its 'axis' attribute "
-            "is set to '{axis}'."
+            f"is set to '{axis}'."
         )
     return coord_var
