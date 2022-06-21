@@ -25,7 +25,7 @@ setup(
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
     ],
-    description="Xarray Extended with Climate Data Analysis Tools",
+    description="Xarray Climate Data Analysis Tools",
     license="Apache-2.0",
     long_description=readme + "\n\n" + history,
     include_package_data=True,
