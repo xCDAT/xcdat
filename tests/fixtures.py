@@ -78,7 +78,7 @@ time_bnds = xr.DataArray(
     coords={"time": time_cf},
     dims=["time", "bnds"],
     attrs={
-        "is_generated": "True",
+        "xcdat_bounds": "True",
     },
 )
 time_bnds_non_cf = xr.DataArray(
@@ -102,7 +102,7 @@ time_bnds_non_cf = xr.DataArray(
     ],
     coords={"time": time_non_cf},
     dims=["time", "bnds"],
-    attrs={"is_generated": "True"},
+    attrs={"xcdat_bounds": "True"},
 )
 
 # LATITUDE
@@ -110,14 +110,14 @@ time_bnds_non_cf = xr.DataArray(
 lat = xr.DataArray(
     data=np.array([-90, -88.75, 88.75, 90]),
     dims=["lat"],
-    attrs={"units": "degrees_north", "axis": "Y"},
+    attrs={"units": "degrees_north", "axis": "Y", "standard_name": "latitude"},
 )
 lat_bnds = xr.DataArray(
     name="lat_bnds",
     data=np.array([[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]),
     coords={"lat": lat},
     dims=["lat", "bnds"],
-    attrs={"is_generated": "True"},
+    attrs={"xcdat_bounds": "True"},
 )
 
 # LONGITUDE
@@ -125,7 +125,7 @@ lat_bnds = xr.DataArray(
 lon = xr.DataArray(
     data=np.array([0, 1.875, 356.25, 358.125]),
     dims=["lon"],
-    attrs={"units": "degrees_east", "axis": "X"},
+    attrs={"units": "degrees_east", "axis": "X", "standard_name": "longitude"},
 )
 lon_bnds = xr.DataArray(
     name="lon_bnds",
@@ -139,7 +139,7 @@ lon_bnds = xr.DataArray(
     ),
     coords={"lon": lon},
     dims=["lon", "bnds"],
-    attrs={"is_generated": "True"},
+    attrs={"xcdat_bounds": "True"},
 )
 
 # VARIABLES

@@ -50,7 +50,8 @@ Things we are striving for:
 
 * Robust handling of coordinates and its associated bounds
 
-  * Coordinates and bounds are retrieved with ``cf_xarray`` using the standard ``axis`` and ``coordinate`` name attributes
+  * Coordinate variables are retrieved with ``cf_xarray`` using either the ``"axis"``, ``"standard_name"``, or dimension name attribute.
+  * Bounds are retrieved with ``cf_xarray`` using the ``"bounds"`` attr.
   * Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
 
 * Support for parallelism using `dask`_ where it is both possible and makes sense
