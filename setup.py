@@ -2,8 +2,6 @@
 
 """The setup script."""
 
-from typing import List
-
 from setuptools import find_packages, setup
 
 with open("README.rst") as readme_file:
@@ -12,16 +10,6 @@ with open("README.rst") as readme_file:
 with open("HISTORY.rst") as history_file:
     history = history_file.read()
 
-# https://packaging.python.org/discussions/install-requires-vs-requirements/#install-requires
-install_requires: List[str] = [
-    "cf_xarray",
-    "cftime",
-    "dask",
-    "netcdf4",
-    "numpy",
-    "pandas",
-    "xarray",
-]
 test_requires = ["pytest>=3"]
 
 setup(
@@ -38,7 +26,6 @@ setup(
         "Programming Language :: Python :: 3.10",
     ],
     description="Xarray Climate Data Analysis Tools",
-    install_requires=install_requires,
     license="Apache-2.0",
     long_description=readme + "\n\n" + history,
     include_package_data=True,

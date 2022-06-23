@@ -14,8 +14,20 @@ from dask.array.core import Array
 # a key by falling back on the generic version. Attempting to index on the short
 # key when the long key is used will fail, but using the generic key should
 # work.
-CFAxis = Literal["lat", "latitude", "Y", "lon", "longitude", "X", "time", "T"]
-GenericAxis = Literal["X", "Y", "T"]
+CFAxis = Literal[
+    "lat",
+    "latitude",
+    "Y",
+    "lon",
+    "longitude",
+    "X",
+    "time",
+    "T",
+    "height",
+    "pressure",
+    "Z",
+]
+GenericAxis = Literal["X", "Y", "T", "Z"]
 GENERIC_AXIS_MAP: Dict[CFAxis, GenericAxis] = {
     "lat": "Y",
     "latitude": "Y",
@@ -25,6 +37,9 @@ GENERIC_AXIS_MAP: Dict[CFAxis, GenericAxis] = {
     "X": "X",
     "time": "T",
     "T": "T",
+    "height": "Z",
+    "pressure": "Z",
+    "Z": "Z",
 }
 
 

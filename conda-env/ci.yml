@@ -15,6 +15,9 @@ dependencies:
     - numpy
     - pandas
     - xarray
+    - xesmf
+    - esmpy
+    - numba
     # Testing
     # ==================
     - pytest
