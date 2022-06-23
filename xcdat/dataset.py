@@ -84,6 +84,7 @@ def open_dataset(
         if cf_compliant_time is False:
             # XCDAT handles decoding time values with non-CF units.
             ds = xr.open_dataset(path, decode_times=False, **kwargs)
+            # attempt to decode non-cf-compliant time axis
             ds = decode_non_cf_time(ds)
         else:
             ds = xr.open_dataset(path, decode_times=True, **kwargs)
@@ -304,7 +305,13 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     time = ds.cf["T"]
     time_bounds = ds.get(time.attrs.get("bounds"), None)
     units_attr = time.attrs.get("units")
-    units, ref_date = _split_time_units_attr(units_attr)
+    # if the time axis cannot be split, we do not yet
+    # support time decoding and we return the original
+    # dataset
+    try:
+        units, ref_date = _split_time_units_attr(units_attr)
+    except ValueError:
+        return ds
     ref_date = pd.to_datetime(ref_date)
 
     data = [ref_date + pd.DateOffset(**{units: offset}) for offset in time.data]
@@ -403,7 +410,11 @@ def _has_cf_compliant_time(
         return None
 
     time = ds.cf["T"]
-    units = _split_time_units_attr(time.attrs.get("units"))[0]
+    # if the time units attr cannot be split it is not cf_compliant
+    try:
+        units = _split_time_units_attr(time.attrs.get("units"))[0]
+    except ValueError:
+        return False
     cf_compliant = units not in NON_CF_TIME_UNITS
 
     return cf_compliant
@@ -589,6 +600,7 @@ def _preprocess_non_cf_dataset(
     if callable:
         ds_new = callable(ds)
 
+    # attempt to decode non-cf-compliant time axis
     ds_new = decode_non_cf_time(ds_new)
 
     return ds_new
@@ -611,6 +623,11 @@ def _split_time_units_attr(units_attr: str) -> Tuple[str, str]:
     if units_attr is None:
         raise KeyError("No 'units' attribute found for the dataset's time coordinates.")
 
-    units, reference_date = units_attr.split(" since ")
+    if "since" in units_attr:
+        units, reference_date = units_attr.split(" since ")
+    else:
+        raise ValueError(
+            "This dataset does not have time coordinates of the form 'X since Y'."
+        )
 
     return units, reference_date

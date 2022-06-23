@@ -52,7 +52,15 @@ time_non_cf = xr.DataArray(
         "standard_name": "time",
     },
 )
-
+time_non_cf_unsupported = xr.DataArray(
+    data=np.arange(1850 + 1 / 24.0, 1851 + 3 / 12.0, 1 / 12.0),
+    dims=["time"],
+    attrs={
+        "units": "year A.D.",
+        "long_name": "time",
+        "standard_name": "time",
+    },
+)
 time_bnds = xr.DataArray(
     name="time_bnds",
     data=np.array(
@@ -103,6 +111,16 @@ time_bnds_non_cf = xr.DataArray(
     coords={"time": time_non_cf},
     dims=["time", "bnds"],
     attrs={"xcdat_bounds": "True"},
+)
+tb = []
+for t in time_non_cf_unsupported:
+    tb.append([t - 1 / 24.0, t + 1 / 24.0])
+time_bnds_non_cf_unsupported = xr.DataArray(
+    name="time_bnds",
+    data=tb,
+    coords={"time": time_non_cf_unsupported},
+    dims=["time", "bnds"],
+    attrs={"is_generated": "True"},
 )
 
 # LATITUDE
@@ -159,7 +177,9 @@ ts_non_cf = xr.DataArray(
 )
 
 
-def generate_dataset(cf_compliant: bool, has_bounds: bool) -> xr.Dataset:
+def generate_dataset(
+    cf_compliant: bool, has_bounds: bool, unsupported=False
+) -> xr.Dataset:
     """Generates a dataset using coordinate and data variable fixtures.
 
     Parameters
@@ -189,8 +209,12 @@ def generate_dataset(cf_compliant: bool, has_bounds: bool) -> xr.Dataset:
             ds.coords["time"] = time_cf.copy()
             ds["time_bnds"] = time_bnds.copy()
         elif not cf_compliant:
-            ds.coords["time"] = time_non_cf.copy()
-            ds["time_bnds"] = time_bnds_non_cf.copy()
+            if unsupported:
+                ds.coords["time"] = time_non_cf_unsupported.copy()
+                ds["time_bnds"] = time_bnds_non_cf_unsupported.copy()
+            else:
+                ds.coords["time"] = time_non_cf.copy()
+                ds["time_bnds"] = time_bnds_non_cf.copy()
 
         # If the "bounds" attribute is included in an existing DataArray and
         # added to a new Dataset, it will get dropped. Therefore, it needs to be
