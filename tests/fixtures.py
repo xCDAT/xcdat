@@ -178,7 +178,7 @@ ts_non_cf = xr.DataArray(
 
 
 def generate_dataset(
-    cf_compliant: bool, has_bounds: bool, unsupported=False
+    cf_compliant: bool, has_bounds: bool, unsupported: bool = False
 ) -> xr.Dataset:
     """Generates a dataset using coordinate and data variable fixtures.
 
@@ -189,12 +189,22 @@ def generate_dataset(
     has_bounds : bool, optional
         Include bounds for coordinates. This also adds the "bounds" attribute
         to existing coordinates to link them to their respective bounds.
+    unsupported : bool, optional
+        Create time units that are unsupported and cannot be decoded.
+        Note that cf_compliant must be set to False.
 
     Returns
     -------
     xr.Dataset
         Test dataset.
     """
+
+    if unsupported & cf_compliant:
+        raise ValueError(
+            "Cannot set cf_compliant=True and unsupported=True. \n"
+            "Set cf_compliant=False."
+        )
+
     if has_bounds:
         ds = xr.Dataset(
             data_vars={

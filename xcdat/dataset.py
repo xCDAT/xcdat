@@ -41,9 +41,10 @@ def open_dataset(
         the Dataset, by default True. Bounds are required for many xCDAT
         features.
     decode_times: bool, optional
-        If True, decode times encoded in the standard NetCDF datetime format
-        into datetime objects. Otherwise, leave them encoded as numbers.
-        This keyword may not be supported by all the backends, by default True.
+        If True, attempt to decode times encoded in the standard NetCDF
+        datetime format into datetime objects. Otherwise, leave them encoded
+        as numbers. This keyword may not be supported by all the backends,
+        by default True.
     center_times: bool, optional
         If True, center time coordinates using the midpoint between its upper
         and lower bounds. Otherwise, use the provided time coordinates, by
@@ -232,7 +233,8 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     ----------
     dataset : xr.Dataset
         Dataset with numerically encoded time coordinates and time bounds (if
-        they exist).
+        they exist). If the time coordinates cannot be decoded then the original
+        dataset is returned.
 
     Returns
     -------
@@ -619,6 +621,11 @@ def _split_time_units_attr(units_attr: str) -> Tuple[str, str]:
     Tuple[str, str]
         The units (e.g, "months") and the reference date (e.g., "1800-01-01").
         If the units attribute doesn't exist for the time coordinates.
+
+    Raises
+    ------
+    ValueError
+        If the time units attribute is not of the form `X since Y`.
     """
     if units_attr is None:
         raise KeyError("No 'units' attribute found for the dataset's time coordinates.")
