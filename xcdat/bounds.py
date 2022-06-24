@@ -153,7 +153,7 @@ class BoundsAccessor:
         Parameters
         ----------
         axis : CFAxisName
-            The CF-compliant axis name ("X", "Y", "T").
+            The CF-compliant axis name ("X", "Y", "T", "Z").
 
         Returns
         -------
@@ -198,7 +198,7 @@ class BoundsAccessor:
         Parameters
         ----------
         axis : CFAxisName
-            The CF-compliant axis name ("X", "Y", "T").
+            The CF-compliant axis name ("X", "Y", "T", "Z").
         width : float, optional
             Width of the bounds relative to the position of the nearest points,
             by default 0.5.
@@ -232,7 +232,7 @@ class BoundsAccessor:
         Parameters
         ----------
         axis : CFAxisName
-            The CF-compliant axis name ("X", "Y", "T").
+            The CF-compliant axis name ("X", "Y", "T", "Z").
         width : float, optional
             Width of the bounds relative to the position of the nearest points,
             by default 0.5.

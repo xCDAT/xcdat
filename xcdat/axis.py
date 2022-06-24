@@ -45,7 +45,7 @@ def get_axis_coord(
     obj : Union[xr.Dataset, xr.DataArray]
         The Dataset or DataArray object.
     axis : CFAxisName
-        The CF-compliant axis name ("X", "Y", "T").
+        The CF-compliant axis name ("X", "Y", "T", "Z").
 
     Returns
     -------
@@ -88,7 +88,7 @@ def get_axis_coord(
 
 
 def get_axis_dim(obj: Union[xr.Dataset, xr.DataArray], axis: CFAxisName) -> str:
-    """Get the dimension for an axis.
+    """Gets the dimension for an axis.
 
     The coordinate name should be identical to the dimension name, so this
     function simply returns the coordinate name.
@@ -98,7 +98,7 @@ def get_axis_dim(obj: Union[xr.Dataset, xr.DataArray], axis: CFAxisName) -> str:
     obj : Union[xr.Dataset, xr.DataArray]
         The Dataset or DataArray object.
     axis : CFAxisName
-        The CF-compliant axis name ("X", "Y", "T").
+        The CF-compliant axis name ("X", "Y", "T", "Z")
 
     Returns
     -------
@@ -152,7 +152,7 @@ def center_times(dataset: xr.Dataset) -> xr.Dataset:
 def swap_lon_axis(
     dataset: xr.Dataset, to: Tuple[float, float], sort_ascending: bool = True
 ) -> xr.Dataset:
-    """Swap the orientation of a dataset's longitude axis.
+    """Swaps the orientation of a dataset's longitude axis.
 
     This method also swaps the axis orientation of the longitude bounds if it
     exists. Afterwards, it sorts longitude and longitude bounds values in
