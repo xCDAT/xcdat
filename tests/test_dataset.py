@@ -43,9 +43,9 @@ class TestOpenDataset:
 
         # even though decode_times=True, it should fail to decode unsupported time axis
         result = open_dataset(self.file_path, decode_times=True)
-        expected_times = np.arange(1850 + 1 / 24.0, 1851 + 3 / 12.0, 1 / 12.0)
+        expected = ds
 
-        assert np.all(expected_times == result.time.values)
+        assert result.identical(expected)
 
     def test_non_cf_compliant_time_is_decoded(self):
         ds = generate_dataset(cf_compliant=False, has_bounds=False)
