@@ -3,6 +3,7 @@ from typing import Any
 
 import xarray as xr
 
+import xcdat.bounds  # noqa: F401
 from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
@@ -32,14 +33,14 @@ def preserve_bounds(
         Target Dataset with preserved bounds.
     """
     try:
-        lat_bnds = source_grid.cf.get_bounds("lat")
+        lat_bnds = source_grid.bounds.get_bounds("Y")
     except KeyError:
         pass
     else:
         target[lat_bnds.name] = lat_bnds.copy()
 
     try:
-        lon_bnds = source_grid.cf.get_bounds("lon")
+        lon_bnds = source_grid.bounds.get_bounds("X")
     except KeyError:
         pass
     else:
@@ -47,7 +48,7 @@ def preserve_bounds(
 
     for dim_name in source.cf.axes:
         try:
-            source_bnds = source.cf.get_bounds(dim_name)
+            source_bnds = source.bounds.get_bounds(dim_name)
         except KeyError:
             logger.debug(f"No bounds for dimension {dim_name!r} found in source")
         else:

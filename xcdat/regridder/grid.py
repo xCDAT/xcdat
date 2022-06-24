@@ -3,6 +3,8 @@ from typing import Optional, Tuple, Union
 import numpy as np
 import xarray as xr
 
+from xcdat.axis import get_axis_coord
+
 # First 50 zeros for the bessel function
 # Taken from https://github.com/CDAT/cdms/blob/dd41a8dd3b5bac10a4bfdf6e56f6465e11efc51d/regrid2/Src/_regridmodule.c#L3390-L3402
 BESSEL_LOOKUP = [
@@ -376,16 +378,16 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
     xr.Dataset
         A dataset containing the global mean grid.
     """
-    lat = grid.cf["lat"]
+    lat = get_axis_coord(grid, "Y")
     lat_data = np.array([(lat[0] + lat[-1]) / 2.0])
 
-    lat_bnds = grid.cf.get_bounds("lat")
+    lat_bnds = grid.bounds.get_bounds("Y")
     lat_bnds = np.array([[lat_bnds[0, 0], lat_bnds[-1, 1]]])
 
-    lon = grid.cf["lon"]
+    lon = get_axis_coord(grid, "X")
     lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
 
-    lon_bnds = grid.cf.get_bounds("lon")
+    lon_bnds = grid.bounds.get_bounds("X")
     lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
     return create_grid(lat_data, lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds)
@@ -406,17 +408,16 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     xr.Dataset
         A dataset containing a zonal grid.
     """
-    lon = grid.cf["lon"]
+    lon = get_axis_coord(grid, "X")
     out_lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
 
-    lon_bnds = grid.cf.get_bounds("lon")
+    lon_bnds = grid.bounds.get_bounds("X")
     lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
-    lat_bnds = grid.cf.get_bounds("lat")
+    lat = get_axis_coord(grid, "Y")
+    lat_bnds = grid.bounds.get_bounds("Y")
 
-    return create_grid(
-        grid.cf["lat"], out_lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds
-    )
+    return create_grid(lat, out_lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds)
 
 
 def create_grid(
@@ -483,6 +484,7 @@ def create_grid(
             lat_bnds = lat_bnds.copy()
 
         data_vars["lat_bnds"] = lat_bnds
+        lat.attrs["bounds"] = lat_bnds.name
 
     if lon_bnds is not None:
         if isinstance(lon_bnds, np.ndarray):
@@ -493,6 +495,7 @@ def create_grid(
             lon_bnds = lon_bnds.copy()
 
         data_vars["lon_bnds"] = lon_bnds
+        lon.attrs["bounds"] = lon_bnds.name
 
     grid = xr.Dataset(data_vars=data_vars, coords={"lat": lat, "lon": lon})
 

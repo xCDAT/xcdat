@@ -9,9 +9,9 @@ import xarray as xr
 from dask.array.core import Array
 
 # https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axis-names
-CFAxisName = Literal["X", "Y", "T"]
+CFAxisName = Literal["X", "Y", "T", "Z"]
 # https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names
-CFStandardName = Literal["latitude", "longitude", "time"]
+CFStandardName = Literal["latitude", "longitude", "time", "height", "pressure"]
 ShortName = Literal["lat", "lon"]
 
 # The key is the accepted value for method and function arguments, and the
@@ -21,6 +21,7 @@ CF_NAME_MAP: Dict[CFAxisName, List[Union[CFAxisName, CFStandardName, ShortName]]
     "X": ["X", "longitude", "lon"],
     "Y": ["Y", "latitude", "lat"],
     "T": ["T", "time"],
+    "Z": ["Z", "height", "pressure"],
 }
 
 

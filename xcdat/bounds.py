@@ -144,7 +144,7 @@ class BoundsAccessor:
                 try:
                     self.get_bounds(axis)
                 except KeyError:
-                    self._dataset = self._add_bounds(axis, width)
+                    self._dataset = self.add_bounds(axis, width)
         return self._dataset
 
     def get_bounds(self, axis: CFAxisName) -> xr.DataArray:

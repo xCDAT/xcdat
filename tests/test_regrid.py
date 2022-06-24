@@ -567,12 +567,12 @@ class TestAccessor:
     def test_grid_missing_axis(self):
         ds = fixtures.generate_dataset(True, True)
 
-        ds_no_lat = ds.drop_vars(["lat"])
+        ds_no_lat = ds.drop_dims(["lat"])
 
         with pytest.raises(KeyError):
             ds_no_lat.regridder.grid
 
-        ds_no_lon = ds.drop_vars(["lon"])
+        ds_no_lon = ds.drop_dims(["lon"])
 
         with pytest.raises(KeyError):
             ds_no_lon.regridder.grid
