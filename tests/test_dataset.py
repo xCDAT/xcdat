@@ -37,6 +37,16 @@ class TestOpenDataset:
         expected = generate_dataset(cf_compliant=False, has_bounds=True)
         assert result.identical(expected)
 
+    def test_non_cf_compliant_and_unsupported_time_is_not_decoded(self):
+        ds = generate_dataset(cf_compliant=False, has_bounds=True, unsupported=True)
+        ds.to_netcdf(self.file_path)
+
+        # even though decode_times=True, it should fail to decode unsupported time axis
+        result = open_dataset(self.file_path, decode_times=True)
+        expected = ds
+
+        assert result.identical(expected)
+
     def test_non_cf_compliant_time_is_decoded(self):
         ds = generate_dataset(cf_compliant=False, has_bounds=False)
         ds.to_netcdf(self.file_path)
