@@ -3,7 +3,98 @@ import pytest
 import xarray as xr
 
 from tests.fixtures import generate_dataset
-from xcdat.axis import center_times, swap_lon_axis
+from xcdat.axis import center_times, get_axis_coord, get_axis_dim, swap_lon_axis
+
+
+class TestGetAxisCoord:
+    def test_raises_error_if_coord_var_does_not_exist(self):
+        ds = xr.Dataset()
+
+        with pytest.raises(KeyError):
+            get_axis_coord(ds, "Y")
+
+    def test_raises_error_if_axis_or_standard_name_is_not_set_or_dim_name_is_not_valid(
+        self,
+    ):
+        ds = xr.Dataset(
+            coords={
+                "invalid_lat_shortname": xr.DataArray(
+                    data=np.ones(3), dims="invalid_lat_shortname"
+                )
+            }
+        )
+
+        with pytest.raises(KeyError):
+            get_axis_coord(ds, "Y")
+
+    def test_returns_coord_var_if_axis_attr_is_set(self):
+        # Set the dimension name to something other than "lat" to make sure
+        # axis attr is being used for the match.
+        ds = xr.Dataset(
+            coords={
+                "lat_not_short_name": xr.DataArray(
+                    data=np.ones(3), dims="lat_not_short_name", attrs={"axis": "Y"}
+                )
+            }
+        )
+
+        result = get_axis_coord(ds, "Y")
+        expected = ds.lat_not_short_name
+
+        assert result.identical(expected)
+
+    def test_returns_coord_var_if_standard_name_attr_is_set(self):
+        # Set the dimension name to something other than "lat" to make sure
+        # standard_name attr is being used for the match.
+        ds = xr.Dataset(
+            coords={
+                "lat_not_short_name": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat_not_short_name",
+                    attrs={"standard_name": "latitude"},
+                )
+            }
+        )
+
+        result = get_axis_coord(ds, "Y")
+        expected = ds.lat_not_short_name
+
+        assert result.identical(expected)
+
+    def test_returns_coord_var_if_dim_name_is_valid(self):
+        ds = xr.Dataset(coords={"lat": xr.DataArray(data=np.ones(3), dims="lat")})
+
+        result = get_axis_coord(ds, "Y")
+        expected = ds.lat
+
+        assert result.identical(expected)
+
+
+class TestGetAxisDim:
+    def test_raises_error_if_dim_name_is_not_valid(self):
+        ds = xr.Dataset(
+            coords={
+                "invalid_lat_shortname": xr.DataArray(
+                    data=np.ones(3), dims="invalid_lat_shortname"
+                )
+            }
+        )
+
+        with pytest.raises(KeyError):
+            get_axis_dim(ds, "Y")
+
+    def test_returns_dim_name(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3), dims="lat", attrs={"standard_name": "latitude"}
+                )
+            }
+        )
+
+        dim = get_axis_dim(ds, "Y")
+
+        assert dim == "lat"
 
 
 class TestCenterTimes:
@@ -129,7 +220,7 @@ class TestSwapLonAxis:
                         ]
                     ),
                     dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
+                    attrs={"xcdat_bounds": "True"},
                 ),
                 "ts": xr.DataArray(
                     name="ts",
@@ -160,7 +251,7 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array([[0, 120], [120, 181], [181, 360]]),
                     dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
+                    attrs={"xcdat_bounds": "True"},
                 )
             },
         )
@@ -184,7 +275,7 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array([[0, 120], [120, 181], [181, 360]]),
                     dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
+                    attrs={"xcdat_bounds": "True"},
                 )
             },
         )
@@ -203,7 +294,7 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array([[-179, 0], [0, 120], [120, -179]]),
                     dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
+                    attrs={"xcdat_bounds": "True"},
                 )
             },
         )
@@ -233,7 +324,7 @@ class TestSwapLonAxis:
                         ]
                     ),
                     dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
+                    attrs={"xcdat_bounds": "True"},
                 ),
                 "ts": xr.DataArray(
                     name="ts",
@@ -268,7 +359,7 @@ class TestSwapLonAxis:
                         ]
                     ),
                     dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
+                    attrs={"xcdat_bounds": "True"},
                 ),
                 "ts": xr.DataArray(
                     name="ts",

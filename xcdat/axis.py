@@ -2,45 +2,110 @@
 Axis module for utilities related to axes, including functions to manipulate
 coordinates.
 """
-
-from typing import Dict, Literal, Optional, Tuple
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
 from dask.array.core import Array
 
-# Mapping of CF compliant long and short axis keys to their generic
-# representations. This map is useful for indexing a Dataset/DataArray on
-# a key by falling back on the generic version. Attempting to index on the short
-# key when the long key is used will fail, but using the generic key should
-# work.
-CFAxis = Literal[
-    "lat",
-    "latitude",
-    "Y",
-    "lon",
-    "longitude",
-    "X",
-    "time",
-    "T",
-    "height",
-    "pressure",
-    "Z",
-]
-GenericAxis = Literal["X", "Y", "T", "Z"]
-GENERIC_AXIS_MAP: Dict[CFAxis, GenericAxis] = {
-    "lat": "Y",
-    "latitude": "Y",
-    "Y": "Y",
-    "lon": "X",
-    "longitude": "X",
-    "X": "X",
-    "time": "T",
-    "T": "T",
-    "height": "Z",
-    "pressure": "Z",
-    "Z": "Z",
+# https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axis-names
+CFAxisName = Literal["X", "Y", "T", "Z"]
+# https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names
+CFStandardName = Literal["latitude", "longitude", "time", "height", "pressure"]
+ShortName = Literal["lat", "lon"]
+
+# The key is the accepted value for method and function arguments, and the
+# values are the CF-compliant axis and standard names that are interpreted in
+# the dataset.
+CF_NAME_MAP: Dict[CFAxisName, List[Union[CFAxisName, CFStandardName, ShortName]]] = {
+    "X": ["X", "longitude", "lon"],
+    "Y": ["Y", "latitude", "lat"],
+    "T": ["T", "time"],
+    "Z": ["Z", "height", "pressure"],
 }
+
+
+def get_axis_coord(
+    obj: Union[xr.Dataset, xr.DataArray], axis: CFAxisName
+) -> xr.DataArray:
+    """Gets the coordinate variable for an axis.
+
+    This function uses ``cf_xarray`` to try to find the matching coordinate
+    variable by checking the following attributes in order:
+
+    - ``"axis"``
+    - ``"standard_name"``
+    - Dimension name
+
+      - Must follow the valid short-hand convention
+      - For example, ``"lat"`` for latitude and ``"lon"`` for longitude
+
+    Parameters
+    ----------
+    obj : Union[xr.Dataset, xr.DataArray]
+        The Dataset or DataArray object.
+    axis : CFAxisName
+        The CF-compliant axis name ("X", "Y", "T", "Z").
+
+    Returns
+    -------
+    xr.DataArray
+        The coordinate variable.
+
+    Raises
+    ------
+    KeyError
+        If the coordinate variable was not found.
+
+    Notes
+    -----
+    Refer to [1]_ for a list of CF-compliant ``"axis"`` and ``"standard_name"``
+    attr names that can be interpreted by ``cf_xarray``.
+
+    References
+    ----------
+
+    .. [1] https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axes-and-coordinates
+    """
+    keys = CF_NAME_MAP[axis]
+    coord_var = None
+
+    for key in keys:
+        try:
+            coord_var = obj.cf[key]
+            break
+        except KeyError:
+            pass
+
+    if coord_var is None:
+        raise KeyError(
+            f"A coordinate variable for the {axis} axis was not found. Make sure "
+            "the coordinate variable exists and either the (1) 'axis' attr or (2) "
+            "'standard_name' attr is set, or (3) the dimension name follows the "
+            "short-hand convention (e.g.,'lat')."
+        )
+    return coord_var
+
+
+def get_axis_dim(obj: Union[xr.Dataset, xr.DataArray], axis: CFAxisName) -> str:
+    """Gets the dimension for an axis.
+
+    The coordinate name should be identical to the dimension name, so this
+    function simply returns the coordinate name.
+
+    Parameters
+    ----------
+    obj : Union[xr.Dataset, xr.DataArray]
+        The Dataset or DataArray object.
+    axis : CFAxisName
+        The CF-compliant axis name ("X", "Y", "T", "Z")
+
+    Returns
+    -------
+    str
+        The dimension for an axis.
+    """
+    return str(get_axis_coord(obj, axis).name)
 
 
 def center_times(dataset: xr.Dataset) -> xr.Dataset:
@@ -62,8 +127,8 @@ def center_times(dataset: xr.Dataset) -> xr.Dataset:
         The Dataset with centered time coordinates.
     """
     ds = dataset.copy()
-    time: xr.DataArray = _get_coord_var(ds, "T")
-    time_bounds = ds.bounds.get_bounds("time")
+    time: xr.DataArray = get_axis_coord(ds, "T")
+    time_bounds = ds.bounds.get_bounds("T")
 
     lower_bounds, upper_bounds = (time_bounds[:, 0].data, time_bounds[:, 1].data)
     bounds_diffs: np.timedelta64 = (upper_bounds - lower_bounds) / 2
@@ -87,7 +152,7 @@ def center_times(dataset: xr.Dataset) -> xr.Dataset:
 def swap_lon_axis(
     dataset: xr.Dataset, to: Tuple[float, float], sort_ascending: bool = True
 ) -> xr.Dataset:
-    """Swap the orientation of a dataset's longitude axis.
+    """Swaps the orientation of a dataset's longitude axis.
 
     This method also swaps the axis orientation of the longitude bounds if it
     exists. Afterwards, it sorts longitude and longitude bounds values in
@@ -115,8 +180,8 @@ def swap_lon_axis(
         The Dataset with swapped lon axes orientation.
     """
     ds = dataset.copy()
-    lon: xr.DataArray = _get_coord_var(ds, "X").copy()
-    lon_bounds: xr.DataArray = dataset.bounds.get_bounds("lon").copy()
+    lon: xr.DataArray = get_axis_coord(ds, "X").copy()
+    lon_bounds: xr.DataArray = dataset.bounds.get_bounds("X").copy()
 
     with xr.set_options(keep_attrs=True):
         if to == (-180, 180):
@@ -169,10 +234,9 @@ def _reassign_lon(dataset: xr.Dataset, lon: xr.DataArray, lon_bounds: xr.DataArr
     xr.Dataset
         The Dataset with swapped longitude coordinates and bounds.
     """
-    lon_name = lon.name
-    lon[lon_name] = lon_bounds[lon_name] = lon
+    lon[lon.name] = lon_bounds[lon.name] = lon
 
-    dataset[lon_name] = lon
+    dataset[lon.name] = lon
     dataset[lon_bounds.name] = lon_bounds
     return dataset
 
@@ -206,9 +270,8 @@ def _align_lon_to_360(dataset: xr.Dataset, p_meridian_index: np.ndarray) -> xr.D
         The Dataset.
     """
     ds = dataset.copy()
-    lon: xr.DataArray = dataset.bounds._get_coords("lon").copy()
-    lon_name = lon.name
-    lon_bounds: xr.DataArray = dataset.bounds.get_bounds("lon").copy()
+    lon: xr.DataArray = get_axis_coord(ds, "X")
+    lon_bounds: xr.DataArray = dataset.bounds.get_bounds("X")
 
     # If chunking, must convert the xarray data structure from lazy
     # Dask arrays into eager, in-memory NumPy arrays before performing
@@ -222,27 +285,27 @@ def _align_lon_to_360(dataset: xr.Dataset, p_meridian_index: np.ndarray) -> xr.D
 
     # Concatenate the longitude coordinates with 360 to handle the prime
     # meridian cell and update the coordinates for the longitude bounds.
-    p_meridian_cell = xr.DataArray([360.0], coords={lon_name: [360.0]}, dims=[lon_name])
-    lon = xr.concat((lon, p_meridian_cell), dim=lon_name)
-    lon_bounds[lon_name] = lon
+    p_meridian_cell = xr.DataArray([360.0], coords={lon.name: [360.0]}, dims=[lon.name])
+    lon = xr.concat((lon, p_meridian_cell), dim=lon.name)
+    lon_bounds[lon.name] = lon
 
     # Get the data variables related to the longitude axis and concatenate each
     # with the value at the prime meridian.
     lon_vars = {}
     for key, value in ds.cf.data_vars.items():
-        if key != lon_bounds.name and lon_name in value.dims:
+        if key != lon_bounds.name and lon.name in value.dims:
             lon_vars[key] = value
 
     for name, var in lon_vars.items():
-        p_meridian_val = var.isel({lon_name: p_meridian_index})
-        new_var = xr.concat((var, p_meridian_val), dim=lon_name)
-        new_var[lon_name] = lon
+        p_meridian_val = var.isel({lon.name: p_meridian_index})
+        new_var = xr.concat((var, p_meridian_val), dim=lon.name)
+        new_var[lon.name] = lon
         lon_vars[name] = new_var
 
     # Create a Dataset with longitude data vars and merge it to the Dataset
     # without longitude data vars.
     ds_lon = xr.Dataset(data_vars={**lon_vars, lon_bounds.name: lon_bounds})
-    ds_no_lon = ds.get([v for v in ds.data_vars if lon_name not in ds[v].dims])
+    ds_no_lon = ds.get([v for v in ds.data_vars if lon.name not in ds[v].dims])
     ds = xr.merge((ds_no_lon, ds_lon))  # type: ignore
     return ds
 
@@ -290,9 +353,8 @@ def _align_lon_bounds_to_360(
     # Extend the array to nlon+1 by concatenating the grid cell that
     # spans the prime meridian to the end.
     # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [-1, 1]]
-    bounds = xr.concat(
-        (bounds, bounds[p_meridian_index, :]), dim=bounds.cf.axes["X"][0]
-    )
+    dim = get_axis_dim(bounds, "X")
+    bounds = xr.concat((bounds, bounds[p_meridian_index, :]), dim=dim)
 
     # Add an equivalent bound that spans 360
     # (i.e., [-1, 1] -> [359, 361]) to the end of the array.
@@ -337,34 +399,3 @@ def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> Optional[np.ndarray]:
     elif p_meridian_index.size > 1:
         raise ValueError("More than one grid cell spans prime meridian.")
     return p_meridian_index
-
-
-def _get_coord_var(dataset: xr.Dataset, axis: GenericAxis):
-    """Gets a coordinate variable using its "axis" attribute.
-
-    Parameters
-    ----------
-    dataset : xr.Dataset
-        The dataset.
-    axis : GenericAxis
-        The axis.
-
-    Returns
-    -------
-    xr.DataArray
-        The coordinate variable.
-
-    Raises
-    ------
-    KeyError
-        If the coordinate variable was not found in the dataset.
-    """
-    try:
-        coord_var = dataset.cf[axis]
-    except KeyError:
-        raise KeyError(
-            f"A '{axis}' coordinate variable was found in the dataset. Make sure "
-            "the coordinate variable exists in the Dataset, and its 'axis' attribute "
-            f"is set to '{axis}'."
-        )
-    return coord_var

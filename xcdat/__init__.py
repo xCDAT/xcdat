@@ -1,5 +1,10 @@
 """Top-level package for xcdat."""
-from xcdat.axis import center_times, swap_lon_axis  # noqa: F401
+from xcdat.axis import (  # noqa: F401
+    center_times,
+    get_axis_coord,
+    get_axis_dim,
+    swap_lon_axis,
+)
 from xcdat.bounds import BoundsAccessor  # noqa: F401
 from xcdat.dataset import decode_non_cf_time, open_dataset, open_mfdataset  # noqa: F401
 from xcdat.regridder.accessor import RegridderAccessor  # noqa: F401

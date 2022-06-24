@@ -61,7 +61,7 @@ class TestAverage:
             ),
             coords={"time": ds.time},
             dims=["time", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
         ds["ts"] = xr.DataArray(
             data=np.array([[[2]], [[np.nan]], [[1]], [[1]], [[2]]]),
@@ -146,7 +146,7 @@ class TestAverage:
             ),
             coords={"time": ds.time},
             dims=["time", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
         ds["ts"] = xr.DataArray(
             data=np.array([[[2]], [[np.nan]], [[1]], [[1]], [[1]]]),
@@ -229,7 +229,7 @@ class TestAverage:
             ),
             coords={"time": ds.time},
             dims=["time", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
         ds["ts"] = xr.DataArray(
             data=np.array([[[2]], [[1]], [[1]], [[1]], [[1]]]),
@@ -312,7 +312,7 @@ class TestAverage:
             ),
             coords={"time": ds.time},
             dims=["time", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
         ds["ts"] = xr.DataArray(
             data=np.array([[[2]], [[1]], [[1]], [[1]], [[1]]]),
@@ -388,7 +388,7 @@ class TestGroupAverage:
             ),
             coords={"time": time},
             dims=["time", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         self.ds = xr.Dataset(
@@ -1910,7 +1910,7 @@ class Test_GetWeights:
                 coords={"time": ds.time},
                 dims=["time", "bnds"],
                 attrs={
-                    "is_generated": "True",
+                    "xcdat_bounds": "True",
                 },
             )
 
@@ -2306,7 +2306,7 @@ class Test_GetWeights:
                 coords={"time": ds.time},
                 dims=["time", "bnds"],
                 attrs={
-                    "is_generated": "True",
+                    "xcdat_bounds": "True",
                 },
             )
 

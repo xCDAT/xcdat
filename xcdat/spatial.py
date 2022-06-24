@@ -17,7 +17,12 @@ import numpy as np
 import xarray as xr
 from dask.array.core import Array
 
-from xcdat.axis import _align_lon_bounds_to_360, _get_prime_meridian_index
+from xcdat.axis import (
+    _align_lon_bounds_to_360,
+    _get_prime_meridian_index,
+    get_axis_coord,
+    get_axis_dim,
+)
 from xcdat.dataset import _get_data_var
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
@@ -244,11 +249,11 @@ class SpatialAccessor:
         )
         axis_bounds: Dict[SpatialAxis, Bounds] = {
             "X": {
-                "domain": self._dataset.bounds.get_bounds("lon").copy(),
+                "domain": self._dataset.bounds.get_bounds("X").copy(),
                 "region": lon_bounds,
             },
             "Y": {
-                "domain": self._dataset.bounds.get_bounds("lat").copy(),
+                "domain": self._dataset.bounds.get_bounds("Y").copy(),
                 "region": lat_bounds,
             },
         }
@@ -301,14 +306,8 @@ class SpatialAccessor:
                     f"{', '.join(SPATIAL_AXES)}."
                 )
 
-            try:
-                self._dataset.cf.axes[key]
-            except KeyError:
-                raise KeyError(
-                    f"A '{key}' axis dimension was not found in the dataset. Make sure "
-                    f"the dataset has '{key}' axis coordinates and the coordinates' "
-                    f"'axis' attribute is set to '{key}'."
-                )
+            # Check the axis coordinate variable exists in the Dataset.
+            get_axis_coord(self._dataset, key)
 
     def _validate_domain_bounds(self, domain_bounds: xr.DataArray):
         """Validates the ``domain_bounds`` arg based on a set of criteria.
@@ -681,22 +680,15 @@ class SpatialAccessor:
             If the axis dimension sizes between ``weights`` and ``data_var``
             are misaligned.
         """
-        # Check that the supplied weights include x and y dimensions.
-        x_key = data_var.cf.axes["X"][0]
-        y_key = data_var.cf.axes["Y"][0]
 
-        if "X" in axis and x_key not in self._weights.dims:
-            raise KeyError(
-                "The weights DataArray either does not include an X axis, "
-                "or the X axis coordinates does not have the 'axis' attribute "
-                "set to 'X'."
-            )
-        if "Y" in axis and y_key not in self._weights.dims:
-            raise KeyError(
-                "The weights DataArray either does not include an Y axis, "
-                "or the Y axis coordinates does not have the 'axis' attribute "
-                "set to 'Y'."
-            )
+        # Check the weights includes the same axis as the data variable.
+        for key in axis:
+            dim_name = get_axis_dim(data_var, key)
+            if dim_name not in self._weights.dims:
+                raise KeyError(
+                    f"The weights DataArray does not include an {key} axis, or the "
+                    "dimension names are not the same."
+                )
 
         # Check the weight dim sizes equal data var dim sizes.
         dim_sizes = {key: data_var.sizes[key] for key in self._weights.sizes.keys()}
@@ -738,7 +730,11 @@ class SpatialAccessor:
         """
         weights = self._weights.fillna(0)
 
+        dim = []
+        for key in axis:
+            dim.append(get_axis_dim(data_var, key))
+
         with xr.set_options(keep_attrs=True):
-            weighted_mean = data_var.cf.weighted(weights).mean(axis)
+            weighted_mean = data_var.cf.weighted(weights).mean(dim=dim)
 
         return weighted_mean

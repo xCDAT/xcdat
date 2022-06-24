@@ -2,6 +2,7 @@ from typing import Any, Dict, Literal, Tuple
 
 import xarray as xr
 
+from xcdat.axis import CFAxisName, get_axis_coord
 from xcdat.regridder import regrid2, xesmf
 
 RegridTool = Literal["xesmf", "regrid2"]
@@ -57,9 +58,8 @@ class RegridderAccessor:
         ValueError
             If axis data variable is not correctly identified.
         """
-        x, x_bnds = self._get_axis_data("X", "Longitude")
-
-        y, y_bnds = self._get_axis_data("Y", "Latitude")
+        x, x_bnds = self._get_axis_data("X")
+        y, y_bnds = self._get_axis_data("Y")
 
         with xr.set_options(keep_attrs=True):
             coords = {x.name: x.copy(), y.name: y.copy()}
@@ -76,22 +76,15 @@ class RegridderAccessor:
 
         return ds
 
-    def _get_axis_data(
-        self, name: str, standard_name: str
-    ) -> Tuple[xr.DataArray, xr.DataArray]:
-        try:
-            axis = self._ds.cf[name]
-        except KeyError:
-            raise KeyError(
-                f"{standard_name} axis could not be correctly identified in the Dataset"
-            )
+    def _get_axis_data(self, name: CFAxisName) -> Tuple[xr.DataArray, xr.DataArray]:
+        coord_var = get_axis_coord(self._ds, name)
 
         try:
-            axis_bnds = self._ds.bounds.get_bounds(axis.name)
+            bounds_var = self._ds.bounds.get_bounds(name)
         except KeyError:
-            axis_bnds = None
+            bounds_var = None
 
-        return axis, axis_bnds
+        return coord_var, bounds_var
 
     def horizontal_xesmf(
         self,

@@ -1,3 +1,5 @@
+import logging
+
 import cftime
 import numpy as np
 import pytest
@@ -5,6 +7,8 @@ import xarray as xr
 
 from tests.fixtures import generate_dataset, lat_bnds, lon_bnds
 from xcdat.bounds import BoundsAccessor
+
+logger = logging.getLogger(__name__)
 
 
 class TestBoundsAccessor:
@@ -53,24 +57,13 @@ class TestAddMissingBounds:
         self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
         self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_adds_bounds_in_dataset(self):
+    def test_adds_bounds_to_the_dataset(self):
         ds = self.ds_with_bnds.copy()
 
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
         result = ds.bounds.add_missing_bounds()
         assert result.identical(self.ds_with_bnds)
-
-    def test_does_not_fill_bounds_for_coord_of_len_less_than_2(
-        self,
-    ):
-        ds = self.ds_with_bnds.copy()
-        ds = ds.isel(time=slice(0, 1))
-        ds = ds.drop_vars("time_bnds")
-
-        result = ds.bounds.add_missing_bounds()
-        expected = ds.copy()
-        assert result.identical(expected)
 
 
 class TestGetBounds:
@@ -79,29 +72,53 @@ class TestGetBounds:
         self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
         self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_raises_error_when_bounds_dont_exist(self):
-        with pytest.raises(KeyError):
-            self.ds.bounds.get_bounds("lat")
-
-    def test_getting_existing_bounds_in_dataset(self):
-        ds = self.ds_with_bnds.copy()
-        lat_bnds = ds.bounds.get_bounds("lat")
-        assert lat_bnds.identical(ds.lat_bnds)
-
-        lon_bnds = ds.bounds.get_bounds("lon")
-        assert lon_bnds.identical(ds.lon_bnds)
-        assert lon_bnds.is_generated
-
-    def test_get_nonexistent_bounds_in_dataset(self):
-        ds = self.ds_with_bnds.copy()
-
-        with pytest.raises(KeyError):
-            ds = ds.drop_vars(["lat_bnds"])
-            ds.bounds.get_bounds("lat")
-
-    def test_raises_error_with_incorrect_coord_arg(self):
+    def test_raises_error_with_invalid_axis_key(self):
         with pytest.raises(ValueError):
-            self.ds.bounds.get_bounds("incorrect_coord_argument")
+            self.ds.bounds.get_bounds("incorrect_axis_argument")
+
+    def test_raises_error_if_bounds_attr_is_not_set_on_coord_var(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(data=np.ones(3), dims="lat", attrs={"axis": "Y"})
+            },
+            data_vars={
+                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"])
+            },
+        )
+        with pytest.raises(KeyError):
+            ds.bounds.get_bounds("Y")
+
+    def test_raises_error_if_bounds_attr_is_set_but_no_bounds_data_var_exists(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={"axis": "Y", "bounds": "lat_bnds"},
+                )
+            }
+        )
+
+        with pytest.raises(KeyError):
+            ds.bounds.get_bounds("Y")
+
+    def test_returns_bounds(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={"axis": "Y", "bounds": "lat_bnds"},
+                )
+            },
+            data_vars={
+                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"])
+            },
+        )
+
+        lat_bnds = ds.bounds.get_bounds("Y")
+
+        assert lat_bnds.identical(ds.lat_bnds)
 
 
 class TestAddBounds:
@@ -110,13 +127,13 @@ class TestAddBounds:
         self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
         self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_add_bounds_raises_error_if_bounds_exist(self):
+    def test_raises_error_if_bounds_already_exist(self):
         ds = self.ds_with_bnds.copy()
 
         with pytest.raises(ValueError):
-            ds.bounds.add_bounds("lat")
+            ds.bounds.add_bounds("Y")
 
-    def test_add_bounds_raises_errors_for_data_dim_and_length(self):
+    def test_raises_errors_for_data_dim_and_length(self):
         # Multidimensional
         lat = xr.DataArray(
             data=np.array([[0, 1, 2], [3, 4, 5]]),
@@ -133,23 +150,52 @@ class TestAddBounds:
 
         # If coords dimensions does not equal 1.
         with pytest.raises(ValueError):
-            ds.bounds.add_bounds("lat")
+            ds.bounds.add_bounds("Y")
         # If coords are length of <=1.
         with pytest.raises(ValueError):
-            ds.bounds.add_bounds("lon")
+            ds.bounds.add_bounds("X")
 
-    def test_add_bounds_for_dataset_with_coords_as_datetime_objects(self):
+    def test_raises_error_if_lat_coord_var_units_is_not_in_degrees(self):
+        lat = xr.DataArray(
+            data=np.array([0, 0, 0]),
+            dims=["lat"],
+            attrs={"units": "invalid_units", "axis": "Y"},
+        )
+
+        ds = xr.Dataset(coords={"lat": lat})
+
+        with pytest.raises(ValueError):
+            ds.bounds.add_bounds("Y")
+
+    def test_adds_bounds_and_sets_units_to_degrees_north_if_lat_coord_var_is_missing_units_attr(
+        self, caplog
+    ):
+        # Suppress the warning
+        caplog.set_level(logging.CRITICAL)
+
+        ds = self.ds.copy()
+        del ds.lat.attrs["units"]
+
+        result = ds.bounds.add_bounds("Y")
+        assert result.lat_bnds.equals(lat_bnds)
+        assert result.lat_bnds.xcdat_bounds == "True"
+        assert result.lat.attrs["units"] == "degrees_north"
+        assert result.lat.attrs["bounds"] == "lat_bnds"
+
+    def test_add_bounds_for_dataset_with_time_coords_as_datetime_objects(self):
         ds = self.ds.copy()
 
-        result = ds.bounds.add_bounds("lat")
+        result = ds.bounds.add_bounds("Y")
         assert result.lat_bnds.equals(lat_bnds)
-        assert result.lat_bnds.is_generated == "True"
+        assert result.lat_bnds.xcdat_bounds == "True"
+        assert result.lat.attrs["bounds"] == "lat_bnds"
 
-        result = result.bounds.add_bounds("lon")
+        result = result.bounds.add_bounds("X")
         assert result.lon_bnds.equals(lon_bnds)
-        assert result.lon_bnds.is_generated == "True"
+        assert result.lon_bnds.xcdat_bounds == "True"
+        assert result.lon.attrs["bounds"] == "lon_bnds"
 
-        result = ds.bounds.add_bounds("time")
+        result = ds.bounds.add_bounds("T")
         # NOTE: The algorithm for generating time bounds doesn't extend the
         # upper bound into the next month.
         expected_time_bnds = xr.DataArray(
@@ -176,12 +222,12 @@ class TestAddBounds:
             ),
             coords={"time": ds.time.assign_attrs({"bounds": "time_bnds"})},
             dims=["time", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         assert result.time_bnds.identical(expected_time_bnds)
 
-    def test_returns_bounds_for_dataset_with_coords_as_cftime_objects(self):
+    def test_returns_bounds_for_dataset_with_time_coords_as_cftime_objects(self):
         ds = self.ds.copy()
         ds = ds.drop_dims("time")
         ds["time"] = xr.DataArray(
@@ -201,7 +247,7 @@ class TestAddBounds:
             },
         )
 
-        result = ds.bounds.add_bounds("time")
+        result = ds.bounds.add_bounds("T")
         expected_time_bnds = xr.DataArray(
             name="time_bnds",
             data=np.array(
@@ -222,31 +268,7 @@ class TestAddBounds:
             ),
             coords={"time": ds.time.assign_attrs({"bounds": "time_bnds"})},
             dims=["time", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         assert result.time_bnds.identical(expected_time_bnds)
-
-
-class Test_GetCoord:
-    @pytest.fixture(autouse=True)
-    def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
-
-    def test_gets_coords(self):
-        ds = self.ds.copy()
-
-        # Check lat axis coordinates exist
-        lat = ds.bounds._get_coords("lat")
-        assert lat is not None
-
-        # Check lon axis coordinates exist
-        lon = ds.bounds._get_coords("lon")
-        assert lon is not None
-
-    def test_raises_error_if_coord_does_not_exist(self):
-        ds = self.ds.copy()
-
-        ds = ds.drop_dims("lat")
-        with pytest.raises(KeyError):
-            ds.bounds._get_coords("lat")

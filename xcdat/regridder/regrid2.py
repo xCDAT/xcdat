@@ -52,11 +52,11 @@ class Regrid2Regridder(BaseRegridder):
         """
         super().__init__(input_grid, output_grid, **options)
 
-        self._src_lat = self._input_grid.bounds.get_bounds("lat")
-        self._src_lon = self._input_grid.bounds.get_bounds("lon")
+        self._src_lat = self._input_grid.bounds.get_bounds("Y")
+        self._src_lon = self._input_grid.bounds.get_bounds("X")
 
-        self._dst_lat = self._output_grid.bounds.get_bounds("lat")
-        self._dst_lon = self._output_grid.bounds.get_bounds("lon")
+        self._dst_lat = self._output_grid.bounds.get_bounds("Y")
+        self._dst_lon = self._output_grid.bounds.get_bounds("X")
 
         self._lat_mapping: Any = None
         self._lon_mapping: Any = None

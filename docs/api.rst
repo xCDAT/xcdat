@@ -19,12 +19,14 @@ Below is a list of top-level API functions available in ``xcdat``.
 .. autosummary::
     :toctree: generated/
 
-    center_times
-    swap_lon_axis
     open_dataset
     open_mfdataset
+    center_times
     decode_non_cf_time
+    swap_lon_axis
     compare_datasets
+    get_axis_coord
+    get_axis_dim
 
 Accessors
 ---------

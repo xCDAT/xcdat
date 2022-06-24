@@ -10,7 +10,7 @@ import xarray as xr
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
-from xcdat.axis import _get_coord_var
+from xcdat.axis import get_axis_coord
 from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
 
@@ -145,9 +145,9 @@ class TemporalAccessor:
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
-        self._dim_name = _get_coord_var(self._dataset, "T").name
+        self._dim = get_axis_coord(self._dataset, "T").name
 
-        self._time_bounds = self._dataset.bounds.get_bounds("time").copy()
+        self._time_bounds = self._dataset.bounds.get_bounds("T").copy()
 
     def average(self, data_var: str, weighted: bool = True, keep_weights: bool = False):
         """
@@ -610,7 +610,7 @@ class TemporalAccessor:
         # to work. Otherwise, the error below is thrown: `ValueError:
         # incompatible dimensions for a grouped binary operation: the group
         # variable '<CHOSEN_FREQ>' is not a dimension on the other argument`
-        dv_climo = dv_climo.rename({self._dim_name: self._labeled_time.name})
+        dv_climo = dv_climo.rename({self._dim: self._labeled_time.name})
 
         # Use xarray's grouped arithmetic to calculate the departures, which is
         # the difference grouped observation data variable and its climatology.
@@ -646,7 +646,7 @@ class TemporalAccessor:
         Frequency
             The time frequency.
         """
-        time_coords = self._dataset[self._dim_name]
+        time_coords = self._dataset[self._dim]
         min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
 
         if min_delta < pd.Timedelta(days=1):
@@ -879,9 +879,9 @@ class TemporalAccessor:
         with xr.set_options(keep_attrs=True):
             if self._weighted:
                 self._weights = self._get_weights()
-                dv = dv.weighted(self._weights).mean(dim=self._dim_name)
+                dv = dv.weighted(self._weights).mean(dim=self._dim)
             else:
-                dv = dv.mean(dim=self._dim_name)
+                dv = dv.mean(dim=self._dim)
 
         dv = self._add_operation_attrs(dv)
 
@@ -915,14 +915,14 @@ class TemporalAccessor:
         # with "year_season". This dimension needs to be renamed back to
         # the original time dimension name before the data variable is added
         # back to the dataset so that the CF compliant name is maintained.
-        dv = dv.rename({self._labeled_time.name: self._dim_name})  # type: ignore
+        dv = dv.rename({self._labeled_time.name: self._dim})  # type: ignore
 
         # After grouping and aggregating, the grouped time dimension's
         # attributes are removed. Xarray's `keep_attrs=True` option only keeps
         # attributes for data variables and not their coordinates, so the
         # coordinate attributes have to be restored manually.
-        dv[self._dim_name].attrs = self._labeled_time.attrs
-        dv[self._dim_name].encoding = self._labeled_time.encoding
+        dv[self._dim].attrs = self._labeled_time.attrs
+        dv[self._dim].encoding = self._labeled_time.encoding
 
         dv = self._add_operation_attrs(dv)
 
@@ -972,7 +972,7 @@ class TemporalAccessor:
 
         grouped_time_lengths = self._group_data(time_lengths)
         weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()  # type: ignore
-        weights.name = f"{self._dim_name}_wts"
+        weights.name = f"{self._dim}_wts"
 
         # Validate the sum of weights for each group is 1.0.
         actual_sum = self._group_data(weights).sum().values  # type: ignore
@@ -1000,9 +1000,9 @@ class TemporalAccessor:
         dv = data_var.copy()
 
         if self._mode == "average":
-            dv_gb = dv.groupby(f"{self._dim_name}.{self._freq}")
+            dv_gb = dv.groupby(f"{self._dim}.{self._freq}")
         else:
-            self._labeled_time = self._label_time_coords(dv[self._dim_name])
+            self._labeled_time = self._label_time_coords(dv[self._dim])
             dv.coords[self._labeled_time.name] = self._labeled_time
             dv_gb = dv.groupby(self._labeled_time.name)
 
@@ -1106,7 +1106,7 @@ class TemporalAccessor:
         # Use the TIME_GROUPS dictionary to determine which components
         # are needed to form the labeled time coordinates.
         for component in TIME_GROUPS[self._mode][self._freq]:
-            df[component] = time_coords[f"{self._dim_name}.{component}"].values
+            df[component] = time_coords[f"{self._dim}.{component}"].values
 
         # The season frequency requires additional datetime components for
         # processing, which are later removed before time coordinates are
@@ -1115,11 +1115,11 @@ class TemporalAccessor:
         # `TIME_GROUPS` represents the final grouping labels.
         if self._freq == "season":
             if self._mode in ["climatology", "departures"]:
-                df["year"] = time_coords[f"{self._dim_name}.year"].values
-                df["month"] = time_coords[f"{self._dim_name}.month"].values
+                df["year"] = time_coords[f"{self._dim}.year"].values
+                df["month"] = time_coords[f"{self._dim}.month"].values
 
             if self._mode == "group_average":
-                df["month"] = time_coords[f"{self._dim_name}.month"].values
+                df["month"] = time_coords[f"{self._dim}.month"].values
 
             df = self._process_season_df(df)
 
@@ -1373,9 +1373,7 @@ class TemporalAccessor:
         # avoid conflict with the grouped time coordinates in the Dataset (can
         # have a different shape).
         if self._mode in ["group_average", "climatology"]:
-            self._weights = self._weights.rename(
-                {self._dim_name: f"{self._dim_name}_original"}
-            )
+            self._weights = self._weights.rename({self._dim: f"{self._dim}_original"})
             # Only keep the original time coordinates, not the ones labeled
             # by group.
             self._weights = self._weights.drop_vars(self._labeled_time.name)
@@ -1383,9 +1381,7 @@ class TemporalAccessor:
         # because the final departures Dataset has the original time coordinates
         # restored after performing grouped subtraction.
         elif self._mode == "departures":
-            self._weights = self._weights.rename(
-                {f"{self._dim_name}_original": self._dim_name}
-            )
+            self._weights = self._weights.rename({f"{self._dim}_original": self._dim})
 
         ds[self._weights.name] = self._weights
 

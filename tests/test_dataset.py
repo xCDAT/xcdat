@@ -820,7 +820,7 @@ class Test_PostProcessDataset:
                         ]
                     ),
                     dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
+                    attrs={"xcdat_bounds": "True"},
                 ),
             },
         ).chunk({"lon": 2})
@@ -851,7 +851,7 @@ class Test_PostProcessDataset:
                         ]
                     ),
                     dims=["lon", "bnds"],
-                    attrs={"is_generated": "True"},
+                    attrs={"xcdat_bounds": "True"},
                 ),
             },
         )

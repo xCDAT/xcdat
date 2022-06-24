@@ -45,15 +45,22 @@ class TestAverage:
         with pytest.raises(ValueError):
             self.ds.spatial.average("ts", axis=["Y", "incorrect_axis"])
 
-    def test_raises_error_if_lat_axis_does_not_exist(self):
+    def test_raises_error_if_lat_axis_coords_cant_be_found(self):
         ds = self.ds.copy()
-        ds.lat.attrs["axis"] = None
+
+        ds = ds.rename_dims({"lat": "invalid_lat"})
+        del ds.lat.attrs["axis"]
+        del ds.lat.attrs["standard_name"]
+
         with pytest.raises(KeyError):
             ds.spatial.average("ts", axis=["X", "Y"])
 
-    def test_raises_error_if_lon_axis_does_not_exist(self):
+    def test_raises_error_if_lon_axis_coords_cant_be_found(self):
         ds = self.ds.copy()
-        ds.lon.attrs["axis"] = None
+
+        ds = ds.rename_dims({"lon": "invalid_lon"})
+        del ds.lon.attrs["axis"]
+        del ds.lon.attrs["standard_name"]
         with pytest.raises(KeyError):
             ds.spatial.average("ts", axis=["X", "Y"])
 
@@ -370,7 +377,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[-65, -5], [-5, 0], [0, 120]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
         with pytest.raises(ValueError):
             self.ds.spatial._swap_lon_axis(domain, to=9000)
@@ -381,7 +388,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[-65, -5], [-5, 0], [0, 120]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         ).chunk(2)
 
         result = self.ds.spatial._swap_lon_axis(domain, to=360)
@@ -389,7 +396,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[295, 355], [355, 0], [0, 120]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         assert result.identical(expected)
@@ -400,7 +407,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[0, 120], [120, 181], [181, 360]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         ).chunk(2)
 
         result = self.ds.spatial._swap_lon_axis(domain, to=180)
@@ -408,7 +415,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[0, 120], [120, -179], [-179, 0]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         assert result.identical(expected)
@@ -417,7 +424,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[-0.25, 120], [120, 359.75]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         ).chunk(2)
 
         result = self.ds.spatial._swap_lon_axis(domain, to=180)
@@ -425,7 +432,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[-0.25, 120], [120, -0.25]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         assert result.identical(expected)
@@ -435,7 +442,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[-65, -5], [-5, 0], [0, 120]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         result = self.ds.spatial._swap_lon_axis(domain, to=360)
@@ -443,7 +450,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[295, 355], [355, 0], [0, 120]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         assert result.identical(expected)
@@ -453,7 +460,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[0, 120], [120, 181], [181, 360]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         result = self.ds.spatial._swap_lon_axis(domain, to=180)
@@ -461,7 +468,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[0, 120], [120, -179], [-179, 0]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         assert result.identical(expected)
@@ -470,7 +477,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[-0.25, 120], [120, 359.75]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         result = self.ds.spatial._swap_lon_axis(domain, to=180)
@@ -478,7 +485,7 @@ class Test_SwapLonAxis:
             name="lon_bnds",
             data=np.array([[-0.25, 120], [120, -0.25]]),
             dims=["lon", "bnds"],
-            attrs={"is_generated": "True"},
+            attrs={"xcdat_bounds": "True"},
         )
 
         assert result.identical(expected)

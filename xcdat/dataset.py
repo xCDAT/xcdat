@@ -21,9 +21,9 @@ NON_CF_TIME_UNITS: List[str] = ["months", "years"]
 def open_dataset(
     path: str,
     data_var: Optional[str] = None,
+    add_bounds: bool = True,
     decode_times: bool = True,
     center_times: bool = False,
-    add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
@@ -36,6 +36,10 @@ def open_dataset(
     data_var: Optional[str], optional
         The key of the non-bounds data variable to keep in the Dataset,
         alongside any existing bounds data variables, by default None.
+    add_bounds: bool, optional
+        If True, add bounds for supported axes (X, Y, T) if they are missing in
+        the Dataset, by default True. Bounds are required for many xCDAT
+        features.
     decode_times: bool, optional
         If True, decode times encoded in the standard NetCDF datetime format
         into datetime objects. Otherwise, leave them encoded as numbers.
@@ -44,10 +48,6 @@ def open_dataset(
         If True, center time coordinates using the midpoint between its upper
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
-    add_bounds: bool, optional
-        If True, add bounds for supported axes (X, Y, T) if they are missing in
-        the Dataset, by default True. Bounds are required for many xCDAT
-        features.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -105,9 +105,9 @@ def open_mfdataset(
         List[List[pathlib.Path]],
     ],
     data_var: Optional[str] = None,
+    add_bounds: bool = True,
     decode_times: bool = True,
     center_times: bool = False,
-    add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
     data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
     preprocess: Optional[Callable] = None,
@@ -124,6 +124,10 @@ def open_mfdataset(
         pathlib Paths. If concatenation along more than one dimension is desired,
         then ``paths`` must be a nested list-of-lists (see ``combine_nested``
         for details). (A string glob will be expanded to a 1-dimensional list.)
+    add_bounds: bool, optional
+        If True, add bounds for supported axes (X, Y, T) if they are missing in
+        the Dataset, by default True. Bounds are required for many xCDAT
+        features.
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
     decode_times: bool, optional
@@ -134,10 +138,6 @@ def open_mfdataset(
         If True, center time coordinates using the midpoint between its upper
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
-    add_bounds: bool, optional
-        If True, add bounds for supported axes (X, Y, T) if they are missing in
-        the Dataset, by default True. Bounds are required for many xCDAT
-        features.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
