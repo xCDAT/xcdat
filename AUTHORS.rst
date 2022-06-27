@@ -1,15 +1,8 @@
-=======
-Credits
-=======
-
-Development Lead
-----------------
+========
+The Team
+========
 
 * Tom Vo <tomvothecoder@gmail.com>
-
-Contributors
-------------
-
 * Jason Boutte
 * Stephen Po-Chedley
 * Jill Chengzhu Zhang
