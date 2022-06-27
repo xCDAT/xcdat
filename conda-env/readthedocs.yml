@@ -6,25 +6,25 @@ channels:
 dependencies:
     # Base
     # ==================
-    - python=3.9.12
-    - pip=22.0.4
-    - cf_xarray=0.7.0
+    - python=3.10.5
+    - pip=22.1.2
+    - cf_xarray=0.7.2
     - cftime=1.6.0
-    - dask=2022.3.0
+    - dask=2022.6.1
+    - esmpy=8.2.0
     - netcdf4=1.5.8
-    - numpy=1.22.3
-    - pandas=1.4.1
+    - numba # TODO: Remove `numba` once it is included in the `xesmf` feedstock.
+    - numpy=1.23.0
+    - pandas=1.4.3
     - xarray=2022.3.0
     - xesmf=0.6.2
-    - esmpy=8.2.0
-    - numba=0.53.1
     # Documentation
     # ==================
-    - sphinx=4.4.0
+    - sphinx=4.5.0
     - sphinxcontrib-napoleon=0.7
-    - sphinx-autosummary-accessors=0.2.1
-    - sphinx-book-theme=0.2.0
+    - sphinx-autosummary-accessors=2022-4-0
+    - sphinx-book-theme=0.3.2
     - sphinx-copybutton=0.5.0
-    - nbsphinx=0.8.8
+    - nbsphinx=0.8.9
     - pandoc=2.18
 prefix: /opt/miniconda3/envs/xcdat_rtd

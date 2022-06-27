@@ -11,13 +11,13 @@ dependencies:
     - cf_xarray
     - cftime
     - dask
+    - esmpy
     - netcdf4
+    - numba # TODO: Remove `numba` once it is included in the `xesmf` feedstock.
     - numpy
     - pandas
     - xarray
     - xesmf
-    - esmpy
-    - numba
     # Testing
     # ==================
     - pytest
