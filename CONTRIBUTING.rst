@@ -8,14 +8,17 @@ Contributions are welcome and greatly appreciated! Every little bit helps, and c
 
 Types of Contributions
 ----------------------
+
 xCDAT includes issue templates based on the contribution type: https://github.com/xCDAT/xcdat/issues/new/choose.
 
 Bug Report
 ~~~~~~~~~~
+
 Look through the `GitHub Issues`_ for bugs to fix. Any unassigned issues tagged with "Type: Bug" is open for implementation.
 
 Feature Request
 ~~~~~~~~~~~~~~~
+
 Look through the `GitHub Issues`_ for feature suggestions. Any unassigned issues tagged with "Type: Enhancement" is open for implementation.
 
 If you are proposing a feature:
@@ -37,10 +40,12 @@ Features must meet the following criteria before they are considered for impleme
 
 Documentation Update
 ~~~~~~~~~~~~~~~~~~~~
+
 Help improve xCDAT's documentation, whether that be the Sphinx documentation or the API docstrings.
 
 Community Discussion
 ~~~~~~~~~~~~~~~~~~~~
+
 Take a look at the `GitHub Discussions`_ page to get involved, share ideas, or ask questions.
 
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
@@ -58,6 +63,7 @@ The repository uses a fork-based Git workflow with tag releases.
 
 Guidelines
 ~~~~~~~~~~
+
 1. ``main`` must always be deployable
 2. All changes are made through support branches
 3. Rebase with the latest ``main`` to avoid/resolve conflicts
@@ -68,6 +74,7 @@ Guidelines
 
 Things to Avoid
 ~~~~~~~~~~~~~~~
+
 1. Don't merge in broken or commented out code
 2. Don't commit directly to ``main``
 
@@ -91,10 +98,12 @@ at the commit level before submitting code reviews.
 
 Get Started
 ------------
+
 Ready to contribute? Here's how to set up xCDAT for local development.
 
 VSCode
 ~~~~~~
+
 We recommend using VSCode as your IDE because it is open-source and has great Python development support.
 
 Get VSCode here: https://code.visualstudio.com
@@ -240,6 +249,7 @@ When you open a pull request on GitHub, there is a template available for use.
 
 Style Guide
 -----------
+
 xCDAT integrates the Black code formatter for code styling. If you want to learn more, please read about it `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
 
 xCDAT also leverages `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale.
@@ -247,6 +257,7 @@ xCDAT also leverages `Python Type Annotations <https://docs.python.org/3.8/libra
 
 Testing
 -------
+
 Testing your local changes are important to ensure long-term maintainability and extensibility of the project.
 Since xCDAT is an open source library, we aim to avoid as many bugs as possible from reaching the end-user.
 
@@ -259,6 +270,7 @@ In most cases, if a function is hard to test, it is usually a symptom of being t
 
 DOs for Testing
 ~~~~~~~~~~~~~~~
+
 *  *DO* write tests for new or refactored code
 *  *DO* try to follow test-driven-development
 *  *DO* use the Coverage reports to see lines of code that need to be tested
@@ -267,11 +279,13 @@ DOs for Testing
 
 DON'Ts for Testing
 ~~~~~~~~~~~~~~~~~~
+
 *  *DON'T* push or merge untested code
 *  *DON'T* introduce tests that fail or produce warnings
 
 Documenting Code
 ----------------
+
 If you are using VS code, the `Python Docstring Generator <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extension can be used to auto-generate a docstring snippet once a function/class has been written.
 If you want the extension to generate docstrings in Sphinx format, you must set the ``"autoDocstring.docstringFormat": "sphinx"`` setting, under File > Preferences > Settings.
 
@@ -282,6 +296,7 @@ More info on docstrings here: https://sphinx-rtd-tutorial.readthedocs.io/en/late
 
 DOs for Documenting Code
 ~~~~~~~~~~~~~~~~~~~~~~~~
+
 *  *DO* explain **why** something is done, its purpose, and its goal. The code shows **how** it is done, so commenting on this can be redundant.
 *  *DO* explain ambiguity or complexities to avoid confusion
 *  *DO* embrace documentation as an integral part of the overall development process
@@ -289,11 +304,13 @@ DOs for Documenting Code
 
 DON'Ts for Documenting Code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 *  *DON'T* write comments as a crutch for poor code
 *  *DON'T* comment *every* function, data structure, type declaration
 
 Developer Tips
 --------------
+
 * flake8 will warn you if the cyclomatic complexity of a function is too high.
 
     * https://github.com/PyCQA/mccabe
@@ -301,6 +318,7 @@ Developer Tips
 
 Helpful Commands
 ----------------
+
 .. note::
     Run ``make help`` in the root of the project for a list of useful commands
 
@@ -315,6 +333,7 @@ FAQs
 
 Why squash and rebase commits?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 Before you merge a support branch back into ``main``, the branch is typically squashed down to a single buildable commit, and then rebased on top of the main repo's ``main`` branch.
 
 Why?
