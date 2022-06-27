@@ -522,7 +522,7 @@ class SpatialAccessor:
         # manipulations on the data. Otherwise, it raises `NotImplementedError
         # xarray can't set arrays with multiple array indices to dask yet`.
         if type(lon_swap.data) == Array:
-            lon_swap.load()  # type: ignore
+            lon_swap.load()
 
         # Must set keep_attrs=True or the xarray DataArray attrs will get
         # dropped. This has no affect on NumPy arrays.

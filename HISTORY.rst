@@ -2,6 +2,77 @@
 History
 =======
 
+
+v0.3.0 (27 June 2022)
+------------------------
+
+New Features
+~~~~~~~~~~~~
+
+-  Add horizontal regridding by @jasonb5 in
+   https://github.com/xCDAT/xcdat/pull/164
+-  Add averages with time dimension removed by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/236
+-  Update ``_get_weights()`` method in ``class SpatialAccessor`` and
+   ``class TemporalAccessor`` by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/252
+
+   -  Add ``keep_weights`` keyword attr to reduction methods
+   -  Make ``_get_weights()`` public in ``class SpatialAccessor``
+
+-  Update ``get_axis_coord()`` to interpret more keys by @tomvothecoder
+   in https://github.com/xCDAT/xcdat/pull/262
+
+   -  Along with the ``axis`` attr, it also now interprets
+      ``standard_name`` and the dimension name
+
+Bug Fixes
+~~~~~~~~~
+
+-  Fix ``add_bounds()`` breaking when time coords are ``cftime`` objects
+   by @tomvothecoder in https://github.com/xCDAT/xcdat/pull/241
+-  Fix parsing of custom seasons for departures by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/246
+-  Update ``swap_lon_axis`` to ignore same systems, which was causing
+   odd behaviors for (0, 360) by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/257
+
+Breaking Changes
+~~~~~~~~~~~~~~~~
+
+-  Remove ``class XCDATAccessor`` by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/222
+-  Update spatial ``axis`` arg supported type and keys by @tomvothecoder
+   in https://github.com/xCDAT/xcdat/pull/226
+
+   -  Now only supports CF-compliant axis names (e.g., “X”, “Y”)
+
+-  Remove ``center_times`` kwarg from temporal averaging methods by
+   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/254
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Revert official project name from “XCDAT” to “xCDAT” by
+   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/231
+-  [DOC] Add CDAT API mapping table and gallery examples by
+   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/239
+
+Internal Changes
+~~~~~~~~~~~~~~~~
+
+-  Update time coordinates object type from ``MultiIndex`` to
+   ``datetime``/``cftime`` for ``TemporalAccessor`` reduction methods
+   and add convenience methods by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/221
+-  Extract method ``_postprocess_dataset()`` and make bounds generation
+   optional by @tomvothecoder in https://github.com/xCDAT/xcdat/pull/223
+-  Update ``add_bounds`` kwarg default value to ``True`` by
+   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/230
+-  Update ``decode_non_cf_time`` to return input dataset if the time
+   “units” attr can’t be split into unit and reference date by @pochedls
+   in https://github.com/xCDAT/xcdat/pull/263
+
 v0.2.0 (24 March 2022)
 ------------------------
 
