@@ -4,32 +4,25 @@
 Contributing
 ============
 
-Contributions are welcome, and they are greatly appreciated! Every little bit
-helps, and credit will always be given.
+Contributions are welcome and greatly appreciated! Every little bit helps, and credit will always be given.
 
 Types of Contributions
 ----------------------
+xCDAT includes issue templates based on the contribution type: https://github.com/xCDAT/xcdat/issues/new/choose.
 
-Report Bugs
-~~~~~~~~~~~
+Bug Report
+~~~~~~~~~~
+Look through the `GitHub Issues`_ for bugs to fix. Any unassigned issues tagged with "Type: Bug" is open for implementation.
 
-Report bugs at https://github.com/xCDAT/xcdat/issues.
+Feature Request
+~~~~~~~~~~~~~~~
+Look through the `GitHub Issues`_ for feature suggestions. Any unassigned issues tagged with "Type: Enhancement" is open for implementation.
 
-If you are reporting a bug, please include:
+If you are proposing a feature:
 
-* Your operating system name and version.
-* Any details about your local setup that might be helpful in troubleshooting.
-* Detailed steps to reproduce the bug.
-
-Fix Bugs
-~~~~~~~~
-
-Look through the GitHub issues for bugs. Any unassigned issues tagged with "Type: Bug" is open for implementation.
-
-Implement Features
-~~~~~~~~~~~~~~~~~~
-
-Look through the GitHub issues for features. Any unassigned issues tagged with "Type: Enhancement" is open for implementation.
+* Explain in detail how it would work.
+* Keep the scope as narrow as possible, to make it easier to implement.
+* Remember that this is a open-source project, and that contributions are welcome :)
 
 Features must meet the following criteria before they are considered for implementation:
 
@@ -42,27 +35,18 @@ Features must meet the following criteria before they are considered for impleme
 4. Feature is generally reusable
 5. Feature is relatively simple and lightweight to implement and use
 
+Documentation Update
+~~~~~~~~~~~~~~~~~~~~
+Help improve xCDAT's documentation, whether that be the Sphinx documentation or the API docstrings.
+
+Community Discussion
+~~~~~~~~~~~~~~~~~~~~
+Take a look at the `GitHub Discussions`_ page to get involved, share ideas, or ask questions.
+
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 .. _CF convention: http://cfconventions.org/
-
-Write Documentation
-~~~~~~~~~~~~~~~~~~~
-
-xCDAT could always use more documentation, whether as part of the
-official xCDAT docs, or directly in the code through docstrings.
-
-Submit Feedback
-~~~~~~~~~~~~~~~
-
-The best way to send feedback is to file an issue at https://github.com/xCDAT/xcdat/issues.
-
-If you are proposing a feature:
-
-* Explain in detail how it would work.
-* Keep the scope as narrow as possible, to make it easier to implement.
-* Remember that this is a open-source project, and that contributions
-  are welcome :)
-
+.. _GitHub Issues: https://github.com/xCDAT/xcdat/issues
+.. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
 
 Version Control
 ---------------
@@ -74,20 +58,22 @@ The repository uses a fork-based Git workflow with tag releases.
 
 Guidelines
 ~~~~~~~~~~
-1. ``master`` must always be deployable
-2. All changes are made through support branches on forks
-3. Rebase with ``master`` to avoid/resolve conflicts
+1. ``main`` must always be deployable
+2. All changes are made through support branches
+3. Rebase with the latest ``main`` to avoid/resolve conflicts
 4. Make sure pre-commit quality assurance checks pass when committing (enforced in CI/CD build)
 5. Open a pull request early for discussion
-6. Once the CI/CD build passes and pull request is approved, squash and rebase your
-   commits
-7. Merge pull request into ``master`` and delete the branch
+6. Once the CI/CD build passes and pull request is approved, squash and rebase your commits
+7. Merge pull request into ``main`` and delete the branch
 
 Things to Avoid
 ~~~~~~~~~~~~~~~
 1. Don't merge in broken or commented out code
-2. Don't commit onto ``master`` directly
-3. Don't merge with conflicts (handle conflicts upon rebasing)
+2. Don't commit directly to ``main``
+
+   *  There are branch-protection rules for ``main``
+
+3. Don't merge with conflicts. Instead, handle conflicts upon rebasing
 
 Source: https://gist.github.com/jbenet/ee6c9ac48068889b0912
 
@@ -109,7 +95,6 @@ Ready to contribute? Here's how to set up xCDAT for local development.
 
 VSCode
 ~~~~~~
-
 We recommend using VSCode as your IDE because it is open-source and has great Python development support.
 
 Get VSCode here: https://code.visualstudio.com
@@ -255,7 +240,6 @@ When you open a pull request on GitHub, there is a template available for use.
 
 Style Guide
 -----------
-
 xCDAT integrates the Black code formatter for code styling. If you want to learn more, please read about it `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
 
 xCDAT also leverages `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale.
@@ -275,18 +259,16 @@ In most cases, if a function is hard to test, it is usually a symptom of being t
 
 DOs for Testing
 ~~~~~~~~~~~~~~~
-
-*  *DO* write tests for any new code
+*  *DO* write tests for new or refactored code
+*  *DO* try to follow test-driven-development
 *  *DO* use the Coverage reports to see lines of code that need to be tested
 *  *DO* focus on simplistic, small, reusable modules for unit testing
 *  *DO* cover as many edge cases as possible when testing
 
 DON'Ts for Testing
 ~~~~~~~~~~~~~~~~~~
-
 *  *DON'T* push or merge untested code
-*  *DON'T* introduce dependencies in tests. Use Python `mocks <https://docs.python.org/3/library/unittest.mock.html>`_ to mock dependencies
-
+*  *DON'T* introduce tests that fail or produce warnings
 
 Documenting Code
 ----------------
@@ -300,7 +282,6 @@ More info on docstrings here: https://sphinx-rtd-tutorial.readthedocs.io/en/late
 
 DOs for Documenting Code
 ~~~~~~~~~~~~~~~~~~~~~~~~
-
 *  *DO* explain **why** something is done, its purpose, and its goal. The code shows **how** it is done, so commenting on this can be redundant.
 *  *DO* explain ambiguity or complexities to avoid confusion
 *  *DO* embrace documentation as an integral part of the overall development process
@@ -308,55 +289,18 @@ DOs for Documenting Code
 
 DON'Ts for Documenting Code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
 *  *DON'T* write comments as a crutch for poor code
 *  *DON'T* comment *every* function, data structure, type declaration
 
-Example Function with Docstrings
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. code-block:: python
-
-    # Python type annotations help automatically fill the argument types in docstrings
-    def open_datasets(
-        path: str,
-        extension: extension = None,
-    ) -> Dict[str, xr.Dataset]:
-        """Lazily loads datasets from a specified path
-
-        :param path: The path of the input files (e.g., "../input_data")
-        :type path: str
-        :param extension: [description], defaults to None
-        :type extension: extension, optional
-        :return: The extension of the input files
-        :rtype: Dict[str, xr.Dataset]
-        """
-        datasets: Dict[str, xr.Dataset] = dict()
-        files_grabbed = []
-
-        if extension:
-            files_grabbed.extend(glob.glob(os.path.join(path, f"*.{extension}")))
-        else:
-            for extension in SUPPORTED_EXTENSIONS:
-                files_grabbed.extend(glob.glob(os.path.join(path, f"*.{extension}")))
-
-        for file in files_grabbed:
-            key = file.replace(f"{path}/", "")
-            datasets[key] = xr.open_dataset(file)
-
-        return datasets
-
-
 Developer Tips
 --------------
-
 * flake8 will warn you if the cyclomatic complexity of a function is too high.
+
     * https://github.com/PyCQA/mccabe
 
 
 Helpful Commands
 ----------------
-
 .. note::
     Run ``make help`` in the root of the project for a list of useful commands
 
@@ -367,17 +311,11 @@ $ pytest tests.test_xcdat
 FAQs
 ----
 
-What is xarray and how do I extend xarray for xCDAT?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-* https://xarray.pydata.org/en/stable/why-xarray.html
-* https://xarray.pydata.org/en/stable/internals.html#extending-xarray
+.. _Why squash and rebase?:
 
-What and why for squashing and rebasing commits?
+Why squash and rebase commits?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Before you merge a support branch back into ``master``, the branch is typically
-squashed down to a single* buildable commit, and then rebased on top of the main repo's ``master`` branch.
-
-\* *In some cases, it might be logical to have multiple squashed commits, as long as each commit passes the CI/CD build*
+Before you merge a support branch back into ``main``, the branch is typically squashed down to a single buildable commit, and then rebased on top of the main repo's ``main`` branch.
 
 Why?
 
@@ -386,34 +324,42 @@ Why?
 * Makes collaboration and review process more efficient
 * Makes handling conflicts from rebasing simple since you only have to deal with conflicted commits
 
+
 How do I squash and rebase commits?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-1. `<OPTIONAL if you are forking>` Sync your fork of ``master`` (aka ``origin``) with the root ``master`` (aka ``upstream``) ::
 
-    git checkout master
-    git rebase upstream/master
-    git push -f origin master
+* Use GitHub's Squash and Merge feature in the pull request
 
-2. Get the SHA of the commit OR number of commits to rebase to ::
+   * You still need to rebase on the latest ``main`` if ``main`` is ahead of your branch.
 
-    git checkout <branch-name>
-    git log --graph --decorate --pretty=oneline --abbrev-commit
+* Manually squash and rebase
 
-3. Squash commits::
+   1. `<OPTIONAL if you are forking>` Sync your fork of ``main`` (aka ``origin``) with the root ``main`` (aka ``upstream``) ::
 
-    git rebase -i [SHA]
+        git checkout main
+        git rebase upstream/main
+        git push -f origin main
 
-    # OR
+   2. Get the SHA of the commit OR number of commits to rebase to ::
 
-    git rebase -i HEAD~[NUMBER OF COMMITS]
+        git checkout <branch-name>
+        git log --graph --decorate --pretty=oneline --abbrev-commit
 
-4. Rebase branch onto ``master`` ::
+   3. Squash commits::
 
-    git rebase master
-    git push -f origin <BRANCH-NAME>
+        git rebase -i [SHA]
 
-5. Make sure your squashed commit messages are refined
+        # OR
 
-6. Force push to remote branch ::
+        git rebase -i HEAD~[NUMBER OF COMMITS]
 
-    git push -f origin <BRANCH-NAME>
+   4. Rebase branch onto ``main`` ::
+
+        git rebase main
+        git push -f origin <BRANCH-NAME>
+
+   5. Make sure your squashed commit messages are refined
+
+   6. Force push to remote branch ::
+
+        git push -f origin <BRANCH-NAME>
