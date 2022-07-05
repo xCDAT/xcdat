@@ -13,7 +13,6 @@ dependencies:
     - dask
     - esmpy
     - netcdf4
-    - numba # TODO: Remove `numba` once it is included in the `xesmf` feedstock.
     - numpy
     - pandas
     - xarray
