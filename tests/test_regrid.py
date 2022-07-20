@@ -136,6 +136,7 @@ class TestRegrid2Regridder:
             }
         )
 
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
     def test_output_bounds(self):
         ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
 
@@ -615,6 +616,7 @@ class TestAccessor:
         ):
             self.ac.horizontal("ts", mock.MagicMock(), "test")  # type: ignore
 
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
     def test_convenience_methods(self):
         ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
 
