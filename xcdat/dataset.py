@@ -4,8 +4,10 @@ from functools import partial
 from glob import glob
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
+import cftime
 import pandas as pd
 import xarray as xr
+from dateutil import relativedelta as rd
 
 from xcdat import bounds  # noqa: F401
 from xcdat.axis import center_times as center_times_func
@@ -315,9 +317,15 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     except ValueError:
         return ds
 
-    ref_date = pd.to_datetime(ref_date)
+    ref_date = pd.to_datetime(ref_date).to_pydatetime()
 
-    data = [ref_date + pd.DateOffset(**{units: offset}) for offset in time.data]
+    if units == "months":
+        data = [ref_date + rd.relativedelta(months=offset) for offset in time.data]
+        data = [cftime.datetime(t.year, t.month, t.day) for t in data]
+    elif units == "years":
+        data = [ref_date + rd.relativedelta(years=offset) for offset in time.data]
+        data = [cftime.datetime(t.year, t.month, t.day) for t in data]
+
     decoded_time = xr.DataArray(
         name=time.name,
         data=data,
@@ -335,13 +343,22 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     ds = ds.assign_coords({time.name: decoded_time})
 
     if time_bounds is not None:
-        data_bounds = [
-            [
-                ref_date + pd.DateOffset(**{units: lower}),
-                ref_date + pd.DateOffset(**{units: upper}),
+        if units == "months":
+            data_bounds = [
+                [
+                    ref_date + rd.relativedelta(months=lower),
+                    ref_date + rd.relativedelta(months=upper),
+                ]
+                for [lower, upper] in time_bounds.data
             ]
-            for [lower, upper] in time_bounds.data
-        ]
+        elif units == "years":
+            data_bounds = [
+                [
+                    ref_date + rd.relativedelta(years=lower),
+                    ref_date + rd.relativedelta(years=upper),
+                ]
+                for [lower, upper] in time_bounds.data
+            ]
         decoded_time_bnds = xr.DataArray(
             name=time_bounds.name,
             data=data_bounds,
@@ -429,7 +446,7 @@ def _postprocess_dataset(
     dataset: xr.Dataset,
     data_var: Optional[str] = None,
     center_times: bool = False,
-    add_bounds: bool = False,
+    add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
 ) -> xr.Dataset:
     """Post-processes a Dataset object.
