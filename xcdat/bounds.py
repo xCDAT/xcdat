@@ -134,12 +134,6 @@ class BoundsAccessor:
 
         for axis in axes:
 
-            # determine if the axis is also a dimension by determining
-            # if there is overlap between the CF axis names and the dimension
-            # names. If not, skip over axis for validation.
-            if len(set(CF_NAME_MAP[axis]) & set(self._dataset.dims.keys())) == 0:
-                continue
-
             CF_NAME_MAP[axis]
             coord_var = None
 
@@ -147,6 +141,12 @@ class BoundsAccessor:
                 coord_var = get_axis_coord(self._dataset, axis)
             except KeyError:
                 pass
+
+            # determine if the axis is also a dimension by determining
+            # if there is overlap between the CF axis names and the dimension
+            # names. If not, skip over axis for validation.
+            if len(set(CF_NAME_MAP[axis]) & set(self._dataset.dims.keys())) == 0:
+                continue
 
             if coord_var is not None:
                 try:
