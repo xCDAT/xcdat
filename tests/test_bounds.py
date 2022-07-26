@@ -66,13 +66,18 @@ class TestAddMissingBounds:
         assert result.identical(self.ds_with_bnds)
 
     def test_adds_bounds_to_the_dataset_skips_nondimensional_axes(self):
+        # generate dataset with height coordinate
         ds = generate_dataset(cf_compliant=True, has_bounds=True)
         ds = ds.assign_coords({"height": 2})
 
+        # drop bounds
         dsm = ds.drop_vars(["lat_bnds", "lon_bnds"]).copy()
 
+        # test bounds re-generation
         result = dsm.bounds.add_missing_bounds()
 
+        # dataset with missing bounds added should match dataset with bounds
+        # and added height coordinate
         assert result.identical(ds)
 
 

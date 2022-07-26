@@ -133,8 +133,6 @@ class BoundsAccessor:
         axes = CF_NAME_MAP.keys()
 
         for axis in axes:
-
-            CF_NAME_MAP[axis]
             coord_var = None
 
             try:
