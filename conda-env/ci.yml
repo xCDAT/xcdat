@@ -6,13 +6,14 @@ channels:
 dependencies:
     # Base
     # ==================
-    - python>=3.8
+    - python >=3.8
     - pip
     - cf_xarray
     - cftime
     - dask
     - esmpy
     - netcdf4
+    - numba >=0.55.2
     - numpy
     - pandas
     - xarray
