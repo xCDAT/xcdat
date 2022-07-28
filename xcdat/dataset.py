@@ -8,6 +8,7 @@ from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 import cftime
 import xarray as xr
 from dateutil import relativedelta as rd
+from dateutil import parser
 
 from xcdat import bounds  # noqa: F401
 from xcdat.axis import center_times as center_times_func
