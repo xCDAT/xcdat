@@ -13,7 +13,8 @@ dependencies:
     - dask=2022.6.1
     - esmpy=8.2.0
     - netcdf4=1.5.8
-    - numpy=1.23.0
+    - numba=0.55.2
+    - numpy=1.22.4
     - pandas=1.4.3
     - xarray=2022.3.0
     - xesmf=0.6.3
