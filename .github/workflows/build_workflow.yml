@@ -23,6 +23,7 @@ jobs:
               with:
                   cancel_others: ${{ env.CANCEL_OTHERS }}
                   paths_ignore: ${{ env.PATHS_IGNORE }}
+                  do_not_skip: '["push", "workflow_dispatch"]'
 
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
               name: Checkout Code Repository
