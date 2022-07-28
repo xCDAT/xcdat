@@ -1,11 +1,11 @@
 """Dataset module for functions related to an xarray.Dataset."""
 import pathlib
+from datetime import datetime
 from functools import partial
 from glob import glob
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import cftime
-import pandas as pd
 import xarray as xr
 from dateutil import relativedelta as rd
 
@@ -222,14 +222,25 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     """Decodes time coordinates and time bounds with non-CF compliant units.
 
     By default, ``xarray`` uses the ``cftime`` module, which only supports
-    decoding time with [3]_ CF compliant units. This function fills the gap in
+    decoding time with CF compliant units [3]_. This function fills the gap in
     xarray by being able to decode time with non-CF compliant units such as
-    "months since ..." and "years since ...". It extracts the units and
-    reference date from the "units" attribute, which are used to convert the
-    numerically encoded time values (representing the offset from the reference
-    date) to pandas DateOffset objects. These offset values are added to the
-    reference date, forming DataArrays of datetime objects that replace the time
-    coordinate and time bounds (if they exist) in the Dataset.
+    "months since ..." and "years since ...".
+
+    The steps include:
+
+    1. Extract ``units`` and ``reference_date`` strings from the "units"
+       attribute.
+
+       * For example with "months since 1800-01-01", ``units="months"`` and
+         ``reference_date="1800-01-01"``
+
+    2. Using the ``reference_date``, create a datetime object (``ref_dt_obj``).
+    3. Starting from ``ref_dt_obj``, use the numerically encoded time coordinate
+       values (each representing an offset) to create an array of
+       ``cftime.datetime`` objects.
+    4. Using the array of ``cftime.datetime`` objects, create a new xr.DataArray
+       of time coordinates to replace the numerically encoded ones.
+    5. If it exists, create a time bounds DataArray using steps 3 and 4.
 
     Parameters
     ----------
@@ -246,23 +257,15 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
 
     Notes
     -----
-    The [4]_ pandas ``DateOffset`` object is a time duration relative to a
-    reference date that respects calendar arithmetic. This means it considers
-    CF calendar types with or without leap years when adding the offsets to the
-    reference date.
-
-    DateOffset is used instead of timedelta64 because timedelta64 does not
-    respect calendar arithmetic. One downside of DateOffset (unlike timedelta64)
-    is that there is currently no simple way of vectorizing the addition of
-    DateOffset objects to Timestamp/datetime64 objects. However, the performance
-    of element-wise iteration should be sufficient for datasets that have
-    "months" and "years" time units since the number of time coordinates should
-    be small compared to "days" or "hours".
+    ``cftime.datetime`` objects are used to represent time coordinates because
+    it is not restricted by the ``pandas.Timestamp`` range (1678 and 2262).
+    Refer to [4]_ and [5]_ for more information on this limitation.
 
     References
     -----
     .. [3] https://cfconventions.org/cf-conventions/cf-conventions.html#time-coordinate
-    .. [4] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#dateoffset-objects
+    .. [4] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
+    .. [5] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
 
     Examples
     --------
@@ -310,21 +313,23 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     time_bounds = ds.get(time.attrs.get("bounds"), None)
     units_attr = time.attrs.get("units")
 
-    # If the time units cannot be split into a unit and reference date, it
-    # cannot be decoded so the original dateset is returned.
     try:
         units, ref_date = _split_time_units_attr(units_attr)
     except ValueError:
+        logger.warning(
+            "Attempted to decode non-CF compliant time coordinates, but the units "
+            f"({units_attr}) is not in a supported format ('months since...' or "
+            "'months since...'). Returning dataset with existing time coordinates."
+        )
         return ds
 
-    ref_date = pd.to_datetime(ref_date).to_pydatetime()
-
-    if units == "months":
-        data = [ref_date + rd.relativedelta(months=offset) for offset in time.data]
-        data = [cftime.datetime(t.year, t.month, t.day) for t in data]
-    elif units == "years":
-        data = [ref_date + rd.relativedelta(years=offset) for offset in time.data]
-        data = [cftime.datetime(t.year, t.month, t.day) for t in data]
+    # Create a reference date object and use the relative delta offsets
+    # to create `cftime.datetime` objects. Note, the reference date object type
+    # must start as `datetime` because `cftime` does not support arithmetic with
+    # `rd.relativedelta`.
+    ref_dt_obj = datetime.strptime(ref_date, "%Y-%m-%d")
+    data = [ref_dt_obj + rd.relativedelta(**{units: offset}) for offset in time.data]
+    data = [cftime.datetime(t.year, t.month, t.day) for t in data]
 
     decoded_time = xr.DataArray(
         name=time.name,
@@ -343,22 +348,14 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     ds = ds.assign_coords({time.name: decoded_time})
 
     if time_bounds is not None:
-        if units == "months":
-            data_bounds = [
-                [
-                    ref_date + rd.relativedelta(months=lower),
-                    ref_date + rd.relativedelta(months=upper),
-                ]
-                for [lower, upper] in time_bounds.data
+        data_bounds = [
+            [
+                ref_dt_obj + rd.relativedelta(**{units: lower}),
+                ref_dt_obj + rd.relativedelta(**{units: upper}),
             ]
-        elif units == "years":
-            data_bounds = [
-                [
-                    ref_date + rd.relativedelta(years=lower),
-                    ref_date + rd.relativedelta(years=upper),
-                ]
-                for [lower, upper] in time_bounds.data
-            ]
+            for [lower, upper] in time_bounds.data
+        ]
+
         decoded_time_bnds = xr.DataArray(
             name=time_bounds.name,
             data=data_bounds,
