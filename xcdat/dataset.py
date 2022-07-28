@@ -313,13 +313,21 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     time_bounds = ds.get(time.attrs.get("bounds"), None)
     units_attr = time.attrs.get("units")
 
+    # Default to standard if no calendar is set because "if the calendar kwarg
+    # is set to a blank string (‘’) or None (the default is ‘standard’) the
+    # instance will not be calendar-aware and some methods will not work".
+    # Source: https://unidata.github.io/cftime/api.html#cftime.datetime
+    # TODO: Maybe a logger warning should be added if a calendar attribute
+    # doesn't exist?
+    calendar_attr = time.attrs.get("calendar", "standard")
+
     try:
         units, ref_date = _split_time_units_attr(units_attr)
     except ValueError:
         logger.warning(
             "Attempted to decode non-CF compliant time coordinates, but the units "
-            f"({units_attr}) is not in a supported format ('months since...' or "
-            "'months since...'). Returning dataset with existing time coordinates."
+            f"attr ('{units_attr}') is not in a supported format ('months since...' or "
+            "'years since...'). Returning dataset with the original time coordinates."
         )
         return ds
 
@@ -329,7 +337,9 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     # `rd.relativedelta`.
     ref_dt_obj = datetime.strptime(ref_date, "%Y-%m-%d")
     data = [ref_dt_obj + rd.relativedelta(**{units: offset}) for offset in time.data]
-    data = [cftime.datetime(t.year, t.month, t.day) for t in data]
+    data = [
+        cftime.datetime(t.year, t.month, t.day, calendar=calendar_attr) for t in data
+    ]
 
     decoded_time = xr.DataArray(
         name=time.name,
@@ -354,6 +364,18 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
                 ref_dt_obj + rd.relativedelta(**{units: upper}),
             ]
             for [lower, upper] in time_bounds.data
+        ]
+
+        data_bounds = [
+            [
+                cftime.datetime(
+                    lower.year, lower.month, lower.day, calendar=calendar_attr
+                ),
+                cftime.datetime(
+                    upper.year, upper.month, upper.day, calendar=calendar_attr
+                ),
+            ]
+            for [lower, upper] in data_bounds
         ]
 
         decoded_time_bnds = xr.DataArray(
