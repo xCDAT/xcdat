@@ -336,7 +336,7 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     # to create `cftime.datetime` objects. Note, the reference date object type
     # must start as `datetime` because `cftime` does not support arithmetic with
     # `rd.relativedelta`.
-    ref_dt_obj = datetime.strptime(ref_date, "%Y-%m-%d")
+    ref_dt_obj = parser.parse(ref_date, default=datetime.datetime(2000, 1, 1))
     data = [ref_dt_obj + rd.relativedelta(**{units: offset}) for offset in time.data]
     data = [
         cftime.datetime(t.year, t.month, t.day, calendar=calendar_attr) for t in data
