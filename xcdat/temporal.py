@@ -7,6 +7,7 @@ import cftime
 import numpy as np
 import pandas as pd
 import xarray as xr
+from dask.array.core import Array
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
@@ -968,6 +969,8 @@ class TemporalAccessor:
         # only select the general DType and not details such as the byte order
         # or time unit (with rare exceptions see release notes). To avoid this
         # warning please use the scalar types `np.float64`, or string notation.`
+        if type(time_lengths.values == Array):
+            time_lengths.load()
         time_lengths = time_lengths.astype(np.float64)
 
         grouped_time_lengths = self._group_data(time_lengths)
