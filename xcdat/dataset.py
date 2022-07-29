@@ -321,6 +321,7 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     # TODO: Maybe a logger warning should be added if a calendar attribute
     # doesn't exist?
     calendar_attr = time.attrs.get("calendar", "standard")
+    cf_calendar_type = _get_date_type(calendar_attr)
 
     try:
         units, ref_date = _split_time_units_attr(units_attr)
@@ -339,7 +340,7 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     ref_dt_obj = parser.parse(ref_date, default=datetime(2000, 1, 1))
     data = [ref_dt_obj + rd.relativedelta(**{units: offset}) for offset in time.data]
     data = [
-        cftime.datetime(t.year, t.month, t.day, calendar=calendar_attr) for t in data
+        cf_calendar_type(t.year, t.month, t.day, calendar=calendar_attr) for t in data
     ]
 
     decoded_time = xr.DataArray(
@@ -369,10 +370,10 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
 
         data_bounds = [
             [
-                cftime.datetime(
+                cf_calendar_type(
                     lower.year, lower.month, lower.day, calendar=calendar_attr
                 ),
-                cftime.datetime(
+                cf_calendar_type(
                     upper.year, upper.month, upper.day, calendar=calendar_attr
                 ),
             ]
@@ -680,3 +681,21 @@ def _split_time_units_attr(units_attr: str) -> Tuple[str, str]:
         )
 
     return units, reference_date
+
+
+def _get_date_type(calendar):
+    """Return the cftime date type for a given calendar name.
+    https://github.com/pydata/xarray/blob/main/xarray/coding/cftime_offsets.py#L68
+    """
+    calendars = {
+        "noleap": cftime.DatetimeNoLeap,
+        "360_day": cftime.Datetime360Day,
+        "365_day": cftime.DatetimeNoLeap,
+        "366_day": cftime.DatetimeAllLeap,
+        "gregorian": cftime.DatetimeGregorian,
+        "proleptic_gregorian": cftime.DatetimeProlepticGregorian,
+        "julian": cftime.DatetimeJulian,
+        "all_leap": cftime.DatetimeAllLeap,
+        "standard": cftime.DatetimeGregorian,
+    }
+    return calendars[calendar]
