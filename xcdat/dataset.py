@@ -339,9 +339,7 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     # `rd.relativedelta`.
     ref_dt_obj = parser.parse(ref_date, default=datetime(2000, 1, 1))
     data = [ref_dt_obj + rd.relativedelta(**{units: offset}) for offset in time.data]
-    data = [
-        cf_calendar_type(t.year, t.month, t.day, calendar=calendar_attr) for t in data
-    ]
+    data = [cf_calendar_type(t.year, t.month, t.day) for t in data]
 
     decoded_time = xr.DataArray(
         name=time.name,
@@ -370,12 +368,8 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
 
         data_bounds = [
             [
-                cf_calendar_type(
-                    lower.year, lower.month, lower.day, calendar=calendar_attr
-                ),
-                cf_calendar_type(
-                    upper.year, upper.month, upper.day, calendar=calendar_attr
-                ),
+                cf_calendar_type(lower.year, lower.month, lower.day),
+                cf_calendar_type(upper.year, upper.month, upper.day),
             ]
             for [lower, upper] in data_bounds
         ]
