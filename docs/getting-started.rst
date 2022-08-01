@@ -30,7 +30,7 @@ Installation
        >>> conda create -n <ENV_NAME> -c conda-forge xcdat
        >>> conda activate <ENV_NAME>
 
-2. Install ``xcdat`` in an existing Conda environment (``conda install``_)
+2. Install ``xcdat`` in an existing Conda environment (`conda install`_)
 
    You can also install ``xcdat`` in an existing Conda environment, granted that Conda is able to resolve the compatible dependencies.
 
@@ -38,6 +38,5 @@ Installation
 
        >>> conda activate <ENV_NAME>
        >>> conda install -c conda-forge xcdat
-       
 .. _conda create: https://docs.conda.io/projects/conda/en/latest/commands/create.html?highlight=create
 .. _conda install: https://docs.conda.io/projects/conda/en/latest/commands/install.html?highlight=install
