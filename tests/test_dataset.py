@@ -456,13 +456,29 @@ class TestDecodeNonCFTimeUnits:
         }
         self.ds = xr.Dataset({"time": time, "time_bnds": time_bnds})
 
-    def test_raises_error_if_function_is_called_on_already_decoded_cf_compliant_dataset(
-        self,
-    ):
-        ds = generate_dataset(cf_compliant=True, has_bounds=True)
+    def test_returns_original_dataset_if_calendar_attr_is_not_set(self):
+        ds = generate_dataset(cf_compliant=False, has_bounds=True)
 
-        with pytest.raises(KeyError):
-            decode_non_cf_time(ds)
+        del ds.time.attrs["calendar"]
+
+        result = decode_non_cf_time(ds)
+        assert ds.identical(result)
+
+    def test_returns_original_dataset_if_units_attr_is_not_set(self):
+        ds = generate_dataset(cf_compliant=False, has_bounds=True)
+
+        del ds.time.attrs["units"]
+
+        result = decode_non_cf_time(ds)
+        assert ds.identical(result)
+
+    def test_returns_original_dataset_if_units_attr_is_in_an_unsupported_format(self):
+        ds = generate_dataset(cf_compliant=False, has_bounds=True)
+
+        ds.time.attrs["units"] = "year AD"
+
+        result = decode_non_cf_time(ds)
+        assert ds.identical(result)
 
     def test_decodes_months_with_a_reference_date_at_the_start_of_the_month(self):
         ds = self.ds.copy()
@@ -1093,10 +1109,6 @@ class Test_PreProcessNonCFDataset:
 
 
 class Test_SplitTimeUnitsAttr:
-    def test_raises_error_if_units_attr_is_none(self):
-        with pytest.raises(KeyError):
-            _split_time_units_attr(None)  # type: ignore
-
     def test_splits_units_attr_to_unit_and_reference_date(self):
         assert _split_time_units_attr("months since 1800") == ("months", "1800")
         assert _split_time_units_attr("months since 1800-01-01") == (
