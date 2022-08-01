@@ -224,24 +224,27 @@ def open_mfdataset(
 def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     """Decodes time coordinates and time bounds with non-CF compliant units.
 
-    By default, ``xarray`` uses the ``cftime`` module, which only supports
-    decoding time with CF compliant units [3]_. This function fills the gap in
-    xarray by being able to decode time with non-CF compliant units such as
-    "months since ..." and "years since ...".
+    By default, ``xarray`` only supports decoding time with CF compliant units
+    [3]_. This function enables decoding time with non-CF compliant units.
 
-    The steps include:
+    The time coordinates must have a "calendar" attribute set to a CF calendar
+    type supported by ``cftime`` ("noleap", "360_day", "365_day", "366_day",
+    "gregorian", "proleptic_gregorian", "julian", "all_leap", or "standard")
+    and a "units" attribute set to a supported format ("months since ..." or
+    "years since ...").
 
-    1. Extract ``units`` and ``reference_date`` strings from the "units"
-       attribute.
+    The logic for this function:
 
-       * For example with "months since 1800-01-01", ``units="months"`` and
-         ``reference_date="1800-01-01"``
+    1. Extract units and reference date strings from the "units" attribute.
 
-    2. Using the ``reference_date``, create a datetime object (``ref_dt_obj``).
-    3. Starting from ``ref_dt_obj``, use the numerically encoded time coordinate
-       values (each representing an offset) to create an array of
-       ``cftime.datetime`` objects.
-    4. Using the array of ``cftime.datetime`` objects, create a new xr.DataArray
+       * For example with "months since 1800-01-01", the units are "months" and
+         reference date is "1800-01-01".
+
+    2. Using the reference date, create a reference ``datetime`` object.
+    3. Starting from the reference ``datetime`` object, use the numerically
+       encoded time coordinate values (each representing an offset) to create an
+       array of ``cftime`` objects based on the calendar type.
+    4. Using the array of ``cftime`` objects, create a new xr.DataArray
        of time coordinates to replace the numerically encoded ones.
     5. If it exists, create a time bounds DataArray using steps 3 and 4.
 
@@ -256,13 +259,13 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     -------
     xr.Dataset
         Dataset with decoded time coordinates and time bounds (if they exist) as
-        datetime objects.
+        ``cftime`` objects.
 
     Notes
     -----
-    ``cftime.datetime`` objects are used to represent time coordinates because
-    it is not restricted by the ``pandas.Timestamp`` range (1678 and 2262).
-    Refer to [4]_ and [5]_ for more information on this limitation.
+    Time coordinates are represented by ``cftime.datetime`` objects because
+    it is not restricted by the ``pandas.Timestamp`` range (years 1678 through
+    2262). Refer to [4]_ and [5]_ for more information on this limitation.
 
     References
     -----
@@ -275,7 +278,8 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
 
     Decode the time coordinates with non-CF units in a Dataset:
 
-    >>> from xcdat.dataset import decode_time_units
+    >>> from xcdat.dataset import decode_non_cf_time
+    >>>
     >>> ds.time
     <xarray.DataArray 'time' (time: 3)>
     array([0, 1, 2])
@@ -289,11 +293,13 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
         standard_name:  time
         calendar:       noleap
     >>>
-    >>> ds_decoded = decode_time_units(ds)
+    >>> ds_decoded = decode_non_cf_time(ds)
     >>> ds_decoded.time
     <xarray.DataArray 'time' (time: 3)>
-    array(['2000-01-01T00:00:00.000000000', '2001-01-01T00:00:00.000000000',
-        '2002-01-01T00:00:00.000000000'], dtype='datetime64[ns]')
+    array([cftime.DatetimeNoLeap(1850, 1, 1, 0, 0, 0, 0, has_year_zero=True),
+           cftime.DatetimeNoLeap(1850, 1, 1, 0, 0, 0, 0, has_year_zero=True),
+           cftime.DatetimeNoLeap(1850, 1, 1, 0, 0, 0, 0, has_year_zero=True)],
+           dtype='object')
     Coordinates:
     * time     (time) datetime64[ns] 2000-01-01 2001-01-01 2002-01-01
     Attributes:
@@ -307,8 +313,11 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     View time encoding information:
 
     >>> ds_decoded.time.encoding
-    {'source': None, 'dtype': dtype('int64'), 'original_shape': (3,), 'units':
-    'years since 2000-01-01', 'calendar': 'noleap'}
+    {'source': None,
+     'dtype': dtype('int64'),
+     'original_shape': (3,),
+     'units': 'years since 2000-01-01',
+     'calendar': 'noleap'}
     """
     ds = dataset.copy()
     time = get_axis_coord(ds, "T")
@@ -682,7 +691,9 @@ def _get_cftime_coords(
     offsets : np.ndarray
         An array of numerically encoded time offsets from the reference date.
     calendar : str
-        The CF calendar type.
+        The CF calendar type supported by ``cftime``. This includes "noleap",
+        "360_day", "365_day", "366_day", "gregorian", "proleptic_gregorian",
+        "julian", "all_leap", and "standard".
     units : str
         The time units.
 
@@ -702,7 +713,7 @@ def _get_cftime_coords(
         dtype="datetime64",
     )
 
-    # Convert the array of `datetime`` objects into `cftime` objects based on
+    # Convert the array of `datetime` objects into `cftime` objects based on
     # the calendar type.
     date_type = get_date_type(calendar)
     coords = convert_times(offsets, date_type=date_type)

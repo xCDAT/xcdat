@@ -1,3 +1,4 @@
+import logging
 import pathlib
 import warnings
 
@@ -38,7 +39,10 @@ class TestOpenDataset:
         expected = generate_dataset(cf_compliant=False, has_bounds=True)
         assert result.identical(expected)
 
-    def test_non_cf_compliant_and_unsupported_time_is_not_decoded(self):
+    def test_non_cf_compliant_and_unsupported_time_is_not_decoded(self, caplog):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+
         ds = generate_dataset(cf_compliant=False, has_bounds=True, unsupported=True)
         ds.to_netcdf(self.file_path)
 
@@ -456,7 +460,10 @@ class TestDecodeNonCFTimeUnits:
         }
         self.ds = xr.Dataset({"time": time, "time_bnds": time_bnds})
 
-    def test_returns_original_dataset_if_calendar_attr_is_not_set(self):
+    def test_returns_original_dataset_if_calendar_attr_is_not_set(self, caplog):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+
         ds = generate_dataset(cf_compliant=False, has_bounds=True)
 
         del ds.time.attrs["calendar"]
@@ -464,7 +471,10 @@ class TestDecodeNonCFTimeUnits:
         result = decode_non_cf_time(ds)
         assert ds.identical(result)
 
-    def test_returns_original_dataset_if_units_attr_is_not_set(self):
+    def test_returns_original_dataset_if_units_attr_is_not_set(self, caplog):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+
         ds = generate_dataset(cf_compliant=False, has_bounds=True)
 
         del ds.time.attrs["units"]
@@ -472,7 +482,12 @@ class TestDecodeNonCFTimeUnits:
         result = decode_non_cf_time(ds)
         assert ds.identical(result)
 
-    def test_returns_original_dataset_if_units_attr_is_in_an_unsupported_format(self):
+    def test_returns_original_dataset_if_units_attr_is_in_an_unsupported_format(
+        self, caplog
+    ):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+
         ds = generate_dataset(cf_compliant=False, has_bounds=True)
 
         ds.time.attrs["units"] = "year AD"
