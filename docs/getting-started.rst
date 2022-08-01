@@ -18,7 +18,7 @@ Prerequisites
 Installation
 ------------
 
-1. Create a Conda environment from scratch with ``xcdat`` (``conda create``_)
+1. Create a Conda environment from scratch with ``xcdat`` (`conda create`_)
 
    We recommend using the Conda environment creation procedure to install ``xcdat``.
    The advantage with following this approach is that Conda will attempt to resolve dependencies (e.g. ``python >= 3.8``) for compatibility.
