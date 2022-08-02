@@ -337,7 +337,7 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     except KeyError:
         logger.warning(
             "This dataset's time coordinates do not have a 'units' attribute set, "
-            "so the time coordinates could not be decoded. Set the 'units' attribute"
+            "so the time coordinates could not be decoded. Set the 'units' attribute "
             "and try decoding the time coordinates again."
         )
         return ds
