@@ -346,7 +346,7 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
         units, ref_date = _split_time_units_attr(units_attr)
     except ValueError:
         logger.warning(
-            f"This dataset's 'units' attributes is ('{units_attr}') is not in a "
+            f"This dataset's 'units' attribute ('{units_attr}') is not in a "
             "supported format ('months since...' or 'years since...'), so the time "
             "coordinates could not be decoded."
         )
@@ -710,7 +710,7 @@ def _get_cftime_coords(
     ref_datetime: datetime = parser.parse(ref_date, default=datetime(2000, 1, 1))
     offsets = np.array(
         [ref_datetime + rd.relativedelta(**{units: offset}) for offset in offsets],
-        dtype="datetime64",
+        dtype="object",
     )
 
     # Convert the array of `datetime` objects into `cftime` objects based on
