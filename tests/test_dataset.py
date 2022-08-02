@@ -1,6 +1,8 @@
+import logging
 import pathlib
 import warnings
 
+import cftime
 import numpy as np
 import pytest
 import xarray as xr
@@ -37,7 +39,10 @@ class TestOpenDataset:
         expected = generate_dataset(cf_compliant=False, has_bounds=True)
         assert result.identical(expected)
 
-    def test_non_cf_compliant_and_unsupported_time_is_not_decoded(self):
+    def test_non_cf_compliant_and_unsupported_time_is_not_decoded(self, caplog):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+
         ds = generate_dataset(cf_compliant=False, has_bounds=True, unsupported=True)
         ds.to_netcdf(self.file_path)
 
@@ -55,59 +60,86 @@ class TestOpenDataset:
 
         # Generate an expected dataset with decoded non-CF compliant time units.
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected_time_data = np.array(
-            [
-                "2000-01-01T00:00:00.000000000",
-                "2000-02-01T00:00:00.000000000",
-                "2000-03-01T00:00:00.000000000",
-                "2000-04-01T00:00:00.000000000",
-                "2000-05-01T00:00:00.000000000",
-                "2000-06-01T00:00:00.000000000",
-                "2000-07-01T00:00:00.000000000",
-                "2000-08-01T00:00:00.000000000",
-                "2000-09-01T00:00:00.000000000",
-                "2000-10-01T00:00:00.000000000",
-                "2000-11-01T00:00:00.000000000",
-                "2000-12-01T00:00:00.000000000",
-                "2001-01-01T00:00:00.000000000",
-                "2001-02-01T00:00:00.000000000",
-                "2001-03-01T00:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
         expected["time"] = xr.DataArray(
             name="time",
-            data=expected_time_data,
+            data=np.array(
+                [
+                    cftime.datetime(2000, 1, 1),
+                    cftime.datetime(2000, 2, 1),
+                    cftime.datetime(2000, 3, 1),
+                    cftime.datetime(2000, 4, 1),
+                    cftime.datetime(2000, 5, 1),
+                    cftime.datetime(2000, 6, 1),
+                    cftime.datetime(2000, 7, 1),
+                    cftime.datetime(2000, 8, 1),
+                    cftime.datetime(2000, 9, 1),
+                    cftime.datetime(2000, 10, 1),
+                    cftime.datetime(2000, 11, 1),
+                    cftime.datetime(2000, 12, 1),
+                    cftime.datetime(2001, 1, 1),
+                    cftime.datetime(2001, 2, 1),
+                    cftime.datetime(2001, 3, 1),
+                ],
+            ),
             dims="time",
-            attrs={
-                "units": "months since 2000-01-01",
-                "calendar": "standard",
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
         )
-        expected.time_bnds.data[:] = np.array(
-            [
-                ["1999-12-16T12:00:00.000000000", "2000-01-16T12:00:00.000000000"],
-                ["2000-01-16T12:00:00.000000000", "2000-02-15T12:00:00.000000000"],
-                ["2000-02-15T12:00:00.000000000", "2000-03-16T12:00:00.000000000"],
-                ["2000-03-16T12:00:00.000000000", "2000-04-16T00:00:00.000000000"],
-                ["2000-04-16T00:00:00.000000000", "2000-05-16T12:00:00.000000000"],
-                ["2000-05-16T12:00:00.000000000", "2000-06-16T00:00:00.000000000"],
-                ["2000-06-16T00:00:00.000000000", "2000-07-16T12:00:00.000000000"],
-                ["2000-07-16T12:00:00.000000000", "2000-08-16T12:00:00.000000000"],
-                ["2000-08-16T12:00:00.000000000", "2000-09-16T00:00:00.000000000"],
-                ["2000-09-16T00:00:00.000000000", "2000-10-16T12:00:00.000000000"],
-                ["2000-10-16T12:00:00.000000000", "2000-11-16T00:00:00.000000000"],
-                ["2000-11-16T00:00:00.000000000", "2000-12-16T12:00:00.000000000"],
-                ["2000-12-16T12:00:00.000000000", "2001-01-16T12:00:00.000000000"],
-                ["2001-01-16T12:00:00.000000000", "2001-02-15T00:00:00.000000000"],
-                ["2001-02-15T00:00:00.000000000", "2001-03-15T00:00:00.000000000"],
-            ],
-            dtype="datetime64[ns]",
+        expected["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        cftime.datetime(1999, 12, 16, 12),
+                        cftime.datetime(2000, 1, 16, 12),
+                    ],
+                    [
+                        cftime.datetime(2000, 1, 16, 12),
+                        cftime.datetime(2000, 2, 15, 12),
+                    ],
+                    [
+                        cftime.datetime(2000, 2, 15, 12),
+                        cftime.datetime(2000, 3, 16, 12),
+                    ],
+                    [cftime.datetime(2000, 3, 16, 12), cftime.datetime(2000, 4, 16, 0)],
+                    [cftime.datetime(2000, 4, 16, 0), cftime.datetime(2000, 5, 16, 12)],
+                    [cftime.datetime(2000, 5, 16, 12), cftime.datetime(2000, 6, 16, 0)],
+                    [cftime.datetime(2000, 6, 16, 0), cftime.datetime(2000, 7, 16, 12)],
+                    [
+                        cftime.datetime(2000, 7, 16, 12),
+                        cftime.datetime(2000, 8, 16, 12),
+                    ],
+                    [cftime.datetime(2000, 8, 16, 12), cftime.datetime(2000, 9, 16, 0)],
+                    [
+                        cftime.datetime(2000, 9, 16, 0),
+                        cftime.datetime(2000, 10, 16, 12),
+                    ],
+                    [
+                        cftime.datetime(2000, 10, 16, 12),
+                        cftime.datetime(2000, 11, 16, 0),
+                    ],
+                    [
+                        cftime.datetime(2000, 11, 16, 0),
+                        cftime.datetime(2000, 12, 16, 12),
+                    ],
+                    [
+                        cftime.datetime(2000, 12, 16, 12),
+                        cftime.datetime(2001, 1, 16, 12),
+                    ],
+                    [cftime.datetime(2001, 1, 16, 12), cftime.datetime(2001, 2, 15, 0)],
+                    [cftime.datetime(2001, 2, 15, 0), cftime.datetime(2001, 3, 15, 0)],
+                ]
+            ),
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
         )
+
+        expected.time.attrs = {
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
+            "axis": "T",
+            "long_name": "time",
+            "standard_name": "time",
+            "bounds": "time_bnds",
+        }
         expected.time.encoding = {
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
@@ -182,67 +214,91 @@ class TestOpenMfDataset:
         ds1.to_netcdf(self.file_path1)
         ds2.to_netcdf(self.file_path2)
 
-        result = open_mfdataset(
-            [self.file_path1, self.file_path2],
-            data_var="ts",
-        )
+        result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
 
-        # Generate an expected dataset, which is a combination of both datasets
-        # with decoded time units and coordinate bounds.
+        # Generate an expected dataset with decoded non-CF compliant time units.
         expected = generate_dataset(cf_compliant=True, has_bounds=True)
-        expected_time_data = np.array(
-            [
-                "2000-01-01T00:00:00.000000000",
-                "2000-02-01T00:00:00.000000000",
-                "2000-03-01T00:00:00.000000000",
-                "2000-04-01T00:00:00.000000000",
-                "2000-05-01T00:00:00.000000000",
-                "2000-06-01T00:00:00.000000000",
-                "2000-07-01T00:00:00.000000000",
-                "2000-08-01T00:00:00.000000000",
-                "2000-09-01T00:00:00.000000000",
-                "2000-10-01T00:00:00.000000000",
-                "2000-11-01T00:00:00.000000000",
-                "2000-12-01T00:00:00.000000000",
-                "2001-01-01T00:00:00.000000000",
-                "2001-02-01T00:00:00.000000000",
-                "2001-03-01T00:00:00.000000000",
-            ],
-            dtype="datetime64[ns]",
-        )
+
         expected["time"] = xr.DataArray(
             name="time",
-            data=expected_time_data,
+            data=np.array(
+                [
+                    cftime.datetime(2000, 1, 1),
+                    cftime.datetime(2000, 2, 1),
+                    cftime.datetime(2000, 3, 1),
+                    cftime.datetime(2000, 4, 1),
+                    cftime.datetime(2000, 5, 1),
+                    cftime.datetime(2000, 6, 1),
+                    cftime.datetime(2000, 7, 1),
+                    cftime.datetime(2000, 8, 1),
+                    cftime.datetime(2000, 9, 1),
+                    cftime.datetime(2000, 10, 1),
+                    cftime.datetime(2000, 11, 1),
+                    cftime.datetime(2000, 12, 1),
+                    cftime.datetime(2001, 1, 1),
+                    cftime.datetime(2001, 2, 1),
+                    cftime.datetime(2001, 3, 1),
+                ],
+            ),
             dims="time",
-            attrs={
-                "units": "months since 2000-01-01",
-                "calendar": "standard",
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-                "bounds": "time_bnds",
-            },
         )
-        expected.time_bnds.data[:] = np.array(
-            [
-                ["1999-12-16T12:00:00.000000000", "2000-01-16T12:00:00.000000000"],
-                ["2000-01-16T12:00:00.000000000", "2000-02-15T12:00:00.000000000"],
-                ["2000-02-15T12:00:00.000000000", "2000-03-16T12:00:00.000000000"],
-                ["2000-03-16T12:00:00.000000000", "2000-04-16T00:00:00.000000000"],
-                ["2000-04-16T00:00:00.000000000", "2000-05-16T12:00:00.000000000"],
-                ["2000-05-16T12:00:00.000000000", "2000-06-16T00:00:00.000000000"],
-                ["2000-06-16T00:00:00.000000000", "2000-07-16T12:00:00.000000000"],
-                ["2000-07-16T12:00:00.000000000", "2000-08-16T12:00:00.000000000"],
-                ["2000-08-16T12:00:00.000000000", "2000-09-16T00:00:00.000000000"],
-                ["2000-09-16T00:00:00.000000000", "2000-10-16T12:00:00.000000000"],
-                ["2000-10-16T12:00:00.000000000", "2000-11-16T00:00:00.000000000"],
-                ["2000-11-16T00:00:00.000000000", "2000-12-16T12:00:00.000000000"],
-                ["2000-12-16T12:00:00.000000000", "2001-01-16T12:00:00.000000000"],
-                ["2001-01-16T12:00:00.000000000", "2001-02-15T00:00:00.000000000"],
-                ["2001-02-15T00:00:00.000000000", "2001-03-15T00:00:00.000000000"],
-            ],
-            dtype="datetime64[ns]",
+        expected["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        cftime.datetime(1999, 12, 16, 12),
+                        cftime.datetime(2000, 1, 16, 12),
+                    ],
+                    [
+                        cftime.datetime(2000, 1, 16, 12),
+                        cftime.datetime(2000, 2, 15, 12),
+                    ],
+                    [
+                        cftime.datetime(2000, 2, 15, 12),
+                        cftime.datetime(2000, 3, 16, 12),
+                    ],
+                    [cftime.datetime(2000, 3, 16, 12), cftime.datetime(2000, 4, 16, 0)],
+                    [cftime.datetime(2000, 4, 16, 0), cftime.datetime(2000, 5, 16, 12)],
+                    [cftime.datetime(2000, 5, 16, 12), cftime.datetime(2000, 6, 16, 0)],
+                    [cftime.datetime(2000, 6, 16, 0), cftime.datetime(2000, 7, 16, 12)],
+                    [
+                        cftime.datetime(2000, 7, 16, 12),
+                        cftime.datetime(2000, 8, 16, 12),
+                    ],
+                    [cftime.datetime(2000, 8, 16, 12), cftime.datetime(2000, 9, 16, 0)],
+                    [
+                        cftime.datetime(2000, 9, 16, 0),
+                        cftime.datetime(2000, 10, 16, 12),
+                    ],
+                    [
+                        cftime.datetime(2000, 10, 16, 12),
+                        cftime.datetime(2000, 11, 16, 0),
+                    ],
+                    [
+                        cftime.datetime(2000, 11, 16, 0),
+                        cftime.datetime(2000, 12, 16, 12),
+                    ],
+                    [
+                        cftime.datetime(2000, 12, 16, 12),
+                        cftime.datetime(2001, 1, 16, 12),
+                    ],
+                    [cftime.datetime(2001, 1, 16, 12), cftime.datetime(2001, 2, 15, 0)],
+                    [cftime.datetime(2001, 2, 15, 0), cftime.datetime(2001, 3, 15, 0)],
+                ]
+            ),
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
         )
+
+        expected.time.attrs = {
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
+            "axis": "T",
+            "long_name": "time",
+            "standard_name": "time",
+            "bounds": "time_bnds",
+        }
         expected.time.encoding = {
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
@@ -383,7 +439,7 @@ class TestDecodeNonCFTimeUnits:
                 "axis": "T",
                 "long_name": "time",
                 "standard_name": "time",
-                "calendar": "noleap",
+                # calendar attr is specified by test.
             },
         )
         time_bnds = xr.DataArray(
@@ -404,16 +460,45 @@ class TestDecodeNonCFTimeUnits:
         }
         self.ds = xr.Dataset({"time": time, "time_bnds": time_bnds})
 
-    def test_raises_error_if_function_is_called_on_already_decoded_cf_compliant_dataset(
-        self,
-    ):
-        ds = generate_dataset(cf_compliant=True, has_bounds=True)
+    def test_returns_original_dataset_if_calendar_attr_is_not_set(self, caplog):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
 
-        with pytest.raises(KeyError):
-            decode_non_cf_time(ds)
+        ds = generate_dataset(cf_compliant=False, has_bounds=True)
+
+        del ds.time.attrs["calendar"]
+
+        result = decode_non_cf_time(ds)
+        assert ds.identical(result)
+
+    def test_returns_original_dataset_if_units_attr_is_not_set(self, caplog):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+
+        ds = generate_dataset(cf_compliant=False, has_bounds=True)
+
+        del ds.time.attrs["units"]
+
+        result = decode_non_cf_time(ds)
+        assert ds.identical(result)
+
+    def test_returns_original_dataset_if_units_attr_is_in_an_unsupported_format(
+        self, caplog
+    ):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+
+        ds = generate_dataset(cf_compliant=False, has_bounds=True)
+
+        ds.time.attrs["units"] = "year AD"
+
+        result = decode_non_cf_time(ds)
+        assert ds.identical(result)
 
     def test_decodes_months_with_a_reference_date_at_the_start_of_the_month(self):
         ds = self.ds.copy()
+        calendar = "standard"
+        ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "months since 2000-01-01"
 
         result = decode_non_cf_time(ds)
@@ -422,8 +507,11 @@ class TestDecodeNonCFTimeUnits:
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        ["2000-02-01", "2000-03-01", "2000-04-01"],
-                        dtype="datetime64",
+                        [
+                            cftime.datetime(2000, 2, 1, calendar=calendar),
+                            cftime.datetime(2000, 3, 1, calendar=calendar),
+                            cftime.datetime(2000, 4, 1, calendar=calendar),
+                        ],
                     ),
                     dims=["time"],
                     attrs=ds.time.attrs,
@@ -432,11 +520,19 @@ class TestDecodeNonCFTimeUnits:
                     name="time_bnds",
                     data=np.array(
                         [
-                            ["2000-01-01", "2000-02-01"],
-                            ["2000-02-01", "2000-03-01"],
-                            ["2000-03-01", "2000-04-01"],
+                            [
+                                cftime.datetime(2000, 1, 1, calendar=calendar),
+                                cftime.datetime(2000, 2, 1, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2000, 2, 1, calendar=calendar),
+                                cftime.datetime(2000, 3, 1, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2000, 3, 1, calendar=calendar),
+                                cftime.datetime(2000, 4, 1, calendar=calendar),
+                            ],
                         ],
-                        dtype="datetime64",
                     ),
                     dims=["time", "bnds"],
                     attrs=ds.time_bnds.attrs,
@@ -450,7 +546,7 @@ class TestDecodeNonCFTimeUnits:
             "dtype": np.dtype(np.int64),
             "original_shape": expected.time.data.shape,
             "units": ds.time.attrs["units"],
-            "calendar": ds.time.attrs["calendar"],
+            "calendar": calendar,
         }
         expected.time_bnds.encoding = ds.time_bnds.encoding
         assert result.time.encoding == expected.time.encoding
@@ -458,6 +554,8 @@ class TestDecodeNonCFTimeUnits:
 
     def test_decodes_months_with_a_reference_date_at_the_middle_of_the_month(self):
         ds = self.ds.copy()
+        calendar = "standard"
+        ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "months since 2000-01-15"
 
         result = decode_non_cf_time(ds)
@@ -466,8 +564,11 @@ class TestDecodeNonCFTimeUnits:
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        ["2000-02-15", "2000-03-15", "2000-04-15"],
-                        dtype="datetime64",
+                        [
+                            cftime.datetime(2000, 2, 15, calendar=calendar),
+                            cftime.datetime(2000, 3, 15, calendar=calendar),
+                            cftime.datetime(2000, 4, 15, calendar=calendar),
+                        ],
                     ),
                     dims=["time"],
                     attrs=ds.time.attrs,
@@ -476,11 +577,19 @@ class TestDecodeNonCFTimeUnits:
                     name="time_bnds",
                     data=np.array(
                         [
-                            ["2000-01-15", "2000-02-15"],
-                            ["2000-02-15", "2000-03-15"],
-                            ["2000-03-15", "2000-04-15"],
+                            [
+                                cftime.datetime(2000, 1, 15, calendar=calendar),
+                                cftime.datetime(2000, 2, 15, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2000, 2, 15, calendar=calendar),
+                                cftime.datetime(2000, 3, 15, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2000, 3, 15, calendar=calendar),
+                                cftime.datetime(2000, 4, 15, calendar=calendar),
+                            ],
                         ],
-                        dtype="datetime64",
                     ),
                     dims=["time", "bnds"],
                     attrs=ds.time_bnds.attrs,
@@ -502,6 +611,8 @@ class TestDecodeNonCFTimeUnits:
 
     def test_decodes_months_with_a_reference_date_at_the_end_of_the_month(self):
         ds = self.ds.copy()
+        calendar = "standard"
+        ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "months since 1999-12-31"
 
         result = decode_non_cf_time(ds)
@@ -510,8 +621,11 @@ class TestDecodeNonCFTimeUnits:
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        ["2000-01-31", "2000-02-29", "2000-03-31"],
-                        dtype="datetime64",
+                        [
+                            cftime.datetime(2000, 1, 31, calendar=calendar),
+                            cftime.datetime(2000, 2, 29, calendar=calendar),
+                            cftime.datetime(2000, 3, 31, calendar=calendar),
+                        ],
                     ),
                     dims=["time"],
                     attrs=ds.time.attrs,
@@ -520,11 +634,19 @@ class TestDecodeNonCFTimeUnits:
                     name="time_bnds",
                     data=np.array(
                         [
-                            ["1999-12-31", "2000-01-31"],
-                            ["2000-01-31", "2000-02-29"],
-                            ["2000-02-29", "2000-03-31"],
+                            [
+                                cftime.datetime(1999, 12, 31, calendar=calendar),
+                                cftime.datetime(2000, 1, 31, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2000, 1, 31, calendar=calendar),
+                                cftime.datetime(2000, 2, 29, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2000, 2, 29, calendar=calendar),
+                                cftime.datetime(2000, 3, 31, calendar=calendar),
+                            ],
                         ],
-                        dtype="datetime64",
                     ),
                     dims=["time", "bnds"],
                     attrs=ds.time_bnds.attrs,
@@ -546,16 +668,22 @@ class TestDecodeNonCFTimeUnits:
 
     def test_decodes_months_with_a_reference_date_on_a_leap_year(self):
         ds = self.ds.copy()
+        calendar = "standard"
+        ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "months since 2000-02-29"
 
         result = decode_non_cf_time(ds)
+
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        ["2000-03-29", "2000-04-29", "2000-05-29"],
-                        dtype="datetime64",
+                        [
+                            cftime.datetime(2000, 3, 29, calendar=calendar),
+                            cftime.datetime(2000, 4, 29, calendar=calendar),
+                            cftime.datetime(2000, 5, 29, calendar=calendar),
+                        ],
                     ),
                     dims=["time"],
                     attrs=ds.time.attrs,
@@ -564,11 +692,19 @@ class TestDecodeNonCFTimeUnits:
                     name="time_bnds",
                     data=np.array(
                         [
-                            ["2000-02-29", "2000-03-29"],
-                            ["2000-03-29", "2000-04-29"],
-                            ["2000-04-29", "2000-05-29"],
+                            [
+                                cftime.datetime(2000, 2, 29, calendar=calendar),
+                                cftime.datetime(2000, 3, 29, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2000, 3, 29, calendar=calendar),
+                                cftime.datetime(2000, 4, 29, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2000, 4, 29, calendar=calendar),
+                                cftime.datetime(2000, 5, 29, calendar=calendar),
+                            ],
                         ],
-                        dtype="datetime64",
                     ),
                     dims=["time", "bnds"],
                     attrs=ds.time_bnds.attrs,
@@ -590,16 +726,23 @@ class TestDecodeNonCFTimeUnits:
 
     def test_decodes_years_with_a_reference_date_at_the_middle_of_the_year(self):
         ds = self.ds.copy()
+
+        calendar = "standard"
+        ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "years since 2000-06-01"
 
         result = decode_non_cf_time(ds)
+
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
                     name="time",
                     data=np.array(
-                        ["2001-06-01", "2002-06-01", "2003-06-01"],
-                        dtype="datetime64",
+                        [
+                            cftime.datetime(2001, 6, 1, calendar=calendar),
+                            cftime.datetime(2002, 6, 1, calendar=calendar),
+                            cftime.datetime(2003, 6, 1, calendar=calendar),
+                        ],
                     ),
                     dims=["time"],
                     attrs=ds.time.attrs,
@@ -608,11 +751,19 @@ class TestDecodeNonCFTimeUnits:
                     name="time_bnds",
                     data=np.array(
                         [
-                            ["2000-06-01", "2001-06-01"],
-                            ["2001-06-01", "2002-06-01"],
-                            ["2002-06-01", "2003-06-01"],
+                            [
+                                cftime.datetime(2000, 6, 1, calendar=calendar),
+                                cftime.datetime(2001, 6, 1, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2001, 6, 1, calendar=calendar),
+                                cftime.datetime(2002, 6, 1, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2002, 6, 1, calendar=calendar),
+                                cftime.datetime(2003, 6, 1, calendar=calendar),
+                            ],
                         ],
-                        dtype="datetime64",
                     ),
                     dims=["time", "bnds"],
                     attrs=ds.time_bnds.attrs,
@@ -634,36 +785,50 @@ class TestDecodeNonCFTimeUnits:
 
     def test_decodes_years_with_a_reference_date_on_a_leap_year(self):
         ds = self.ds.copy()
+
+        calendar = "standard"
+        ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "years since 2000-02-29"
 
         result = decode_non_cf_time(ds)
+
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
                     name="time",
-                    data=[
-                        np.datetime64("2001-02-28"),
-                        np.datetime64("2002-02-28"),
-                        np.datetime64("2003-02-28"),
-                    ],
+                    data=np.array(
+                        [
+                            cftime.datetime(2001, 2, 28, calendar=calendar),
+                            cftime.datetime(2002, 2, 28, calendar=calendar),
+                            cftime.datetime(2003, 2, 28, calendar=calendar),
+                        ],
+                    ),
                     dims=["time"],
+                    attrs=ds.time.attrs,
                 ),
                 "time_bnds": xr.DataArray(
                     name="time_bnds",
                     data=np.array(
                         [
-                            ["2000-02-29", "2001-02-28"],
-                            ["2001-02-28", "2002-02-28"],
-                            ["2002-02-28", "2003-02-28"],
+                            [
+                                cftime.datetime(2000, 2, 29, calendar=calendar),
+                                cftime.datetime(2001, 2, 28, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2001, 2, 28, calendar=calendar),
+                                cftime.datetime(2002, 2, 28, calendar=calendar),
+                            ],
+                            [
+                                cftime.datetime(2002, 2, 28, calendar=calendar),
+                                cftime.datetime(2003, 2, 28, calendar=calendar),
+                            ],
                         ],
-                        dtype="datetime64",
                     ),
                     dims=["time", "bnds"],
                     attrs=ds.time_bnds.attrs,
                 ),
             }
         )
-        expected.time.attrs = ds.time.attrs
         assert result.identical(expected)
 
         expected.time.encoding = {
@@ -934,31 +1099,31 @@ class Test_PreProcessNonCFDataset:
         expected = ds.copy().isel(time=slice(0, 1))
         expected["time"] = xr.DataArray(
             name="time",
-            data=np.array(
-                ["2000-01-01"],
-                dtype="datetime64",
-            ),
+            data=np.array([cftime.datetime(2000, 1, 1)]),
             dims=["time"],
         )
         expected["time_bnds"] = xr.DataArray(
             name="time_bnds",
             data=np.array(
-                [["1999-12-01", "2000-01-01"]],
-                dtype="datetime64",
+                [[cftime.datetime(1999, 12, 1), cftime.datetime(2000, 1, 1)]],
             ),
             dims=["time", "bnds"],
         )
+        expected.time.attrs = {
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
+            "axis": "T",
+            "long_name": "time",
+            "standard_name": "time",
+            "bounds": "time_bnds",
+        }
 
-        expected.time.attrs = ds.time.attrs
-        expected.time_bnds.attrs = ds.time_bnds.attrs
+        expected.time_bnds.attrs = {"xcdat_bounds": "True"}
+
         assert result.identical(expected)
 
 
 class Test_SplitTimeUnitsAttr:
-    def test_raises_error_if_units_attr_is_none(self):
-        with pytest.raises(KeyError):
-            _split_time_units_attr(None)  # type: ignore
-
     def test_splits_units_attr_to_unit_and_reference_date(self):
         assert _split_time_units_attr("months since 1800") == ("months", "1800")
         assert _split_time_units_attr("months since 1800-01-01") == (
