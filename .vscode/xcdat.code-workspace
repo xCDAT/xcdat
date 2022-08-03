@@ -1,5 +1,5 @@
-// This file stores the xcdat repository's workspace settings.
-// Simply open up this file in VS Code and it will be automatically configured using this file.
+// This file stores the xcdat repository's VS Code workspace settings.
+// Simply open up this file in VS Code and the editor will be automatically configured using this file.
 // Workspace settings take precedence over your user settings.
 {
     "folders": [
