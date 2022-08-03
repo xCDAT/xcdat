@@ -5,7 +5,35 @@
         }
     ],
     "settings": {
-        "autoDocstring.docstringFormat": "numpy",
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        // ===================
+        // Python settings
+        // ===================
+        "[python]": {
+            // editor.rulers: [comments, max line length, wrap line length],
+            // Black does not wrap comments.
+            "editor.rulers": [80, 88, 120],
+            "editor.wordWrap": "wordWrapColumn",
+            "editor.wordWrapColumn": 120,
+            "editor.defaultFormatter": "ms-python.python"
+        },
+        // Code Formatting and Linting
+        "python.formatting.provider": "black",
+        "python.linting.flake8Enabled": true,
+        "python.linting.flake8Args": ["--config=setup.cfg"],
+        // Type checking
+        "python.linting.mypyEnabled": true,
+        "python.linting.mypyArgs": ["--config=setup.cfg"],
+        // Testing
+        "python.testing.unittestEnabled": false,
+        "python.testing.pytestEnabled": true,
+        // NOTE: Debugger doesn't work if pytest-cov is enabled, so set "--no-cov"
+        // https://github.com/microsoft/vscode-python/issues/693
+        "python.testing.pytestArgs": ["--no-cov"],
+        // ===================
+        // Extension settings
+        // ===================
+        "jupyter.notebookFileRoot": "${workspaceFolder}",
+        "autoDocstring.docstringFormat": "numpy"
     }
 }
