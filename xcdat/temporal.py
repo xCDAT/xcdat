@@ -806,8 +806,8 @@ class TemporalAccessor:
         # method concatenates the time dimension to non-time dimension data
         # vars, which is not a desired behavior.
         ds = dataset.copy()
-        ds_time = ds.get([v for v in ds.data_vars if self._dim in ds[v].dims])
-        ds_no_time = ds.get([v for v in ds.data_vars if self._dim not in ds[v].dims])
+        ds_time = ds.get([v for v in ds.data_vars if self._dim in ds[v].dims])  # type: ignore
+        ds_no_time = ds.get([v for v in ds.data_vars if self._dim not in ds[v].dims])  # type: ignore
 
         start_year, end_year = (
             ds[self._dim].dt.year.values[0],
@@ -817,12 +817,12 @@ class TemporalAccessor:
         for year_month in incomplete_seasons:
             try:
                 coord_pt = ds.loc[dict(time=year_month)][self._dim][0]
-                ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)  # type: ignore
+                ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)
                 self._time_bounds = ds_time[self._time_bounds.name]
             except (KeyError, IndexError):
                 continue
 
-        ds_final = xr.merge((ds_time, ds_no_time))  # type: ignore
+        ds_final = xr.merge((ds_time, ds_no_time))
 
         return ds_final
 
@@ -920,9 +920,9 @@ class TemporalAccessor:
         if self._weighted:
             self._weights = self._get_weights()
             dv *= self._weights
-            dv = self._group_data(dv).sum()  # type: ignore
+            dv = self._group_data(dv).sum()
         else:
-            dv = self._group_data(dv).mean()  # type: ignore
+            dv = self._group_data(dv).mean()
 
         # After grouping and aggregating the data variable values, the
         # original time dimension is replaced with the grouped time dimension.
@@ -930,7 +930,7 @@ class TemporalAccessor:
         # with "year_season". This dimension needs to be renamed back to
         # the original time dimension name before the data variable is added
         # back to the dataset so that the CF compliant name is maintained.
-        dv = dv.rename({self._labeled_time.name: self._dim})  # type: ignore
+        dv = dv.rename({self._labeled_time.name: self._dim})
 
         # After grouping and aggregating, the grouped time dimension's
         # attributes are removed. Xarray's `keep_attrs=True` option only keeps
@@ -988,11 +988,11 @@ class TemporalAccessor:
         time_lengths = time_lengths.astype(np.float64)
 
         grouped_time_lengths = self._group_data(time_lengths)
-        weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()  # type: ignore
+        weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()
         weights.name = f"{self._dim}_wts"
 
         # Validate the sum of weights for each group is 1.0.
-        actual_sum = self._group_data(weights).sum().values  # type: ignore
+        actual_sum = self._group_data(weights).sum().values
         expected_sum = np.ones(len(grouped_time_lengths.groups))
         np.testing.assert_allclose(actual_sum, expected_sum)
 
