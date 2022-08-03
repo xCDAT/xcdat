@@ -84,8 +84,8 @@ Things we are striving for:
 
 * Support for CF compliant, E3SM non-CF compliant, and common metadata
 
-   * xCDAT primarily focuses on datasets that folllow the `CF convention`_. xCDAT leverages `cf_xarray`_ to interpret CF convention attributes on ``xarray`` objects
-   * Accomodations for specific non-CF compliant situations will be considered on a case-by-case basis
+  * xCDAT primarily focuses on datasets that follow the `CF convention`_. xCDAT leverages `cf_xarray`_ to interpret CF convention attributes on ``xarray`` objects
+  * Accomodations for specific non-CF compliant situations will be considered on a case-by-case basis
 
 * Robust handling of coordinates and its associated bounds
 
