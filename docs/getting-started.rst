@@ -38,5 +38,6 @@ Installation
 
        >>> conda activate <ENV_NAME>
        >>> conda install -c conda-forge xcdat
+
 .. _conda create: https://docs.conda.io/projects/conda/en/latest/commands/create.html?highlight=create
 .. _conda install: https://docs.conda.io/projects/conda/en/latest/commands/install.html?highlight=install

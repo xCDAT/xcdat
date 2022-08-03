@@ -40,16 +40,15 @@
 .. |Checked with mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
    :target: http://mypy-lang.org/
 
-xCDAT is an extension of `xarray`_ for climate data analysis on structured grids.
-It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library.
+xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library.
+
+The goal of xCDAT is to provide climate domain features and general utilities in xarray, which includes porting some core CDAT functionalities. xCDAT leverages several powerful libraries in the xarray ecosystem (e.g., `xESMF`_ and `cf_xarray`_) to deliver robust APIs. The xCDAT core team is aiming to provide a maintainable and extensible package that serves the needs of the climate community in the long-term.
 
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
 Planned Features
 -----------------
-
-The goal of xCDAT is to provide climate domain specific features and general utilities with xarray.
 
 Initial planned features include:
 
@@ -75,7 +74,7 @@ Initial planned features include:
 
   * Support rectilinear and cuvilinear grids
   * Python implementation of `regrid2`_ for handling cartesian latitude longitude grids
-  * API that wraps `xesmf`_ with utilities to handle edge cases
+  * API that wraps `xESMF`_ with utilities to handle edge cases
 
 * Vertical structured regridding
 
@@ -85,18 +84,19 @@ Things we are striving for:
 
 * Support for CF compliant, E3SM non-CF compliant, and common metadata
 
-  * Leverage `cf_xarray`_ to interpret `CF convention`_ attributes on ``xarray`` objects
+   * xCDAT primarily focuses on datasets that folllow the `CF convention`_. xCDAT leverages `cf_xarray`_ to interpret CF convention attributes on ``xarray`` objects
+   * Accomodations for specific non-CF compliant situations will be considered on a case-by-case basis
 
 * Robust handling of coordinates and its associated bounds
 
-  * Coordinate variables are retrieved with ``cf_xarray`` using either the ``"axis"``, ``"standard_name"``, or dimension name attribute.
-  * Bounds are retrieved with ``cf_xarray`` using the ``"bounds"`` attr.
+  * Coordinate variables are retrieved with ``cf_xarray`` using either the ``"axis"``, ``"standard_name"``, or dimension name attribute
+  * Bounds are retrieved with ``cf_xarray`` using the ``"bounds"`` attr
   * Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
 
 * Support for parallelism using `dask`_ where it is both possible and makes sense
 
 .. _regrid2: https://cdms.readthedocs.io/en/latest/regrid2.html
-.. _xesmf: https://pangeo-xesmf.readthedocs.io/en/latest/
+.. _xESMF: https://pangeo-xesmf.readthedocs.io/en/latest/
 .. _dask: https://dask.org/
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 .. _CF convention: http://cfconventions.org/
