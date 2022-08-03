@@ -1,3 +1,6 @@
+// This file stores the xcdat repository's workspace settings.
+// Simply open up this file in VS Code and it will be automatically configured using this file.
+// Workspace settings take precedence over your user settings.
 {
     "folders": [
         {
@@ -5,6 +8,9 @@
         }
     ],
     "settings": {
+        // ===================
+        // Editor settings
+        // ===================
         "editor.formatOnSave": true,
         // ===================
         // Python settings
