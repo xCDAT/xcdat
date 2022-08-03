@@ -101,21 +101,21 @@ Get Started
 
 Ready to contribute? Here's how to set up xCDAT for local development.
 
-VSCode
-~~~~~~
+VS Code, the editor of choice
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-We recommend using VSCode as your IDE because it is open-source and has great Python development support.
+We recommend using VS Code as your IDE because it is open-source and has great Python development support.
 
-Get VSCode here: https://code.visualstudio.com
+Get VS Code here: https://code.visualstudio.com
 
-VSCode Setup
-^^^^^^^^^^^^
-xCDAT includes a VSCode settings file (``.vscode/setting.json``). This file automatically configures your IDE with the Conda development environment, quality assurance tools, code line-length rulers, and more.
+VS Code Setup
+^^^^^^^^^^^^^
+xCDAT includes a VS Code workspace file (``.vscode/xcdat.code-setting``). This file automatically configures your IDE with the quality assurance tools, code line-length rulers, and more.
 
-Just open the cloned repository in VSCode and you are set!
+Make sure to follow the :ref:`Local Development` section below.
 
-Recommended VSCode Extensions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Recommended VS Code Extensions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
     * `Python <https://marketplace.visualstudio.com/items?itemName=ms-python.python>`_
     * `Pylance <https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance>`_
     * `Python Docstring Generator <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
@@ -123,6 +123,9 @@ Recommended VSCode Extensions
     * `Better Comments <https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments>`_
     * `Jupyter <https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter>`_
     * `Visual Studio Intellicode <https://marketplace.visualstudio.com/items?itemName=VisualStudioExptTeam.vscodeintellicode>`_
+
+
+.. _Local Development:
 
 Local Development
 ~~~~~~~~~~~~~~~~~
@@ -152,22 +155,27 @@ Local Development
 
     $ git clone git@github.com:your_name_here/xcdat.git
 
-4. Create and activate Conda development environment::
+4. <OPTIONAL> Open ``.vscode/xcdat.code-settings`` in VS Code
+
+
+5. Create and activate Conda development environment::
 
     $ cd xcdat
     $ conda env create -f conda-env/dev.yml
     $ conda activate xcdat_dev
 
-5. Install pre-commit::
+6. <OPTIONAL> Set VS Code Python interpretor to ``xcdat_dev``
+
+7. Install pre-commit::
 
     $ pre-commit install
     pre-commit installed at .git/hooks/pre-commit
 
-6. Create a branch for local development and make changes::
+8. Create a branch for local development and make changes::
 
     $ git checkout -b <BRANCH-NAME>
 
-7. `<OPTIONAL>` During or after making changes, check for formatting or linting issues using pre-commit::
+9. `<OPTIONAL>` During or after making changes, check for formatting or linting issues using pre-commit::
 
     # Step 9 performs this automatically on staged files in a commit
     $ pre-commit run --all-files
@@ -180,7 +188,7 @@ Local Development
     flake8...................................................................Passed
     mypy.....................................................................Passed
 
-8. Generate code coverage report and check unit tests pass::
+10. Generate code coverage report and check unit tests pass::
 
     $ make test # Automatically opens HTML report in your browser
     $ pytest # Does not automatically open HTML report in your browser
@@ -207,7 +215,7 @@ Local Development
 
     - The Coverage HTML report is much more detailed (e.g., exact lines of tested/untested code)
 
-9. Commit your changes::
+11. Commit your changes::
 
      $ git add .
      $ git commit -m <Your detailed description of your changes>
@@ -220,16 +228,16 @@ Local Development
      flake8...................................................................Passed
      mypy.....................................................................Passed
 
-10. Make sure pre-commit QA checks pass. Otherwise, fix any caught issues.
+12. Make sure pre-commit QA checks pass. Otherwise, fix any caught issues.
 
     - Most of the tools fix issues automatically so you just need to re-stage the files.
     - flake8 and mypy issues must be fixed automatically.
 
-11. Push changes::
+13. Push changes::
 
     $ git push origin <BRANCH-NAME>
 
-12. Submit a pull request through the GitHub website.
+14. Submit a pull request through the GitHub website.
 
 
 Pull Request Guidelines
