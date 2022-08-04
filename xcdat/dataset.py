@@ -102,9 +102,9 @@ def open_dataset(
             ds = xr.open_dataset(path, decode_times=False, **kwargs)
             ds = decode_non_cf_time(ds)
         else:
-            ds = xr.open_dataset(path, decode_times=True, **kwargs)
+            ds = xr.open_dataset(path, decode_times=True, **kwargs)  # type: ignore
     else:
-        ds = xr.open_dataset(path, decode_times=False, **kwargs)
+        ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
 
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
@@ -225,7 +225,7 @@ def open_mfdataset(
         decode_times=decode_times,
         data_vars=data_vars,
         preprocess=preprocess,
-        **kwargs,
+        **kwargs,  # type: ignore
     )
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
