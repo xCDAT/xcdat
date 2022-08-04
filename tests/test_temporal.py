@@ -419,19 +419,11 @@ class TestGroupAverage:
                 "lon": expected.lon,
                 "time": xr.DataArray(
                     data=np.array(
-                        [
-                            "2000-01-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
+                        [cftime.datetime(2000, 1, 1), cftime.datetime(2001, 1, 1)],
                     ),
                     coords={
                         "time": np.array(
-                            [
-                                "2000-01-01T00:00:00.000000000",
-                                "2001-01-01T00:00:00.000000000",
-                            ],
-                            dtype="datetime64[ns]",
+                            [cftime.datetime(2000, 1, 1), cftime.datetime(2001, 1, 1)],
                         )
                     },
                     dims=["time"],
@@ -470,19 +462,11 @@ class TestGroupAverage:
                 "lon": expected.lon,
                 "time": xr.DataArray(
                     data=np.array(
-                        [
-                            "2000-01-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
-                        ],
-                        dtype="datetime64[ns]",
+                        [cftime.datetime(2000, 1, 1), cftime.datetime(2001, 1, 1)],
                     ),
                     coords={
                         "time": np.array(
-                            [
-                                "2000-01-01T00:00:00.000000000",
-                                "2001-01-01T00:00:00.000000000",
-                            ],
-                            dtype="datetime64[ns]",
+                            [cftime.datetime(2000, 1, 1), cftime.datetime(2001, 1, 1)],
                         )
                     },
                     dims=["time"],
@@ -527,12 +511,11 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
+                            cftime.datetime(2000, 4, 1),
+                            cftime.datetime(2000, 7, 1),
+                            cftime.datetime(2000, 10, 1),
+                            cftime.datetime(2001, 1, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -577,13 +560,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
+                            cftime.datetime(2000, 1, 1),
+                            cftime.datetime(2000, 4, 1),
+                            cftime.datetime(2000, 7, 1),
+                            cftime.datetime(2000, 10, 1),
+                            cftime.datetime(2001, 1, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -626,24 +608,22 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
+                            cftime.datetime(2000, 1, 1),
+                            cftime.datetime(2000, 4, 1),
+                            cftime.datetime(2000, 7, 1),
+                            cftime.datetime(2000, 10, 1),
+                            cftime.datetime(2001, 1, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     coords={
                         "time": np.array(
                             [
-                                "2000-01-01T00:00:00.000000000",
-                                "2000-04-01T00:00:00.000000000",
-                                "2000-07-01T00:00:00.000000000",
-                                "2000-10-01T00:00:00.000000000",
-                                "2001-01-01T00:00:00.000000000",
+                                cftime.datetime(2000, 1, 1),
+                                cftime.datetime(2000, 4, 1),
+                                cftime.datetime(2000, 7, 1),
+                                cftime.datetime(2000, 10, 1),
+                                cftime.datetime(2001, 1, 1),
                             ],
-                            dtype="datetime64[ns]",
                         )
                     },
                     dims=["time"],
@@ -692,12 +672,11 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-02-01T00:00:00.000000000",
-                            "2000-05-01T00:00:00.000000000",
-                            "2000-08-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
+                            cftime.datetime(2000, 2, 1),
+                            cftime.datetime(2000, 5, 1),
+                            cftime.datetime(2000, 8, 1),
+                            cftime.datetime(2001, 2, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -783,13 +762,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-03-01T00:00:00.000000000",
-                            "2000-06-01T00:00:00.000000000",
-                            "2000-09-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
+                            cftime.datetime(2000, 1, 1),
+                            cftime.datetime(2000, 3, 1),
+                            cftime.datetime(2000, 6, 1),
+                            cftime.datetime(2000, 9, 1),
+                            cftime.datetime(2001, 2, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -833,13 +811,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-03-01T00:00:00.000000000",
-                            "2000-06-01T00:00:00.000000000",
-                            "2000-09-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
+                            cftime.datetime(2000, 1, 1),
+                            cftime.datetime(2000, 3, 1),
+                            cftime.datetime(2000, 6, 1),
+                            cftime.datetime(2000, 9, 1),
+                            cftime.datetime(2001, 2, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -876,13 +853,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-16T00:00:00.000000000",
-                            "2000-03-16T00:00:00.000000000",
-                            "2000-06-16T00:00:00.000000000",
-                            "2000-09-16T00:00:00.000000000",
-                            "2001-02-15T00:00:00.000000000",
+                            cftime.datetime(2000, 1, 16),
+                            cftime.datetime(2000, 3, 16),
+                            cftime.datetime(2000, 6, 16),
+                            cftime.datetime(2000, 9, 16),
+                            cftime.datetime(2001, 2, 15),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -917,7 +893,24 @@ class TestGroupAverage:
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
-                "time": ds.time,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.datetime(2000, 1, 16, 12),
+                            cftime.datetime(2000, 3, 16, 12),
+                            cftime.datetime(2000, 6, 16, 0),
+                            cftime.datetime(2000, 9, 16, 0),
+                            cftime.datetime(2001, 2, 15, 12),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={

@@ -1306,16 +1306,13 @@ class TemporalAccessor:
         return df_season
 
     def _convert_df_to_dt(self, df: pd.DataFrame) -> np.ndarray:
-        """Converts a DataFrame of datetime components to datetime objects.
+        """Converts a DataFrame of datetime components to cftime datetime
+        objects.
 
         datetime objects require at least a year, month, and day value. However,
         some modes and time frequencies don't require year, month, and/or day
         for grouping. For these cases, use default values of 1 in order to
         meet this datetime requirement.
-
-        If the default value of 1 is used for the years, datetime objects
-        must be created using `cftime.datetime` because year 1 is outside the
-        Timestamp-valid range.
 
         Parameters
         ----------
@@ -1325,11 +1322,12 @@ class TemporalAccessor:
         Returns
         -------
         np.ndarray
-            A numpy ndarray of datetime.datetime or cftime.datetime objects.
+            A numpy ndarray of cftime.datetime objects.
 
         Notes
         -----
         Refer to [3]_ and [4]_ for more information on Timestamp-valid range.
+        We use cftime.datetime objects to avoid these time range issues.
 
         References
         ----------
@@ -1344,18 +1342,12 @@ class TemporalAccessor:
             if component not in df_new.columns:
                 df_new[component] = default_val
 
-        year_is_unused = self._mode in ["climatology", "departures"] or (
-            self._mode == "average" and self._freq != "year"
-        )
-        if year_is_unused:
-            dates = [
-                cftime.datetime(year, month, day, hour)
-                for year, month, day, hour in zip(
-                    df_new.year, df_new.month, df_new.day, df_new.hour
-                )
-            ]
-        else:
-            dates = pd.to_datetime(df_new)
+        dates = [
+            cftime.datetime(year, month, day, hour)
+            for year, month, day, hour in zip(
+                df_new.year, df_new.month, df_new.day, df_new.hour
+            )
+        ]
 
         return np.array(dates)
 
