@@ -43,6 +43,7 @@
         // Extension settings
         // ===================
         "jupyter.notebookFileRoot": "${workspaceFolder}",
+        "jupyter.runStartupCommands": ["%load_ext autoreload", "%autoreload 2"],
         "autoDocstring.docstringFormat": "numpy"
     }
 }

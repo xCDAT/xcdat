@@ -321,24 +321,32 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     """
     ds = dataset.copy()
     time = get_axis_coord(ds, "T")
+    time_attrs = time.attrs
 
-    try:
-        calendar = time.attrs["calendar"]
-    except KeyError:
+    # NOTE: When opening datasets with `decode_times=False`, the "calendar" and
+    # "units" attributes are stored in `.encoding` (unlike `decode_times=True`
+    # which stores them in `.attrs`). Since xCDAT manually decodes non-CF
+    # compliant time coordinates by first setting `decode_times=False`, the
+    # "calendar" and "units" attrs are popped from the `.attrs` dict and stored
+    # in the `.encoding` dict to mimic xarray's behavior.
+    calendar = time_attrs.pop("calendar", None)
+    units_attr = time_attrs.pop("units", None)
+
+    if calendar is None:
         logger.warning(
             "This dataset's time coordinates do not have a 'calendar' attribute set, "
             "so time coordinates could not be decoded. Set the 'calendar' attribute "
-            "and try decoding the time coordinates again."
+            f"(`ds.{time.name}.attrs['calendar]`) and try decoding the time "
+            "coordinates again."
         )
         return ds
 
-    try:
-        units_attr = time.attrs["units"]
-    except KeyError:
+    if units_attr is None:
         logger.warning(
             "This dataset's time coordinates do not have a 'units' attribute set, "
             "so the time coordinates could not be decoded. Set the 'units' attribute "
-            "and try decoding the time coordinates again."
+            f"(`ds.{time.name}.attrs['units']`) and try decoding the time "
+            "coordinates again."
         )
         return ds
 
@@ -346,9 +354,9 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
         units, ref_date = _split_time_units_attr(units_attr)
     except ValueError:
         logger.warning(
-            f"This dataset's 'units' attribute ('{units_attr}') is not in a "
-            "supported format ('months since...' or 'years since...'), so the time "
-            "coordinates could not be decoded."
+            f"This dataset's time coordinates 'units' attribute ('{units_attr}') is "
+            "not in a supported format ('months since...' or 'years since...'), so the "
+            "time coordinates could not be decoded."
         )
         return ds
 
@@ -358,12 +366,16 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
         data=data,
         dims=time.dims,
         coords={time.name: data},
-        attrs=time.attrs,
+        # As mentioned in a comment above, the units and calendar attributes are
+        # popped from the `.attrs` dict.
+        attrs=time_attrs,
     )
     decoded_time.encoding = {
         "source": ds.encoding.get("source", "None"),
         "dtype": time.dtype,
         "original_shape": time.shape,
+        # The units and calendar attributes are now saved in the `.encoding`
+        # dict.
         "units": units_attr,
         "calendar": calendar,
     }

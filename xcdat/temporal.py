@@ -3,11 +3,11 @@ from itertools import chain
 from typing import Dict, List, Literal, Optional, Tuple, TypedDict, get_args
 
 import cf_xarray  # noqa: F401
-import cftime
 import numpy as np
 import pandas as pd
 import xarray as xr
 from dask.array.core import Array
+from xarray.coding.cftime_offsets import get_date_type
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
@@ -149,6 +149,17 @@ class TemporalAccessor:
         self._dim = get_axis_coord(self._dataset, "T").name
 
         self._time_bounds = self._dataset.bounds.get_bounds("T").copy()
+
+        try:
+            self.calendar = self._dataset[self._dim].encoding["calendar"]
+            self.date_type = get_date_type(self.calendar)
+        except KeyError:
+            raise KeyError(
+                "This dataset's time coordinates do not have a 'calendar' encoding "
+                "attribute set, which might indicate that the time coordinates were not "
+                "decoded to datetime objects. Ensure that the time coordinates are "
+                "decoded before performing temporal averaging operations."
+            )
 
     def average(self, data_var: str, weighted: bool = True, keep_weights: bool = False):
         """
@@ -1306,7 +1317,8 @@ class TemporalAccessor:
         return df_season
 
     def _convert_df_to_dt(self, df: pd.DataFrame) -> np.ndarray:
-        """Converts a DataFrame of datetime components to cftime datetime
+        """
+        Converts a DataFrame of datetime components to cftime datetime
         objects.
 
         datetime objects require at least a year, month, and day value. However,
@@ -1343,7 +1355,7 @@ class TemporalAccessor:
                 df_new[component] = default_val
 
         dates = [
-            cftime.datetime(year, month, day, hour)
+            self.date_type(year, month, day, hour)
             for year, month, day, hour in zip(
                 df_new.year, df_new.month, df_new.day, df_new.hour
             )
