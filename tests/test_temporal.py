@@ -390,7 +390,7 @@ class TestGroupAverage:
         )
         time.encoding = {"calendar": "standard"}
         time_bnds = xr.DataArray(
-            name="time_bndsZ",
+            name="time_bnds",
             data=np.array(
                 [
                     ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
