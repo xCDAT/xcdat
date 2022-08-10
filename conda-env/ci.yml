@@ -18,6 +18,8 @@ dependencies:
     - pandas
     - xarray
     - xesmf
+    - python-dateutil
+    - types-python-dateutil
     # Testing
     # ==================
     - pytest
