@@ -41,17 +41,26 @@ time_cf = xr.DataArray(
         "standard_name": "time",
     },
 )
+# NOTE: With `decode_times=True`, the "calendar" and "units" attributes are
+# stored in `.encoding`.
+time_cf.encoding["calendar"] = "standard"
+time_cf.encoding["units"] = "days since 2000-01-01"
+
+
+# NOTE: With `decode_times=False`, the "calendar" and "units" attributes are
+# stored in `.attrs`.
 time_non_cf = xr.DataArray(
     data=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
     dims=["time"],
     attrs={
-        "units": "months since 2000-01-01",
-        "calendar": "standard",
         "axis": "T",
         "long_name": "time",
         "standard_name": "time",
+        "calendar": "standard",
+        "units": "months since 2000-01-01",
     },
 )
+
 time_non_cf_unsupported = xr.DataArray(
     data=np.arange(1850 + 1 / 24.0, 1851 + 3 / 12.0, 1 / 12.0),
     dims=["time"],

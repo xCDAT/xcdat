@@ -19,6 +19,13 @@ class TestTemporalAccessor:
         obj = ds.temporal
         assert obj._dataset.identical(ds)
 
+    def test_raises_error_if_calendar_encoding_attr_is_not_set(self):
+        ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds.time.encoding = {}
+
+        with pytest.raises(KeyError):
+            TemporalAccessor(ds)
+
 
 class TestAverage:
     def test_averages_for_yearly_time_series(self):
@@ -47,6 +54,7 @@ class TestAverage:
                 ),
             }
         )
+        ds.time.encoding = {"calendar": "standard"}
         ds["time_bnds"] = xr.DataArray(
             name="time_bnds",
             data=np.array(
@@ -132,6 +140,8 @@ class TestAverage:
                 ),
             }
         )
+        ds.time.encoding = {"calendar": "standard"}
+
         ds["time_bnds"] = xr.DataArray(
             name="time_bnds",
             data=np.array(
@@ -215,6 +225,8 @@ class TestAverage:
                 ),
             }
         )
+        ds.time.encoding = {"calendar": "standard"}
+
         ds["time_bnds"] = xr.DataArray(
             name="time_bnds",
             data=np.array(
@@ -298,6 +310,8 @@ class TestAverage:
                 ),
             }
         )
+        ds.time.encoding = {"calendar": "standard"}
+
         ds["time_bnds"] = xr.DataArray(
             name="time_bnds",
             data=np.array(
@@ -374,6 +388,7 @@ class TestGroupAverage:
             dims=["time"],
             attrs={"axis": "T", "long_name": "time", "standard_name": "time"},
         )
+        time.encoding = {"calendar": "standard"}
         time_bnds = xr.DataArray(
             name="time_bnds",
             data=np.array(
@@ -420,18 +435,16 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     coords={
                         "time": np.array(
                             [
-                                "2000-01-01T00:00:00.000000000",
-                                "2001-01-01T00:00:00.000000000",
+                                cftime.DatetimeGregorian(2000, 1, 1),
+                                cftime.DatetimeGregorian(2001, 1, 1),
                             ],
-                            dtype="datetime64[ns]",
                         )
                     },
                     dims=["time"],
@@ -471,18 +484,16 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     coords={
                         "time": np.array(
                             [
-                                "2000-01-01T00:00:00.000000000",
-                                "2001-01-01T00:00:00.000000000",
+                                cftime.DatetimeGregorian(2000, 1, 1),
+                                cftime.DatetimeGregorian(2001, 1, 1),
                             ],
-                            dtype="datetime64[ns]",
                         )
                     },
                     dims=["time"],
@@ -527,12 +538,11 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -577,13 +587,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -626,24 +635,22 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                            "2000-07-01T00:00:00.000000000",
-                            "2000-10-01T00:00:00.000000000",
-                            "2001-01-01T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     coords={
                         "time": np.array(
                             [
-                                "2000-01-01T00:00:00.000000000",
-                                "2000-04-01T00:00:00.000000000",
-                                "2000-07-01T00:00:00.000000000",
-                                "2000-10-01T00:00:00.000000000",
-                                "2001-01-01T00:00:00.000000000",
+                                cftime.DatetimeGregorian(2000, 1, 1),
+                                cftime.DatetimeGregorian(2000, 4, 1),
+                                cftime.DatetimeGregorian(2000, 7, 1),
+                                cftime.DatetimeGregorian(2000, 10, 1),
+                                cftime.DatetimeGregorian(2001, 1, 1),
                             ],
-                            dtype="datetime64[ns]",
                         )
                     },
                     dims=["time"],
@@ -692,12 +699,11 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-02-01T00:00:00.000000000",
-                            "2000-05-01T00:00:00.000000000",
-                            "2000-08-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 2, 1),
+                            cftime.DatetimeGregorian(2000, 5, 1),
+                            cftime.DatetimeGregorian(2000, 8, 1),
+                            cftime.DatetimeGregorian(2001, 2, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -783,13 +789,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-03-01T00:00:00.000000000",
-                            "2000-06-01T00:00:00.000000000",
-                            "2000-09-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 3, 1),
+                            cftime.DatetimeGregorian(2000, 6, 1),
+                            cftime.DatetimeGregorian(2000, 9, 1),
+                            cftime.DatetimeGregorian(2001, 2, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -833,13 +838,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-03-01T00:00:00.000000000",
-                            "2000-06-01T00:00:00.000000000",
-                            "2000-09-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 3, 1),
+                            cftime.DatetimeGregorian(2000, 6, 1),
+                            cftime.DatetimeGregorian(2000, 9, 1),
+                            cftime.DatetimeGregorian(2001, 2, 1),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -876,13 +880,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-16T00:00:00.000000000",
-                            "2000-03-16T00:00:00.000000000",
-                            "2000-06-16T00:00:00.000000000",
-                            "2000-09-16T00:00:00.000000000",
-                            "2001-02-15T00:00:00.000000000",
+                            cftime.DatetimeGregorian(2000, 1, 16),
+                            cftime.DatetimeGregorian(2000, 3, 16),
+                            cftime.DatetimeGregorian(2000, 6, 16),
+                            cftime.DatetimeGregorian(2000, 9, 16),
+                            cftime.DatetimeGregorian(2001, 2, 15),
                         ],
-                        dtype="datetime64[ns]",
                     ),
                     dims=["time"],
                     attrs={
@@ -917,7 +920,24 @@ class TestGroupAverage:
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
-                "time": ds.time,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 1, 16, 12),
+                            cftime.DatetimeGregorian(2000, 3, 16, 12),
+                            cftime.DatetimeGregorian(2000, 6, 16, 0),
+                            cftime.DatetimeGregorian(2000, 9, 16, 0),
+                            cftime.DatetimeGregorian(2001, 2, 15, 12),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
@@ -952,19 +972,19 @@ class TestClimatology:
         expected_time = xr.DataArray(
             data=np.array(
                 [
-                    cftime.datetime(1, 1, 1),
-                    cftime.datetime(1, 4, 1),
-                    cftime.datetime(1, 7, 1),
-                    cftime.datetime(1, 10, 1),
+                    cftime.DatetimeGregorian(1, 1, 1),
+                    cftime.DatetimeGregorian(1, 4, 1),
+                    cftime.DatetimeGregorian(1, 7, 1),
+                    cftime.DatetimeGregorian(1, 10, 1),
                 ],
             ),
             coords={
                 "time": np.array(
                     [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
                     ],
                 ),
             },
@@ -1007,19 +1027,19 @@ class TestClimatology:
         expected_time = xr.DataArray(
             data=np.array(
                 [
-                    cftime.datetime(1, 1, 1),
-                    cftime.datetime(1, 4, 1),
-                    cftime.datetime(1, 7, 1),
-                    cftime.datetime(1, 10, 1),
+                    cftime.DatetimeGregorian(1, 1, 1),
+                    cftime.DatetimeGregorian(1, 4, 1),
+                    cftime.DatetimeGregorian(1, 7, 1),
+                    cftime.DatetimeGregorian(1, 10, 1),
                 ],
             ),
             coords={
                 "time": np.array(
                     [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
                     ],
                 ),
             },
@@ -1059,19 +1079,19 @@ class TestClimatology:
         expected_time = xr.DataArray(
             data=np.array(
                 [
-                    cftime.datetime(1, 1, 1),
-                    cftime.datetime(1, 4, 1),
-                    cftime.datetime(1, 7, 1),
-                    cftime.datetime(1, 10, 1),
+                    cftime.DatetimeGregorian(1, 1, 1),
+                    cftime.DatetimeGregorian(1, 4, 1),
+                    cftime.DatetimeGregorian(1, 7, 1),
+                    cftime.DatetimeGregorian(1, 10, 1),
                 ],
             ),
             coords={
                 "time": np.array(
                     [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
                     ],
                 ),
             },
@@ -1116,19 +1136,19 @@ class TestClimatology:
         expected_time = xr.DataArray(
             data=np.array(
                 [
-                    cftime.datetime(1, 2, 1),
-                    cftime.datetime(1, 5, 1),
-                    cftime.datetime(1, 8, 1),
-                    cftime.datetime(1, 11, 1),
+                    cftime.DatetimeGregorian(1, 2, 1),
+                    cftime.DatetimeGregorian(1, 5, 1),
+                    cftime.DatetimeGregorian(1, 8, 1),
+                    cftime.DatetimeGregorian(1, 11, 1),
                 ],
             ),
             coords={
                 "time": np.array(
                     [
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 11, 1),
+                        cftime.DatetimeGregorian(1, 2, 1),
+                        cftime.DatetimeGregorian(1, 5, 1),
+                        cftime.DatetimeGregorian(1, 8, 1),
+                        cftime.DatetimeGregorian(1, 11, 1),
                     ],
                 ),
             },
@@ -1169,35 +1189,35 @@ class TestClimatology:
         expected_time = xr.DataArray(
             data=np.array(
                 [
-                    cftime.datetime(1, 1, 1),
-                    cftime.datetime(1, 2, 1),
-                    cftime.datetime(1, 3, 1),
-                    cftime.datetime(1, 4, 1),
-                    cftime.datetime(1, 5, 1),
-                    cftime.datetime(1, 6, 1),
-                    cftime.datetime(1, 7, 1),
-                    cftime.datetime(1, 8, 1),
-                    cftime.datetime(1, 9, 1),
-                    cftime.datetime(1, 10, 1),
-                    cftime.datetime(1, 11, 1),
-                    cftime.datetime(1, 12, 1),
+                    cftime.DatetimeGregorian(1, 1, 1),
+                    cftime.DatetimeGregorian(1, 2, 1),
+                    cftime.DatetimeGregorian(1, 3, 1),
+                    cftime.DatetimeGregorian(1, 4, 1),
+                    cftime.DatetimeGregorian(1, 5, 1),
+                    cftime.DatetimeGregorian(1, 6, 1),
+                    cftime.DatetimeGregorian(1, 7, 1),
+                    cftime.DatetimeGregorian(1, 8, 1),
+                    cftime.DatetimeGregorian(1, 9, 1),
+                    cftime.DatetimeGregorian(1, 10, 1),
+                    cftime.DatetimeGregorian(1, 11, 1),
+                    cftime.DatetimeGregorian(1, 12, 1),
                 ],
             ),
             coords={
                 "time": np.array(
                     [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 3, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 6, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 9, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 11, 1),
-                        cftime.datetime(1, 12, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 2, 1),
+                        cftime.DatetimeGregorian(1, 3, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 5, 1),
+                        cftime.DatetimeGregorian(1, 6, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 8, 1),
+                        cftime.DatetimeGregorian(1, 9, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 11, 1),
+                        cftime.DatetimeGregorian(1, 12, 1),
                     ],
                 ),
             },
@@ -1232,35 +1252,35 @@ class TestClimatology:
         expected_time = xr.DataArray(
             data=np.array(
                 [
-                    cftime.datetime(1, 1, 1),
-                    cftime.datetime(1, 2, 1),
-                    cftime.datetime(1, 3, 1),
-                    cftime.datetime(1, 4, 1),
-                    cftime.datetime(1, 5, 1),
-                    cftime.datetime(1, 6, 1),
-                    cftime.datetime(1, 7, 1),
-                    cftime.datetime(1, 8, 1),
-                    cftime.datetime(1, 9, 1),
-                    cftime.datetime(1, 10, 1),
-                    cftime.datetime(1, 11, 1),
-                    cftime.datetime(1, 12, 1),
+                    cftime.DatetimeGregorian(1, 1, 1),
+                    cftime.DatetimeGregorian(1, 2, 1),
+                    cftime.DatetimeGregorian(1, 3, 1),
+                    cftime.DatetimeGregorian(1, 4, 1),
+                    cftime.DatetimeGregorian(1, 5, 1),
+                    cftime.DatetimeGregorian(1, 6, 1),
+                    cftime.DatetimeGregorian(1, 7, 1),
+                    cftime.DatetimeGregorian(1, 8, 1),
+                    cftime.DatetimeGregorian(1, 9, 1),
+                    cftime.DatetimeGregorian(1, 10, 1),
+                    cftime.DatetimeGregorian(1, 11, 1),
+                    cftime.DatetimeGregorian(1, 12, 1),
                 ],
             ),
             coords={
                 "time": np.array(
                     [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 3, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 6, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 9, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 11, 1),
-                        cftime.datetime(1, 12, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 2, 1),
+                        cftime.DatetimeGregorian(1, 3, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 5, 1),
+                        cftime.DatetimeGregorian(1, 6, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 8, 1),
+                        cftime.DatetimeGregorian(1, 9, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 11, 1),
+                        cftime.DatetimeGregorian(1, 12, 1),
                     ],
                 ),
             },
@@ -1294,35 +1314,35 @@ class TestClimatology:
         expected_time = xr.DataArray(
             data=np.array(
                 [
-                    cftime.datetime(1, 1, 16),
-                    cftime.datetime(1, 2, 15),
-                    cftime.datetime(1, 3, 16),
-                    cftime.datetime(1, 4, 16),
-                    cftime.datetime(1, 5, 16),
-                    cftime.datetime(1, 6, 16),
-                    cftime.datetime(1, 7, 16),
-                    cftime.datetime(1, 8, 16),
-                    cftime.datetime(1, 9, 16),
-                    cftime.datetime(1, 10, 16),
-                    cftime.datetime(1, 11, 16),
-                    cftime.datetime(1, 12, 16),
+                    cftime.DatetimeGregorian(1, 1, 16),
+                    cftime.DatetimeGregorian(1, 2, 15),
+                    cftime.DatetimeGregorian(1, 3, 16),
+                    cftime.DatetimeGregorian(1, 4, 16),
+                    cftime.DatetimeGregorian(1, 5, 16),
+                    cftime.DatetimeGregorian(1, 6, 16),
+                    cftime.DatetimeGregorian(1, 7, 16),
+                    cftime.DatetimeGregorian(1, 8, 16),
+                    cftime.DatetimeGregorian(1, 9, 16),
+                    cftime.DatetimeGregorian(1, 10, 16),
+                    cftime.DatetimeGregorian(1, 11, 16),
+                    cftime.DatetimeGregorian(1, 12, 16),
                 ],
             ),
             coords={
                 "time": np.array(
                     [
-                        cftime.datetime(1, 1, 16),
-                        cftime.datetime(1, 2, 15),
-                        cftime.datetime(1, 3, 16),
-                        cftime.datetime(1, 4, 16),
-                        cftime.datetime(1, 5, 16),
-                        cftime.datetime(1, 6, 16),
-                        cftime.datetime(1, 7, 16),
-                        cftime.datetime(1, 8, 16),
-                        cftime.datetime(1, 9, 16),
-                        cftime.datetime(1, 10, 16),
-                        cftime.datetime(1, 11, 16),
-                        cftime.datetime(1, 12, 16),
+                        cftime.DatetimeGregorian(1, 1, 16),
+                        cftime.DatetimeGregorian(1, 2, 15),
+                        cftime.DatetimeGregorian(1, 3, 16),
+                        cftime.DatetimeGregorian(1, 4, 16),
+                        cftime.DatetimeGregorian(1, 5, 16),
+                        cftime.DatetimeGregorian(1, 6, 16),
+                        cftime.DatetimeGregorian(1, 7, 16),
+                        cftime.DatetimeGregorian(1, 8, 16),
+                        cftime.DatetimeGregorian(1, 9, 16),
+                        cftime.DatetimeGregorian(1, 10, 16),
+                        cftime.DatetimeGregorian(1, 11, 16),
+                        cftime.DatetimeGregorian(1, 12, 16),
                     ],
                 ),
             },
@@ -1356,35 +1376,35 @@ class TestClimatology:
         expected_time = xr.DataArray(
             data=np.array(
                 [
-                    cftime.datetime(1, 1, 16),
-                    cftime.datetime(1, 2, 15),
-                    cftime.datetime(1, 3, 16),
-                    cftime.datetime(1, 4, 16),
-                    cftime.datetime(1, 5, 16),
-                    cftime.datetime(1, 6, 16),
-                    cftime.datetime(1, 7, 16),
-                    cftime.datetime(1, 8, 16),
-                    cftime.datetime(1, 9, 16),
-                    cftime.datetime(1, 10, 16),
-                    cftime.datetime(1, 11, 16),
-                    cftime.datetime(1, 12, 16),
+                    cftime.DatetimeGregorian(1, 1, 16),
+                    cftime.DatetimeGregorian(1, 2, 15),
+                    cftime.DatetimeGregorian(1, 3, 16),
+                    cftime.DatetimeGregorian(1, 4, 16),
+                    cftime.DatetimeGregorian(1, 5, 16),
+                    cftime.DatetimeGregorian(1, 6, 16),
+                    cftime.DatetimeGregorian(1, 7, 16),
+                    cftime.DatetimeGregorian(1, 8, 16),
+                    cftime.DatetimeGregorian(1, 9, 16),
+                    cftime.DatetimeGregorian(1, 10, 16),
+                    cftime.DatetimeGregorian(1, 11, 16),
+                    cftime.DatetimeGregorian(1, 12, 16),
                 ],
             ),
             coords={
                 "time": np.array(
                     [
-                        cftime.datetime(1, 1, 16),
-                        cftime.datetime(1, 2, 15),
-                        cftime.datetime(1, 3, 16),
-                        cftime.datetime(1, 4, 16),
-                        cftime.datetime(1, 5, 16),
-                        cftime.datetime(1, 6, 16),
-                        cftime.datetime(1, 7, 16),
-                        cftime.datetime(1, 8, 16),
-                        cftime.datetime(1, 9, 16),
-                        cftime.datetime(1, 10, 16),
-                        cftime.datetime(1, 11, 16),
-                        cftime.datetime(1, 12, 16),
+                        cftime.DatetimeGregorian(1, 1, 16),
+                        cftime.DatetimeGregorian(1, 2, 15),
+                        cftime.DatetimeGregorian(1, 3, 16),
+                        cftime.DatetimeGregorian(1, 4, 16),
+                        cftime.DatetimeGregorian(1, 5, 16),
+                        cftime.DatetimeGregorian(1, 6, 16),
+                        cftime.DatetimeGregorian(1, 7, 16),
+                        cftime.DatetimeGregorian(1, 8, 16),
+                        cftime.DatetimeGregorian(1, 9, 16),
+                        cftime.DatetimeGregorian(1, 10, 16),
+                        cftime.DatetimeGregorian(1, 11, 16),
+                        cftime.DatetimeGregorian(1, 12, 16),
                     ],
                 ),
             },
@@ -1652,21 +1672,21 @@ class Test_GetWeights:
                 name="month",
                 data=np.array(
                     [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 3, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 6, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 9, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 11, 1),
-                        cftime.datetime(1, 12, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 12, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 2, 1),
+                        cftime.DatetimeGregorian(1, 3, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 5, 1),
+                        cftime.DatetimeGregorian(1, 6, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 8, 1),
+                        cftime.DatetimeGregorian(1, 9, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 11, 1),
+                        cftime.DatetimeGregorian(1, 12, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 2, 1),
+                        cftime.DatetimeGregorian(1, 12, 1),
                     ],
                 ),
                 coords={"time": ds.time},
@@ -1846,6 +1866,7 @@ class Test_GetWeights:
                     "bounds": "time_bnds",
                 },
             )
+            ds.time.encoding = {"calendar": "standard"}
             ds["ts"] = xr.DataArray(
                 name="ts",
                 data=np.ones((12, 4, 4)),
@@ -2242,6 +2263,7 @@ class Test_GetWeights:
                     "bounds": "time_bnds",
                 },
             )
+            ds.time.encoding = {"calendar": "standard"}
             ds["ts"] = xr.DataArray(
                 name="ts",
                 data=np.ones((12, 4, 4)),
@@ -2319,18 +2341,18 @@ class Test_GetWeights:
                 name="season",
                 data=np.array(
                     [
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
                     ],
                 ),
                 coords={"time": ds.time},
@@ -2375,21 +2397,21 @@ class Test_GetWeights:
                 name="season",
                 data=np.array(
                     [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
                     ],
                 ),
                 coords={"time": ds.time},
@@ -2438,21 +2460,21 @@ class Test_GetWeights:
                 name="month",
                 data=np.array(
                     [
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 3, 1),
-                        cftime.datetime(1, 4, 1),
-                        cftime.datetime(1, 5, 1),
-                        cftime.datetime(1, 6, 1),
-                        cftime.datetime(1, 7, 1),
-                        cftime.datetime(1, 8, 1),
-                        cftime.datetime(1, 9, 1),
-                        cftime.datetime(1, 10, 1),
-                        cftime.datetime(1, 11, 1),
-                        cftime.datetime(1, 12, 1),
-                        cftime.datetime(1, 1, 1),
-                        cftime.datetime(1, 2, 1),
-                        cftime.datetime(1, 12, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 2, 1),
+                        cftime.DatetimeGregorian(1, 3, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 5, 1),
+                        cftime.DatetimeGregorian(1, 6, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 8, 1),
+                        cftime.DatetimeGregorian(1, 9, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                        cftime.DatetimeGregorian(1, 11, 1),
+                        cftime.DatetimeGregorian(1, 12, 1),
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 2, 1),
+                        cftime.DatetimeGregorian(1, 12, 1),
                     ],
                 ),
                 coords={"time": ds.time},
@@ -2500,21 +2522,21 @@ class Test_GetWeights:
                 name="month_day",
                 data=np.array(
                     [
-                        cftime.datetime(1, 1, 16),
-                        cftime.datetime(1, 2, 15),
-                        cftime.datetime(1, 3, 16),
-                        cftime.datetime(1, 4, 16),
-                        cftime.datetime(1, 5, 6),
-                        cftime.datetime(1, 6, 16),
-                        cftime.datetime(1, 7, 16),
-                        cftime.datetime(1, 8, 16),
-                        cftime.datetime(1, 9, 16),
-                        cftime.datetime(1, 10, 16),
-                        cftime.datetime(1, 11, 16),
-                        cftime.datetime(1, 12, 16),
-                        cftime.datetime(1, 1, 16),
-                        cftime.datetime(1, 2, 15),
-                        cftime.datetime(1, 12, 16),
+                        cftime.DatetimeGregorian(1, 1, 16),
+                        cftime.DatetimeGregorian(1, 2, 15),
+                        cftime.DatetimeGregorian(1, 3, 16),
+                        cftime.DatetimeGregorian(1, 4, 16),
+                        cftime.DatetimeGregorian(1, 5, 6),
+                        cftime.DatetimeGregorian(1, 6, 16),
+                        cftime.DatetimeGregorian(1, 7, 16),
+                        cftime.DatetimeGregorian(1, 8, 16),
+                        cftime.DatetimeGregorian(1, 9, 16),
+                        cftime.DatetimeGregorian(1, 10, 16),
+                        cftime.DatetimeGregorian(1, 11, 16),
+                        cftime.DatetimeGregorian(1, 12, 16),
+                        cftime.DatetimeGregorian(1, 1, 16),
+                        cftime.DatetimeGregorian(1, 2, 15),
+                        cftime.DatetimeGregorian(1, 12, 16),
                     ],
                 ),
                 coords={"time": ds.time},
