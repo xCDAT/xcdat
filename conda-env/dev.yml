@@ -20,6 +20,15 @@ dependencies:
     - xesmf=0.6.3
     - python-dateutil=2.8.2
     - types-python-dateutil=2.8.19
+    # Documentation
+    # ==================
+    - sphinx=4.5.0
+    - sphinxcontrib-napoleon=0.7
+    - sphinx-autosummary-accessors=2022-4-0
+    - sphinx-book-theme=0.3.2
+    - sphinx-copybutton=0.5.0
+    - nbsphinx=0.8.9
+    - pandoc=2.18
     # Quality Assurance
     # ==================
     # If versions are updated, also update 'rev' in `.pre-commit.config.yaml`
@@ -38,13 +47,4 @@ dependencies:
     - matplotlib=3.5.2
     - jupyterlab=3.4.3
     - tbump=6.9.0
-    # Documentation
-    # ==================
-    - sphinx=4.5.0
-    - sphinxcontrib-napoleon=0.7
-    - sphinx-autosummary-accessors=2022-4-0
-    - sphinx-book-theme=0.3.2
-    - sphinx-copybutton=0.5.0
-    - nbsphinx=0.8.9
-    - pandoc=2.18
 prefix: /opt/miniconda3/envs/xcdat_dev
