@@ -40,5 +40,5 @@ repos:
                     numpy==1.22.4,
                     pandas==1.4.3,
                     xarray==2022.3.0,
-                    types-python-dateutil==2.8.2,
+                    types-python-dateutil==2.8.19,
                 ]
