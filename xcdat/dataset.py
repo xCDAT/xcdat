@@ -324,8 +324,8 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     time_attrs = time.attrs
 
     # NOTE: When opening datasets with `decode_times=False`, the "calendar" and
-    # "units" attributes are stored in `.encoding` (unlike `decode_times=True`
-    # which stores them in `.attrs`). Since xCDAT manually decodes non-CF
+    # "units" attributes are stored in `.attrs` (unlike `decode_times=True`
+    # which stores them in `.encoding`). Since xCDAT manually decodes non-CF
     # compliant time coordinates by first setting `decode_times=False`, the
     # "calendar" and "units" attrs are popped from the `.attrs` dict and stored
     # in the `.encoding` dict to mimic xarray's behavior.
