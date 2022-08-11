@@ -325,28 +325,17 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset([self.file_path1, self.file_path2], decode_times=True)
-
         expected = ds1.copy().merge(ds2.copy())
-        expected.time.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": True,
-            "chunksizes": None,
-            # Set source as result source because it changes every test run.
-            "source": result.time.encoding["source"],
-            "original_shape": (15,),
-            "dtype": np.dtype(np.float64),
-            "units": "days since 2000-01-01",
-            "calendar": "standard",
-        }
+
         assert result.identical(expected)
 
-        # Delete '_FillValue' dict entry because it is `np.nan`, and asserting
-        # equality between two `np.nan` will result in False.
-        del result.time.encoding["_FillValue"]
-        assert result.time.encoding == expected.time.encoding
+        # We mainly care for calendar and units attributes. We don't perform
+        # equality assertion on the entire time `.encoding` dict because there
+        # might be different encoding attributes added or removed between xarray
+        # versions (e.g., "bzip2", "ztsd", "blosc", and "szip" are added in
+        # v2022.06.0), which makes that assertion fragile.
+        assert result.time.encoding["calendar"] == "standard"
+        assert result.time.encoding["units"] == "days since 2000-01-01"
 
     def test_non_cf_compliant_time_is_not_decoded(self):
         ds1 = generate_dataset(cf_compliant=False, has_bounds=True)
