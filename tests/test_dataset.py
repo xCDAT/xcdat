@@ -341,8 +341,11 @@ class TestOpenMfDataset:
             "units": "days since 2000-01-01",
             "calendar": "standard",
         }
-
         assert result.identical(expected)
+
+        # Delete '_FillValue' dict entry because it is `np.nan`, and asserting
+        # equality between two `np.nan` will result in False.
+        del result.time.encoding["_FillValue"]
         assert result.time.encoding == expected.time.encoding
 
     def test_non_cf_compliant_time_is_not_decoded(self):
