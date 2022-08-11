@@ -700,7 +700,7 @@ class TemporalAccessor:
         # it becomes obsolete after the data variable is averaged. When the
         # averaged data variable is added to the dataset, the new time dimension
         # and its associated coordinates are also added.
-        ds = ds.drop_dims("time")
+        ds = ds.drop_dims(self._dim)
         ds[dv.name] = dv
 
         if keep_weights:
@@ -733,7 +733,7 @@ class TemporalAccessor:
         Raises
         ------
         KeyError
-            If the Dataset does not have a "time" dimension.
+            If the Dataset does not have a time dimension.
         ValueError
             If an incorrect ``freq`` arg was passed.
         ValueError
@@ -806,15 +806,18 @@ class TemporalAccessor:
         # method concatenates the time dimension to non-time dimension data
         # vars, which is not a desired behavior.
         ds = dataset.copy()
-        ds_time = ds.get([v for v in ds.data_vars if "time" in ds[v].dims])
-        ds_no_time = ds.get([v for v in ds.data_vars if "time" not in ds[v].dims])
+        ds_time = ds.get([v for v in ds.data_vars if self._dim in ds[v].dims])
+        ds_no_time = ds.get([v for v in ds.data_vars if self._dim not in ds[v].dims])
 
-        start_year, end_year = (ds.time.dt.year.values[0], ds.time.dt.year.values[-1])
+        start_year, end_year = (
+            ds[self._dim].dt.year.values[0],
+            ds[self._dim].dt.year.values[-1],
+        )
         incomplete_seasons = (f"{start_year}-01", f"{start_year}-02", f"{end_year}-12")
         for year_month in incomplete_seasons:
             try:
-                coord_pt = ds.loc[dict(time=year_month)].time[0]
-                ds_time = ds_time.where(ds_time.time != coord_pt, drop=True)  # type: ignore
+                coord_pt = ds.loc[dict(time=year_month)][self._dim][0]
+                ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)  # type: ignore
                 self._time_bounds = ds_time[self._time_bounds.name]
             except (KeyError, IndexError):
                 continue
@@ -923,7 +926,7 @@ class TemporalAccessor:
 
         # After grouping and aggregating the data variable values, the
         # original time dimension is replaced with the grouped time dimension.
-        # For example, grouping on "year_season" replaces the "time" dimension
+        # For example, grouping on "year_season" replaces the time dimension
         # with "year_season". This dimension needs to be renamed back to
         # the original time dimension name before the data variable is added
         # back to the dataset so that the CF compliant name is maintained.
@@ -1072,11 +1075,11 @@ class TemporalAccessor:
         time_grouped = xr.DataArray(
             name="_".join(df_dt_components.columns),
             data=dt_objects,
-            coords={"time": time_coords.time},
-            dims=["time"],
-            attrs=time_coords.time.attrs,
+            coords={self._dim: time_coords[self._dim]},
+            dims=[self._dim],
+            attrs=time_coords[self._dim].attrs,
         )
-        time_grouped.encoding = time_coords.time.encoding
+        time_grouped.encoding = time_coords[self._dim].encoding
 
         return time_grouped
 
