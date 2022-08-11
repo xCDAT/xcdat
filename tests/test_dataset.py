@@ -305,6 +305,46 @@ class TestOpenMfDataset:
         self.file_path1 = f"{dir}/file1.nc"
         self.file_path2 = f"{dir}/file2.nc"
 
+    def test_mfdataset_keeps_time_encoding_dict(self):
+        # FIXME: This test always passes because `xr.open_mfdatset()` always
+        # keeps the time encoding attrs, which isn't the expected behavior.
+        # Based on this test, if datasets are generated in xarray and written
+        # out with `to_netcdf()` and then opened and merged using
+        # `xr.open_mfdataset()`, the time encoding attributes are not dropped.
+        # On the other hand, if multiple real world datasets that did not
+        # originate from xarray (written out with `.to_netcdf()`) are opened
+        # using `xr.open_mfdataset()`, the time encoding attrs are dropped.
+        # (Refer to https://github.com/pydata/xarray/issues/2436). My theory is
+        # that xarray maintains the time encoding attrs if datasets are written
+        # out with `.to_netcdf()`, and drops it for other cases such
+        # as opening multiple datasets from other sources.
+        ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds1.to_netcdf(self.file_path1)
+        ds2 = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds2 = ds2.rename_vars({"ts": "tas"})
+        ds2.to_netcdf(self.file_path2)
+
+        result = open_mfdataset([self.file_path1, self.file_path2], decode_times=True)
+
+        expected = ds1.copy().merge(ds2.copy())
+        expected.time.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": True,
+            "chunksizes": None,
+            # Set source as result source because it changes every test run.
+            "source": result.time.encoding["source"],
+            "original_shape": (15,),
+            "dtype": np.dtype(np.int64),
+            "units": "hours since 2000-01-16 12:00:00",
+            "calendar": "proleptic_gregorian",
+        }
+
+        assert result.identical(expected)
+        assert result.time.encoding == expected.time.encoding
+
     def test_non_cf_compliant_time_is_not_decoded(self):
         ds1 = generate_dataset(cf_compliant=False, has_bounds=True)
         ds1.to_netcdf(self.file_path1)
