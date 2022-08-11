@@ -337,9 +337,9 @@ class TestOpenMfDataset:
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
             "original_shape": (15,),
-            "dtype": np.dtype(np.int64),
-            "units": "hours since 2000-01-16 12:00:00",
-            "calendar": "proleptic_gregorian",
+            "dtype": np.dtype(np.float64),
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
         }
 
         assert result.identical(expected)
