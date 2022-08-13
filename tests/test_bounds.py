@@ -166,9 +166,6 @@ class TestAddBounds:
         # If coords dimensions does not equal 1.
         with pytest.raises(ValueError):
             ds.bounds.add_bounds("Y")
-        # If coords are length of <=1.
-        with pytest.raises(ValueError):
-            ds.bounds.add_bounds("X")
 
     def test_raises_error_if_lat_coord_var_units_is_not_in_degrees(self):
         lat = xr.DataArray(

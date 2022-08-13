@@ -274,7 +274,11 @@ class BoundsAccessor:
         if coord_var.ndim != 1:
             raise ValueError("Cannot generate bounds for multidimensional coordinates.")
         if coord_var.shape[0] <= 1:
-            raise ValueError("Cannot generate bounds for a coordinate of length <= 1.")
+            logger.warning(
+                f"Cannot generate bounds for coordinate variable '{coord_var.name}'"
+                " which has a length <= 1."
+            )
+            return ds
 
         # Retrieve coordinate dimension to calculate the diffs between points.
         dim = coord_var.dims[0]
