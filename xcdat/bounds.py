@@ -252,8 +252,6 @@ class BoundsAccessor:
         ------
         ValueError
             If coords dimensions does not equal 1.
-        ValueError
-            If coords are length of <=1.
 
         Notes
         -----
