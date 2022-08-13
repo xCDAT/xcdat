@@ -148,7 +148,7 @@ class TestAddBounds:
         with pytest.raises(ValueError):
             ds.bounds.add_bounds("Y")
 
-    def test_raises_errors_for_data_dim_and_length(self):
+    def test_raises_errors_for_data_dim_and_length(self, caplog):
         # Multidimensional
         lat = xr.DataArray(
             data=np.array([[0, 1, 2], [3, 4, 5]]),
@@ -166,6 +166,12 @@ class TestAddBounds:
         # If coords dimensions does not equal 1.
         with pytest.raises(ValueError):
             ds.bounds.add_bounds("Y")
+
+        # If coords are length of <=1; no error, but original ds returned
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+        result = ds.bounds.add_bounds("X")
+        assert result.identical(ds)
 
     def test_raises_error_if_lat_coord_var_units_is_not_in_degrees(self):
         lat = xr.DataArray(
