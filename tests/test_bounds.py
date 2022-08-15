@@ -167,7 +167,7 @@ class TestAddBounds:
         with pytest.raises(ValueError):
             ds.bounds.add_bounds("Y")
 
-    def test_raises_errors_for_data_dim_and_length(self, caplog):
+    def test_raises_errors_for_data_dim_and_length(self):
         # Multidimensional
         lat = xr.DataArray(
             data=np.array([[0, 1, 2], [3, 4, 5]]),
