@@ -306,34 +306,34 @@ class TestOpenMfDataset:
         self.file_path2 = f"{dir}/file2.nc"
 
     def test_mfdataset_keeps_time_encoding_dict(self):
-        # FIXME: This test always passes because `xr.open_mfdatset()` always
-        # keeps the time encoding attrs, which isn't the expected behavior.
-        # Based on this test, if datasets are generated in xarray and written
-        # out with `to_netcdf()` and then opened and merged using
-        # `xr.open_mfdataset()`, the time encoding attributes are not dropped.
-        # On the other hand, if multiple real world datasets that did not
-        # originate from xarray (written out with `.to_netcdf()`) are opened
-        # using `xr.open_mfdataset()`, the time encoding attrs are dropped.
-        # (Refer to https://github.com/pydata/xarray/issues/2436). My theory is
-        # that xarray maintains the time encoding attrs if datasets are written
-        # out with `.to_netcdf()`, and drops it for other cases such
-        # as opening multiple datasets from other sources.
         ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
         ds1.to_netcdf(self.file_path1)
+
+        # Create another dataset that extends the time coordinates by 1 value,
+        # to mimic a multifile dataset.
         ds2 = generate_dataset(cf_compliant=True, has_bounds=True)
-        ds2 = ds2.rename_vars({"ts": "tas"})
+        ds2 = ds2.isel(dict(time=slice(0, 1)))
+        ds2["time"].values[:] = np.array(
+            ["2002-01-16T12:00:00.000000000"],
+            dtype="datetime64[ns]",
+        )
         ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset([self.file_path1, self.file_path2], decode_times=True)
-        expected = ds1.copy().merge(ds2.copy())
+        expected = ds1.merge(ds2)
 
         assert result.identical(expected)
 
-        # We mainly care for calendar and units attributes. We don't perform
-        # equality assertion on the entire time `.encoding` dict because there
-        # might be different encoding attributes added or removed between xarray
-        # versions (e.g., "bzip2", "ztsd", "blosc", and "szip" are added in
-        # v2022.06.0), which makes that assertion fragile.
+        # We mainly care for the "source" and "original_shape" attrs (updated
+        # internally by xCDAT), and the "calendar" and "units" attrs. We don't
+        # perform equality assertion on the entire time `.encoding` dict because
+        # there might be different encoding attributes added or removed between
+        # xarray versions (e.g., "bzip2", "ztsd", "blosc", and "szip" are added
+        # in v2022.06.0), which makes that assertion fragile.
+        paths = result.time.encoding["source"]
+        assert self.file_path1 in paths[0]
+        assert self.file_path2 in paths[1]
+        assert result.time.encoding["original_shape"] == (16,)
         assert result.time.encoding["calendar"] == "standard"
         assert result.time.encoding["units"] == "days since 2000-01-01"
 

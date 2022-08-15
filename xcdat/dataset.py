@@ -232,6 +232,8 @@ def open_mfdataset(
     if time_encoding is not None:
         time_dim = get_axis_dim(ds, "T")
         ds[time_dim].encoding = time_encoding
+        # Update "original_shape" to reflect the final time coordinates shape.
+        ds[time_dim].encoding["original_shape"] = ds[time_dim].shape
 
     return ds
 
@@ -448,8 +450,10 @@ def _keep_time_encoding(paths: Paths) -> Dict[Hashable, Any]:
     # FIXME: Remove `type: ignore` comment after properly handling the type
     # annotations in `_get_first_path()`.
     ds = open_dataset(first_path, decode_times=True, add_bounds=False)  # type: ignore
-
     time_coord = get_axis_coord(ds, "T")
+
+    time_encoding = time_coord.encoding
+    time_encoding["source"] = paths
 
     return time_coord.encoding
 
