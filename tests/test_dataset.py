@@ -305,6 +305,38 @@ class TestOpenMfDataset:
         self.file_path1 = f"{dir}/file1.nc"
         self.file_path2 = f"{dir}/file2.nc"
 
+    def test_mfdataset_keeps_time_encoding_dict(self):
+        ds1 = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds1.to_netcdf(self.file_path1)
+
+        # Create another dataset that extends the time coordinates by 1 value,
+        # to mimic a multifile dataset.
+        ds2 = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds2 = ds2.isel(dict(time=slice(0, 1)))
+        ds2["time"].values[:] = np.array(
+            ["2002-01-16T12:00:00.000000000"],
+            dtype="datetime64[ns]",
+        )
+        ds2.to_netcdf(self.file_path2)
+
+        result = open_mfdataset([self.file_path1, self.file_path2], decode_times=True)
+        expected = ds1.merge(ds2)
+
+        assert result.identical(expected)
+
+        # We mainly care for the "source" and "original_shape" attrs (updated
+        # internally by xCDAT), and the "calendar" and "units" attrs. We don't
+        # perform equality assertion on the entire time `.encoding` dict because
+        # there might be different encoding attributes added or removed between
+        # xarray versions (e.g., "bzip2", "ztsd", "blosc", and "szip" are added
+        # in v2022.06.0), which makes that assertion fragile.
+        paths = result.time.encoding["source"]
+        assert self.file_path1 in paths[0]
+        assert self.file_path2 in paths[1]
+        assert result.time.encoding["original_shape"] == (16,)
+        assert result.time.encoding["calendar"] == "standard"
+        assert result.time.encoding["units"] == "days since 2000-01-01"
+
     def test_non_cf_compliant_time_is_not_decoded(self):
         ds1 = generate_dataset(cf_compliant=False, has_bounds=True)
         ds1.to_netcdf(self.file_path1)
