@@ -207,7 +207,7 @@ def open_mfdataset(
     # multiple files are merged with `decode_times=True` (refer to
     # https://github.com/pydata/xarray/issues/2436). The workaround is to store
     # the time encoding from the first dataset as a variable, and add the time
-    # encoding back to final merged dataset in the postprocessing function.
+    # encoding back to final merged dataset.
     time_encoding = None
 
     if decode_times:
@@ -227,9 +227,11 @@ def open_mfdataset(
         preprocess=preprocess,
         **kwargs,
     )
-    ds = _postprocess_dataset(
-        ds, data_var, center_times, add_bounds, lon_orient, time_encoding
-    )
+    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
+
+    if time_encoding is not None:
+        time_dim = get_axis_dim(ds, "T")
+        ds[time_dim].encoding = time_encoding
 
     return ds
 
@@ -539,7 +541,6 @@ def _postprocess_dataset(
     center_times: bool = False,
     add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
-    time_encoding: Optional[Dict[Hashable, Any]] = None,
 ) -> xr.Dataset:
     """Post-processes a Dataset object.
 
@@ -565,10 +566,6 @@ def _postprocess_dataset(
           * None:  use the current orientation (if the longitude axis exists)
           * (-180, 180): represents [-180, 180) in math notation
           * (0, 360): represents [0, 360) in math notation
-
-    time_encoding: Optional[Dict[Hashable, Any]], optional
-        The encoding information for the decoded time coordinates (if the
-        Dataset has a time axis), by default None.
 
     Returns
     -------
@@ -601,10 +598,6 @@ def _postprocess_dataset(
             raise ValueError(
                 "This dataset does not have longitude coordinates to reorient."
             )
-
-    if time_encoding is not None:
-        time_dim = get_axis_dim(dataset, "T")
-        dataset[time_dim].encoding = time_encoding
 
     return dataset
 
