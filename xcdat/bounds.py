@@ -297,7 +297,7 @@ class BoundsAccessor:
         if coord_var.ndim != 1:
             raise ValueError(
                 f"Cannot generate bounds for coordinate variable '{coord_var.name}"
-                "because it is multidimensional coordinates."
+                " because it is multidimensional coordinates."
             )
         if coord_var.shape[0] <= 1:
             raise ValueError(
