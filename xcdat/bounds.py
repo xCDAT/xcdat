@@ -157,6 +157,7 @@ class BoundsAccessor:
             # Otherwise, try to add bounds if it meets the function's criteria.
             try:
                 self.get_bounds(axis)
+                continue
             except KeyError:
                 pass
 
