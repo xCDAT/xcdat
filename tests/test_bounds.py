@@ -60,6 +60,7 @@ class TestAddMissingBounds:
     def test_adds_bounds_to_the_dataset(self):
         ds = self.ds_with_bnds.copy()
 
+        # Delete the lat and lon bounds and remove the "bounds" attr mapping
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
         result = ds.bounds.add_missing_bounds()
@@ -78,6 +79,25 @@ class TestAddMissingBounds:
 
         # dataset with missing bounds added should match dataset with bounds
         # and added height coordinate
+        assert result.identical(ds)
+
+    def test_skips_adding_bounds_for_coords_that_are_multidimensional_or_len_of_1(self):
+        # Multidimensional
+        lat = xr.DataArray(
+            data=np.array([[0, 1, 2], [3, 4, 5]]),
+            dims=["placeholder_1", "placeholder_2"],
+            attrs={"units": "degrees_north", "axis": "Y"},
+        )
+        # Length <=1
+        lon = xr.DataArray(
+            data=np.array([0]),
+            dims=["lon"],
+            attrs={"units": "degrees_east", "axis": "X"},
+        )
+        ds = xr.Dataset(coords={"lat": lat, "lon": lon})
+
+        result = ds.bounds.add_missing_bounds("Y")
+
         assert result.identical(ds)
 
 
@@ -166,12 +186,6 @@ class TestAddBounds:
         # If coords dimensions does not equal 1.
         with pytest.raises(ValueError):
             ds.bounds.add_bounds("Y")
-
-        # If coords are length of <=1; no error, but original ds returned
-        # Update logger level to silence the logger warning during test runs.
-        caplog.set_level(logging.ERROR)
-        result = ds.bounds.add_bounds("X")
-        assert result.identical(ds)
 
     def test_raises_error_if_lat_coord_var_units_is_not_in_degrees(self):
         lat = xr.DataArray(

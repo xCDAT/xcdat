@@ -117,8 +117,16 @@ class BoundsAccessor:
     def add_missing_bounds(self, width: float = 0.5) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
-        This function loops through the Dataset's axes and adds coordinate
-        bounds for an axis that doesn't have any.
+        This function loops through the Dataset's axes and attempts to adds
+        bounds to its coordinates if they don't exist. The coordinates must meet
+        the following criteria in order to add bounds:
+
+          1. The axis for the coordinates are "X", "Y", "T", or "Z"
+          2. Coordinates are a single dimension, not multidimensional
+          3. Coordinates are a length > 1 (not singleton)
+          4. Bounds must not already exist.
+             * Determined by attempting to map the coordinate variable's
+             "bounds" attr (if set) to the bounds data variable of the same key.
 
         Parameters
         ----------
@@ -133,24 +141,30 @@ class BoundsAccessor:
         axes = CF_NAME_MAP.keys()
 
         for axis in axes:
-            coord_var = None
-
+            # Check if the axis coordinates can be mapped to.
             try:
-                coord_var = get_axis_coord(self._dataset, axis)
+                get_axis_coord(self._dataset, axis)
             except KeyError:
-                pass
+                continue
 
-            # determine if the axis is also a dimension by determining
-            # if there is overlap between the CF axis names and the dimension
-            # names. If not, skip over axis for validation.
+            # Determine if the axis is also a dimension by determining if there
+            # is overlap between the CF axis names and the dimension names. If
+            # not, skip over axis for validation.
             if len(set(CF_NAME_MAP[axis]) & set(self._dataset.dims.keys())) == 0:
                 continue
 
-            if coord_var is not None:
-                try:
-                    self.get_bounds(axis)
-                except KeyError:
-                    self._dataset = self.add_bounds(axis, width)
+            # Check if bounds also exist using the "bounds" attribute.
+            # Otherwise, try to add bounds if it meets the function's criteria.
+            try:
+                self.get_bounds(axis)
+            except KeyError:
+                pass
+
+            try:
+                self._dataset = self.add_bounds(axis, width)
+            except ValueError:
+                continue
+
         return self._dataset
 
     def get_bounds(self, axis: CFAxisName) -> xr.DataArray:
@@ -200,6 +214,16 @@ class BoundsAccessor:
 
     def add_bounds(self, axis: CFAxisName, width: float = 0.5) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
+
+        The coordinates must meet the following criteria in order to add
+        bounds:
+
+          1. The axis for the coordinates are "X", "Y", "T", or "Z"
+          2. Coordinates are a single dimension, not multidimensional
+          3. Coordinates are a length > 1 (not singleton)
+          4. Bounds must not already exist.
+             * Determined by attempting to map the coordinate variable's
+             "bounds" attr (if set) to the bounds data variable of the same key.
 
         Parameters
         ----------
@@ -270,13 +294,15 @@ class BoundsAccessor:
 
         # Validate coordinate shape and dimensions
         if coord_var.ndim != 1:
-            raise ValueError("Cannot generate bounds for multidimensional coordinates.")
+            raise ValueError(
+                "Cannot generate bounds for coordinate variable '{coord_var.name}"
+                "because it is multidimensional coordinates."
+            )
         if coord_var.shape[0] <= 1:
-            logger.warning(
+            raise ValueError(
                 f"Cannot generate bounds for coordinate variable '{coord_var.name}'"
                 " which has a length <= 1."
             )
-            return ds
 
         # Retrieve coordinate dimension to calculate the diffs between points.
         dim = coord_var.dims[0]
