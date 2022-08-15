@@ -60,7 +60,6 @@ class TestAddMissingBounds:
     def test_adds_bounds_to_the_dataset(self):
         ds = self.ds_with_bnds.copy()
 
-        # Delete the lat and lon bounds and remove the "bounds" attr mapping
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
         result = ds.bounds.add_missing_bounds()
