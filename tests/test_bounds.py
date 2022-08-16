@@ -80,6 +80,25 @@ class TestAddMissingBounds:
         # and added height coordinate
         assert result.identical(ds)
 
+    def test_skips_adding_bounds_for_coords_that_are_multidimensional_or_len_of_1(self):
+        # Multidimensional
+        lat = xr.DataArray(
+            data=np.array([[0, 1, 2], [3, 4, 5]]),
+            dims=["placeholder_1", "placeholder_2"],
+            attrs={"units": "degrees_north", "axis": "Y"},
+        )
+        # Length <=1
+        lon = xr.DataArray(
+            data=np.array([0]),
+            dims=["lon"],
+            attrs={"units": "degrees_east", "axis": "X"},
+        )
+        ds = xr.Dataset(coords={"lat": lat, "lon": lon})
+
+        result = ds.bounds.add_missing_bounds("Y")
+
+        assert result.identical(ds)
+
 
 class TestGetBounds:
     @pytest.fixture(autouse=True)
@@ -166,9 +185,6 @@ class TestAddBounds:
         # If coords dimensions does not equal 1.
         with pytest.raises(ValueError):
             ds.bounds.add_bounds("Y")
-        # If coords are length of <=1.
-        with pytest.raises(ValueError):
-            ds.bounds.add_bounds("X")
 
     def test_raises_error_if_lat_coord_var_units_is_not_in_degrees(self):
         lat = xr.DataArray(
