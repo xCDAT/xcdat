@@ -14,7 +14,7 @@ dependencies:
     - dask=2022.8.0
     - esmpy=8.2.0
     - netcdf4=1.6.0
-    - numba=0.55.2 # TODO: Remove this pin once `numba` is properly patched with `numpy` compatability.
+    - numba=0.55.2 # TODO: Remove this pin once `numba` is properly patched with `numpy` compatibility.
     - numpy=1.22.4
     - pandas=1.4.3
     - xarray=2022.6.0
