@@ -42,7 +42,9 @@
 
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library.
 
-The goal of xCDAT is to provide climate domain features and general utilities in xarray, which includes porting some core CDAT functionalities. xCDAT leverages several powerful libraries in the xarray ecosystem (e.g., `xESMF`_ and `cf_xarray`_) to deliver robust APIs. The xCDAT core team is aiming to provide a maintainable and extensible package that serves the needs of the climate community in the long-term.
+The goal of xCDAT is to provide generalizable climate domain features and general utilities in xarray, which includes porting some core CDAT functionalities. xCDAT leverages several powerful libraries in the xarray ecosystem (e.g., `xESMF`_ and `cf_xarray`_) to deliver robust APIs. The xCDAT core team is aiming to provide a maintainable and extensible package that serves the needs of the climate community in the long-term.
+
+A major design philosophy of xCDAT is streamlining the user experience while developing code to analyze climate data. This means reducing the complexity and number of lines required to achieve certain features with xarray.
 
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
