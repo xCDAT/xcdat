@@ -305,7 +305,7 @@ def _align_lon_to_360(dataset: xr.Dataset, p_meridian_index: np.ndarray) -> xr.D
     # Create a Dataset with longitude data vars and merge it to the Dataset
     # without longitude data vars.
     ds_lon = xr.Dataset(data_vars={**lon_vars, lon_bounds.name: lon_bounds})
-    ds_no_lon = ds.get([v for v in ds.data_vars if lon.name not in ds[v].dims])
+    ds_no_lon = ds.get([v for v in ds.data_vars if lon.name not in ds[v].dims])  # type: ignore
     ds = xr.merge((ds_no_lon, ds_lon))
     return ds
 

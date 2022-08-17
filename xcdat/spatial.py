@@ -647,7 +647,8 @@ class SpatialAccessor:
             (``axis``) in the region.
         """
         region_weights = reduce((lambda x, y: x * y), axis_weights.values())
-        region_weights.name = "_".join(sorted(region_weights.coords.keys())) + "_wts"
+        coord_keys = sorted(region_weights.coords.keys())  # type: ignore
+        region_weights.name = "_".join(coord_keys) + "_wts"  # type: ignore
 
         return region_weights
 

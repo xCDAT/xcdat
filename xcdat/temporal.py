@@ -806,8 +806,8 @@ class TemporalAccessor:
         # method concatenates the time dimension to non-time dimension data
         # vars, which is not a desired behavior.
         ds = dataset.copy()
-        ds_time = ds.get([v for v in ds.data_vars if self._dim in ds[v].dims])
-        ds_no_time = ds.get([v for v in ds.data_vars if self._dim not in ds[v].dims])
+        ds_time = ds.get([v for v in ds.data_vars if self._dim in ds[v].dims])  # type: ignore
+        ds_no_time = ds.get([v for v in ds.data_vars if self._dim not in ds[v].dims])  # type: ignore
 
         start_year, end_year = (
             ds[self._dim].dt.year.values[0],
@@ -817,7 +817,7 @@ class TemporalAccessor:
         for year_month in incomplete_seasons:
             try:
                 coord_pt = ds.loc[dict(time=year_month)][self._dim][0]
-                ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)  # type: ignore
+                ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)
                 self._time_bounds = ds_time[self._time_bounds.name]
             except (KeyError, IndexError):
                 continue
