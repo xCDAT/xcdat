@@ -4,14 +4,14 @@ fail_fast: true
 
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v4.1.0
+      rev: v4.3.0
       hooks:
           - id: trailing-whitespace
           - id: end-of-file-fixer
           - id: check-yaml
 
     - repo: https://github.com/psf/black
-      rev: 22.3.0
+      rev: 22.6.0
       hooks:
           - id: black
 
@@ -30,15 +30,15 @@ repos:
             additional_dependencies: [flake8-isort]
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v0.961
+      rev: v0.971
       hooks:
           - id: mypy
             args: ["--config=setup.cfg"]
             additional_dependencies:
                 [
-                    dask==2022.6.1,
+                    dask==2022.7.1,
                     numpy==1.22.4,
                     pandas==1.4.3,
-                    xarray==2022.3.0,
+                    xarray==2022.6.0,
                     types-python-dateutil==2.8.19,
                 ]

@@ -99,12 +99,12 @@ def open_dataset(
         cf_compliant_time: Optional[bool] = _has_cf_compliant_time(path)
         # xCDAT attempts to decode non-CF compliant time coordinates.
         if cf_compliant_time is False:
-            ds = xr.open_dataset(path, decode_times=False, **kwargs)
+            ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
             ds = decode_non_cf_time(ds)
         else:
-            ds = xr.open_dataset(path, decode_times=True, **kwargs)
+            ds = xr.open_dataset(path, decode_times=True, **kwargs)  # type: ignore
     else:
-        ds = xr.open_dataset(path, decode_times=False, **kwargs)
+        ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
 
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
@@ -225,7 +225,7 @@ def open_mfdataset(
         decode_times=decode_times,
         data_vars=data_vars,
         preprocess=preprocess,
-        **kwargs,
+        **kwargs,  # type: ignore
     )
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
@@ -489,7 +489,7 @@ def _has_cf_compliant_time(paths: Paths) -> Optional[bool]:
     compliance.
     """
     first_path = _get_first_path(paths)
-    ds = xr.open_dataset(first_path, decode_times=False)
+    ds = xr.open_dataset(first_path, decode_times=False)  # type: ignore
 
     if ds.cf.dims.get("T") is None:
         return None
