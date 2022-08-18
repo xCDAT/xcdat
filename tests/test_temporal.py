@@ -831,7 +831,7 @@ class TestGroupAverage:
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.array([[[2.0]], [[0.0]], [[1.0]], [[1.0]], [[2.0]]]),
+            data=np.array([[[2.0]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,

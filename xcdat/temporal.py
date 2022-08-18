@@ -919,10 +919,28 @@ class TemporalAccessor:
 
         if self._weighted:
             self._weights = self._get_weights()
+            # grab metadata
+            dv_attrs = dv.attrs
+            dv_name = dv.name
+            # grab metadata (populated after calling ._group_data())
+            lt_attrs = self._labeled_time.attrs
+            lt_encoding = self._labeled_time.encoding
+            # weight the data variable
             dv *= self._weights
-            dv = self._group_data(dv).sum()
+            # cast the weights to match the dv.shape / dims
+            weights, x = xr.broadcast(self._weights, dv)
+            # ensure missing data receives no weight
+            weights = xr.where(np.isnan(dv), 0.0, weights)
+            # perform weighted average
+            dv = self._group_data(dv).sum() / self._group_data(weights).sum()
+            # add dv attributes
+            dv.attrs = dv_attrs
+            dv.name = dv_name
         else:
             dv = self._group_data(dv).mean()
+            # grab metadata (populated after calling ._group_data())
+            lt_attrs = self._labeled_time.attrs
+            lt_encoding = self._labeled_time.encoding
 
         # After grouping and aggregating the data variable values, the
         # original time dimension is replaced with the grouped time dimension.
@@ -936,8 +954,8 @@ class TemporalAccessor:
         # attributes are removed. Xarray's `keep_attrs=True` option only keeps
         # attributes for data variables and not their coordinates, so the
         # coordinate attributes have to be restored manually.
-        dv[self._dim].attrs = self._labeled_time.attrs
-        dv[self._dim].encoding = self._labeled_time.encoding
+        dv[self._dim].attrs = lt_attrs
+        dv[self._dim].encoding = lt_encoding
 
         dv = self._add_operation_attrs(dv)
 
