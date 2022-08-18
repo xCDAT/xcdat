@@ -5,9 +5,6 @@ History
 v0.3.1 (18 August 2022)
 -----------------------
 
-What’s Changed
---------------
-
 Bug Fixes
 ~~~~~~~~~
 
@@ -92,7 +89,7 @@ DevOps
       https://github.com/xCDAT/xcdat/pull/307
 
 New Contributors
-----------------
+~~~~~~~~~~~~~~~~
 
 -  `Paul Durack <https://github.com/durack1>`__ made their first
    contribution in https://github.com/xCDAT/xcdat/pull/294
