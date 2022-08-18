@@ -1,4 +1,4 @@
-gitname: xcdat_rtd
+name: xcdat_rtd
 channels:
     - conda-forge
     - defaults
