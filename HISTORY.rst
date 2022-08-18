@@ -82,11 +82,9 @@ DevOps
    env by `Tom Vo <https://github.com/tomvothecoder>`__ in
    https://github.com/xCDAT/xcdat/pull/280
 
--
-
-   -  Update conda env yml files and add missing dependencies by `Tom
-      Vo <https://github.com/tomvothecoder>`__ in
-      https://github.com/xCDAT/xcdat/pull/307
+-  Update conda env yml files and add missing dependencies by `Tom
+   Vo <https://github.com/tomvothecoder>`__ in
+   https://github.com/xCDAT/xcdat/pull/307
 
 New Contributors
 ~~~~~~~~~~~~~~~~
