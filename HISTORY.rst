@@ -5,6 +5,9 @@ History
 v0.3.1 (18 August 2022)
 -----------------------
 
+This patch release focuses on bug fixes including handling bounds generation with singleton coordinates and the use of ``cftime``
+to represent temporal averaging outputs and non-CF compliant time coordinates (to avoid the pandas Timestamp limitations).
+
 Bug Fixes
 ~~~~~~~~~
 
