@@ -446,7 +446,8 @@ def create_grid(
 
     Examples
     --------
-    Create uniform 2.5 x 2.5 degree grid
+    Create uniform 2.5 x 2.5 degree grid:
+
     >>> import xcdat
     >>> import numpy as np
     >>> lat = np.arange(-90, 90, 2.5)
