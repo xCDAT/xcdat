@@ -418,6 +418,7 @@ class TestGroupAverage:
             ),
             coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
             dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
         )
 
     def test_weighted_annual_averages(self):
@@ -458,6 +459,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "year",
@@ -467,6 +469,7 @@ class TestGroupAverage:
 
         xr.testing.assert_allclose(result, expected)
         assert result.ts.attrs == expected.ts.attrs
+        assert result.time.attrs == expected.time.attrs
 
     @requires_dask
     def test_weighted_annual_averages_with_chunking(self):
@@ -507,6 +510,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "year",
@@ -516,6 +520,7 @@ class TestGroupAverage:
 
         xr.testing.assert_allclose(result, expected)
         assert result.ts.attrs == expected.ts.attrs
+        assert result.time.attrs == expected.time.attrs
 
     def test_weighted_seasonal_averages_with_DJF_and_drop_incomplete_seasons(self):
         ds = self.ds.copy()
@@ -555,6 +560,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "season",
@@ -605,6 +611,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "season",
@@ -664,6 +671,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "season",
@@ -716,6 +724,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "season",
@@ -807,6 +816,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "month",
@@ -824,6 +834,7 @@ class TestGroupAverage:
             ),
             coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
             dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
         )
 
         result = ds.temporal.group_average("ts", "month")
@@ -856,6 +867,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "month",
@@ -898,6 +910,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "day",
@@ -941,6 +954,7 @@ class TestGroupAverage:
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "hour",

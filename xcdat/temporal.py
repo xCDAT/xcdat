@@ -919,43 +919,40 @@ class TemporalAccessor:
 
         if self._weighted:
             self._weights = self._get_weights()
-            # grab metadata
-            dv_attrs = dv.attrs
-            dv_name = dv.name
-            # grab metadata (populated after calling ._group_data())
-            lt_attrs = self._labeled_time.attrs
-            lt_encoding = self._labeled_time.encoding
-            # weight the data variable
+            # Weight the data variable.
             dv *= self._weights
-            # cast the weights to match the dv.shape / dims
-            weights, x = xr.broadcast(self._weights, dv)
-            # ensure missing data receives no weight
+
+            # Ensure missing data (`np.nan`) receives no weight (zero). To
+            # achieve this, first broadcast the one-dimensional (temporal
+            # dimension) shape of the `weights` DataArray to the
+            # multi-dimensional shape of its corresponding data variable.
+            weights, _ = xr.broadcast(self._weights, dv)
             weights = xr.where(np.isnan(dv), 0.0, weights)
-            # perform weighted average
-            dv = self._group_data(dv).sum() / self._group_data(weights).sum()
-            # add dv attributes
-            dv.attrs = dv_attrs
-            dv.name = dv_name
+
+            # Perform weighted average using the formula
+            # WA = sum(data*weights) / sum(weights). The denominator must be
+            # included to take into account zero weight for missing data.
+            with xr.set_options(keep_attrs=True):
+                dv = self._group_data(dv).sum() / self._group_data(weights).sum()
+            # Restore the data variable's name.
+            dv.name = data_var.name
         else:
             dv = self._group_data(dv).mean()
-            # grab metadata (populated after calling ._group_data())
-            lt_attrs = self._labeled_time.attrs
-            lt_encoding = self._labeled_time.encoding
 
         # After grouping and aggregating the data variable values, the
         # original time dimension is replaced with the grouped time dimension.
         # For example, grouping on "year_season" replaces the time dimension
         # with "year_season". This dimension needs to be renamed back to
         # the original time dimension name before the data variable is added
-        # back to the dataset so that the CF compliant name is maintained.
+        # back to the dataset so that the original name is preserved.
         dv = dv.rename({self._labeled_time.name: self._dim})
 
         # After grouping and aggregating, the grouped time dimension's
         # attributes are removed. Xarray's `keep_attrs=True` option only keeps
         # attributes for data variables and not their coordinates, so the
         # coordinate attributes have to be restored manually.
-        dv[self._dim].attrs = lt_attrs
-        dv[self._dim].encoding = lt_encoding
+        dv[self._dim].attrs = self._labeled_time.attrs
+        dv[self._dim].encoding = self._labeled_time.encoding
 
         dv = self._add_operation_attrs(dv)
 
@@ -1037,7 +1034,12 @@ class TemporalAccessor:
         if self._mode == "average":
             dv_gb = dv.groupby(f"{self._dim}.{self._freq}")
         else:
-            self._labeled_time = self._label_time_coords(dv[self._dim])
+            # Reuse the labeled time coordinates if they are already generated.
+            # This specifically applies when generating weights, which calls
+            # this method again after it has already been called to group
+            # the data variable with the same time coordinates.
+            if not hasattr(self, "_labeled_time"):
+                self._labeled_time = self._label_time_coords(dv[self._dim])
             dv.coords[self._labeled_time.name] = self._labeled_time
             dv_gb = dv.groupby(self._labeled_time.name)
 
