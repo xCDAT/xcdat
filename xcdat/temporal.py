@@ -146,9 +146,8 @@ class TemporalAccessor:
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
+        # The name of the time dimension.
         self._dim = get_axis_coord(self._dataset, "T").name
-
-        self._time_bounds = self._dataset.bounds.get_bounds("T").copy()
 
         try:
             self.calendar = self._dataset[self._dim].encoding["calendar"]
@@ -739,6 +738,9 @@ class TemporalAccessor:
         ValueError
             If an incorrect ``dec_mode`` arg was passed.
         """
+        # The time bounds.
+        self._time_bounds = self._dataset.bounds.get_bounds("T")
+
         # General configuration attributes.
         if mode not in list(MODES):
             modes = ", ".join(f'"{word}"' for word in MODES)

@@ -1620,6 +1620,7 @@ class Test_GetWeights:
             ds.temporal._mode = "average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="year",
                 data=np.array(
@@ -1682,6 +1683,7 @@ class Test_GetWeights:
             ds.temporal._mode = "average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="month",
                 data=np.array(
@@ -1748,6 +1750,7 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="year",
                 data=np.array(
@@ -1810,6 +1813,7 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="year_month",
                 data=np.array(
@@ -1954,6 +1958,7 @@ class Test_GetWeights:
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal._season_config = {"dec_mode": "DJF"}
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="year_season",
                 data=np.array(
@@ -2015,6 +2020,7 @@ class Test_GetWeights:
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal._season_config = {"dec_mode": "JDF"}
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="year_season",
                 data=np.array(
@@ -2083,6 +2089,7 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._season_config = {
                 "custom_seasons": {
                     "JanFebMar": ["Jan", "Feb", "Mar"],
@@ -2159,6 +2166,7 @@ class Test_GetWeights:
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "day"
             ds.temporal._weighted = "True"
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="year_month_day",
                 data=np.array(
@@ -2204,6 +2212,7 @@ class Test_GetWeights:
             ds.temporal._freq = "hour"
             ds.temporal._weighted = "True"
             ds.temporal._season_config = {"dec_mode": "JDF"}
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="year_month_day_hour",
                 data=np.array(
@@ -2351,6 +2360,7 @@ class Test_GetWeights:
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal._season_config = {"dec_mode": "DJF"}
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="season",
                 data=np.array(
@@ -2407,6 +2417,7 @@ class Test_GetWeights:
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
             ds.temporal._season_config = {"dec_mode": "JDF"}
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="season",
                 data=np.array(
@@ -2470,6 +2481,7 @@ class Test_GetWeights:
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="month",
                 data=np.array(
@@ -2532,6 +2544,7 @@ class Test_GetWeights:
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "day"
             ds.temporal._weighted = "True"
+            ds.temporal._time_bounds = ds.time_bnds
             ds.temporal._labeled_time = xr.DataArray(
                 name="month_day",
                 data=np.array(
