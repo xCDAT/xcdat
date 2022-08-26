@@ -10,6 +10,15 @@ A major design philosophy of xCDAT is streamlining the user experience while dev
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
+Getting Started
+---------------
+
+The best resource for getting started with xCDAT is via our `readthedocs page <https://xcdat.readthedocs.io/en/latest/>`__. There, we provide guidance for setting up your environment on your `computer <https://xcdat.readthedocs.io/en/latest/getting-started.html>`_ or `HPC/Jupyter <https://xcdat.readthedocs.io/en/latest/getting-started-hpc-jupyter.html>`_ environment. We also include an `API Overview <https://xcdat.readthedocs.io/en/latest/api.html>`_ and `Gallery <https://xcdat.readthedocs.io/en/latest/gallery.html>`_ to highlight xCDAT functionality.
+
+xCDAT invites discussion on version releases, architecture, new features suggestions, and other topics on the `GitHub discussion <https://github.com/xCDAT/xcdat/discussions>`_ page. Users and contributors can also view and open issues on our `GitHub Issue Tracker <https://github.com/xCDAT/xcdat/issues>`_.
+
+We welcome and appreciate contributions to xCDAT. If you'd like to help improve xCDAT, please checkout our `Contributing Guide <https://xcdat.readthedocs.io/en/latest/contributing.html>`_. 
+
 Planned Features
 -----------------
 
@@ -93,6 +102,7 @@ See `LICENSE <LICENSE>`_ for details
    :caption: For users
 
    Getting Started <getting-started>
+   xCDAT on HPC / Jupyter <getting-started-hpc-jupyter>
    Gallery <gallery>
    API Reference <api>
    Frequently Asked Questions <faqs>
