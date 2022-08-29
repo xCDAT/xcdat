@@ -18,10 +18,8 @@ Setting up your xCDAT environment
 Ensure ``conda`` is installed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Option 1: Machines with ``conda`` pre-installed
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Your HPC machine may have ``python`` and ``conda`` pre-installed. You
+In general, instructions from `getting started guide<https://xcdat.readthedocs.io/en/latest/getting-started.html>`_ can be followed to install xcdat through conda. 
+Some HPC machines may have ``python`` and ``conda`` pre-installed. You
 can check to see whether they are available by entering ``which conda``
 and/or ``which python`` in the command line (which will return their
 path if they are available).
@@ -33,28 +31,6 @@ example, some machines make both available via:
 
    module load python
 
-Option 2: Machines without ``conda`` pre-installed
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-::
-
-   wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-   bash Miniconda3-latest-Linux-x86_64.sh
-
-Then follow the instructions for installation. To have conda added to
-your path you will need to type ``yes`` in response to "Do you wish the
-installer to initialize Miniconda3 by running conda init?" (we recommend
-that you do this). Note that this will modify your shell profile (e.g.,
-``~/.bashrc``) to add ``conda`` to your path.
-
-Note: After installation completes you may need to type ``bash`` to
-restart your shell (if you use bash). Alternatively, you can log out and
-log back in.
-
-Creating your environment with ``conda``
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Once ``conda`` is setup, you can create a new ``xcdat`` environment
 with:
 
 ::
@@ -70,7 +46,7 @@ example, you could instead install ``xcdat`` with ``matplotlib``,
 
    conda create -n xcdat -c conda-forge xcdat matplotlib ipython ipykernel
 
-You can add packages later with ``conda install ...``.
+You can add packages later with ``conda install``.
 
 Adding an ``xcdat`` kernel for use with Jupyter
 -----------------------------------------------
