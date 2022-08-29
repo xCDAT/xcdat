@@ -12,7 +12,9 @@
 
    Xarray Climate Data Analysis Tools
 
-   |conda-forge| |platforms| |CI/CD Build Workflow| |docs| |Codecov|
+   |conda| |conda-forge| |platforms| |conda-downloads|
+
+   |CI/CD Build Workflow| |docs| |Codecov|
 
    |pre-commit| |Code style: black| |flake8| |Checked with mypy|
 
@@ -21,9 +23,13 @@
 
       </h3>
 
+.. |conda| image:: https://anaconda.org/conda-forge/xcdat/badges/installer/conda.svg
+   :target: https://anaconda.org/conda-forge/xcdat
 .. |conda-forge| image:: https://img.shields.io/conda/vn/conda-forge/xcdat.svg
    :target: https://anaconda.org/conda-forge/xcdat
 .. |platforms| image:: https://img.shields.io/conda/pn/conda-forge/xcdat.svg
+   :target: https://anaconda.org/conda-forge/xcdat
+.. |conda-downloads| image:: https://anaconda.org/conda-forge/xcdat/badges/downloads.svg
    :target: https://anaconda.org/conda-forge/xcdat
 .. |CI/CD Build Workflow| image:: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
    :target: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml
