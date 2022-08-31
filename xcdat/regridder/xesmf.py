@@ -5,8 +5,7 @@ import xarray as xr
 try:
     import xesmf as xe
 except ImportError:
-    print("xesmf module not available")
-    pass
+    raise ImportError("xesmf module not available")
 
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
 

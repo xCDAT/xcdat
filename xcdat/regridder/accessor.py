@@ -21,7 +21,6 @@ except ImportError:
     REGRID_TOOLS = {
         "regrid2": regrid2.Regrid2Regridder,
     }
-    print("xesmf module not available")
     xesmfAvailable = False
 
 
