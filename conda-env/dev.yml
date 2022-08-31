@@ -1,4 +1,4 @@
-name: xcdat_dev
+name: xcdat_dev_noEsmpy
 channels:
     - conda-forge
     - defaults
