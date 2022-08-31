@@ -2,10 +2,12 @@ import xarray as xr
 # esmpy, xesmf dependency not solved for osx-arm64 https://github.com/conda-forge/esmpy-feedstock/issues/55
 # _importorskip is another option if these accumulate https://github.com/pydata/xarray/blob/main/xarray/tests/__init__.py#L29-L60
 # discussion: https://github.com/xCDAT/xcdat/issues/315
-try:
-    import xesmf as xe
-except ImportError:
-    raise ImportError("xesmf module not available")
+# try:
+import xesmf as xe
+# except ModuleNotFoundError:
+#    raise ModuleNotFoundError("xesmf module not available")
+# except ImportError:
+#    raise ImportError("xesmf module not available")
 
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
 
