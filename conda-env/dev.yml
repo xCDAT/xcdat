@@ -50,16 +50,18 @@ dependencies:
     - jupyterlab=3.4.5
     - tbump=6.9.0
 
-run_constrained:
-    # ==================
-    # Deal with existing limitation on osx-arm64
-    # Base
-    # ==================
-    - esmpy=8.2.0 # https://github.com/conda-forge/esmpy-feedstock/issues/55
-    - xesmf=0.6.3 # depends on esmpy
-    # ==================
-    # Documentation
-    # ==================
-    - pandoc=2.19 # currently broken for osx-arm64 https://anaconda.org/conda-forge/pandoc/files?version=2.19
+requirements:
+    # per https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html#run-constrained
+    run_constrained:
+        # ==================
+        # Deal with existing limitation on osx-arm64
+        # Base
+        # ==================
+        - esmpy=8.2.0 # https://github.com/conda-forge/esmpy-feedstock/issues/55
+        - xesmf=0.6.3 # depends on esmpy
+        # ==================
+        # Documentation
+        # ==================
+        - pandoc=2.19 # currently broken for osx-arm64 https://anaconda.org/conda-forge/pandoc/files?version=2.19
 
 prefix: /opt/miniconda3/envs/xcdat_dev
