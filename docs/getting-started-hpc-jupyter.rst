@@ -18,25 +18,28 @@ Ensure ``conda`` is installed
 
 Generally, the instructions from `getting started guide <getting-started.rst>`_ can also
 be followed for HPC machines. This guide covers installing Miniconda3 and creating
-a conda environment with the ``xcdat`` package.
+a conda environment with the ``xcdat`` package. 
 
-In some cases, ``python`` and ``conda`` might be pre-installed on an HPC machine. You
-can check to see whether they are available by entering ``which conda`` and/or
-``which python`` in the command line (which will return their path if they are
-available).
+Before installing Miniconda3, you should consult your HPC documentation to see if
+``conda`` is already available; in some cases, ``python`` and ``conda`` may be 
+pre-installed on an HPC machine. You can check to see whether they are available by 
+entering ``which conda`` and/or ``which python`` in the command line (which will 
+return their path if they are available).
 
-In other cases, ``python`` and ``conda`` is available via modules on an HPC machine. For
+In other cases, ``python`` and ``conda`` are available via modules on an HPC machine. For
 example, some machines make both available via:
 
 ::
 
    module load python
 
+Once ``conda`` is active, you can create and activate a new ``xcdat`` environment
 with:
 
 ::
 
-   conda create -n xcdat -c conda-forge xcdat
+   conda create -n <ENV_NAME> -c conda-forge xcdat
+   conda activate <ENV_NAME>
 
 You may also want to use ``xcdat`` with some additional packages. For example, you can
 install ``xcdat`` with ``matplotlib``, ``ipython``, and ``ipykernel`` (see the next
@@ -44,7 +47,8 @@ section for more about ``ipykernel``):
 
 ::
 
-   conda create -n xcdat -c conda-forge xcdat matplotlib ipython ipykernel
+   conda create -n <ENV_NAME> -c conda-forge xcdat matplotlib ipython ipykernel
+   conda activate <ENV_NAME>
 
 The advantage with following this approach is that conda will attempt to resolve
 dependencies (e.g., python >= 3.8) for compatibility.
@@ -66,7 +70,7 @@ install it in your ``xcdat`` environment (created above) with:
 
 ::
 
-   conda activate xcdat
+   conda activate <ENV NAME>
    conda install -c conda-forge ipykernel
 
 Once ``ipykernel`` is added to your ``xcdat`` environment, you can create an ``xcdat``
@@ -74,7 +78,7 @@ kernel with:
 
 ::
 
-   python -m ipykernel install --user --name xcdat --display-name xcdat
+   python -m ipykernel install --user --name <ENV NAME> --display-name <ENV NAME>
 
 After the kernel is installed, login to the Jupyter instance on your HPC. Your ``xcdat``
 kernel may be available on the home launch page (to open a new notebook or command line
