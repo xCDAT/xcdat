@@ -7,20 +7,14 @@ from xcdat.axis import (  # noqa: F401
 )
 from xcdat.bounds import BoundsAccessor  # noqa: F401
 from xcdat.dataset import decode_non_cf_time, open_dataset, open_mfdataset  # noqa: F401
-# esmpy, xesmf dependency not solved for osx-arm64 https://github.com/conda-forge/esmpy-feedstock/issues/55
-# _importorskip is another option if these accumulate https://github.com/pydata/xarray/blob/main/xarray/tests/__init__.py#L29-L60
-# discussion: https://github.com/xCDAT/xcdat/issues/315
-try:
-    from xcdat.regridder.accessor import RegridderAccessor  # noqa: F401
-    from xcdat.regridder.grid import (  # noqa: F401
-        create_gaussian_grid,
-        create_global_mean_grid,
-        create_grid,
-        create_uniform_grid,
-        create_zonal_grid,
-    )
-except ImportError:
-    pass
+from xcdat.regridder.accessor import RegridderAccessor  # noqa: F401
+from xcdat.regridder.grid import (  # noqa: F401
+    create_gaussian_grid,
+    create_global_mean_grid,
+    create_grid,
+    create_uniform_grid,
+    create_zonal_grid,
+)
 from xcdat.spatial import SpatialAccessor  # noqa: F401
 from xcdat.temporal import TemporalAccessor  # noqa: F401
 from xcdat.utils import compare_datasets  # noqa: F401

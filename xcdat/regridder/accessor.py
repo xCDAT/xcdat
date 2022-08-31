@@ -14,6 +14,7 @@ try:
         "xesmf": xesmf.XESMFRegridder,
         "regrid2": regrid2.Regrid2Regridder,
     }
+    xesmfAvailable = True
 except ImportError:
     from xcdat.regridder import regrid2
     RegridTool = Literal["regrid2"]
