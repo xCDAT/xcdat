@@ -12,13 +12,11 @@ dependencies:
     - cf_xarray=0.7.4
     - cftime=1.6.1
     - dask=2022.8.0
-    - esmpy=8.2.0
     - netcdf4=1.6.0
     - numba=0.55.2 # TODO: Remove this pin once `numba` is properly patched with `numpy` compatibility.
     - numpy=1.22.4
     - pandas=1.4.3
     - xarray=2022.6.0
-    - xesmf=0.6.3
     - python-dateutil=2.8.2
     - types-python-dateutil=2.8.19
     # ==================
@@ -30,7 +28,6 @@ dependencies:
     - sphinx-book-theme=0.3.3
     - sphinx-copybutton=0.5.0
     - nbsphinx=0.8.9
-    - pandoc=2.19
     # ==================
     # Quality Assurance
     # ==================
@@ -52,4 +49,17 @@ dependencies:
     - matplotlib=3.5.2
     - jupyterlab=3.4.5
     - tbump=6.9.0
+
+run_constrained:
+    # ==================
+    # Deal with existing limitation on osx-arm64
+    # Base
+    # ==================
+    - esmpy=8.2.0 # https://github.com/conda-forge/esmpy-feedstock/issues/55
+    - xesmf=0.6.3 # depends on esmpy
+    # ==================
+    # Documentation
+    # ==================
+    - pandoc=2.19 # currently broken for osx-arm64 https://anaconda.org/conda-forge/pandoc/files?version=2.19
+
 prefix: /opt/miniconda3/envs/xcdat_dev
