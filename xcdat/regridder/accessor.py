@@ -3,14 +3,25 @@ from typing import Any, Dict, Literal, Tuple
 import xarray as xr
 
 from xcdat.axis import CFAxisName, get_axis_coord
-from xcdat.regridder import regrid2, xesmf
 
-RegridTool = Literal["xesmf", "regrid2"]
-
-REGRID_TOOLS = {
-    "xesmf": xesmf.XESMFRegridder,
-    "regrid2": regrid2.Regrid2Regridder,
-}
+# esmpy, xesmf dependency not solved for osx-arm64 https://github.com/conda-forge/esmpy-feedstock/issues/55
+# _importorskip is another option if these accumulate https://github.com/pydata/xarray/blob/main/xarray/tests/__init__.py#L29-L60
+# discussion: https://github.com/xCDAT/xcdat/issues/315
+try:
+    from xcdat.regridder import regrid2, xesmf
+    RegridTool = Literal["xesmf", "regrid2"]
+    REGRID_TOOLS = {
+        "xesmf": xesmf.XESMFRegridder,
+        "regrid2": regrid2.Regrid2Regridder,
+    }
+except ImportError:
+    from xcdat.regridder import regrid2
+    RegridTool = Literal["regrid2"]
+    REGRID_TOOLS = {
+        "regrid2": regrid2.Regrid2Regridder,
+    }
+    print("xesmf module not available")
+    xesmfAvailable = False
 
 
 @xr.register_dataset_accessor(name="regridder")
@@ -86,53 +97,54 @@ class RegridderAccessor:
 
         return coord_var, bounds_var
 
-    def horizontal_xesmf(
-        self,
-        data_var: str,
-        output_grid: xr.Dataset,
-        **options: Dict[str, Any],
-    ) -> xr.Dataset:
-        """
-        Wraps the xESMF library providing access to regridding between
-        structured rectilinear and curvilinear grids.
+    if xesmfAvailable:
+        def horizontal_xesmf(
+            self,
+            data_var: str,
+            output_grid: xr.Dataset,
+            **options: Dict[str, Any],
+        ) -> xr.Dataset:
+            """
+            Wraps the xESMF library providing access to regridding between
+            structured rectilinear and curvilinear grids.
 
-        Regrids ``data_var`` in dataset to ``output_grid``.
+            Regrids ``data_var`` in dataset to ``output_grid``.
 
-        Option documentation :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
+            Option documentation :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
 
-        Parameters
-        ----------
-        data_var: str
-            Name of the variable in the `xr.Dataset` to regrid.
-        output_grid : xr.Dataset
-            Dataset containing output grid.
-        options : Dict[str, Any]
-            Dictionary with extra parameters for the regridder.
+            Parameters
+            ----------
+            data_var: str
+                Name of the variable in the `xr.Dataset` to regrid.
+            output_grid : xr.Dataset
+                Dataset containing output grid.
+            options : Dict[str, Any]
+                Dictionary with extra parameters for the regridder.
 
-        Returns
-        -------
-        xr.Dataset
-            With the ``data_var`` variable on the grid defined in ``output_grid``.
+            Returns
+            -------
+            xr.Dataset
+                With the ``data_var`` variable on the grid defined in ``output_grid``.
 
-        Raises
-        ------
-        ValueError
-            If tool is not supported.
+            Raises
+            ------
+            ValueError
+                If tool is not supported.
 
-        Examples
-        --------
+            Examples
+            --------
 
-        Generate output grid:
+            Generate output grid:
 
-        >>> output_grid = xcdat.create_gaussian_grid(32)
+            >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Regrid data to output grid using regrid2:
+            Regrid data to output grid using regrid2:
 
-        >>> ds.regridder.horizontal_regrid2("ts", output_grid)
-        """
-        regridder = REGRID_TOOLS["xesmf"](self._ds, output_grid, **options)
+            >>> ds.regridder.horizontal_regrid2("ts", output_grid)
+            """
+            regridder = REGRID_TOOLS["xesmf"](self._ds, output_grid, **options)
 
-        return regridder.horizontal(data_var, self._ds)
+            return regridder.horizontal(data_var, self._ds)
 
     def horizontal_regrid2(
         self,
