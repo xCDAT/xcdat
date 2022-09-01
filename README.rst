@@ -12,7 +12,9 @@
 
    Xarray Climate Data Analysis Tools
 
-   |conda-forge| |platforms| |CI/CD Build Workflow| |docs| |Codecov|
+   |conda| |conda-forge| |platforms| |conda-downloads|
+
+   |CI/CD Build Workflow| |docs| |Codecov|
 
    |pre-commit| |Code style: black| |flake8| |Checked with mypy|
 
@@ -21,9 +23,13 @@
 
       </h3>
 
+.. |conda| image:: https://anaconda.org/conda-forge/xcdat/badges/installer/conda.svg
+   :target: https://anaconda.org/conda-forge/xcdat
 .. |conda-forge| image:: https://img.shields.io/conda/vn/conda-forge/xcdat.svg
    :target: https://anaconda.org/conda-forge/xcdat
 .. |platforms| image:: https://img.shields.io/conda/pn/conda-forge/xcdat.svg
+   :target: https://anaconda.org/conda-forge/xcdat
+.. |conda-downloads| image:: https://anaconda.org/conda-forge/xcdat/badges/downloads.svg
    :target: https://anaconda.org/conda-forge/xcdat
 .. |CI/CD Build Workflow| image:: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
    :target: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml
@@ -49,8 +55,17 @@ A major design philosophy of xCDAT is streamlining the user experience while dev
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
+Getting Started
+---------------
+
+The best resource for getting started with xCDAT is via our `documentation page <https://xcdat.readthedocs.io/en/latest/>`__. There, we provide guidance for setting up your environment on your `computer <https://xcdat.readthedocs.io/en/latest/getting-started.html>`_ generally or on an `HPC/Jupyter <https://xcdat.readthedocs.io/en/latest/getting-started-hpc-jupyter.html>`_ environment. We also include an `API Overview <https://xcdat.readthedocs.io/en/latest/api.html>`_ and `Gallery <https://xcdat.readthedocs.io/en/latest/gallery.html>`_ to highlight xCDAT functionality.
+
+xCDAT invites discussion on version releases, architecture, new feature suggestions, and other topics on the `GitHub discussion <https://github.com/xCDAT/xcdat/discussions>`_ page. Users and contributors can also view and open issues on our `GitHub Issue Tracker <https://github.com/xCDAT/xcdat/issues>`_.
+
+We welcome and appreciate contributions to xCDAT. If you'd like to help improve xCDAT, please checkout our `Contributing Guide <https://xcdat.readthedocs.io/en/latest/contributing.html>`_.
+
 Planned Features
------------------
+----------------
 
 Initial planned features include:
 

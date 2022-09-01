@@ -43,6 +43,11 @@
         // Extension settings
         // ===================
         "jupyter.notebookFileRoot": "${workspaceFolder}",
-        "autoDocstring.docstringFormat": "numpy"
+        "autoDocstring.docstringFormat": "numpy",
+        "[restructuredtext]": {
+            "editor.rulers": [88, 120],
+            "editor.wordWrap": "wordWrapColumn",
+            "editor.wordWrapColumn": 120
+        }
     }
 }
