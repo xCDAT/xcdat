@@ -11,24 +11,32 @@ from xcdat.temporal import TemporalAccessor
 
 class TestTemporalAccessor:
     def test__init__(self):
-        ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds: xr.Dataset = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
         obj = TemporalAccessor(ds)
         assert obj._dataset.identical(ds)
 
     def test_decorator(self):
-        ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+        ds: xr.Dataset = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
         obj = ds.temporal
         assert obj._dataset.identical(ds)
 
-    def test_raises_error_if_calendar_encoding_attr_is_not_set(self):
-        ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
-        ds.time.encoding = {}
-
-        with pytest.raises(KeyError):
-            TemporalAccessor(ds)
-
 
 class TestAverage:
+    def test_raises_error_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
+        self,
+    ):
+        ds: xr.Dataset = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+        ds.ts.time.encoding = {}
+
+        with pytest.raises(KeyError):
+            ds.temporal.average("ts")
+
     def test_averages_for_yearly_time_series(self):
         ds = xr.Dataset(
             coords={
@@ -421,6 +429,17 @@ class TestGroupAverage:
             dims=["time", "lat", "lon"],
             attrs={"test_attr": "test"},
         )
+
+    def test_raises_error_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
+        self,
+    ):
+        ds: xr.Dataset = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+        ds.ts.time.encoding = {}
+
+        with pytest.raises(KeyError):
+            ds.temporal.group_average("ts", freq="year")
 
     def test_weighted_annual_averages(self):
         ds = self.ds.copy()
@@ -971,7 +990,20 @@ class TestClimatology:
     # for better test reliability and accuracy. This may require subsetting.
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds: xr.Dataset = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+    def test_raises_error_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
+        self,
+    ):
+        ds: xr.Dataset = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+        ds.ts.time.encoding = {}
+
+        with pytest.raises(KeyError):
+            ds.temporal.climatology("ts", freq="season")
 
     def test_weighted_seasonal_climatology_with_DJF(self):
         ds = self.ds.copy()
@@ -1542,9 +1574,22 @@ class TestDepartures:
     # better test reliability and accuracy. This may require subsetting.
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds: xr.Dataset = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
         self.seasons = ["JJA", "MAM", "SON", "DJF"]
+
+    def test_raises_error_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
+        self,
+    ):
+        ds: xr.Dataset = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+        ds.ts.time.encoding = {}
+
+        with pytest.raises(KeyError):
+            ds.temporal.departures("ts", freq="year")
 
     def test_weighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
@@ -1823,12 +1868,15 @@ class Test_GetWeights:
     class TestWeightsForAverageMode:
         @pytest.fixture(autouse=True)
         def setup(self):
-            self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+            self.ds: xr.Dataset = generate_dataset(
+                decode_times=True, cf_compliant=False, has_bounds=True
+            )
 
         def test_weights_for_yearly_averages(self):
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
@@ -1892,6 +1940,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
@@ -1953,12 +2002,15 @@ class Test_GetWeights:
     class TestWeightsForGroupAverageMode:
         @pytest.fixture(autouse=True)
         def setup(self):
-            self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+            self.ds: xr.Dataset = generate_dataset(
+                decode_times=True, cf_compliant=False, has_bounds=True
+            )
 
         def test_weights_for_yearly_averages(self):
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "year"
             ds.temporal._weighted = "True"
@@ -2022,6 +2074,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
@@ -2166,6 +2219,7 @@ class Test_GetWeights:
             )
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2228,6 +2282,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2298,6 +2353,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2375,6 +2431,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "day"
             ds.temporal._weighted = "True"
@@ -2420,6 +2477,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "group_average"
             ds.temporal._freq = "hour"
             ds.temporal._weighted = "True"
@@ -2465,7 +2523,9 @@ class Test_GetWeights:
     class TestWeightsForClimatologyMode:
         @pytest.fixture(autouse=True)
         def setup(self):
-            self.ds: xr.Dataset = generate_dataset(cf_compliant=True, has_bounds=True)
+            self.ds: xr.Dataset = generate_dataset(
+                decode_times=True, cf_compliant=False, has_bounds=True
+            )
 
         def test_weights_for_seasonal_climatology_with_DJF(self):
             ds = self.ds.copy()
@@ -2568,6 +2628,7 @@ class Test_GetWeights:
             )
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2625,6 +2686,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "season"
             ds.temporal._weighted = "True"
@@ -2690,6 +2752,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "month"
             ds.temporal._weighted = "True"
@@ -2753,6 +2816,7 @@ class Test_GetWeights:
             ds = self.ds.copy()
 
             # Set object attrs required to test the method.
+            ds.temporal.dim = "time"
             ds.temporal._mode = "climatology"
             ds.temporal._freq = "day"
             ds.temporal._weighted = "True"
@@ -2816,7 +2880,9 @@ class Test_Averager:
     # test these cases for the public methods that call this private method.
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
     def test_raises_error_with_incorrect_mode_arg(self):
         with pytest.raises(ValueError):

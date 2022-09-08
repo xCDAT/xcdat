@@ -1,4 +1,5 @@
 """This module stores reusable test fixtures."""
+import cftime
 import numpy as np
 import xarray as xr
 
@@ -13,26 +14,26 @@ import xarray as xr
 
 # TIME
 # ====
-time_cf = xr.DataArray(
+time_decoded = xr.DataArray(
     data=np.array(
         [
-            "2000-01-16T12:00:00.000000000",
-            "2000-02-15T12:00:00.000000000",
-            "2000-03-16T12:00:00.000000000",
-            "2000-04-16T00:00:00.000000000",
-            "2000-05-16T12:00:00.000000000",
-            "2000-06-16T00:00:00.000000000",
-            "2000-07-16T12:00:00.000000000",
-            "2000-08-16T12:00:00.000000000",
-            "2000-09-16T00:00:00.000000000",
-            "2000-10-16T12:00:00.000000000",
-            "2000-11-16T00:00:00.000000000",
-            "2000-12-16T12:00:00.000000000",
-            "2001-01-16T12:00:00.000000000",
-            "2001-02-15T00:00:00.000000000",
-            "2001-12-16T12:00:00.000000000",
+            cftime.DatetimeGregorian(2000, 1, 16, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 2, 15, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 3, 16, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 4, 16, 0, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 5, 16, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 6, 16, 0, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 7, 16, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 8, 16, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 9, 16, 0, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 10, 16, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 11, 16, 0, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 12, 16, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2001, 1, 16, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2001, 2, 15, 0, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2001, 12, 16, 12, 0, 0, 0, has_year_zero=False),
         ],
-        dtype="datetime64[ns]",
+        dtype=object,
     ),
     dims=["time"],
     attrs={
@@ -41,64 +42,89 @@ time_cf = xr.DataArray(
         "standard_name": "time",
     },
 )
-# NOTE: With `decode_times=True`, the "calendar" and "units" attributes are
-# stored in `.encoding`.
-time_cf.encoding["calendar"] = "standard"
-time_cf.encoding["units"] = "days since 2000-01-01"
-
-
-# NOTE: With `decode_times=False`, the "calendar" and "units" attributes are
-# stored in `.attrs`.
-time_non_cf = xr.DataArray(
+time_encoded = xr.DataArray(
     data=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
     dims=["time"],
     attrs={
         "axis": "T",
         "long_name": "time",
         "standard_name": "time",
-        "calendar": "standard",
-        "units": "months since 2000-01-01",
     },
 )
 
-time_non_cf_unsupported = xr.DataArray(
-    data=np.arange(1850 + 1 / 24.0, 1851 + 3 / 12.0, 1 / 12.0),
-    dims=["time"],
-    attrs={
-        "units": "year A.D.",
-        "long_name": "time",
-        "standard_name": "time",
-    },
-)
-time_bnds = xr.DataArray(
+time_bnds_decoded = xr.DataArray(
     name="time_bnds",
     data=np.array(
         [
-            ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
-            ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
-            ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
-            ["2000-04-01T00:00:00.000000000", "2000-05-01T00:00:00.000000000"],
-            ["2000-05-01T00:00:00.000000000", "2000-06-01T00:00:00.000000000"],
-            ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
-            ["2000-07-01T00:00:00.000000000", "2000-08-01T00:00:00.000000000"],
-            ["2000-08-01T00:00:00.000000000", "2000-09-01T00:00:00.000000000"],
-            ["2000-09-01T00:00:00.000000000", "2000-10-01T00:00:00.000000000"],
-            ["2000-10-01T00:00:00.000000000", "2000-11-01T00:00:00.000000000"],
-            ["2000-11-01T00:00:00.000000000", "2000-12-01T00:00:00.000000000"],
-            ["2000-12-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-            ["2001-01-01T00:00:00.000000000", "2001-02-01T00:00:00.000000000"],
-            ["2001-02-01T00:00:00.000000000", "2001-03-01T00:00:00.000000000"],
-            ["2001-12-01T00:00:00.000000000", "2002-01-01T00:00:00.000000000"],
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 2, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 2, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 3, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 3, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 4, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 4, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 5, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 5, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 6, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 6, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 7, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 7, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 8, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 8, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 9, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 9, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 10, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 10, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 11, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 11, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 12, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 12, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2001, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2001, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2001, 2, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2001, 2, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2001, 3, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2001, 12, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
         ],
-        dtype="datetime64[ns]",
+        dtype=object,
     ),
-    coords={"time": time_cf},
     dims=["time", "bnds"],
     attrs={
         "xcdat_bounds": "True",
     },
 )
-time_bnds_non_cf = xr.DataArray(
+time_bnds_encoded = xr.DataArray(
     name="time_bnds",
     data=[
         [-1, 0],
@@ -117,19 +143,8 @@ time_bnds_non_cf = xr.DataArray(
         [12, 13],
         [13, 14],
     ],
-    coords={"time": time_non_cf},
     dims=["time", "bnds"],
     attrs={"xcdat_bounds": "True"},
-)
-tb = []
-for t in time_non_cf_unsupported:
-    tb.append([t - 1 / 24.0, t + 1 / 24.0])
-time_bnds_non_cf_unsupported = xr.DataArray(
-    name="time_bnds",
-    data=tb,
-    coords={"time": time_non_cf_unsupported},
-    dims=["time", "bnds"],
-    attrs={"is_generated": "True"},
 )
 
 # LATITUDE
@@ -171,69 +186,84 @@ lon_bnds = xr.DataArray(
 
 # VARIABLES
 # =========
-ts_cf = xr.DataArray(
+ts_decoded = xr.DataArray(
     name="ts",
     data=np.ones((15, 4, 4)),
-    coords={"time": time_cf, "lat": lat, "lon": lon},
+    coords={"time": time_decoded, "lat": lat, "lon": lon},
     dims=["time", "lat", "lon"],
 )
 
-ts_non_cf = xr.DataArray(
+ts_encoded = xr.DataArray(
     name="ts",
     data=np.ones((15, 4, 4)),
-    coords={"time": time_non_cf, "lat": lat, "lon": lon},
+    coords={"time": time_encoded, "lat": lat, "lon": lon},
     dims=["time", "lat", "lon"],
 )
 
 
 def generate_dataset(
-    cf_compliant: bool, has_bounds: bool, unsupported: bool = False
+    decode_times: bool,
+    cf_compliant: bool,
+    has_bounds: bool,
 ) -> xr.Dataset:
     """Generates a dataset using coordinate and data variable fixtures.
 
     Parameters
     ----------
-    cf_compliant : bool, optional
-        CF compliant time units.
-    has_bounds : bool, optional
+    decode_times : bool
+        If True, represent time coordinates `cftime` objects. If False,
+        represent time coordinates as numbers.
+    cf_compliant : bool
+        If True, use CF compliant time units ("days since ..."). If False,
+        use non-CF compliant time units ("months since ...").
+    has_bounds : bool
         Include bounds for coordinates. This also adds the "bounds" attribute
         to existing coordinates to link them to their respective bounds.
-    unsupported : bool, optional
-        Create time units that are unsupported and cannot be decoded.
-        Note that cf_compliant must be set to False.
 
     Returns
     -------
     xr.Dataset
         Test dataset.
     """
-
-    if unsupported & cf_compliant:
-        raise ValueError(
-            "Cannot set cf_compliant=True and unsupported=True. \n"
-            "Set cf_compliant=False."
-        )
-
-    if has_bounds:
+    # First, create a dataset with either encoded or decoded coordinates.
+    if decode_times:
         ds = xr.Dataset(
             data_vars={
-                "ts": ts_cf.copy(),
-                "lat_bnds": lat_bnds.copy(),
-                "lon_bnds": lon_bnds.copy(),
+                "ts": ts_decoded.copy(),
             },
-            coords={"lat": lat.copy(), "lon": lon.copy()},
+            coords={"lat": lat.copy(), "lon": lon.copy(), "time": time_decoded.copy()},
         )
 
+        # Add the calendar and units attr to the encoding dict.
+        ds["time"].encoding["calendar"] = "standard"
         if cf_compliant:
-            ds.coords["time"] = time_cf.copy()
-            ds["time_bnds"] = time_bnds.copy()
-        elif not cf_compliant:
-            if unsupported:
-                ds.coords["time"] = time_non_cf_unsupported.copy()
-                ds["time_bnds"] = time_bnds_non_cf_unsupported.copy()
-            else:
-                ds.coords["time"] = time_non_cf.copy()
-                ds["time_bnds"] = time_bnds_non_cf.copy()
+            ds["time"].encoding["units"] = "days since 2000-01-01"
+        else:
+            ds["time"].encoding["units"] = "months since 2000-01-01"
+
+    else:
+        ds = xr.Dataset(
+            data_vars={
+                "ts": ts_encoded.copy(),
+            },
+            coords={"lat": lat.copy(), "lon": lon.copy(), "time": time_encoded.copy()},
+        )
+
+        # Add the calendar and units attr to the attrs dict.
+        ds["time"].attrs["calendar"] = "standard"
+        if cf_compliant:
+            ds["time"].attrs["units"] = "days since 2000-01-01"
+        else:
+            ds["time"].attrs["units"] = "months since 2000-01-01"
+
+    if has_bounds:
+        ds["lat_bnds"] = lat_bnds.copy()
+        ds["lon_bnds"] = lon_bnds.copy()
+
+        if decode_times:
+            ds["time_bnds"] = time_bnds_decoded.copy()
+        else:
+            ds["time_bnds"] = time_bnds_encoded.copy()
 
         # If the "bounds" attribute is included in an existing DataArray and
         # added to a new Dataset, it will get dropped. Therefore, it needs to be
@@ -241,16 +271,5 @@ def generate_dataset(
         ds["lat"].attrs["bounds"] = "lat_bnds"
         ds["lon"].attrs["bounds"] = "lon_bnds"
         ds["time"].attrs["bounds"] = "time_bnds"
-
-    elif not has_bounds:
-        ds = xr.Dataset(
-            data_vars={"ts": ts_cf.copy()},
-            coords={"lat": lat.copy(), "lon": lon.copy()},
-        )
-
-        if cf_compliant:
-            ds.coords["time"] = time_cf.copy()
-        elif not cf_compliant:
-            ds.coords["time"] = time_non_cf.copy()
 
     return ds
