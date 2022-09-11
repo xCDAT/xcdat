@@ -263,6 +263,10 @@ class SpatialAccessor:
 
         for key in axis:
             d_bounds = axis_bounds[key]["domain"]
+            # the logic for generating longitude weights depends on the
+            # bounds being ordered such that d_bounds[:, 0] < d_bounds[:, 1]
+            # they are re-ordered (if need be) for the purpose of creating
+            # weights
             d_bounds = self._force_domain_order_low_to_high(d_bounds)
 
             r_bounds: Union[Optional[RegionAxisBounds], np.ndarray] = axis_bounds[key][
