@@ -44,11 +44,10 @@ Installation
 
    .. code-block:: console
 
-       >>> conda create -n <ENV_NAME> -c conda-forge xcdat <OPTIONAL_DEPENDENCIES>
+       >>> conda create -n <ENV_NAME> -c conda-forge xcdat
        >>> conda activate <ENV_NAME>
 
-
-2. Install ``xcdat`` in an existing Conda environment (`conda install`_)
+2. Install ``xcdat`` in an existing conda environment (`conda install`_)
 
    You can also install ``xcdat`` in an existing Conda environment, granted that Conda
    is able to resolve the compatible dependencies.
@@ -56,9 +55,7 @@ Installation
    .. code-block:: console
 
        >>> conda activate <ENV_NAME>
-       >>> conda install -c conda-forge xcdat <OPTIONAL_DEPENDENCIES>
-
-   Refer to the `optional dependencies`_ section for dependencies you might want to install with ``xcdat``.
+       >>> conda install -c conda-forge xcdat
 
 3. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
    either in step 1 or step 2 above:
@@ -76,15 +73,15 @@ Installation
 Optional dependencies
 ---------------------
 
-xCDAT includes APIs that can be enabled by installing optional dependencies.
-These dependencies are optional because they might not be supported on specific platforms (e.g., osx-arm64, windows).
-
+`xcdat` includes APIs that are enabled by installing optional dependencies.
+When installing `xcdat`, conda will attempt to also install these optional dependencies. However, some optional dependencies might be skipped if your platform does not support it (e.g., osx-arm64, windows).
+Refer to the list below for more details.
 
 Regridding
 ~~~~~~~~~~
 
-* ``xesmf``: required to enable horizontal regridding with ``xesmf``, currently not supported on `osx-arm64`_ and `windows`_
-
+* ``xesmf``: required to enable horizontal regridding with ``xesmf``
+  * Currently not supported on `osx-arm64`_ and `windows`_
   * Inherently, ``xcdat``'s ``xesmf`` `horizontal regridding API <generated/xcdat.regridder.xesmf.XESMFRegridder.rst>`_ is not supported on these platforms.
 
 .. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64

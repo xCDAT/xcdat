@@ -7,8 +7,11 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from tests import fixtures
-from xcdat.regridder import accessor, base, grid, regrid2, xesmf
+from tests import fixtures, has_xesmf, requires_xesmf
+from xcdat.regridder import accessor, base, grid, regrid2
+
+if has_xesmf:
+    from xcdat.regridder import xesmf
 
 np.set_printoptions(threshold=sys.maxsize, suppress=True)
 
@@ -409,11 +412,11 @@ class TestRegrid2Regridder:
         assert north[0], north[-1] == (60, 90)
 
 
+@requires_xesmf
 class TestXESMFRegridder:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
-
         self.new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
     def test_regrid(self):
@@ -616,6 +619,7 @@ class TestAccessor:
         ):
             self.ac.horizontal("ts", mock.MagicMock(), "test")  # type: ignore
 
+    @requires_xesmf
     @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
     def test_convenience_methods(self):
         ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
