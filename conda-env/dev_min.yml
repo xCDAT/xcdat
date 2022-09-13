@@ -1,5 +1,6 @@
-# A conda development environment with all dependencies, including optional and documentation dependencies.
-name: xcdat_dev
+# A conda development environment without the optional and documentation dependencies.
+# Use the environment if are developing on an `osx-arm64` or `windows` platform (`xesmf`/`esmpy` not supported)
+name: xcdat_dev_min
 channels:
     - conda-forge
     - defaults
@@ -19,20 +20,6 @@ dependencies:
     - pandas=1.4.3
     - python-dateutil=2.8.2
     - xarray=2022.6.0
-    # ==================
-    # Optional
-    # ==================
-    - xesmf=0.6.3
-    # ==================
-    # Documentation
-    # ==================
-    - sphinx=4.5.0
-    - sphinxcontrib-napoleon=0.7
-    - sphinx-autosummary-accessors=2022.4.0
-    - sphinx-book-theme=0.3.3
-    - sphinx-copybutton=0.5.0
-    - nbsphinx=0.8.9
-    - pandoc=2.19
     # ==================
     # Quality Assurance
     # ==================
@@ -56,4 +43,4 @@ dependencies:
     - jupyterlab=3.4.5
     - tbump=6.9.0
 
-prefix: /opt/miniconda3/envs/xcdat_dev
+prefix: /opt/miniconda3/envs/xcdat_dev_min
