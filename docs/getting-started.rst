@@ -73,8 +73,7 @@ Installation
 Optional dependencies
 ---------------------
 
-``xcdat`` includes APIs that are enabled by installing optional dependencies. conda will automatically attempt to install these optional dependencies with ``xcdat``.
-However, some optional dependencies might be skipped if your platform does not support it (e.g., ``osx-arm64``, ``windows``). ``windows`` users can try `WSL2`_ as a workaround.
+``xcdat`` includes APIs that are enabled by installing optional dependencies. conda will automatically attempt to install these optional dependencies with ``xcdat``. However, some optional dependencies might be skipped if your platform does not support it (e.g., ``osx-arm64``, ``windows``). ``windows`` users can try `WSL2`_ as a workaround.
 
 .. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
 
