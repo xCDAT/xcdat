@@ -641,16 +641,12 @@ class TestBase:
 
         output_ds = base.preserve_bounds(ds_with_bounds, ds_without_bounds, target)
 
-        assert "lat_bnds" in output_ds
-        assert "lon_bnds" in output_ds
         assert "time_bnds" in output_ds
 
         target = xr.Dataset()
 
         output_ds = base.preserve_bounds(ds_without_bounds, ds_without_bounds, target)
 
-        assert "lat_bnds" not in output_ds
-        assert "lon_bnds" not in output_ds
         assert "time_bnds" in output_ds
 
     def test_regridder_implementation(self):
