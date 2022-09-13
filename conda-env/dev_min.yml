@@ -1,5 +1,5 @@
 # A conda development environment without the optional and documentation dependencies.
-# Use the environment if are developing on an `osx-arm64` or `windows` platform (`xesmf`/`esmpy` not supported)
+# Use the environment if you are developing on an `osx-arm64` or `windows` platform (`xesmf`/`esmpy` not supported)
 name: xcdat_dev_min
 channels:
     - conda-forge
