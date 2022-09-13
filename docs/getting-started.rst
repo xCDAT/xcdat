@@ -73,16 +73,17 @@ Installation
 Optional dependencies
 ---------------------
 
-`xcdat` includes APIs that are enabled by installing optional dependencies.
-When installing `xcdat`, conda will attempt to also install these optional dependencies. However, some optional dependencies might be skipped if your platform does not support it (e.g., osx-arm64, windows).
-Refer to the list below for more details.
+``xcdat`` includes APIs that are enabled by installing optional dependencies. conda will automatically attempt to install these optional dependencies with ``xcdat``.
+However, some optional dependencies might be skipped if your platform does not support it (e.g., ``osx-arm64``, ``windows``). ``windows`` users can try `WSL2`_ as a workaround.
+
+.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
 
 Regridding
 ~~~~~~~~~~
 
 * ``xesmf``: required to enable horizontal regridding with ``xesmf``
-  * Currently not supported on `osx-arm64`_ and `windows`_
-  * Inherently, ``xcdat``'s ``xesmf`` `horizontal regridding API <generated/xcdat.regridder.xesmf.XESMFRegridder.rst>`_ is not supported on these platforms.
+
+  * Currently not supported on `osx-arm64`_ and `windows`_ due to ``esmpy``, which lacks support for these platforms.
 
 .. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
 .. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
