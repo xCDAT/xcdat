@@ -44,8 +44,9 @@ Installation
 
    .. code-block:: console
 
-       >>> conda create -n <ENV_NAME> -c conda-forge xcdat
+       >>> conda create -n <ENV_NAME> -c conda-forge xcdat <OPTIONAL_DEPENDENCIES>
        >>> conda activate <ENV_NAME>
+
 
 2. Install ``xcdat`` in an existing conda environment (`conda install`_)
 
@@ -55,34 +56,28 @@ Installation
    .. code-block:: console
 
        >>> conda activate <ENV_NAME>
-       >>> conda install -c conda-forge xcdat
+       >>> conda install -c conda-forge xcdat <OPTIONAL_DEPENDENCIES>
 
-3. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
-   either in step 1 or step 2 above:
+3. [Optional] Specific features in ``xcdat`` require the installation of optional
+   dependencies, either in step 1 or step 2 above:
 
-        - ``jupyterlab``: a web-based interactive development environment for notebooks,
-          code, and data. This package also includes ``ipykernel``.
-        - ``matplotlib``: a library for creating visualizations in Python.
-        - ``cartopy``: an add-on package for ``matplotlib`` and specialized for geospatial data processing.
+   - ``xesmf``: required to enable horizontal regridding with ``xesmf``
 
-.. _conda create: https://docs.conda.io/projects/conda/en/latest/commands/create.html?highlight=create
-.. _conda install: https://docs.conda.io/projects/conda/en/latest/commands/install.html?highlight=install
-
-.. _optional-dependencies:
-
-Optional dependencies
----------------------
-
-``xcdat`` includes APIs that are enabled by installing optional dependencies. conda will automatically attempt to install these optional dependencies with ``xcdat``. However, some optional dependencies might be skipped if your platform does not support it (e.g., ``osx-arm64``, ``windows``). ``windows`` users can try `WSL2`_ as a workaround.
-
-.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
-
-Regridding
-~~~~~~~~~~
-
-* ``xesmf``: required to enable horizontal regridding with ``xesmf``
-
-  * Currently not supported on `osx-arm64`_ and `windows`_ due to ``esmpy``, which lacks support for these platforms.
+     - Currently not supported on `osx-arm64`_ and `windows`_ due to ``esmpy``,
+       which lacks support for these platforms. ``windows`` users can try `WSL2`_
+       as a workaround.
 
 .. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
 .. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
+.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
+
+4. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
+   either in step 1 or step 2 above:
+
+   - ``jupyterlab``: a web-based interactive development environment for notebooks,
+     code, and data. This package also includes ``ipykernel``.
+   - ``matplotlib``: a library for creating visualizations in Python.
+   - ``cartopy``: an add-on package for ``matplotlib`` and specialized for geospatial data processing.
+
+.. _conda create: https://docs.conda.io/projects/conda/en/latest/commands/create.html?highlight=create
+.. _conda install: https://docs.conda.io/projects/conda/en/latest/commands/install.html?highlight=install
