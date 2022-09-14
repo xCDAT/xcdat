@@ -89,7 +89,7 @@ def str_to_bool(attr: str) -> bool:
 
 
 def _has_module(modname: str) -> bool:  # pragma: no cover
-    """Checks module is installed in the environment.
+    """Checks if the specified module is installed in the Python environment.
 
     Parameters
     ----------

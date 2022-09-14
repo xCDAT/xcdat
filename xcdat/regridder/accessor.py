@@ -3,13 +3,11 @@ from typing import Any, Dict, Literal, Tuple
 import xarray as xr
 
 from xcdat.axis import CFAxisName, get_axis_coord
-from xcdat.regridder import regrid2
-from xcdat.utils import _has_module
+from xcdat.regridder import has_xesmf, regrid2
 
 RegridTool = Literal["xesmf", "regrid2"]
 REGRID_TOOLS = {"regrid2": regrid2.Regrid2Regridder}
 
-has_xesmf = _has_module("xesmf")
 if has_xesmf:
     from xcdat.regridder import xesmf
 
