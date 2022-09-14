@@ -197,7 +197,7 @@ class RegridderAccessor:
         self,
         data_var: str,
         output_grid: xr.Dataset,
-        tool: RegridTool,
+        tool: RegridTool = "xesmf",
         **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
