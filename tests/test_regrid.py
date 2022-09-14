@@ -419,6 +419,13 @@ class TestXESMFRegridder:
         self.ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
         self.new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
+    @pytest.mark.xfail
+    def test_raises_error_if_xesmf_is_not_installed(self):
+        # TODO Find a way to mock the value of `_has_xesmf` to False or
+        # to remove the `xesmf` module entirely
+        with pytest.raises(ModuleNotFoundError):
+            xesmf.XESMFRegridder(self.ds, self.new_grid, "bilinear")
+
     def test_regrid(self):
         ds = self.ds.copy()
 
@@ -633,6 +640,16 @@ class TestAccessor:
         output_regrid2 = ds.regridder.horizontal_regrid2("ts", out_grid)
 
         assert output_regrid2.ts.shape == (15, 32, 65)
+
+    @pytest.mark.xfail
+    def test_raises_error_if_xesmf_is_not_installed(self):
+        # TODO Find a way to mock the value of `_has_xesmf` to False or
+        # to remove the `xesmf` module entirely
+        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+
+        out_grid = grid.create_gaussian_grid(32)
+        with pytest.raises(ModuleNotFoundError):
+            ds.regridder.horizontal_xesmf("ts", out_grid, method="bilinear")
 
 
 class TestBase:

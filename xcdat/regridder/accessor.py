@@ -9,8 +9,9 @@ from xcdat.utils import _has_module
 RegridTool = Literal["xesmf", "regrid2"]
 REGRID_TOOLS = {"regrid2": regrid2.Regrid2Regridder}
 
+# TODO: Test this conditional.
 _has_xesmf = _has_module("xesmf")
-if _has_xesmf:
+if _has_xesmf:  # pragma: no cover
     from xcdat.regridder import xesmf
 
     REGRID_TOOLS["xesmf"] = xesmf.XESMFRegridder  # type: ignore
@@ -133,11 +134,12 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_xesmf("ts", output_grid)
         """
-        if _has_xesmf:
+        # TODO: Test this conditional.
+        if _has_xesmf:  # pragma: no cover
             regridder = REGRID_TOOLS["xesmf"](self._ds, output_grid, **options)
 
             return regridder.horizontal(data_var, self._ds)
-        else:
+        else:  # pragma: no cover
             raise ModuleNotFoundError(
                 "The `xesmf` package is required for horizontal regridding with "
                 "`xesmf`. Make sure your platform supports `xesmf` and it is installed "
@@ -254,7 +256,8 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_regrid2("ts", output_grid)
         """
-        if tool == "xesmf" and not _has_xesmf:
+        # TODO: Test this conditional.
+        if tool == "xesmf" and not _has_xesmf:  # pragma: no cover
             raise ModuleNotFoundError(
                 "The `xesmf` package is required for horizontal regridding with "
                 "`xesmf`. Make sure your platform supports `xesmf` and it is installed "
