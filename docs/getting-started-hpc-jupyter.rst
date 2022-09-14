@@ -34,12 +34,17 @@ example, some machines make both available via:
    module load python
 
 Once ``conda`` is active, you can create and activate a new ``xcdat`` environment
-with:
+with ``xesmf`` (a recommended dependency):
 
 ::
 
-   conda create -n <ENV_NAME> -c conda-forge xcdat
+   conda create -n <ENV_NAME> -c conda-forge xcdat xesmf
    conda activate <ENV_NAME>
+
+Note that ``xesmf`` is an optional dependency, which is required for horizontal
+regridding. ``xesmf`` is not currently supported on `osx-arm64`_ or `windows`_
+because ``esmpy`` is not yet available on these platforms. ``windows`` users can
+try `WSL2`_ as a workaround.
 
 You may also want to use ``xcdat`` with some additional packages. For example, you can
 install ``xcdat`` with ``matplotlib``, ``ipython``, and ``ipykernel`` (see the next
@@ -47,7 +52,7 @@ section for more about ``ipykernel``):
 
 ::
 
-   conda create -n <ENV_NAME> -c conda-forge xcdat matplotlib ipython ipykernel
+   conda create -n <ENV_NAME> -c conda-forge xcdat xesmf matplotlib ipython ipykernel
    conda activate <ENV_NAME>
 
 The advantage with following this approach is that conda will attempt to resolve

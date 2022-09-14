@@ -40,13 +40,18 @@ Installation
    The advantage with following this approach is that Conda will attempt to resolve
    dependencies (e.g. ``python >= 3.8``) for compatibility.
 
-   To create a conda environment with ``xcdat``, run:
+   To create an ``xcdat`` conda environment with ``xesmf`` (a recommended dependency),
+   run:
 
    .. code-block:: console
 
-       >>> conda create -n <ENV_NAME> -c conda-forge xcdat <OPTIONAL_DEPENDENCIES>
+       >>> conda create -n <ENV_NAME> -c conda-forge xcdat xesmf
        >>> conda activate <ENV_NAME>
 
+   Note that ``xesmf`` is an optional dependency, which is required for horizontal
+   regridding. ``xesmf`` is not currently supported on `osx-arm64`_ or `windows`_
+   because ``esmpy`` is not yet available on these platforms. ``windows`` users can
+   try `WSL2`_ as a workaround.
 
 2. Install ``xcdat`` in an existing conda environment (`conda install`_)
 
@@ -56,16 +61,9 @@ Installation
    .. code-block:: console
 
        >>> conda activate <ENV_NAME>
-       >>> conda install -c conda-forge xcdat <OPTIONAL_DEPENDENCIES>
+       >>> conda install -c conda-forge xcdat xesmf
 
-3. [Optional] Specific features in ``xcdat`` require the installation of optional
-   dependencies, either in step 1 or step 2 above:
-
-   - ``xesmf``: required to enable horizontal regridding with ``xesmf``
-
-     - Currently not supported on `osx-arm64`_ and `windows`_ due to ``esmpy``,
-       which lacks support for these platforms. ``windows`` users can try `WSL2`_
-       as a workaround.
+   Note: As above, ``xesmf`` is an optional dependency.
 
 .. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
 .. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
