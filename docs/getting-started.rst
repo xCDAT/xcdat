@@ -48,10 +48,10 @@ Installation
        >>> conda create -n <ENV_NAME> -c conda-forge xcdat xesmf
        >>> conda activate <ENV_NAME>
 
-   Note that ``xesmf`` is an optional dependency, which is required for horizontal
-   regridding. ``xesmf`` is not currently supported on `osx-arm64`_ or `windows`_
-   because ``esmpy`` is not yet available on these platforms. Windows users can
-   try `WSL2`_ as a workaround.
+   Note that ``xesmf`` is an optional dependency, which is required using ``xesmf``
+   based horizontal regridding APIs in ``xcdat``. ``xesmf`` is not currently supported
+   on `osx-arm64`_ or `windows`_ because ``esmpy`` is not yet available on these
+   platforms. Windows users can try `WSL2`_ as a workaround.
 
 .. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
 .. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
