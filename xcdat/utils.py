@@ -1,3 +1,4 @@
+import importlib
 import json
 from typing import Dict, List
 
@@ -85,3 +86,24 @@ def str_to_bool(attr: str) -> bool:
 
     bool_attr = json.loads(attr.lower())
     return bool_attr
+
+
+def _has_module(modname: str) -> bool:  # pragma: no cover
+    """Checks if the specified module is installed in the Python environment.
+
+    Parameters
+    ----------
+    modname : str
+        The name of the module.
+
+    Returns
+    -------
+    bool
+    """
+    try:
+        importlib.import_module(modname)
+        has = True
+    except ImportError:
+        has = False
+
+    return has

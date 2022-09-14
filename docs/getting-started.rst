@@ -34,21 +34,30 @@ log back in.
 Installation
 ------------
 
-1. Create a Conda environment from scratch with ``xcdat`` (`conda create`_)
+1. Create a conda environment from scratch with ``xcdat`` (`conda create`_)
 
    We recommend using the Conda environment creation procedure to install ``xcdat``.
    The advantage with following this approach is that Conda will attempt to resolve
    dependencies (e.g. ``python >= 3.8``) for compatibility.
 
-   To create a Conda environment with ``xcdat``, run:
+   To create an ``xcdat`` conda environment with ``xesmf`` (a recommended dependency),
+   run:
 
    .. code-block:: console
 
-       >>> conda create -n <ENV_NAME> -c conda-forge xcdat
+       >>> conda create -n <ENV_NAME> -c conda-forge xcdat xesmf
        >>> conda activate <ENV_NAME>
 
+   Note that ``xesmf`` is an optional dependency, which is required for using ``xesmf``
+   based horizontal regridding APIs in ``xcdat``. ``xesmf`` is not currently supported
+   on `osx-arm64`_ or `windows`_ because ``esmpy`` is not yet available on these
+   platforms. Windows users can try `WSL2`_ as a workaround.
 
-2. Install ``xcdat`` in an existing Conda environment (`conda install`_)
+.. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
+.. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
+.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
+
+2. Install ``xcdat`` in an existing conda environment (`conda install`_)
 
    You can also install ``xcdat`` in an existing Conda environment, granted that Conda
    is able to resolve the compatible dependencies.
@@ -56,15 +65,17 @@ Installation
    .. code-block:: console
 
        >>> conda activate <ENV_NAME>
-       >>> conda install -c conda-forge xcdat
+       >>> conda install -c conda-forge xcdat xesmf
+
+   Note: As above, ``xesmf`` is an optional dependency.
 
 3. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
    either in step 1 or step 2 above:
 
-        - ``jupyterlab``: a web-based interactive development environment for notebooks,
-          code, and data. This package also includes ``ipykernel``.
-        - ``matplotlib``: a library for creating visualizations in Python.
-        - ``cartopy``: an add-on package for ``matplotlib`` and specialized for geospatial data processing.
+   - ``jupyterlab``: a web-based interactive development environment for notebooks,
+     code, and data. This package also includes ``ipykernel``.
+   - ``matplotlib``: a library for creating visualizations in Python.
+   - ``cartopy``: an add-on package for ``matplotlib`` and specialized for geospatial data processing.
 
 .. _conda create: https://docs.conda.io/projects/conda/en/latest/commands/create.html?highlight=create
 .. _conda install: https://docs.conda.io/projects/conda/en/latest/commands/install.html?highlight=install
