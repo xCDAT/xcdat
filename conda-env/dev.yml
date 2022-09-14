@@ -55,5 +55,4 @@ dependencies:
     - matplotlib=3.5.2
     - jupyterlab=3.4.5
     - tbump=6.9.0
-
 prefix: /opt/miniconda3/envs/xcdat_dev
