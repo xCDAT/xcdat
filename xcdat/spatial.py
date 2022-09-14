@@ -333,8 +333,8 @@ class SpatialAccessor:
             new_domain_bounds[index_bad_cells, 1] = domain_bounds[index_bad_cells, 0]
 
             return new_domain_bounds
-        else:
-            return domain_bounds
+
+        return domain_bounds
 
     def _validate_region_bounds(self, axis: SpatialAxis, bounds: RegionAxisBounds):
         """Validates the ``bounds`` arg based on a set of criteria.
