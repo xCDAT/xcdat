@@ -3,8 +3,8 @@ import xarray as xr
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
 from xcdat.utils import _has_module
 
-has_xesmf = _has_module("xesmf")
-if has_xesmf:
+_has_xesmf = _has_module("xesmf")
+if _has_xesmf:
     import xesmf as xe
 else:
     raise ModuleNotFoundError(

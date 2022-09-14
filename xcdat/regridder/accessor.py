@@ -3,12 +3,14 @@ from typing import Any, Dict, Literal, Tuple
 import xarray as xr
 
 from xcdat.axis import CFAxisName, get_axis_coord
-from xcdat.regridder import has_xesmf, regrid2
+from xcdat.regridder import regrid2
+from xcdat.utils import _has_module
 
 RegridTool = Literal["xesmf", "regrid2"]
 REGRID_TOOLS = {"regrid2": regrid2.Regrid2Regridder}
 
-if has_xesmf:
+_has_xesmf = _has_module("xesmf")
+if _has_xesmf:
     from xcdat.regridder import xesmf
 
     REGRID_TOOLS["xesmf"] = xesmf.XESMFRegridder  # type: ignore
@@ -131,7 +133,7 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_xesmf("ts", output_grid)
         """
-        if has_xesmf:
+        if _has_xesmf:
             regridder = REGRID_TOOLS["xesmf"](self._ds, output_grid, **options)
 
             return regridder.horizontal(data_var, self._ds)
@@ -252,7 +254,7 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_regrid2("ts", output_grid)
         """
-        if tool == "xesmf" and not has_xesmf:
+        if tool == "xesmf" and not _has_xesmf:
             raise ModuleNotFoundError(
                 "The `xesmf` package is required for horizontal regridding with "
                 "`xesmf`. Make sure your platform supports `xesmf` and it is installed "
