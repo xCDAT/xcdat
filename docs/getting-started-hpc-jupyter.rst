@@ -18,12 +18,12 @@ Ensure ``conda`` is installed
 
 Generally, the instructions from `getting started guide <getting-started.rst>`_ can also
 be followed for HPC machines. This guide covers installing Miniconda3 and creating
-a conda environment with the ``xcdat`` package. 
+a conda environment with the ``xcdat`` package.
 
 Before installing Miniconda3, you should consult your HPC documentation to see if
-``conda`` is already available; in some cases, ``python`` and ``conda`` may be 
-pre-installed on an HPC machine. You can check to see whether they are available by 
-entering ``which conda`` and/or ``which python`` in the command line (which will 
+``conda`` is already available; in some cases, ``python`` and ``conda`` may be
+pre-installed on an HPC machine. You can check to see whether they are available by
+entering ``which conda`` and/or ``which python`` in the command line (which will
 return their path if they are available).
 
 In other cases, ``python`` and ``conda`` are available via modules on an HPC machine. For
@@ -43,8 +43,12 @@ with ``xesmf`` (a recommended dependency):
 
 Note that ``xesmf`` is an optional dependency, which is required for horizontal
 regridding. ``xesmf`` is not currently supported on `osx-arm64`_ or `windows`_
-because ``esmpy`` is not yet available on these platforms. ``windows`` users can
+because ``esmpy`` is not yet available on these platforms. Windows users can
 try `WSL2`_ as a workaround.
+
+.. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
+.. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
+.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
 
 You may also want to use ``xcdat`` with some additional packages. For example, you can
 install ``xcdat`` with ``matplotlib``, ``ipython``, and ``ipykernel`` (see the next

@@ -50,8 +50,12 @@ Installation
 
    Note that ``xesmf`` is an optional dependency, which is required for horizontal
    regridding. ``xesmf`` is not currently supported on `osx-arm64`_ or `windows`_
-   because ``esmpy`` is not yet available on these platforms. ``windows`` users can
+   because ``esmpy`` is not yet available on these platforms. Windows users can
    try `WSL2`_ as a workaround.
+
+.. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
+.. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
+.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
 
 2. Install ``xcdat`` in an existing conda environment (`conda install`_)
 
@@ -65,11 +69,7 @@ Installation
 
    Note: As above, ``xesmf`` is an optional dependency.
 
-.. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
-.. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
-.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
-
-4. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
+3. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
    either in step 1 or step 2 above:
 
    - ``jupyterlab``: a web-based interactive development environment for notebooks,
