@@ -1,6 +1,7 @@
 """Module containing geospatial averaging functions."""
 from functools import reduce
 from typing import (
+    Callable,
     Dict,
     Hashable,
     List,
@@ -244,42 +245,36 @@ class SpatialAccessor:
         and pressure).
         """
         Bounds = TypedDict(
-            "Bounds",
-            {"domain": xr.DataArray, "region": Optional[RegionAxisBounds]},
+            "Bounds", {"weights_method": Callable, "region": Optional[np.ndarray]}
         )
-        axis_bounds: Dict[SpatialAxis, Bounds] = {}
-        if "X" in axis:
-            axis_bounds["X"] = {
-                "domain": self._dataset.bounds.get_bounds("X").copy(),
-                "region": lon_bounds,
-            }
-        if "Y" in axis:
-            axis_bounds["Y"] = {
-                "domain": self._dataset.bounds.get_bounds("Y").copy(),
-                "region": lat_bounds,
-            }
+
+        axis_bounds: Dict[SpatialAxis, Bounds] = {
+            "X": {
+                "weights_method": self._get_longitude_weights,
+                "region": np.array(lon_bounds, dtype="float")
+                if lon_bounds is not None
+                else None,
+            },
+            "Y": {
+                "weights_method": self._get_latitude_weights,
+                "region": np.array(lat_bounds, dtype="float")
+                if lat_bounds is not None
+                else None,
+            },
+        }
 
         axis_weights: AxisWeights = {}
-
         for key in axis:
-            d_bounds = axis_bounds[key]["domain"]
-            # the logic for generating longitude weights depends on the
-            # bounds being ordered such that d_bounds[:, 0] < d_bounds[:, 1]
-            # they are re-ordered (if need be) for the purpose of creating
-            # weights
+            d_bounds = self._dataset.bounds.get_bounds(key).copy()
+            # The logic for generating longitude weights depends on the
+            # bounds being ordered such that d_bounds[:, 0] < d_bounds[:, 1].
+            # They are re-ordered (if need be) for the purpose of creating
+            # weights.
             d_bounds = self._force_domain_order_low_to_high(d_bounds)
 
-            r_bounds: Union[Optional[RegionAxisBounds], np.ndarray] = axis_bounds[key][
-                "region"
-            ]
-            if r_bounds is not None:
-                r_bounds = np.array(r_bounds, dtype="float")
+            r_bounds = axis_bounds[key]["region"]
 
-            if key == "X":
-                weights = self._get_longitude_weights(d_bounds, r_bounds)
-            elif key == "Y":
-                weights = self._get_latitude_weights(d_bounds, r_bounds)
-
+            weights = axis_bounds[key]["weights_method"](d_bounds, r_bounds)
             weights.attrs = d_bounds.attrs
             axis_weights[key] = weights
 
@@ -315,22 +310,28 @@ class SpatialAccessor:
             get_axis_coord(self._dataset, key)
 
     def _force_domain_order_low_to_high(self, domain_bounds: xr.DataArray):
-        """Re-orders the ``domain_bounds`` to be ordered low-to-high such that
-        domain_bounds[:, 0] < domain_bounds[:, 1].
+        """Reorders the ``domain_bounds`` low-to-high.
+
+        This method ensures all lower bound values are less than the upper bound
+        values (``domain_bounds[:, 1] < domain_bounds[:, 1]``).
+
         Parameters
         ----------
         domain_bounds: xr.DataArray
             The bounds of an axis.
+
         Returns
         ------
         xr.DataArray
             The bounds of an axis (re-ordered if applicable).
         """
         index_bad_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
+
         if len(index_bad_cells) > 0:
             new_domain_bounds = domain_bounds.copy()
             new_domain_bounds[index_bad_cells, 0] = domain_bounds[index_bad_cells, 1]
             new_domain_bounds[index_bad_cells, 1] = domain_bounds[index_bad_cells, 0]
+
             return new_domain_bounds
         else:
             return domain_bounds
