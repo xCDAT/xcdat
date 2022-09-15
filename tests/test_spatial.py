@@ -254,12 +254,26 @@ class TestGetWeights:
     def setup(self):
         self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
 
-    def test_raises_error_if_domain_lower_bound_exceeds_upper_bound(self):
-        ds = self.ds.copy()
-        ds.lon_bnds.data[:] = np.array([[1, 0], [1, 2], [2, 3], [3, 4]])
+    def test_bounds_reordered_when_upper_indexed_first(self):
+        domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array(
+                [[-89.375, -90], [0.0, -89.375], [0.0, 89.375], [89.375, 90]]
+            ),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        )
+        result = self.ds.spatial._force_domain_order_low_to_high(domain_bounds)
 
-        with pytest.raises(ValueError):
-            ds.spatial.get_weights(axis=["X"])
+        expected_domain_bounds = xr.DataArray(
+            name="lon_bnds",
+            data=np.array(
+                [[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]
+            ),
+            coords={"lat": self.ds.lat},
+            dims=["lat", "bnds"],
+        )
+        assert result.identical(expected_domain_bounds)
 
     def test_weights_for_region_in_lat_and_lon_domains(self):
         result = self.ds.spatial.get_weights(
