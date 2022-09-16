@@ -10,11 +10,11 @@ logger = setup_custom_logger(__name__)
 
 
 def preserve_bounds(
-    source: xr.Dataset, source_grid: xr.Dataset, target: xr.Dataset
+    source: xr.Dataset, target_grid: xr.Dataset, target: xr.Dataset
 ) -> xr.Dataset:
     """Preserves bounds from sources to target.
 
-    Preserve the lat/lon bounds from `source_grid` to `target`.
+    Ensure the lat/lon bounds from `target_grid` are included in the `target` dataset.
 
     Preserve any additional bounds e.g. time, vertical from `source` to `target`.
 
@@ -22,8 +22,8 @@ def preserve_bounds(
     ----------
     source : xr.Dataset
         Source Dataset.
-    source_grid : xr.Dataset
-        Source grid Dataset.
+    target_grid : xr.Dataset
+        Target grid Dataset.
     target : xr.Dataset
         Target Dataset to preserve bounds to.
 
@@ -33,14 +33,14 @@ def preserve_bounds(
         Target Dataset with preserved bounds.
     """
     try:
-        lat_bnds = source_grid.bounds.get_bounds("Y")
+        lat_bnds = target_grid.bounds.get_bounds("Y")
     except KeyError:
         pass
     else:
         target[lat_bnds.name] = lat_bnds.copy()
 
     try:
-        lon_bnds = source_grid.bounds.get_bounds("X")
+        lon_bnds = target_grid.bounds.get_bounds("X")
     except KeyError:
         pass
     else:
@@ -54,6 +54,9 @@ def preserve_bounds(
         else:
             if source_bnds.name in target:
                 logger.debug(f"Bounds {source_bnds.name!r} already present")
+            elif dim_name in ["X", "Y"]:
+                # the X / Y bounds are copied from the target grid above
+                continue
             else:
                 target[source_bnds.name] = source_bnds.copy()
 
