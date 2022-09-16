@@ -3,14 +3,18 @@ from typing import Any, Dict, Literal, Tuple
 import xarray as xr
 
 from xcdat.axis import CFAxisName, get_axis_coord
-from xcdat.regridder import regrid2, xesmf
+from xcdat.regridder import regrid2
+from xcdat.utils import _has_module
 
 RegridTool = Literal["xesmf", "regrid2"]
+REGRID_TOOLS = {"regrid2": regrid2.Regrid2Regridder}
 
-REGRID_TOOLS = {
-    "xesmf": xesmf.XESMFRegridder,
-    "regrid2": regrid2.Regrid2Regridder,
-}
+# TODO: Test this conditional.
+_has_xesmf = _has_module("xesmf")
+if _has_xesmf:  # pragma: no cover
+    from xcdat.regridder import xesmf
+
+    REGRID_TOOLS["xesmf"] = xesmf.XESMFRegridder  # type: ignore
 
 
 @xr.register_dataset_accessor(name="regridder")
@@ -126,13 +130,21 @@ class RegridderAccessor:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Regrid data to output grid using regrid2:
+        Regrid data to output grid using xesmf:
 
-        >>> ds.regridder.horizontal_regrid2("ts", output_grid)
+        >>> ds.regridder.horizontal_xesmf("ts", output_grid)
         """
-        regridder = REGRID_TOOLS["xesmf"](self._ds, output_grid, **options)
+        # TODO: Test this conditional.
+        if _has_xesmf:  # pragma: no cover
+            regridder = REGRID_TOOLS["xesmf"](self._ds, output_grid, **options)
 
-        return regridder.horizontal(data_var, self._ds)
+            return regridder.horizontal(data_var, self._ds)
+        else:  # pragma: no cover
+            raise ModuleNotFoundError(
+                "The `xesmf` package is required for horizontal regridding with "
+                "`xesmf`. Make sure your platform supports `xesmf` and it is installed "
+                "in your conda environment."
+            )
 
     def horizontal_regrid2(
         self,
@@ -244,6 +256,14 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_regrid2("ts", output_grid)
         """
+        # TODO: Test this conditional.
+        if tool == "xesmf" and not _has_xesmf:  # pragma: no cover
+            raise ModuleNotFoundError(
+                "The `xesmf` package is required for horizontal regridding with "
+                "`xesmf`. Make sure your platform supports `xesmf` and it is installed "
+                "in your conda environment."
+            )
+
         try:
             regrid_tool = REGRID_TOOLS[tool]
         except KeyError as e:
@@ -252,7 +272,6 @@ class RegridderAccessor:
             )
 
         regridder = regrid_tool(self._ds, output_grid, **options)
-
         output_ds = regridder.horizontal(data_var, self._ds)
 
         return output_ds

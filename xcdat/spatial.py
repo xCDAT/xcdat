@@ -1,6 +1,7 @@
 """Module containing geospatial averaging functions."""
 from functools import reduce
 from typing import (
+    Callable,
     Dict,
     Hashable,
     List,
@@ -244,37 +245,36 @@ class SpatialAccessor:
         and pressure).
         """
         Bounds = TypedDict(
-            "Bounds",
-            {"domain": xr.DataArray, "region": Optional[RegionAxisBounds]},
+            "Bounds", {"weights_method": Callable, "region": Optional[np.ndarray]}
         )
+
         axis_bounds: Dict[SpatialAxis, Bounds] = {
             "X": {
-                "domain": self._dataset.bounds.get_bounds("X").copy(),
-                "region": lon_bounds,
+                "weights_method": self._get_longitude_weights,
+                "region": np.array(lon_bounds, dtype="float")
+                if lon_bounds is not None
+                else None,
             },
             "Y": {
-                "domain": self._dataset.bounds.get_bounds("Y").copy(),
-                "region": lat_bounds,
+                "weights_method": self._get_latitude_weights,
+                "region": np.array(lat_bounds, dtype="float")
+                if lat_bounds is not None
+                else None,
             },
         }
 
         axis_weights: AxisWeights = {}
-
         for key in axis:
-            d_bounds = axis_bounds[key]["domain"]
-            self._validate_domain_bounds(d_bounds)
+            d_bounds = self._dataset.bounds.get_bounds(key).copy()
+            # The logic for generating longitude weights depends on the
+            # bounds being ordered such that d_bounds[:, 0] < d_bounds[:, 1].
+            # They are re-ordered (if need be) for the purpose of creating
+            # weights.
+            d_bounds = self._force_domain_order_low_to_high(d_bounds)
 
-            r_bounds: Union[Optional[RegionAxisBounds], np.ndarray] = axis_bounds[key][
-                "region"
-            ]
-            if r_bounds is not None:
-                r_bounds = np.array(r_bounds, dtype="float")
+            r_bounds = axis_bounds[key]["region"]
 
-            if key == "X":
-                weights = self._get_longitude_weights(d_bounds, r_bounds)
-            elif key == "Y":
-                weights = self._get_latitude_weights(d_bounds, r_bounds)
-
+            weights = axis_bounds[key]["weights_method"](d_bounds, r_bounds)
             weights.attrs = d_bounds.attrs
             axis_weights[key] = weights
 
@@ -309,25 +309,32 @@ class SpatialAccessor:
             # Check the axis coordinate variable exists in the Dataset.
             get_axis_coord(self._dataset, key)
 
-    def _validate_domain_bounds(self, domain_bounds: xr.DataArray):
-        """Validates the ``domain_bounds`` arg based on a set of criteria.
+    def _force_domain_order_low_to_high(self, domain_bounds: xr.DataArray):
+        """Reorders the ``domain_bounds`` low-to-high.
+
+        This method ensures all lower bound values are less than the upper bound
+        values (``domain_bounds[:, 1] < domain_bounds[:, 1]``).
 
         Parameters
         ----------
         domain_bounds: xr.DataArray
-            The bounds of an axis
+            The bounds of an axis.
 
-        Raises
+        Returns
         ------
-        TypeError
-            If the ``domain_bounds`` of a grid cell are not ordered low-to-high.
+        xr.DataArray
+            The bounds of an axis (re-ordered if applicable).
         """
         index_bad_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
+
         if len(index_bad_cells) > 0:
-            raise ValueError(
-                "The bounds have unexpected ordering. A lower bound has a "
-                "greater value than an upper bound."
-            )
+            new_domain_bounds = domain_bounds.copy()
+            new_domain_bounds[index_bad_cells, 0] = domain_bounds[index_bad_cells, 1]
+            new_domain_bounds[index_bad_cells, 1] = domain_bounds[index_bad_cells, 0]
+
+            return new_domain_bounds
+
+        return domain_bounds
 
     def _validate_region_bounds(self, axis: SpatialAxis, bounds: RegionAxisBounds):
         """Validates the ``bounds`` arg based on a set of criteria.
@@ -359,7 +366,7 @@ class SpatialAccessor:
                 "upper bounds, (lower, upper)."
             )
 
-        if len(bounds) <= 0 or len(bounds) > 2:
+        if len(bounds) != 2:
             raise ValueError(
                 f"The {axis} regional bounds is not a length of 2 (lower, upper)."
             )
@@ -602,7 +609,7 @@ class SpatialAccessor:
             domain_uppers = d_bounds[:, 1]
             region_lower, region_upper = r_bounds
 
-            # Grid cell stradling lower boundary.
+            # Grid cell straddling lower boundary.
             inds = np.where(
                 (domain_lowers < region_lower) & (domain_uppers > region_lower)
             )[0]
@@ -618,7 +625,7 @@ class SpatialAccessor:
             # and their weight will also be zero.
             d_bounds[inds, :] = region_upper
 
-            # Grid cell stradling upper boundary.
+            # Grid cell straddling upper boundary.
             inds = np.where(
                 (domain_lowers < region_upper) & (domain_uppers > region_upper)
             )[0]
