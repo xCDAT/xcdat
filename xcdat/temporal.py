@@ -795,13 +795,13 @@ class TemporalAccessor:
 
         Parameters
         ----------
-        data_var : xr.DataArray
-            The data variable with some possibly incomplete DJF seasons.
+        dataset : xr.Dataset
+            The dataset with some possibly incomplete DJF seasons.
 
         Returns
         -------
-        xr.DataArray
-            The data variable with only complete DJF seasons.
+        xr.Dataset
+            The dataset with only complete DJF seasons.
         """
         # Separate the dataset into two datasets, one with and one without
         # the time dimension. This is necessary because the xarray .where()
