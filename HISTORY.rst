@@ -18,33 +18,33 @@ Temporal Average
 ~~~~~~~~~~~~~~~~
 
 -  Fix multiple temporal avg calls on same dataset breaking by
-   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/329
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/329
 -  Fix incorrect results for group averaging with missing data by
-   @pochedls in https://github.com/xCDAT/xcdat/pull/320
+   `Stephen Po-Chedley`_ in https://github.com/xCDAT/xcdat/pull/320
 
 Spatial Average
 ~~~~~~~~~~~~~~~
 
 -  Fix spatial bugs: handle datasets with domain bounds out of order and
-   zonal averaging by @pochedls in
+   zonal averaging by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/340
 
 Horizontal Regridding
 ~~~~~~~~~~~~~~~~~~~~~
 
--  Fix regridder storing NaNs for bounds by @pochedls in
+-  Fix regridder storing NaNs for bounds by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/344
 
 Documentation
 -------------
 
--  Update README and add HPC/Jupyter Guidance by @pochedls in
+-  Update README and add HPC/Jupyter Guidance by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/331
 
 Dependencies
 ------------
 
--  Make ``xesmf`` an optional dependency by @durack1 in
+-  Make ``xesmf`` an optional dependency by `Paul Durack`_ in
    https://github.com/xCDAT/xcdat/pull/334
 
    -  This is required because ``xesmf`` (and ``esmpy`` which is a
@@ -52,6 +52,8 @@ Dependencies
       this time.
    -  Once these platforms are supported, ``xesmf`` can become a direct
       dependency of ``xcdat``.
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.3.1...v0.3.2
 
 v0.3.1 (18 August 2022)
 -----------------------
@@ -66,87 +68,72 @@ Bounds
 ^^^^^^
 
 -  Ignore singleton coordinates without dims when attempting to generate
-   bounds by `Stephen Po-Chedley <https://github.com/pochedls>`__ in
+   bounds by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/281
 -  Modify logic to not throw error for singleton coordinates (with no
-   bounds) by `Stephen Po-Chedley <https://github.com/pochedls>`__ in
+   bounds) by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/313
 
 Time Axis and Coordinates
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 -  Fix ``TypeError`` with Dask Arrays from multifile datasets in
-   temporal averaging by `Stephen
-   Po-Chedley <https://github.com/pochedls>`__ in
+   temporal averaging by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/291
 -  Use ``cftime`` to avoid out of bounds ``datetime`` when decoding
-   non-CF time coordinates by `Stephen
-   Po-Chedley <https://github.com/pochedls>`__ and `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+   non-CF time coordinates by `Stephen Po-Chedley`_ and `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/283
 -  Use ``cftime`` for temporal averaging operations to avoid out of
-   bounds ``datetime`` by `Stephen
-   Po-Chedley <https://github.com/pochedls>`__ and `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+   bounds ``datetime`` by `Stephen Po-Chedley`_ and `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/302
--  Fix ``open_mfdataset()`` dropping time encoding attrs by `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+-  Fix ``open_mfdataset()`` dropping time encoding attrs by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/309
 -  Replace “time” references with ``self._dim`` in
-   ``class TemporalAccessor`` by `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+   ``class TemporalAccessor`` by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/312
 
 Internal Changes
 ~~~~~~~~~~~~~~~~
 
--  Filters safe warnings. by `Jason
-   Boutte <https://github.com/jasonb5>`__ in
+-  Filters safe warnings. by `Jason Boutte`_ in
    https://github.com/xCDAT/xcdat/pull/276
 
 Documentation
 ~~~~~~~~~~~~~
 
--  update conda install to conda create by `Paul
-   Durack <https://github.com/durack1>`__ in
+-  update conda install to conda create by `Paul Durack`_ in
    https://github.com/xCDAT/xcdat/pull/294
--  Update project overview and planned features list by `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+-  Update project overview and planned features list by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/298
--  Fix bullet formatting in ``README.rst`` and\ ``index.rst`` by `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+-  Fix bullet formatting in ``README.rst`` and\ ``index.rst`` by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/299
--  Fix Jupyter headings not rendering with pandoc by `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+-  Fix Jupyter headings not rendering with pandoc by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/318
 
 DevOps
 ~~~~~~
 
--  Unify workspace settings with ``settings.json`` by `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+-  Unify workspace settings with ``settings.json`` by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/297
 
--  Run CI/CD on “push” and “workflow_dispatch” by `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+-  Run CI/CD on “push” and “workflow_dispatch” by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/287 and
    https://github.com/xCDAT/xcdat/pull/288
 
 -  Pin ``numba=0.55.2`` in dev env and constrain ``numba>=0.55.2`` in ci
-   env by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   env by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/280
 
--  Update conda env yml files and add missing dependencies by `Tom
-   Vo <https://github.com/tomvothecoder>`__ in
+-  Update conda env yml files and add missing dependencies by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/307
 
 New Contributors
 ~~~~~~~~~~~~~~~~
 
--  `Paul Durack <https://github.com/durack1>`__ made their first
+-  `Paul Durack`_ made their first
    contribution in https://github.com/xCDAT/xcdat/pull/294
 
-**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.3.0…v0.3.1
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.3.0...v0.3.1
 
 v0.3.0 (27 June 2022)
 ------------------------
@@ -154,18 +141,18 @@ v0.3.0 (27 June 2022)
 New Features
 ~~~~~~~~~~~~
 
--  Add horizontal regridding by `Jason Boutte <https://github.com/jasonb5>`__ in
+-  Add horizontal regridding by `Jason Boutte`_ in
    https://github.com/xCDAT/xcdat/pull/164
--  Add averages with time dimension removed by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Add averages with time dimension removed by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/236
 -  Update ``_get_weights()`` method in ``class SpatialAccessor`` and
-   ``class TemporalAccessor`` by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   ``class TemporalAccessor`` by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/252
 
    -  Add ``keep_weights`` keyword attr to reduction methods
    -  Make ``_get_weights()`` public in ``class SpatialAccessor``
 
--  Update ``get_axis_coord()`` to interpret more keys by `Tom Vo <https://github.com/tomvothecoder>`__
+-  Update ``get_axis_coord()`` to interpret more keys by `Tom Vo`_
    in https://github.com/xCDAT/xcdat/pull/262
 
    -  Along with the ``axis`` attr, it also now interprets
@@ -175,48 +162,50 @@ Bug Fixes
 ~~~~~~~~~
 
 -  Fix ``add_bounds()`` breaking when time coords are ``cftime`` objects
-   by `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/241
--  Fix parsing of custom seasons for departures by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/241
+-  Fix parsing of custom seasons for departures by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/246
 -  Update ``swap_lon_axis`` to ignore same systems, which was causing
-   odd behaviors for (0, 360) by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   odd behaviors for (0, 360) by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/257
 
 Breaking Changes
 ~~~~~~~~~~~~~~~~
 
--  Remove ``class XCDATAccessor`` by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Remove ``class XCDATAccessor`` by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/222
--  Update spatial ``axis`` arg supported type and keys by `Tom Vo <https://github.com/tomvothecoder>`__
+-  Update spatial ``axis`` arg supported type and keys by `Tom Vo`_
    in https://github.com/xCDAT/xcdat/pull/226
 
    -  Now only supports CF-compliant axis names (e.g., “X”, “Y”)
 
 -  Remove ``center_times`` kwarg from temporal averaging methods by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/254
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/254
 
 Documentation
 ~~~~~~~~~~~~~
 
 -  Revert official project name from “XCDAT” to “xCDAT” by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/231
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/231
 -  [DOC] Add CDAT API mapping table and gallery examples by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/239
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/239
 
 Internal Changes
 ~~~~~~~~~~~~~~~~
 
 -  Update time coordinates object type from ``MultiIndex`` to
    ``datetime``/``cftime`` for ``TemporalAccessor`` reduction methods
-   and add convenience methods by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   and add convenience methods by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/221
 -  Extract method ``_postprocess_dataset()`` and make bounds generation
-   optional by `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/223
+   optional by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/223
 -  Update ``add_bounds`` kwarg default value to ``True`` by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/230
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/230
 -  Update ``decode_non_cf_time`` to return input dataset if the time
-   “units” attr can’t be split into unit and reference date by `Stephen Po-Chedley <https://github.com/pochedls>`__
+   “units” attr can’t be split into unit and reference date by `Stephen Po-Chedley`_
    in https://github.com/xCDAT/xcdat/pull/263
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.2.0...v0.3.0
 
 v0.2.0 (24 March 2022)
 ------------------------
@@ -224,66 +213,67 @@ v0.2.0 (24 March 2022)
 New Features
 ~~~~~~~~~~~~
 
--  Add support for spatial averaging parallelism via Dask by `Stephen Po-Chedley <https://github.com/pochedls>`__
+-  Add support for spatial averaging parallelism via Dask by `Stephen Po-Chedley`_
    in https://github.com/xCDAT/xcdat/pull/132
 -  Refactor spatial averaging with more robust handling of longitude
-   spanning prime meridian by `Stephen Po-Chedley <https://github.com/pochedls>`__ in
+   spanning prime meridian by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/152
--  Update xcdat.open_mfdataset time decoding logic by `Stephen Po-Chedley <https://github.com/pochedls>`__ in
+-  Update xcdat.open_mfdataset time decoding logic by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/161
 -  Add function to swap dataset longitude axis orientation by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/145
--  Add utility functions by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/145
+-  Add utility functions by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/205
 -  Add temporal utilities and averaging functionalities by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/107
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/107
 
 Bug Fixes
 ~~~~~~~~~
 
 -  Add exception for coords of len <= 1 or multidimensional coords in
-   ``fill_missing_bounds()`` by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   ``fill_missing_bounds()`` by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/141
 -  Update ``open_mfdataset()`` to avoid data vars dim concatenation by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/143
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/143
 -  Fix indexing on axis keys using generic map (related to spatial
-   averaging) by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   averaging) by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/172
+
 
 Breaking Changes
 ~~~~~~~~~~~~~~~~
 
 -  Rename accessor classes and methods for API consistency by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/142
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/142
 -  Rename ``fill_missing_bounds()`` to ``add_missing_bounds()`` by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/157
--  Remove data variable inference API by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/157
+-  Remove data variable inference API by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/196
--  Rename spatial file and class by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Rename spatial file and class by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/207
 
 Documentation
 ~~~~~~~~~~~~~
 
--  update README by `Jill Chengzhu Zhang <https://github.com/chengzhuzhang>`__ in
+-  update README by `Jill Chengzhu Zhang`_ in
    https://github.com/xCDAT/xcdat/pull/127
--  Update readme by `Jiwoo Lee <https://github.com/lee1043>`__ in https://github.com/xCDAT/xcdat/pull/129
--  Update ``HISTORY.rst`` and fix docstrings by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Update readme by `Jiwoo Lee`_ in https://github.com/xCDAT/xcdat/pull/129
+-  Update ``HISTORY.rst`` and fix docstrings by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/139
--  Update ``README.rst`` content and add logo by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Update ``README.rst`` content and add logo by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/153
--  Update API Reference docs to list all APIs by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Update API Reference docs to list all APIs by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/155
 -  Add ``config.yml`` for issue templates with link to discussions by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/176
--  Add FAQs page to docs by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/176
+-  Add FAQs page to docs by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/181
--  Fix syntax of code examples from PR #181 by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Fix syntax of code examples from PR #181 by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/182
 -  Replace markdown issue templates with GitHub yml forms by
-   `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/186
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/186
 -  Update ``README.rst``, ``index.rst``, and ``project_maintenance.rst``
-   by `Tom Vo <https://github.com/tomvothecoder>`__ in https://github.com/xCDAT/xcdat/pull/211
+   by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/211
 
 Deprecations
 ~~~~~~~~~~~~
@@ -291,46 +281,45 @@ Deprecations
 Internal Changes
 ~~~~~~~~~~~~~~~~
 
--  Update logger levels to debug by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Update logger levels to debug by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/148
--  Update and remove logger debug messages by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Update and remove logger debug messages by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/193
 
 DevOps
 ~~~~~~
 
--  Add ``requires_dask`` decorator for tests by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Add ``requires_dask`` decorator for tests by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/177
--  Update dependencies in ``setup.py`` and ``dev.yml`` by `Tom Vo <https://github.com/tomvothecoder>`__
+-  Update dependencies in ``setup.py`` and ``dev.yml`` by `Tom Vo`_
    in https://github.com/xCDAT/xcdat/pull/174
--  Add matrix testing and ci specific conda env by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Add matrix testing and ci specific conda env by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/178
--  Suppress xarray warning in test suite by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Suppress xarray warning in test suite by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/179
--  Drop support for Python 3.7 by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Drop support for Python 3.7 by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/187
--  Update conda env dependencies by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Update conda env dependencies by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/189
--  Add deps to ``pre-commit`` ``mypy`` and fix issues by `Tom Vo <https://github.com/tomvothecoder>`__
+-  Add deps to ``pre-commit`` ``mypy`` and fix issues by `Tom Vo`_
    in https://github.com/xCDAT/xcdat/pull/191
 -  Add ``matplotlib`` to dev env, update ``ci.yml`` and add Python 3.10
-   to build workflow by `Tom Vo <https://github.com/tomvothecoder>`__ in
+   to build workflow by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/203
--  Replace conda with mamba in rtd build by `Tom Vo <https://github.com/tomvothecoder>`__ in
+-  Replace conda with mamba in rtd build by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/209
 
 New Contributors
 ~~~~~~~~~~~~~~~~
 
--  `Jill Chengzhu Zhang <https://github.com/chengzhuzhang>`__ made their first contribution in
+-  `Jill Chengzhu Zhang`_ made their first contribution in
    https://github.com/xCDAT/xcdat/pull/127
--  `Jiwoo Lee <https://github.com/lee1043>`__ made their first contribution in
+-  `Jiwoo Lee`_ made their first contribution in
    https://github.com/xCDAT/xcdat/pull/129
--  `Stephen Po-Chedley <https://github.com/pochedls>`__ made their first contribution in
+-  `Stephen Po-Chedley`_ made their first contribution in
    https://github.com/xCDAT/xcdat/pull/132
 
-**Full Changelog**:
-https://github.com/xCDAT/xcdat/compare/v0.1.0...v0.2.0
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.1.0...v0.2.0
 
 v0.1.0 (7 October 2021)
 ------------------------
@@ -339,8 +328,8 @@ New Features
 ~~~~~~~~~~~~
 
 -  Add geospatial averaging API through
-   ``DatasetSpatialAverageAccessor`` class by `Stephen Po-Chedley <https://github.com/pochedls>`__ and
-   `Tom Vo <https://github.com/tomvothecoder>`__ in #87
+   ``DatasetSpatialAverageAccessor`` class by `Stephen Po-Chedley`_ and
+   `Tom Vo`_ in #87
 
    -  Does not support parallelism with Dask yet
 
@@ -385,3 +374,12 @@ DevOps
 -  Pytest and pytest-cov for test suite
 
 **Full Changelog**: https://github.com/xCDAT/xcdat/commits/v0.1.0
+
+
+.. Contributor Links
+.. _Tom Vo: https://github.com/tomvothecoder
+.. _Stephen Po-Chedley: https://github.com/pochedls
+.. _Jason Boutte: https://github.com/jasonb5
+.. _Jiwoo Lee: https://github.com/lee1043
+.. _Jill Chengzhu Zhang: https://github.com/chengzhuzhang
+.. _Paul Durack: https://github.com/durack1
