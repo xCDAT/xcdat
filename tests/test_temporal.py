@@ -1698,6 +1698,126 @@ class TestDepartures:
 
         assert result.identical(expected)
 
+    def test_weighted_daily_departures_drops_leap_days_with_matching_calendar(self):
+        calendars = ["gregorian", "standard", "proleptic_gregorian"]
+
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",
+                    "2000-02-29T12:00:00.000000000",
+                    "2000-06-16T00:00:00.000000000",
+                    "2000-09-16T00:00:00.000000000",
+                    "2001-03-15T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={"axis": "T", "long_name": "time", "standard_name": "time"},
+        )
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-09-01T00:00:00.000000000", "2000-10-01T00:00:00.000000000"],
+                    ["2001-03-01T00:00:00.000000000", "2001-04-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+        ds.time.attrs["bounds"] = "time_bnds"
+        ds["ts"] = xr.DataArray(
+            data=np.array(
+                [[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]], dtype="float64"
+            ),
+            coords={"time": ds.time, "lat": ds.lat, "lon": ds.lon},
+            dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
+        )
+
+        for calendar in calendars:
+            ds_new = ds.copy()
+            ds_new.time.encoding = {"calendar": calendar}
+
+            result = ds_new.temporal.departures("ts", "day", weighted=True)
+            expected = xr.Dataset(
+                coords={
+                    "lat": ds.lat,
+                    "lon": ds.lon,
+                    "time": xr.DataArray(
+                        data=np.array(
+                            [
+                                "2000-01-16T12:00:00.000000000",
+                                "2000-06-16T00:00:00.000000000",
+                                "2000-09-16T00:00:00.000000000",
+                                "2001-03-15T12:00:00.000000000",
+                            ],
+                            dtype="datetime64[ns]",
+                        ),
+                        dims=["time"],
+                        attrs={
+                            "axis": "T",
+                            "long_name": "time",
+                            "standard_name": "time",
+                            "bounds": "time_bnds",
+                        },
+                    ),
+                },
+                data_vars={
+                    "ts": xr.DataArray(
+                        name="ts",
+                        data=np.array([[[0]], [[0]], [[0]], [[0]]]),
+                        dims=["time", "lat", "lon"],
+                        attrs={
+                            "test_attr": "test",
+                            "operation": "temporal_avg",
+                            "mode": "departures",
+                            "freq": "day",
+                            "weighted": "True",
+                        },
+                    ),
+                    "time_bnds": xr.DataArray(
+                        name="time_bnds",
+                        data=np.array(
+                            [
+                                [
+                                    "2000-01-01T00:00:00.000000000",
+                                    "2000-02-01T00:00:00.000000000",
+                                ],
+                                [
+                                    "2000-06-01T00:00:00.000000000",
+                                    "2000-07-01T00:00:00.000000000",
+                                ],
+                                [
+                                    "2000-09-01T00:00:00.000000000",
+                                    "2000-10-01T00:00:00.000000000",
+                                ],
+                                [
+                                    "2001-03-01T00:00:00.000000000",
+                                    "2001-04-01T00:00:00.000000000",
+                                ],
+                            ],
+                            dtype="datetime64[ns]",
+                        ),
+                        dims=["time", "bnds"],
+                        attrs={"xcdat_bounds": "True"},
+                    ),
+                },
+            )
+
+            assert result.identical(expected)
+
 
 class Test_GetWeights:
     class TestWeightsForAverageMode:

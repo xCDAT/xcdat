@@ -606,8 +606,12 @@ class TemporalAccessor:
         ds = self._dataset.copy()
         self._set_obj_attrs("departures", freq, weighted, season_config)
 
+        # Preprocess the dataset based on method argument values.
+        ds = self._preprocess_dataset(ds)
+
         # Group the observation data variable.
         dv_obs = _get_data_var(ds, data_var)
+        self._labeled_time = self._label_time_coords(dv_obs[self._dim])
         dv_obs_grouped = self._group_data(dv_obs)
 
         # Calculate the climatology of the data variable.
@@ -623,10 +627,10 @@ class TemporalAccessor:
         # variable '<CHOSEN_FREQ>' is not a dimension on the other argument`
         dv_climo = dv_climo.rename({self._dim: self._labeled_time.name})
 
-        # Use xarray's grouped arithmetic to calculate the departures, which is
-        # the difference grouped observation data variable and its climatology.
+        # Calculate the departures for the data variable, which uses the formula
+        # observation - climatology.
         with xr.set_options(keep_attrs=True):
-            ds_departs = self._dataset.copy()
+            ds_departs = ds.copy()
             ds_departs[data_var] = dv_obs_grouped - dv_climo
             ds_departs[data_var] = self._add_operation_attrs(ds_departs[data_var])
 
@@ -682,21 +686,8 @@ class TemporalAccessor:
         ds = self._dataset.copy()
         self._set_obj_attrs(mode, freq, weighted, season_config)
 
-        # Perform the required dataset level operations on time coordinates
-        # and time bounds first.
-        if (
-            self._freq == "season"
-            and self._season_config.get("dec_mode") == "DJF"
-            and self._season_config.get("drop_incomplete_djf") is True
-        ):
-            ds = self._drop_incomplete_djf(ds)
-
-        if (
-            self._freq in ["day"]
-            and self._mode in ["climatology", "departures"]
-            and self.calendar in ["gregorian", "standard", "proleptic_gregorian"]
-        ):
-            ds = self._drop_leap_days(ds)
+        # Preprocess the dataset based on method argument values.
+        ds = self._preprocess_dataset(ds)
 
         # Get the data variable and time bounds from the dataset and perform
         # the averaging operation.
@@ -794,73 +785,6 @@ class TemporalAccessor:
         else:
             self._season_config["custom_seasons"] = self._form_seasons(custom_seasons)
 
-    def _drop_incomplete_djf(self, dataset: xr.Dataset) -> xr.Dataset:
-        """Drops incomplete DJF seasons within a continuous time series.
-
-        This method assumes that the time series is continuous and removes the
-        leading and trailing incomplete seasons (e.g., the first January and
-        February of a time series that are not complete, because the December of
-        the previous year is missing). This method does not account for or
-        remove missing time steps anywhere else.
-
-        Parameters
-        ----------
-        dataset : xr.Dataset
-            The dataset with some possibly incomplete DJF seasons.
-
-        Returns
-        -------
-        xr.Dataset
-            The dataset with only complete DJF seasons.
-        """
-        # Separate the dataset into two datasets, one with and one without
-        # the time dimension. This is necessary because the xarray .where()
-        # method concatenates the time dimension to non-time dimension data
-        # vars, which is not a desired behavior.
-        ds = dataset.copy()
-        ds_time = ds.get([v for v in ds.data_vars if self._dim in ds[v].dims])  # type: ignore
-        ds_no_time = ds.get([v for v in ds.data_vars if self._dim not in ds[v].dims])  # type: ignore
-
-        start_year, end_year = (
-            ds[self._dim].dt.year.values[0],
-            ds[self._dim].dt.year.values[-1],
-        )
-        incomplete_seasons = (f"{start_year}-01", f"{start_year}-02", f"{end_year}-12")
-        for year_month in incomplete_seasons:
-            try:
-                coord_pt = ds.loc[dict(time=year_month)][self._dim][0]
-                ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)
-            except (KeyError, IndexError):
-                continue
-
-        ds_final = xr.merge((ds_time, ds_no_time))
-
-        return ds_final
-
-    def _drop_leap_days(self, ds: xr.Dataset):
-        """Drop leap days from time coordinates.
-
-        This method is used to drop 2/29 from leap years (if present) before
-        calculating climatology/departures for high frequency time series data
-        to avoid `cftime` breaking (`ValueError: invalid day number provided
-        in cftime.DatetimeProlepticGregorian(1, 2, 29, 0, 0, 0, 0,
-        has_year_zero=True`).
-
-        Parameters
-        ----------
-        ds : xr.Dataset
-            _description_
-
-        Returns
-        -------
-        _type_
-            _description_
-        """
-        ds = ds.sel(  # type: ignore
-            **{self._dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))}
-        )
-        return ds
-
     def _form_seasons(self, custom_seasons: List[List[str]]) -> Dict[str, List[str]]:
         """Forms custom seasons from a nested list of months.
 
@@ -911,6 +835,105 @@ class TemporalAccessor:
 
         return c_seasons
 
+    def _preprocess_dataset(self, ds: xr.Dataset) -> xr.Dataset:
+        """Preprocess the dataset based on averaging settings.
+
+        Preprocessing operations include:
+          - Drop incomplete DJF seasons (leading/trailing)
+          - Drop leap days
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            The dataset.
+
+        Returns
+        -------
+        xr.Dataset
+        """
+        if (
+            self._freq == "season"
+            and self._season_config.get("dec_mode") == "DJF"
+            and self._season_config.get("drop_incomplete_djf") is True
+        ):
+            ds = self._drop_incomplete_djf(ds)
+
+        if (
+            self._freq == "day"
+            and self._mode in ["climatology", "departures"]
+            and self.calendar in ["gregorian", "standard", "proleptic_gregorian"]
+        ):
+            ds = self._drop_leap_days(ds)
+
+        return ds
+
+    def _drop_incomplete_djf(self, dataset: xr.Dataset) -> xr.Dataset:
+        """Drops incomplete DJF seasons within a continuous time series.
+
+        This method assumes that the time series is continuous and removes the
+        leading and trailing incomplete seasons (e.g., the first January and
+        February of a time series that are not complete, because the December of
+        the previous year is missing). This method does not account for or
+        remove missing time steps anywhere else.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The dataset with some possibly incomplete DJF seasons.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset with only complete DJF seasons.
+        """
+        # Separate the dataset into two datasets, one with and one without
+        # the time dimension. This is necessary because the xarray .where()
+        # method concatenates the time dimension to non-time dimension data
+        # vars, which is not a desired behavior.
+        ds = dataset.copy()
+        ds_time = ds.get([v for v in ds.data_vars if self._dim in ds[v].dims])  # type: ignore
+        ds_no_time = ds.get([v for v in ds.data_vars if self._dim not in ds[v].dims])  # type: ignore
+
+        start_year, end_year = (
+            ds[self._dim].dt.year.values[0],
+            ds[self._dim].dt.year.values[-1],
+        )
+        incomplete_seasons = (f"{start_year}-01", f"{start_year}-02", f"{end_year}-12")
+
+        for year_month in incomplete_seasons:
+            try:
+                coord_pt = ds.loc[dict(time=year_month)][self._dim][0]
+                ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)
+            except (KeyError, IndexError):
+                continue
+
+        ds_final = xr.merge((ds_time, ds_no_time))
+
+        return ds_final
+
+    def _drop_leap_days(self, ds: xr.Dataset):
+        """Drop leap days from time coordinates.
+
+        This method is used to drop 2/29 from leap years (if present) before
+        calculating climatology/departures for high frequency time series data
+        to avoid `cftime` breaking (`ValueError: invalid day number provided
+        in cftime.DatetimeProlepticGregorian(1, 2, 29, 0, 0, 0, 0,
+        has_year_zero=True`).
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            The dataset.
+
+        Returns
+        -------
+        xr.Dataset
+        """
+        ds = ds.sel(  # type: ignore
+            **{self._dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))}
+        )
+        return ds
+
     def _average(
         self, data_var: xr.DataArray, time_bounds: xr.DataArray
     ) -> xr.DataArray:
@@ -959,6 +982,10 @@ class TemporalAccessor:
             The data variable averaged by time group.
         """
         dv = data_var.copy()
+
+        # Label the time coordinates for grouping weights and the data variable
+        # values.
+        self._labeled_time = self._label_time_coords(dv[self._dim])
 
         if self._weighted:
             self._weights = self._get_weights(time_bounds)
@@ -1080,12 +1107,6 @@ class TemporalAccessor:
         if self._mode == "average":
             dv_gb = dv.groupby(f"{self._dim}.{self._freq}")
         else:
-            # Reuse the labeled time coordinates if they are already generated.
-            # This specifically applies when generating weights, which calls
-            # this method again after it has already been called to group
-            # the data variable with the same time coordinates.
-            if not hasattr(self, "_labeled_time"):
-                self._labeled_time = self._label_time_coords(dv[self._dim])
             dv.coords[self._labeled_time.name] = self._labeled_time
             dv_gb = dv.groupby(self._labeled_time.name)
 
