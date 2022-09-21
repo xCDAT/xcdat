@@ -364,6 +364,8 @@ class TemporalAccessor:
             * "season": groups by season for the seasonal cycle climatology.
             * "month": groups by month for the annual cycle climatology.
             * "day": groups by (month, day) for the daily cycle climatology.
+              Leap days (if present) are dropped if the CF calendar type is
+              ``"gregorian"``, ``"proleptic_gregorian"``, or ``"standard"``
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
@@ -516,7 +518,10 @@ class TemporalAccessor:
 
             * "season": groups by season for the seasonal cycle departures.
             * "month": groups by month for the annual cycle departures.
-            * "day": groups by (month, day) for the daily cycle departures.
+            * "day": groups by (month, day) for the daily cycle departures. Leap
+              days (if present) are dropped if the CF calendar type is
+              ``"gregorian"``, ``"proleptic_gregorian"``, or ``"standard"``
+
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
@@ -861,7 +866,7 @@ class TemporalAccessor:
         if (
             self._freq == "day"
             and self._mode in ["climatology", "departures"]
-            and self.calendar in ["gregorian", "standard", "proleptic_gregorian"]
+            and self.calendar in ["gregorian", "proleptic_gregorian", "standard"]
         ):
             ds = self._drop_leap_days(ds)
 
