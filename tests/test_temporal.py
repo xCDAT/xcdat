@@ -1384,8 +1384,6 @@ class TestClimatology:
         assert result.identical(expected)
 
     def test_weighted_daily_climatology_drops_leap_days_with_matching_calendar(self):
-        calendars = ["gregorian", "standard", "proleptic_gregorian"]
-
         time = xr.DataArray(
             data=np.array(
                 [
@@ -1431,6 +1429,8 @@ class TestClimatology:
             attrs={"test_attr": "test"},
         )
 
+        # Loop over calendars and test results.
+        calendars = ["gregorian", "proleptic_gregorian", "standard"]
         for calendar in calendars:
             ds_new = ds.copy()
             ds_new.time.encoding = {"calendar": calendar}
@@ -1699,8 +1699,6 @@ class TestDepartures:
         assert result.identical(expected)
 
     def test_weighted_daily_departures_drops_leap_days_with_matching_calendar(self):
-        calendars = ["gregorian", "standard", "proleptic_gregorian"]
-
         time = xr.DataArray(
             data=np.array(
                 [
@@ -1746,6 +1744,8 @@ class TestDepartures:
             attrs={"test_attr": "test"},
         )
 
+        # Loop over calendars and test results.
+        calendars = ["gregorian", "proleptic_gregorian", "standard"]
         for calendar in calendars:
             ds_new = ds.copy()
             ds_new.time.encoding = {"calendar": calendar}
