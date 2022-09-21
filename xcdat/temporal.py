@@ -682,6 +682,8 @@ class TemporalAccessor:
         ds = self._dataset.copy()
         self._set_obj_attrs(mode, freq, weighted, season_config)
 
+        # Perform the required dataset level operations on time coordinates
+        # and time bounds first.
         if (
             self._freq == "season"
             and self._season_config.get("dec_mode") == "DJF"
@@ -689,11 +691,22 @@ class TemporalAccessor:
         ):
             ds = self._drop_incomplete_djf(ds)
 
+        if (
+            self._freq in ["day"]
+            and self._mode in ["climatology", "departures"]
+            and self.calendar in ["gregorian", "standard", "proleptic_gregorian"]
+        ):
+            ds = self._drop_leap_days(ds)
+
+        # Get the data variable and time bounds from the dataset and perform
+        # the averaging operation.
         dv = _get_data_var(ds, data_var)
+        time_bounds = ds.bounds.get_bounds("T")
+
         if self._mode == "average":
-            dv = self._average(dv)
+            dv = self._average(dv, time_bounds)
         elif self._mode in ["group_average", "climatology", "departures"]:
-            dv = self._group_average(dv)
+            dv = self._group_average(dv, time_bounds)
 
         # The original time dimension is dropped from the dataset because
         # it becomes obsolete after the data variable is averaged. When the
@@ -738,9 +751,6 @@ class TemporalAccessor:
         ValueError
             If an incorrect ``dec_mode`` arg was passed.
         """
-        # The time bounds.
-        self._time_bounds = self._dataset.bounds.get_bounds("T")
-
         # General configuration attributes.
         if mode not in list(MODES):
             modes = ", ".join(f'"{word}"' for word in MODES)
@@ -820,13 +830,36 @@ class TemporalAccessor:
             try:
                 coord_pt = ds.loc[dict(time=year_month)][self._dim][0]
                 ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)
-                self._time_bounds = ds_time[self._time_bounds.name]
             except (KeyError, IndexError):
                 continue
 
         ds_final = xr.merge((ds_time, ds_no_time))
 
         return ds_final
+
+    def _drop_leap_days(self, ds: xr.Dataset):
+        """Drop leap days from time coordinates.
+
+        This method is used to drop 2/29 from leap years (if present) before
+        calculating climatology/departures for high frequency time series data
+        to avoid `cftime` breaking (`ValueError: invalid day number provided
+        in cftime.DatetimeProlepticGregorian(1, 2, 29, 0, 0, 0, 0,
+        has_year_zero=True`).
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            _description_
+
+        Returns
+        -------
+        _type_
+            _description_
+        """
+        ds = ds.sel(  # type: ignore
+            **{self._dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))}
+        )
+        return ds
 
     def _form_seasons(self, custom_seasons: List[List[str]]) -> Dict[str, List[str]]:
         """Forms custom seasons from a nested list of months.
@@ -878,13 +911,17 @@ class TemporalAccessor:
 
         return c_seasons
 
-    def _average(self, data_var: xr.DataArray) -> xr.DataArray:
+    def _average(
+        self, data_var: xr.DataArray, time_bounds: xr.DataArray
+    ) -> xr.DataArray:
         """Averages a data variable with the time dimension removed.
 
         Parameters
         ----------
         data_var : xr.DataArray
             The data variable.
+        time_bounds : xr.DataArray
+            The time bounds.
 
         Returns
         -------
@@ -895,7 +932,7 @@ class TemporalAccessor:
 
         with xr.set_options(keep_attrs=True):
             if self._weighted:
-                self._weights = self._get_weights()
+                self._weights = self._get_weights(time_bounds)
                 dv = dv.weighted(self._weights).mean(dim=self._dim)
             else:
                 dv = dv.mean(dim=self._dim)
@@ -904,13 +941,17 @@ class TemporalAccessor:
 
         return dv
 
-    def _group_average(self, data_var: xr.DataArray) -> xr.DataArray:
+    def _group_average(
+        self, data_var: xr.DataArray, time_bounds: xr.DataArray
+    ) -> xr.DataArray:
         """Averages a data variable by time group.
 
         Parameters
         ----------
         data_var : xr.DataArray
             The data variable.
+        time_bounds : xr.DataArray
+            The time bounds.
 
         Returns
         -------
@@ -920,7 +961,7 @@ class TemporalAccessor:
         dv = data_var.copy()
 
         if self._weighted:
-            self._weights = self._get_weights()
+            self._weights = self._get_weights(time_bounds)
             # Weight the data variable.
             dv *= self._weights
 
@@ -960,7 +1001,7 @@ class TemporalAccessor:
 
         return dv
 
-    def _get_weights(self) -> xr.DataArray:
+    def _get_weights(self, time_bounds: xr.DataArray) -> xr.DataArray:
         """Calculates weights for a data variable using time bounds.
 
         This method gets the length of time for each coordinate point by using
@@ -976,6 +1017,11 @@ class TemporalAccessor:
         The sum of the weights for each group is validated to ensure it equals
         1.0.
 
+        Parameters
+        ----------
+        time_bounds : xr.DataArray
+            The time bounds.
+
         Returns
         -------
         xr.DataArray
@@ -990,9 +1036,7 @@ class TemporalAccessor:
         .. [5] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
         with xr.set_options(keep_attrs=True):
-            time_lengths: xr.DataArray = (
-                self._time_bounds[:, 1] - self._time_bounds[:, 0]
-            )
+            time_lengths: xr.DataArray = time_bounds[:, 1] - time_bounds[:, 0]
 
         # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
         # when using Dask arrays. Otherwise, the numpy warning below is thrown:

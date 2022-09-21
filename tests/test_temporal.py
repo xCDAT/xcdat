@@ -2,6 +2,7 @@ import cftime
 import numpy as np
 import pytest
 import xarray as xr
+from xarray.coding.cftime_offsets import get_date_type
 from xarray.tests import requires_dask
 
 from tests.fixtures import generate_dataset
@@ -1382,6 +1383,97 @@ class TestClimatology:
 
         assert result.identical(expected)
 
+    def test_weighted_daily_climatology_drops_leap_days_with_matching_calendar(self):
+        calendars = ["gregorian", "standard", "proleptic_gregorian"]
+
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",
+                    "2000-02-29T12:00:00.000000000",
+                    "2000-06-16T00:00:00.000000000",
+                    "2000-09-16T00:00:00.000000000",
+                    "2001-03-15T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={"axis": "T", "long_name": "time", "standard_name": "time"},
+        )
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-09-01T00:00:00.000000000", "2000-10-01T00:00:00.000000000"],
+                    ["2001-03-01T00:00:00.000000000", "2001-04-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+        ds.time.attrs["bounds"] = "time_bnds"
+        ds["ts"] = xr.DataArray(
+            data=np.array(
+                [[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]], dtype="float64"
+            ),
+            coords={"time": ds.time, "lat": ds.lat, "lon": ds.lon},
+            dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
+        )
+
+        for calendar in calendars:
+            ds_new = ds.copy()
+            ds_new.time.encoding = {"calendar": calendar}
+
+            result = ds_new.temporal.climatology("ts", "day", weighted=True)
+            expected = ds.copy()
+            expected = expected.drop_dims("time")
+            expected["ts"] = xr.DataArray(
+                name="ts",
+                data=np.array([[[2.0]], [[2.0]], [[1.0]], [[1.0]]]),
+                coords={
+                    "lat": expected.lat,
+                    "lon": expected.lon,
+                    "time": xr.DataArray(
+                        data=np.array(
+                            [
+                                get_date_type(calendar)(1, 1, 16),
+                                get_date_type(calendar)(1, 3, 15),
+                                get_date_type(calendar)(1, 6, 16),
+                                get_date_type(calendar)(1, 9, 16),
+                            ],
+                        ),
+                        dims=["time"],
+                        attrs={
+                            "axis": "T",
+                            "long_name": "time",
+                            "standard_name": "time",
+                            "bounds": "time_bnds",
+                        },
+                    ),
+                },
+                dims=["time", "lat", "lon"],
+                attrs={
+                    "test_attr": "test",
+                    "operation": "temporal_avg",
+                    "mode": "climatology",
+                    "freq": "day",
+                    "weighted": "True",
+                },
+            )
+
+            assert result.identical(expected)
+
     def test_unweighted_daily_climatology(self):
         result = self.ds.temporal.climatology("ts", "day", weighted=False)
 
@@ -1654,7 +1746,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     0.08469945,
@@ -1715,7 +1807,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     0.5,
@@ -1784,7 +1876,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     0.08469945,
@@ -1847,7 +1939,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
@@ -1993,7 +2085,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     0.33695652,
@@ -2060,7 +2152,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     0.34065934,
@@ -2137,7 +2229,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     0.34065934,
@@ -2200,7 +2292,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
@@ -2246,7 +2338,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
@@ -2389,7 +2481,7 @@ class Test_GetWeights:
                 },
             )
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     0.33695652,
@@ -2450,7 +2542,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     [
@@ -2513,7 +2605,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     [
@@ -2576,7 +2668,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights()
+            result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.array(
                 [
                     0.5,
