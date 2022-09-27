@@ -64,6 +64,24 @@ xCDAT invites discussion on version releases, architecture, new feature suggesti
 
 We welcome and appreciate contributions to xCDAT. If you'd like to help improve xCDAT, please checkout our `Contributing Guide <https://xcdat.readthedocs.io/en/latest/contributing.html>`_.
 
+Stay up to Date with Releases
+-----------------------------
+xCDAT (released as ``xcdat``) follows a rapid release cycle with continuous
+integration/continuous deployment. This means releases are made relatively frequently
+based on the importance of commits. The xCDAT team reviews if commits warrant a release
+every two weeks.
+
+To be notified of releases through GitHub:
+
+1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
+2. Click the "Watch" button on the upper right-hand corner of the page.
+
+   .. image:: /docs/_static/github-watch-releases-1.png
+
+3. Click "Custom" and checkmark "Releases", and click "Apply".
+
+   .. image:: /docs/_static/github-watch-releases-2.png
+
 Planned Features
 ----------------
 
