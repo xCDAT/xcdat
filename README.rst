@@ -68,8 +68,8 @@ Stay up to Date with Releases
 -----------------------------
 xCDAT (released as ``xcdat``) follows a rapid release cycle with continuous
 integration/continuous deployment. This means releases are made relatively frequently
-based on the importance of commits. The xCDAT team reviews if commits warrant a release
-every two weeks.
+based on the importance of commits. The xCDAT core team reviews commits every two weeks
+to determine if they warrant a release.
 
 To be notified of releases through GitHub:
 
