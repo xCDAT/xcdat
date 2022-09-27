@@ -73,6 +73,24 @@ Things we are striving for:
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 .. _CF convention: http://cfconventions.org/
 
+Stay up to Date with Releases
+-----------------------------
+xCDAT (released as ``xcdat``) follows a rapid release cycle with continuous
+integration/continuous deployment. This means releases are made relatively frequently
+based on the importance of commits. The xCDAT core team reviews commits every two weeks
+to determine if they warrant a release.
+
+To be notified of releases through GitHub:
+
+1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
+2. Click the "Watch" button on the upper right-hand corner of the page.
+
+   .. image:: /_static/github-watch-releases-1.png
+
+3. Click "Custom" and checkmark "Releases", then click "Apply".
+
+   .. image:: /_static/github-watch-releases-2.png
+
 Acknowledgement
 ---------------
 
