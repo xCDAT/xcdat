@@ -78,7 +78,7 @@ To be notified of releases through GitHub:
 
    .. image:: /docs/_static/github-watch-releases-1.png
 
-3. Click "Custom" and checkmark "Releases", and click "Apply".
+3. Click "Custom" and checkmark "Releases", then click "Apply".
 
    .. image:: /docs/_static/github-watch-releases-2.png
 
