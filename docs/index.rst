@@ -123,6 +123,7 @@ See `LICENSE <LICENSE>`_ for details
    xCDAT on HPC / Jupyter <getting-started-hpc-jupyter>
    Gallery <gallery>
    API Reference <api>
+   Changelog <history>
    Frequently Asked Questions <faqs>
 
 .. toctree::
@@ -132,7 +133,6 @@ See `LICENSE <LICENSE>`_ for details
 
    Contributing Guide <contributing>
    Project Maintenance <project-maintenance>
-   What’s New <history>
    Team <authors>
 
 .. toctree::

@@ -2,6 +2,38 @@
 History
 =======
 
+v0.3.3 (12 October 2022)
+========================
+
+This patch release fixes a bug where calculating daily climatologies/departures for
+specific CF calendar types that have leap days breaks when using ``cftime``. It also
+includes documentation updates.
+
+Bug Fixes
+---------
+
+-  Drop leap days based on CF calendar type to calculate daily
+   climatologies and departures by `Tom Vo`_ and `Jiwoo Lee`_ in
+   https://github.com/xCDAT/xcdat/pull/350
+
+   -  Affected CF calendar types include ``gregorian``, ``proleptic_gregorian``, and
+      ``standard``
+   -  Since a solution implementation for handling leap days is
+      generally opinionated, we decided to go with the route of least
+      complexity and overhead (drop the leap days before performing
+      calculations). We may revisit adding more options for the user to determine how
+      they want to handle leap days (based on how valuable/desired it is).
+
+Documentation
+-------------
+
+-  Add horizontal regridding gallery notebook by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/328
+-  Add doc for staying up to date with releases by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/355
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.3.2...v0.3.3
+
 v0.3.2 (16 September 2022)
 ==========================
 
