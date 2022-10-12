@@ -19,8 +19,8 @@ Bug Fixes
    -  Since a solution implementation for handling leap days is
       generally opinionated, we decided to go with the route of least
       complexity and overhead (drop the leap days before performing
-      calculations). We may revisit adding more options to the user on
-      how to handle leap days based on how valuable/desired it is.
+      calculations). We may revisit adding more options for the user to determine how
+      they want to handle leap days (based on how valuable/desired it is).
 
 Documentation
 -------------
