@@ -5,9 +5,9 @@ History
 v0.3.3 (12 October 2022)
 ========================
 
-This patch release fixes a bug where calculating daily climatologies/departures breaks
+This patch release fixes a bug where calculating daily climatologies/departures
 for certain CF calendar types (``gregorian``, ``proleptic_gregorian``, and ``standard``)
-that have leap days when using ``cftime``. It also includes documentation updates.
+that have leap days breaks when using ``cftime``. It also includes documentation updates.
 
 Bug Fixes
 ---------
