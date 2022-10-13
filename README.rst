@@ -1,5 +1,8 @@
-.. image:: /docs/_static/xcdat_logo.png
-   :align: center
+.. raw:: html
+
+   <p align="center">
+      <img src="./docs/_static/xcdat_logo.png" alt="xCDAT logo"/>
+   </p>
 
 .. container::
 
