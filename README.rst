@@ -1,5 +1,5 @@
 .. image:: /docs/_static/xcdat_logo.png
-    :align: center
+   :align: center
 
 .. container::
 
