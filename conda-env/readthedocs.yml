@@ -33,4 +33,5 @@ dependencies:
     - sphinx-copybutton=0.5.0
     - nbsphinx=0.8.9
     - pandoc=2.19
+    - ipython=8.5.0  # Required for nbsphinx syntax highlighting.
 prefix: /opt/miniconda3/envs/xcdat_rtd

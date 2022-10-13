@@ -2,6 +2,52 @@
 Frequently Asked Questions
 ==========================
 
+.. _Metadata Interpretation:
+
+Metadata Interpretation
+-----------------------
+
+What types of datasets does ``xcdat`` primarily focus on?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``xcdat`` primarily focuses on datasets that follow the `CF convention`_.
+
+.. _CF convention: http://cfconventions.org/
+
+How does ``xcdat`` interpret dataset metadata?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+``xcdat`` leverages `cf_xarray`_ to interpret CF attributes on ``xarray`` objects.
+``xcdat`` methods and functions usually accept an ``axis`` argument (e.g.,
+``ds.temporal.average(data_var="ts", axis="T")``). This argument is internally mapped to ``cf_xarray`` mapping tables that interpret the CF attributes.
+
+.. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
+
+What CF attributes are interpreted using ``cf_xarray`` mapping tables?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+* Axis names -- used to map to `dimension coordinates`_
+
+  * For example, any ``xr.DataArray`` that has ``axis: "X"`` in its attrs will be
+    identified as the "latitude" coordinate variable by ``cf_xarray``.
+  * Refer to the ``cf_xarray`` `Axis Names`_ table for more information.
+
+* Coordinate names -- used to map to `dimension coordinates`_
+
+  * For example, any ``xr.DataArray`` that has ``standard_name: "latitude"`` or
+    ``_CoordinateAxisType: "Lat"`` or ``"units": "degrees_north"`` in its attrs will be
+    identified as the "latitude" coordinate variable by ``cf_xarray``.
+  * Refer to the ``cf_xarray`` `Coordinate Names`_ table for more information.
+
+* Bounds attribute -- used to map to bounds data variables
+
+  * For example, the ``latitude`` coordinate variable has ``bounds: "lat_bnds"``, which
+    maps its bounds to the ``lat_bnds`` data variable.
+  * Refer to ``cf_xarray`` `Bounds Variables`_ page for more information.
+
+.. _dimension coordinates: https://docs.xarray.dev/en/stable/user-guide/data-structures.html#coordinates
+.. _Axis Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axis-names
+.. _Coordinate Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names
+.. _Bounds Variables: https://cf-xarray.readthedocs.io/en/latest/bounds.html
+
 Data Wrangling
 --------------
 

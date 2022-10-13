@@ -3,14 +3,14 @@ History
 =======
 
 v0.3.3 (12 October 2022)
-========================
+------------------------
 
 This patch release fixes a bug where calculating daily climatologies/departures for
 specific CF calendar types that have leap days breaks when using ``cftime``. It also
 includes documentation updates.
 
 Bug Fixes
----------
+~~~~~~~~~
 
 -  Drop leap days based on CF calendar type to calculate daily
    climatologies and departures by `Tom Vo`_ and `Jiwoo Lee`_ in
@@ -25,7 +25,7 @@ Bug Fixes
       they want to handle leap days (based on how valuable/desired it is).
 
 Documentation
--------------
+~~~~~~~~~~~~~
 
 -  Add horizontal regridding gallery notebook by `Jason Boutte`_ in
    https://github.com/xCDAT/xcdat/pull/328
@@ -35,7 +35,7 @@ Documentation
 **Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.3.2...v0.3.3
 
 v0.3.2 (16 September 2022)
-==========================
+--------------------------
 
 This patch release focuses on bug fixes related to temporal averaging,
 spatial averaging, and regridding. ``xesmf`` is now an optional
@@ -44,10 +44,10 @@ at this time. There is a new documentation page for HPC/Jupyter
 guidance.
 
 Bug Fixes
----------
+~~~~~~~~~
 
 Temporal Average
-~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^
 
 -  Fix multiple temporal avg calls on same dataset breaking by
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/329
@@ -55,26 +55,26 @@ Temporal Average
    `Stephen Po-Chedley`_ in https://github.com/xCDAT/xcdat/pull/320
 
 Spatial Average
-~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^
 
 -  Fix spatial bugs: handle datasets with domain bounds out of order and
    zonal averaging by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/340
 
 Horizontal Regridding
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 -  Fix regridder storing NaNs for bounds by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/344
 
 Documentation
--------------
+^^^^^^^^^^^^^
 
 -  Update README and add HPC/Jupyter Guidance by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/331
 
 Dependencies
-------------
+^^^^^^^^^^^^
 
 -  Make ``xesmf`` an optional dependency by `Paul Durack`_ in
    https://github.com/xCDAT/xcdat/pull/334
