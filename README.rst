@@ -1,8 +1,5 @@
-.. raw:: html
-
-   <p align="center">
-      <img src="./docs/_static/xcdat_logo.png" alt="xCDAT logo"/>
-   </p>
+.. image:: ../docs/_static/xcdat_logo.png
+    :align: center
 
 .. container::
 
@@ -17,7 +14,6 @@
    |CI/CD Build Workflow| |docs| |Codecov|
 
    |pre-commit| |Code style: black| |flake8| |Checked with mypy|
-
 
    .. raw:: html
 
@@ -55,10 +51,11 @@ A major design philosophy of xCDAT is streamlining the user experience while dev
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
+
 Getting Started
 ---------------
 
-The best resource for getting started with xCDAT is via our `documentation page <https://xcdat.readthedocs.io/en/latest/>`__. There, we provide guidance for setting up your environment on your `computer <https://xcdat.readthedocs.io/en/latest/getting-started.html>`_ generally or on an `HPC/Jupyter <https://xcdat.readthedocs.io/en/latest/getting-started-hpc-jupyter.html>`_ environment. We also include an `API Overview <https://xcdat.readthedocs.io/en/latest/api.html>`_ and `Gallery <https://xcdat.readthedocs.io/en/latest/gallery.html>`_ to highlight xCDAT functionality.
+This `documentation page <https://xcdat.readthedocs.io/en/latest/>`__ provides guidance for setting up your environment on your `computer <https://xcdat.readthedocs.io/en/latest/getting-started.html>`_ generally or on an `HPC/Jupyter <https://xcdat.readthedocs.io/en/latest/getting-started-hpc-jupyter.html>`_ environment. We also include an `API Overview <https://xcdat.readthedocs.io/en/latest/api.html>`_ and `Gallery <https://xcdat.readthedocs.io/en/latest/gallery.html>`_ to highlight xCDAT functionality.
 
 xCDAT invites discussion on version releases, architecture, new feature suggestions, and other topics on the `GitHub discussion <https://github.com/xCDAT/xcdat/discussions>`_ page. Users and contributors can also view and open issues on our `GitHub Issue Tracker <https://github.com/xCDAT/xcdat/issues>`_.
 
@@ -76,11 +73,11 @@ To be notified of releases through GitHub:
 1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
 2. Click the "Watch" button on the upper right-hand corner of the page.
 
-   .. image:: /docs/_static/github-watch-releases-1.png
+   .. image:: ../docs/_static/github-watch-releases-1.png
 
 3. Click "Custom" and checkmark "Releases", then click "Apply".
 
-   .. image:: /docs/_static/github-watch-releases-2.png
+   .. image:: ../docs/_static/github-watch-releases-2.png
 
 Available Features
 ------------------
@@ -134,8 +131,9 @@ Things we are striving for:
 
 * Robust handling of dimensions and their coordinates and coordinate bounds
 
-   * Coordinate variables are retrieved with ``cf_xarray`` using CF axis names or
-     coordinate names found in xarray object attributes.
+  * Coordinate variables are retrieved with ``cf_xarray`` using CF axis names or
+    coordinate names found in xarray object attributes. Refer to :ref:`Metadata Interpretation`.
+    for more information.
   * Bounds are retrieved with ``cf_xarray`` using the ``"bounds"`` attr
   * Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
 
