@@ -1,4 +1,4 @@
-.. image:: ../docs/_static/xcdat_logo.png
+.. image:: _static/xcdat_logo.png
     :align: center
 
 .. container::
@@ -73,11 +73,11 @@ To be notified of releases through GitHub:
 1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
 2. Click the "Watch" button on the upper right-hand corner of the page.
 
-   .. image:: ../docs/_static/github-watch-releases-1.png
+   .. image:: _static/github-watch-releases-1.png
 
 3. Click "Custom" and checkmark "Releases", then click "Apply".
 
-   .. image:: ../docs/_static/github-watch-releases-2.png
+   .. image:: _static/github-watch-releases-2.png
 
 Available Features
 ------------------
