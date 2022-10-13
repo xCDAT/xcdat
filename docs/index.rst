@@ -19,15 +19,37 @@ xCDAT invites discussion on version releases, architecture, new feature suggesti
 
 We welcome and appreciate contributions to xCDAT. If you'd like to help improve xCDAT, please checkout our `Contributing Guide <https://xcdat.readthedocs.io/en/latest/contributing.html>`_.
 
-Planned Features
------------------
+Stay up to Date with Releases
+-----------------------------
+xCDAT (released as ``xcdat``) follows a rapid release cycle with continuous
+integration/continuous deployment. This means releases are made relatively frequently
+based on the importance of commits. The xCDAT core team reviews commits every two weeks
+to determine if they warrant a release.
 
-Initial planned features include:
+To be notified of releases through GitHub:
+
+1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
+2. Click the "Watch" button on the upper right-hand corner of the page.
+
+   .. image:: /_static/github-watch-releases-1.png
+
+3. Click "Custom" and checkmark "Releases", then click "Apply".
+
+   .. image:: /_static/github-watch-releases-2.png
+
+Available Features
+------------------
 
 * Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` with post-processing options
 
   * Generate bounds for axes supported by ``xcdat`` if they don't exist in the Dataset
-  * Optional decoding non-CF time units, in addition to CF time units (already supported in ``xarray``)
+  * Optional selection of single data variable to keep in the Dataset (bounds are also
+    kept if they exist)
+  * Optional decoding of time coordinates
+
+    * In addition to CF time units, also decodes common non-CF time units ("months since ...",
+      "years since ...")
+
   * Optional centering of time coordinates using time bounds
   * Optional conversion of longitudinal axis orientation between [0, 360) and [-180, 180)
 
@@ -46,22 +68,30 @@ Initial planned features include:
 
   * Support rectilinear and cuvilinear grids
   * Python implementation of `regrid2`_ for handling cartesian latitude longitude grids
-  * API that wraps `xESMF`_ with utilities to handle edge cases
+  * API that wraps `xESMF`_
+
+Planned Features
+----------------
 
 * Vertical structured regridding
 
   * Support rectilinear and cuvilinear grids
 
 Things we are striving for:
+---------------------------
 
 * Support for CF compliant, E3SM non-CF compliant, and common metadata
 
-  * xCDAT primarily focuses on datasets that follow the `CF convention`_. xCDAT leverages `cf_xarray`_ to interpret CF convention attributes on ``xarray`` objects
-  * Accomodations for specific non-CF compliant situations will be considered on a case-by-case basis
+  * xCDAT primarily focuses on datasets that follow the `CF convention`_.
+  * xCDAT leverages `cf_xarray`_ to interpret CF attributes on ``xarray`` objects
+  * Accomodations for specific non-CF compliant situations will be considered on a
+    case-by-case basis.
 
-* Robust handling of coordinates and its associated bounds
+* Robust handling of dimensions and their coordinates and coordinate bounds
 
-  * Coordinate variables are retrieved with ``cf_xarray`` using either the ``"axis"``, ``"standard_name"``, or dimension name attribute
+  * Coordinate variables are retrieved with ``cf_xarray`` using CF axis names or
+    coordinate names found in xarray object attributes. Refer to :ref:`Metadata Interpretation`.
+    for more information.
   * Bounds are retrieved with ``cf_xarray`` using the ``"bounds"`` attr
   * Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
 
@@ -72,24 +102,6 @@ Things we are striving for:
 .. _dask: https://dask.org/
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 .. _CF convention: http://cfconventions.org/
-
-Stay up to Date with Releases
------------------------------
-xCDAT (released as ``xcdat``) follows a rapid release cycle with continuous
-integration/continuous deployment. This means releases are made relatively frequently
-based on the importance of commits. The xCDAT core team reviews commits every two weeks
-to determine if they warrant a release.
-
-To be notified of releases through GitHub:
-
-1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
-2. Click the "Watch" button on the upper right-hand corner of the page.
-
-   .. image:: /_static/github-watch-releases-1.png
-
-3. Click "Custom" and checkmark "Releases", then click "Apply".
-
-   .. image:: /_static/github-watch-releases-2.png
 
 Acknowledgement
 ---------------
