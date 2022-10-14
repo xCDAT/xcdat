@@ -94,8 +94,9 @@ integration/continuous deployment. As a result, releases are performed relativel
 frequently based on the priority of commits. The xCDAT core team reviews commits every
 two weeks to determine if they warrant a release.
 
-After releases are performed on `GitHub Releases`_, the ``xcdat`` package version will
-be available to download through `conda-forge`_ within 30 minutes to 1 hour.
+After releases are performed on `GitHub Releases`_, the corresponding ``xcdat`` package
+version will be available to download through `conda-forge`_ within 30 minutes to 1
+hour.
 
 To be notified of releases through GitHub:
 
