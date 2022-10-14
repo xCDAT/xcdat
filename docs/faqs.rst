@@ -2,8 +2,6 @@
 Frequently Asked Questions
 ==========================
 
-.. _Metadata Interpretation:
-
 Metadata Interpretation
 -----------------------
 

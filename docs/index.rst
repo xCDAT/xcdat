@@ -6,7 +6,7 @@ serves as the spiritual successor to the Community Data Analysis Tools (`CDAT`_)
 library.
 
 The goal of xCDAT is to provide generalizable climate domain features and utilities
-that streamline the experience of developing climate data analysis code. xCDAT's design
+that streamline the developer experience for data analysis code. xCDAT's design
 philosophy is to reduce the complexity and overhead required by the user to accomplish
 specific tasks in xarray. Some xCDAT features are inspired by or ported from core CDAT
 functionalities, while others leverage powerful libraries in the xarray ecosystem
@@ -120,13 +120,14 @@ Things we are striving for:
 * Robust handling of dimensions and their coordinates and coordinate bounds
 
   * Coordinate variables are retrieved with ``cf_xarray`` using CF axis names or
-    coordinate names found in xarray object attributes. Refer to :ref:`Metadata Interpretation`.
+    coordinate names found in xarray object attributes. Refer to `Metadata Interpretation`_.
     for more information.
   * Bounds are retrieved with ``cf_xarray`` using the ``"bounds"`` attr
   * Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
 
 * Support for parallelism using `dask`_ where it is both possible and makes sense
 
+.. _Metadata Interpretation: faqs.rst#metadata-interpretation
 .. _regrid2: https://cdms.readthedocs.io/en/latest/regrid2.html
 .. _xESMF: https://pangeo-xesmf.readthedocs.io/en/latest/
 .. _dask: https://dask.org/
