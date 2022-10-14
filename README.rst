@@ -50,7 +50,7 @@ serves as the spiritual successor to the Community Data Analysis Tools (`CDAT`_)
 library.
 
 The goal of xCDAT is to provide generalizable climate domain features and utilities
-that streamline the developer experience for climate data analysis code. xCDAT's design
+that streamline the experience of developing climate data analysis code. xCDAT's design
 philosophy is to reduce the complexity and overhead required by the user to accomplish
 specific tasks in xarray. Some xCDAT features are inspired by or ported from core CDAT
 functionalities, while others leverage powerful libraries in the xarray ecosystem
