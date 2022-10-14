@@ -103,11 +103,11 @@ To be notified of releases through GitHub:
 1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
 2. Click the "Watch" button on the upper right-hand corner of the page.
 
-   .. image:: _static/github-watch-releases-1.png
+   .. image:: docs/_static/github-watch-releases-1.png
 
 3. Click "Custom" and checkmark "Releases", then click "Apply".
 
-   .. image:: _static/github-watch-releases-2.png
+   .. image:: docs/_static/github-watch-releases-2.png
 
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
 .. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
@@ -172,7 +172,7 @@ Things we are striving for:
 
 * Support for parallelism using `dask`_ where it is both possible and makes sense
 
-.. _Metadata Interpretation: ./docs/faqs.rst#metadata-interpretation
+.. _Metadata Interpretation: docs/faqs.rst#metadata-interpretation
 .. _regrid2: https://cdms.readthedocs.io/en/latest/regrid2.html
 .. _xESMF: https://pangeo-xesmf.readthedocs.io/en/latest/
 .. _dask: https://dask.org/
