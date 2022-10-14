@@ -120,7 +120,7 @@ Things we are striving for:
 * Robust handling of dimensions and their coordinates and coordinate bounds
 
   * Coordinate variables are retrieved with ``cf_xarray`` using CF axis names or
-    coordinate names found in xarray object attributes. Refer to `Metadata Interpretation`_.
+    coordinate names found in xarray object attributes. Refer to `Metadata Interpretation`_
     for more information.
   * Bounds are retrieved with ``cf_xarray`` using the ``"bounds"`` attr
   * Ability to operate on both longitudinal axis orientations, [0, 360) and [-180, 180)
