@@ -51,8 +51,8 @@ library.
 
 The goal of xCDAT is to provide generalizable climate domain features and utilities
 that streamline the experience of developing climate data analysis code. xCDAT's design
-philosophy is to reduce the complexity and number of lines required to accomplish
-certain tasks in xarray. Some xCDAT features are inspired by or ported from core CDAT
+philosophy is to reduce the complexity and overhead required by the user to accomplish
+specific tasks in xarray. Some xCDAT features are inspired by or ported from core CDAT
 functionalities, while others leverage powerful libraries in the xarray ecosystem
 (e.g., `xESMF`_ and `cf_xarray`_) to deliver robust APIs.
 
