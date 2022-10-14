@@ -9,7 +9,8 @@ Prerequisites
 
 1. Familiarity with ``xarray``, since this package is an extension of it
 
-   - Please visit the `xarray documentation`_ to get started.
+   - We highly recommend visiting the `xarray tutorial`_ and `xarray documentation`_
+     pages if you aren't familiar with ``xarray``.
 
 2. xCDAT is distributed through conda, which is available through Anaconda and Miniconda.
 
@@ -30,6 +31,7 @@ Prerequisites
    restart your shell (if you use bash). Alternatively, you can log out and
    log back in.
 
+.. _xarray tutorial: https://tutorial.xarray.dev/intro.html
 .. _xarray documentation: https://docs.xarray.dev/en/stable/getting-started-guide/index.html
 
 Installation

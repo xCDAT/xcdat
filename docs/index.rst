@@ -1,11 +1,20 @@
 xCDAT: Xarray Climate Data Analysis Tools
 =========================================
 
-xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It serves as a spiritual successor to the Community Data Analysis Tools (`CDAT`_) library.
+xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
+serves as the spiritual successor to the Community Data Analysis Tools (`CDAT`_)
+library.
 
-The goal of xCDAT is to provide generalizable climate domain features and general utilities in xarray, which includes porting some core CDAT functionalities. xCDAT leverages several powerful libraries in the xarray ecosystem (e.g., `xESMF`_ and `cf_xarray`_) to deliver robust APIs. The xCDAT core team is aiming to provide a maintainable and extensible package that serves the needs of the climate community in the long-term.
+The goal of xCDAT is to provide generalizable climate domain features and utilities
+that streamline the experience of developing climate data analysis code. xCDAT's design
+philosophy is to reduce the complexity and number of lines required to accomplish
+certain tasks in xarray. Some xCDAT features are inspired by or ported from core CDAT
+functionalities, while others leverage powerful libraries in the xarray ecosystem
+(e.g., `xESMF`_ and `cf_xarray`_) to deliver robust APIs.
 
-A major design philosophy of xCDAT is streamlining the user experience while developing code to analyze climate data. This means reducing the complexity and number of lines required to achieve certain features with xarray.
+The xCDAT core team's mission is to provide a maintainable and extensible package
+that serves the needs of the climate community in the long-term. We are excited
+to be working on this project and hope to have you onboard!
 
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
@@ -13,18 +22,35 @@ A major design philosophy of xCDAT is streamlining the user experience while dev
 Getting Started
 ---------------
 
-This `documentation page <https://xcdat.readthedocs.io/en/latest/>`__ provides guidance for setting up your environment on your `computer <https://xcdat.readthedocs.io/en/latest/getting-started.html>`_ generally or on an `HPC/Jupyter <https://xcdat.readthedocs.io/en/latest/getting-started-hpc-jupyter.html>`_ environment. We also include an `API Overview <https://xcdat.readthedocs.io/en/latest/api.html>`_ and `Gallery <https://xcdat.readthedocs.io/en/latest/gallery.html>`_ to highlight xCDAT functionality.
+This `documentation page`_ provides general guidance for setting up your Anaconda
+environment on your local `computer`_ or on an `HPC/Jupyter`_ environment. We also
+include an `API Overview`_ and `Gallery`_ to highlight xCDAT functionality.
 
-xCDAT invites discussion on version releases, architecture, new feature suggestions, and other topics on the `GitHub discussion <https://github.com/xCDAT/xcdat/discussions>`_ page. Users and contributors can also view and open issues on our `GitHub Issue Tracker <https://github.com/xCDAT/xcdat/issues>`_.
+xCDAT invites discussion on version releases, architecture, new feature suggestions, and
+other topics on the `GitHub Discussions`_ page. Users and contributors can also view and
+open issues on our `GitHub Issue Tracker`_.
 
-We welcome and appreciate contributions to xCDAT. If you'd like to help improve xCDAT, please checkout our `Contributing Guide <https://xcdat.readthedocs.io/en/latest/contributing.html>`_.
+We welcome and appreciate contributions to xCDAT. If you'd like to help improve xCDAT,
+please checkout our `Contributing Guide`_.
+
+.. _documentation page: https://xcdat.readthedocs.io/en/latest/
+.. _computer: https://xcdat.readthedocs.io/en/latest/getting-started.html
+.. _HPC/Jupyter: https://xcdat.readthedocs.io/en/latest/getting-started-hpc-jupyter.html
+.. _API Overview: https://xcdat.readthedocs.io/en/latest/api.html
+.. _Gallery: https://xcdat.readthedocs.io/en/latest/gallery.html
+.. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
+.. _GitHub Issue Tracker: https://github.com/xCDAT/xcdat/issues
+.. _Contributing Guide: https://xcdat.readthedocs.io/en/latest/contributing.html
 
 Stay up to Date with Releases
 -----------------------------
 xCDAT (released as ``xcdat``) follows a rapid release cycle with continuous
-integration/continuous deployment. This means releases are made relatively frequently
-based on the importance of commits. The xCDAT core team reviews commits every two weeks
-to determine if they warrant a release.
+integration/continuous deployment. As a result, releases are performed relatively
+frequently based on the priority of commits. The xCDAT core team reviews commits every
+two weeks to determine if they warrant a release.
+
+After releases are performed on `GitHub Releases`_, the ``xcdat`` package will be
+available to download through `conda-forge`_ within 30 minutes to 1 hour.
 
 To be notified of releases through GitHub:
 
@@ -37,6 +63,9 @@ To be notified of releases through GitHub:
 
    .. image:: _static/github-watch-releases-2.png
 
+.. _conda-forge: https://anaconda.org/conda-forge/xcdat
+.. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
+
 Available Features
 ------------------
 
@@ -47,8 +76,8 @@ Available Features
     kept if they exist)
   * Optional decoding of time coordinates
 
-    * In addition to CF time units, also decodes common non-CF time units ("months since ...",
-      "years since ...")
+    * In addition to CF time units, also decodes common non-CF time units
+      ("months since ...", "years since ...")
 
   * Optional centering of time coordinates using time bounds
   * Optional conversion of longitudinal axis orientation between [0, 360) and [-180, 180)
@@ -61,12 +90,12 @@ Available Features
 
 * Geospatial weighted averaging
 
-  * Support rectilinear grid
+  * Supports rectilinear grid
   * Optional specification of regional domain
 
 * Horizontal structured regridding
 
-  * Support rectilinear and cuvilinear grids
+  * Supports rectilinear and curvilinear grids
   * Python implementation of `regrid2`_ for handling cartesian latitude longitude grids
   * API that wraps `xESMF`_
 
@@ -75,7 +104,7 @@ Planned Features
 
 * Vertical structured regridding
 
-  * Support rectilinear and cuvilinear grids
+  * Support rectilinear and curvilinear grids
 
 Things we are striving for:
 ---------------------------
