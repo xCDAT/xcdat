@@ -50,7 +50,7 @@ serves as the spiritual successor to the Community Data Analysis Tools (`CDAT`_)
 library.
 
 The goal of xCDAT is to provide generalizable climate domain features and utilities
-that streamline the experience of developing climate data analysis code. xCDAT's design
+that streamline the developer experience for climate data analysis code. xCDAT's design
 philosophy is to reduce the complexity and overhead required by the user to accomplish
 specific tasks in xarray. Some xCDAT features are inspired by or ported from core CDAT
 functionalities, while others leverage powerful libraries in the xarray ecosystem
@@ -94,8 +94,8 @@ integration/continuous deployment. As a result, releases are performed relativel
 frequently based on the priority of commits. The xCDAT core team reviews commits every
 two weeks to determine if they warrant a release.
 
-After releases are performed on `GitHub Releases`_, the ``xcdat`` package will be
-available to download through `conda-forge`_ within 30 minutes to 1 hour.
+After releases are performed on `GitHub Releases`_, the ``xcdat`` package version will
+be available to download through `conda-forge`_ within 30 minutes to 1 hour.
 
 To be notified of releases through GitHub:
 
@@ -154,12 +154,12 @@ Planned Features
 Things we are striving for:
 ---------------------------
 
-* Support for CF compliant, E3SM non-CF compliant, and common metadata
+* xCDAT supports CF compliant datasets, but will also strive to support datasets with
+  common non-CF compliant metadata (e.g., time units in "months since ..." or "years
+  since ...")
 
-  * xCDAT primarily focuses on datasets that follow the `CF convention`_.
   * xCDAT leverages `cf_xarray`_ to interpret CF attributes on ``xarray`` objects
-  * Accomodations for specific non-CF compliant situations will be considered on a
-    case-by-case basis.
+  * Refer to `CF Convention`_ for more information on CF attributes
 
 * Robust handling of dimensions and their coordinates and coordinate bounds
 
@@ -180,7 +180,14 @@ Things we are striving for:
 Acknowledgement
 ---------------
 
-This software is jointly developed by scientists and developers from the Energy Exascale Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and Intercomparison (`PCMDI`_). The work is performed for the E3SM project, which is sponsored by Earth System Model Development (`ESMD`_) program, and the Simplifying ESM Analysis Through Standards (SEATS) project, which is sponsored by the Regional and Global Model Analysis (`RGMA`_) program. ESMD and RGMA are programs for the Earth and Environmental Systems Sciences Division (`EESSD`_) in the Office of Biological and Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of Science`_.
+This software is jointly developed by scientists and developers from the Energy Exascale
+Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and
+Intercomparison (`PCMDI`_). The work is performed for the E3SM project, which is
+sponsored by Earth System Model Development (`ESMD`_) program, and the Simplifying ESM
+Analysis Through Standards (SEATS) project, which is sponsored by the Regional and
+Global Model Analysis (`RGMA`_) program. ESMD and RGMA are programs for the Earth and
+Environmental Systems Sciences Division (`EESSD`_) in the Office of Biological and
+Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of Science`_.
 
 .. _E3SM: https://e3sm.org/
 .. _PCMDI: https://pcmdi.llnl.gov/

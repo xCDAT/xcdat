@@ -9,7 +9,9 @@ Metadata Interpretation
 
 What types of datasets does ``xcdat`` primarily focus on?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``xcdat`` primarily focuses on datasets that follow the `CF convention`_.
+``xcdat`` supports datasets that follow the `CF convention`_, but will also strive
+to support datasets with common non-CF compliant metadata (e.g., time units in
+"months since ..." or "years since ...").
 
 .. _CF convention: http://cfconventions.org/
 
