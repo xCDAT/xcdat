@@ -12,27 +12,21 @@
 
    Xarray Climate Data Analysis Tools
 
-   |conda| |conda-forge| |platforms| |conda-downloads|
-
-   |CI/CD Build Workflow| |docs| |codecov|
-
-   |pre-commit| |black| |flake8| |mypy|
+   +--------------------+------------------------------------------------------+
+   | Category           | Badges                                               |
+   +====================+======================================================+
+   | Distribution       | |conda| |conda-forge| |platforms| |conda-downloads|  |
+   +--------------------+------------------------------------------------------+
+   | Citation           | |zenodo-doi|                                         |
+   +--------------------+------------------------------------------------------+
+   | DevOps             | |CI/CD Build Workflow| |codecov| |docs|              |
+   +--------------------+------------------------------------------------------+
+   | Quality Assurance  | |pre-commit| |black| |flake8| |mypy|                 |
+   +--------------------+------------------------------------------------------+
 
    .. raw:: html
 
       </h3>
-
-+--------------------+------------------------------------------------------+
-| Category           | Badges                                               |
-+====================+======================================================+
-| Distribution       | |conda| |conda-forge| |platforms| |conda-downloads|  |
-+--------------------+------------------------------------------------------+
-| Citation           | |zenodo-doi|                                         |
-+--------------------+------------------------------------------------------+
-| DevOps             | |CI/CD Build Workflow| |codecov| |docs|              |
-+--------------------+------------------------------------------------------+
-| Quality Assurance  | |pre-commit| |black| |flake8| |mypy|                 |
-+--------------------+------------------------------------------------------+
 
 .. |conda| image:: https://anaconda.org/conda-forge/xcdat/badges/installer/conda.svg
    :target: https://anaconda.org/conda-forge/xcdat
