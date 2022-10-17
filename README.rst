@@ -14,13 +14,22 @@
 
    |conda| |conda-forge| |platforms| |conda-downloads|
 
-   |CI/CD Build Workflow| |docs| |Codecov|
+   |CI/CD Build Workflow| |docs| |codecov|
 
-   |pre-commit| |Code style: black| |flake8| |Checked with mypy|
+   |pre-commit| |black| |flake8| |mypy|
 
    .. raw:: html
 
       </h3>
+
++--------------------+------------------------------------------------------+
+| Category           | Badges                                               |
++====================+======================================================+
+| Distribution       | |conda| |conda-forge| |platforms| |conda-downloads|  |
+| Citation           | |zenodo-doi|                                         |
+| DevOps             | |CI/CD Build Workflow| |docs| |Codecov|              |
+| Quality Assurance  | |pre-commit| |black| |flake8| |mypy|                 |
++--------------------+------------------------------------------------------+
 
 .. |conda| image:: https://anaconda.org/conda-forge/xcdat/badges/installer/conda.svg
    :target: https://anaconda.org/conda-forge/xcdat
@@ -30,19 +39,21 @@
    :target: https://anaconda.org/conda-forge/xcdat
 .. |conda-downloads| image:: https://anaconda.org/conda-forge/xcdat/badges/downloads.svg
    :target: https://anaconda.org/conda-forge/xcdat
+.. |zenodo-doi| image:: https://zenodo.org/badge/354103918.svg
+   :target: https://zenodo.org/badge/latestdoi/354103918
 .. |CI/CD Build Workflow| image:: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
    :target: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml
 .. |docs| image:: https://readthedocs.org/projects/xcdat/badge/?version=latest
    :target: https://xcdat.readthedocs.io/en/latest/?badge=latest
-.. |Codecov| image:: https://codecov.io/gh/xCDAT/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
+.. |codecov| image:: https://codecov.io/gh/xCDAT/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
    :target: https://codecov.io/gh/xCDAT/xcdat
 .. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
    :target: https://github.com/pre-commit/pre-commit
-.. |Code style: black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/psf/black
 .. |flake8| image:: https://img.shields.io/badge/flake8-enabled-green
    :target: https://github.com/PyCQA/flake8
-.. |Checked with mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
+.. |mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
    :target: http://mypy-lang.org/
 
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
