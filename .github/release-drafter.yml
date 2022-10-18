@@ -2,21 +2,15 @@ name-template: "v$RESOLVED_VERSION"
 tag-template: "v$RESOLVED_VERSION"
 autolabeler:
     - label: "Type: Enhancement"
-      branch:
-          - '/feature\/.+/'
+      branch: '/feature\/.+/'
     - label: "Type: Bug"
-      branch:
-          - '/fix\/.+/'
-      title:
-          - "/fix/i"
+      branch: '/fix\/.+/'
+      title: "/fix/i"
     - label: "Type: Documentation"
-      files:
-          - "*.rst"
-      branch:
-          - '/docs{0,1}\/.+/'
+      files: "*.rst"
+      branch: '/docs{0,1}\/.+/'
     - label: "Type: DevOps"
-      branch:
-          - '/devops\/.+/'
+      branch: '/devops\/.+/'
 categories:
     - title: "Features"
       labels: "Type: Enhancement"
