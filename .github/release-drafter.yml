@@ -39,7 +39,5 @@ template: |
     ## $RESOLVED_VERSION
 
     $CHANGES
-    <br/>
 
-footer: |
     **Full Changelog**: https://github.com/xCDAT/xcdat/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
