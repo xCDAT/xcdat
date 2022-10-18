@@ -4,7 +4,7 @@ autolabeler:
     - label: "Type: Enhancement"
       branch: '/feature\/.+/'
     - label: "Type: Bug"
-      branch: '/fix\/.+/'
+      branch: '/(bug)?fix\/.+/'
       title: "/fix/i"
     - label: "Type: Documentation"
       files: "*.rst"
