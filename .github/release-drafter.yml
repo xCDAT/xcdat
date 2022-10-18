@@ -1,5 +1,19 @@
 name-template: "v$RESOLVED_VERSION"
 tag-template: "v$RESOLVED_VERSION"
+autolabeler:
+  - label: 'Type: Enhancement'
+    branch:
+      - '/feature\/.+/'
+  - label: 'Type: Bug'
+    branch:
+      - '/fix\/.+/'
+    title:
+      - '/fix/i'
+    - label: 'Type: Documentation'
+    files:
+      - '*.rst'
+    branch:
+      - '/docs{0,1}\/.+/'
 categories:
     - title: "Features"
       labels: "Type: Enhancement"
