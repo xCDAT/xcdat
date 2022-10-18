@@ -22,7 +22,7 @@ categories:
       label: "Type: DevOps"
 change-template: "- $TITLE by @$AUTHOR in $URL"
 change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
-exclude-labels: "skip-changelog"
+exclude-labels: ["skip-changelog"]
 version-resolver:
     major:
         labels:
