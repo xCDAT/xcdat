@@ -1,0 +1,31 @@
+name-template: "v$RESOLVED_VERSION"
+tag-template: "v$RESOLVED_VERSION"
+categories:
+    - title: "Features"
+      labels: "Type: Enhancement"
+    - title: "Bug Fixes"
+      labels: "Type: Bug"
+    - title: "Documentation"
+      label: "Type: Documentation"
+    - title: "DevOps"
+      label: "Type: DevOps"
+change-template: "- $TITLE by @$AUTHOR in $URL"
+change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
+exclude-labels: "skip-changelog"
+version-resolver:
+  major:
+    labels:
+      - 'major'
+  minor:
+    labels:
+      - 'minor'
+  patch:
+    labels:
+      - 'patch'
+  default: patch
+template: |
+    ## Changes
+
+    $CHANGES
+footer: |
+    **Full Changelog**: https://github.com/xCDAT/xcdat/compare/$PREVIOUS_TAG...$RESOLVED_VERSION
