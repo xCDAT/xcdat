@@ -15,7 +15,7 @@
    +--------------------+------------------------------------------------------+
    |                    | Badges                                               |
    +====================+======================================================+
-   | Distribution       | |conda| |conda-forge| |platforms| |conda-downloads|  |
+   | Distribution       | |conda-forge| |platforms| |conda-downloads|          |
    +--------------------+------------------------------------------------------+
    | Citation           | |zenodo-doi|                                         |
    +--------------------+------------------------------------------------------+
@@ -28,8 +28,6 @@
 
       </h3>
 
-.. |conda| image:: https://anaconda.org/conda-forge/xcdat/badges/installer/conda.svg
-   :target: https://anaconda.org/conda-forge/xcdat
 .. |conda-forge| image:: https://img.shields.io/conda/vn/conda-forge/xcdat.svg
    :target: https://anaconda.org/conda-forge/xcdat
 .. |platforms| image:: https://img.shields.io/conda/pn/conda-forge/xcdat.svg
