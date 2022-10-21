@@ -9,26 +9,29 @@ Prerequisites
 
 1. Familiarity with ``xarray``, since this package is an extension of it
 
-   - Please visit the `xarray documentation`_ to get started.
+   - We highly recommend visiting the `xarray tutorial`_ and `xarray documentation`_
+     pages if you aren't familiar with ``xarray``.
 
 2. xCDAT is distributed through conda, which is available through Anaconda and Miniconda.
-The instruction to install conda from Miniconda is provided as follows:
 
-::
+   We recommend following these steps to install Miniconda:
 
-   wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-   bash Miniconda3-latest-Linux-x86_64.sh
+   .. code-block:: console
 
-Then follow the instructions for installation. To have conda added to
-your path you will need to type ``yes`` in response to "Do you wish the
-installer to initialize Miniconda3 by running conda init?" (we recommend
-that you do this). Note that this will modify your shell profile (e.g.,
-``~/.bashrc``) to add ``conda`` to your path.
+      wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+      bash Miniconda3-latest-Linux-x86_64.sh
 
-Note: After installation completes you may need to type ``bash`` to
-restart your shell (if you use bash). Alternatively, you can log out and
-log back in.
+   Then follow the instructions for installation. To have conda added to
+   your path you will need to type ``yes`` in response to ``"Do you wish the
+   installer to initialize Miniconda3 by running conda init?"`` (we recommend
+   that you do this). Note that this will modify your shell profile (e.g.,
+   ``~/.bashrc``) to add ``conda`` to your path.
 
+   Note: After installation completes you may need to type ``bash`` to
+   restart your shell (if you use bash). Alternatively, you can log out and
+   log back in.
+
+.. _xarray tutorial: https://tutorial.xarray.dev/intro.html
 .. _xarray documentation: https://docs.xarray.dev/en/stable/getting-started-guide/index.html
 
 Installation
