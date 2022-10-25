@@ -124,6 +124,7 @@ class XESMFRegridder(BaseRegridder):
         self._extrap_method = extrap_method
         self._extrap_dist_exponent = extrap_dist_exponent
         self._extrap_num_src_pnts = extrap_num_src_pnts
+        self._ignore_degenerate = ignore_degenerate
         self._regridder: xe.XESMFRegridder = None
         self._extra_options = options
 
@@ -178,6 +179,7 @@ class XESMFRegridder(BaseRegridder):
                 extrap_method=self._extrap_method,
                 extrap_dist_exponent=self._extrap_dist_exponent,
                 extrap_num_src_pnts=self._extrap_num_src_pnts,
+                ignore_degenerate=self._ignore_degenerate,
                 **self._extra_options,
             )
 

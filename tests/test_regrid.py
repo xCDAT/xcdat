@@ -438,6 +438,26 @@ class TestXESMFRegridder:
         assert "lon_bnds" in output
         assert "time_bnds" in output
 
+    @pytest.mark.parametrize(
+        "name,value,attr_name",
+        [
+            ("periodic", True, "_periodic"),
+            ("extrap_method", "inverse_dist", "_extrap_method"),
+            ("extrap_method", "nearest_s2d", "_extrap_method"),
+            ("extrap_dist_exponent", 0.1, "_extrap_dist_exponent"),
+            ("extrap_num_src_pnts", 10, "_extrap_num_src_pnts"),
+            ("ignore_degenerate", False, "_ignore_degenerate"),
+        ],
+    )
+    def test_flags(self, name, value, attr_name):
+        ds = self.ds.copy()
+
+        options = {name: value}
+
+        regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear", **options)
+
+        assert getattr(regridder, attr_name) == value
+
     def test_no_variable(self):
         ds = self.ds.copy()
 
