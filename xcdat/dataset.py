@@ -318,7 +318,7 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
     for key in coord_keys:
         coord = ds[key].copy()
 
-        if not _is_time_decoded(coord):
+        if not _is_decoded(coord.values):
             attrs = coord.attrs
 
             # NOTE: The "calendar" and "units" attributes are stored in the `.attrs`
@@ -356,7 +356,9 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
                 )
                 continue
 
-            decoded_time = _decode_time_coords(ref_date, coord, attrs, calendar, units)
+            decoded_time = _decode_time_coords(
+                ref_date, coord, coord.values, attrs, calendar, units
+            )
             decoded_time.encoding = {
                 "source": ds.encoding.get("source", "None"),
                 "original_shape": coord.shape,
@@ -371,9 +373,21 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
             except KeyError:
                 bounds = None
 
-            if bounds is not None and not _is_time_decoded(bounds):
-                decoded_bounds = _decode_time_bounds(ref_date, bounds, calendar, units)
-                ds = ds.assign({bounds.name: decoded_bounds})
+            if bounds is not None:
+                # `.values` converts the underlying array to `np.ndarray` if it
+                # is not already an `np.ndarray` (e.g., multi-file Datasets
+                # which store data variables as Dask Arrays). Calling `.values`
+                # multiple times can result in multiple conversion operations,
+                # leading to decreased runtime performance. To avoid this
+                # situation, we store `bounds.values` as a variable and reuse it
+                # for decoding (if necessary).
+                bounds_vals = bounds.values
+
+                if not _is_decoded(bounds_vals):
+                    decoded_bounds = _decode_time_bounds(
+                        ref_date, bounds, bounds_vals, calendar, units
+                    )
+                    ds = ds.assign({bounds.name: decoded_bounds})
 
     return ds
 
@@ -381,11 +395,12 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
 def _decode_time_coords(
     ref_date: str,
     coord: xr.DataArray,
+    values: np.ndarray,
     attrs: Dict[str, Any],
     calendar: str,
     units: str,
 ):
-    data = _get_cftime_coords(ref_date, coord.values, calendar, units)
+    data = _get_cftime_coords(ref_date, values, calendar, units)
 
     decoded_time = xr.DataArray(
         name=coord.name,
@@ -397,9 +412,11 @@ def _decode_time_coords(
     return decoded_time
 
 
-def _decode_time_bounds(ref_date: str, bounds: xr.DataArray, calendar: str, units: str):
-    lowers = _get_cftime_coords(ref_date, bounds.values[:, 0], calendar, units)
-    uppers = _get_cftime_coords(ref_date, bounds.values[:, 1], calendar, units)
+def _decode_time_bounds(
+    ref_date: str, bounds: xr.DataArray, values: np.ndarray, calendar: str, units: str
+):
+    lowers = _get_cftime_coords(ref_date, values[:, 0], calendar, units)
+    uppers = _get_cftime_coords(ref_date, values[:, 1], calendar, units)
     data_bounds = np.vstack((lowers, uppers)).T
 
     decoded_bounds = xr.DataArray(
@@ -555,24 +572,24 @@ def _get_data_var(dataset: xr.Dataset, key: str) -> xr.DataArray:
     return dv.copy()
 
 
-def _is_time_decoded(coord: xr.DataArray) -> bool:
-    """Check if time coordinates or bounds are already decoded.
+def _is_decoded(time_arr: np.ndarray) -> bool:
+    """Check if an array on the time axis is decoded.
 
     Parameters
     ----------
-    coord : xr.DataArray
-        The time coordinates or bounds.
+    arr : np.ndarray
+        An array of time axis values (e.g., coords, bounds)
 
     Returns
     -------
     bool
     """
-    if coord.ndim == 1:
-        vals = coord.values
+    if time_arr.ndim == 1:
+        vals = time_arr[0]
     else:
-        vals = coord.values.flat[0]
+        vals = time_arr.flat[0]
 
-    is_decoded = coord.dtype == np.dtype("datetime64[ns]") or isinstance(
+    is_decoded = time_arr.dtype == np.dtype("datetime64[ns]") or isinstance(
         vals, cftime.datetime
     )
 
@@ -633,22 +650,27 @@ def _get_cftime_coords(
     np.ndarray
         An array of `cftime` coordinates.
     """
-    # Create an array of `datetime` objects by adding the number offset to the
-    # reference date. The `parse.parse` default is set to datetime(2000, 1, 1),
-    # with each component being a placeholder if the value does not exist.
-    ref_datetime: datetime = parser.parse(ref_date, default=datetime(2000, 1, 1))
+    if units in NON_CF_TIME_UNITS:
+        # Convert offsets to `np.float64` to avoid "TypeError: unsupported type
+        # for timedelta days component: numpy.int64".
+        offsets = offsets.astype("float64")
 
-    # Convert offsets to `np.float64` to avoid "TypeError: unsupported type for
-    # timedelta days component: numpy.int64".
-    offsets = offsets.astype("float64")
-    times = np.array(
-        [ref_datetime + rd.relativedelta(**{units: offset}) for offset in offsets],
-        dtype="object",
-    )
-
-    # Convert the array of `datetime` objects into `cftime` objects based on
-    # the calendar type.
-    date_type = get_date_type(calendar)
-    coords = convert_times(times, date_type=date_type)
+        # We don't need to do calendar arithmetic here because the units and
+        # offsets are in "months" or "years", which means leap days should not
+        # be factored.
+        ref_datetime: datetime = parser.parse(ref_date, default=datetime(2000, 1, 1))
+        times = np.array(
+            [ref_datetime + rd.relativedelta(**{units: offset}) for offset in offsets],
+            dtype="object",
+        )
+        # Convert the array of `datetime` objects into `cftime` objects based on
+        # the calendar type.
+        date_type = get_date_type(calendar)
+        coords = convert_times(times, date_type=date_type)
+    else:
+        xrunits = units + " since " + ref_date
+        coords = xr.coding.times.decode_cf_datetime(
+            offsets, xrunits, calendar=calendar, use_cftime=True
+        )
 
     return coords
