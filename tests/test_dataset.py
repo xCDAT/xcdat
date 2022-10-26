@@ -10,7 +10,6 @@ from tests.fixtures import generate_dataset
 from xcdat.dataset import (
     _keep_single_var,
     _postprocess_dataset,
-    _split_time_units_attr,
     decode_time,
     open_dataset,
     open_mfdataset,
@@ -258,10 +257,20 @@ class TestOpenDataset:
 
         # Check encoding is preserved.
         expected.time.encoding = {
+            "zlib": False,
+            "szip": False,
+            "zstd": False,
+            "bzip2": False,
+            "blosc": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": True,
+            "chunksizes": None,
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
+            "original_shape": (15,),
             "dtype": np.dtype("int64"),
-            "original_shape": expected.time.data.shape,
             "units": "days since 2000-01-01",
             "calendar": "standard",
         }
@@ -279,6 +288,8 @@ class TestOpenDataset:
             "source": result.time.encoding["source"],
             "original_shape": (15, 2),
             "dtype": np.dtype("int64"),
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
         }
 
         assert result.time.encoding == expected.time.encoding
@@ -487,12 +498,22 @@ class TestOpenDataset:
 
         assert result.identical(expected)
 
-        # Check encoding information is preserved.
+        # Check encoding is preserved.
         expected.time.encoding = {
+            "zlib": False,
+            "szip": False,
+            "zstd": False,
+            "bzip2": False,
+            "blosc": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": True,
+            "chunksizes": None,
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
+            "original_shape": (15,),
             "dtype": np.dtype("int64"),
-            "original_shape": expected.time.data.shape,
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
@@ -507,9 +528,12 @@ class TestOpenDataset:
             "fletcher32": False,
             "contiguous": True,
             "chunksizes": None,
+            # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
             "original_shape": (15, 2),
             "dtype": np.dtype("int64"),
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
         }
 
         assert result.time.encoding == expected.time.encoding
@@ -542,36 +566,6 @@ class TestOpenMfDataset:
         dir.mkdir()
         self.file_path1 = f"{dir}/file1.nc"
         self.file_path2 = f"{dir}/file2.nc"
-
-    def test_mfdataset_keeps_time_encoding_dict(self):
-        # Generate two dataset files, with the second being a single
-        # time coordinate value that extends from the first dataset.
-        ds1 = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=True)
-        ds1.to_netcdf(self.file_path1)
-
-        ds2 = ds1.isel(dict(time=slice(0, 1)))
-        ds2["time"].values[:] = np.array(
-            cftime.DatetimeProlepticGregorian(2002, 1, 16, 12),
-            dtype="object",
-        )
-        ds2.to_netcdf(self.file_path2)
-
-        # Open both dataset files as single Dataset object.
-        result = open_mfdataset([self.file_path1, self.file_path2], decode_times=True)
-
-        # Create an expected Dataset object and check identical with result.
-        expected = xr.concat((ds1, ds2), dim="time", data_vars="minimal")
-        expected["time"].values[-1] = cftime.DatetimeProlepticGregorian(2002, 1, 16, 12)
-
-        assert result.identical(expected)
-
-        # Check encoding is preserved.
-        # No source because these files are temporary.
-        assert result.time.encoding["source"] == "None"
-        assert result.time.encoding["original_shape"] == (16,)
-        assert result.time.encoding["dtype"] == np.dtype("float64")
-        assert result.time.encoding["units"] == "days since 2000-01-01"
-        assert result.time.encoding["calendar"] == "standard"
 
     def test_skip_decoding_times_explicitly(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -654,6 +648,12 @@ class TestOpenMfDataset:
                 dtype="object",
             ),
             dims="time",
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
         )
 
         expected["time_bnds"] = xr.DataArray(
@@ -790,24 +790,34 @@ class TestOpenMfDataset:
         # Make sure the expected is chunked.
         expected = expected.chunk(chunks={"time": 15, "bnds": 2})
 
-        # Set the expected metadata.
-        expected.time.attrs = {
-            "axis": "T",
-            "long_name": "time",
-            "standard_name": "time",
-            "bounds": "time_bnds",
-        }
+        # Check encoding is preserved. The extra metadata like "zlib" are from
+        # the netCDF4 files.
         expected.time.encoding = {
+            "zlib": False,
+            "szip": False,
+            "zstd": False,
+            "bzip2": False,
+            "blosc": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": True,
+            "chunksizes": None,
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
+            "original_shape": (15,),
+            "dtype": np.dtype("int64"),
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
+        }
+        expected.time_bnds.encoding = {
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
 
         assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
+        assert result.time_bnds.encoding == expected.time_bnds.encoding
 
     def test_keeps_specified_var_and_preserves_bounds(self):
         # Generate two dataset files with different variables.
@@ -864,18 +874,7 @@ class TestDecodeTime:
         }
         self.ds = xr.Dataset({"time": time, "time_bnds": time_bnds})
 
-    def test_skips_decoding_time_coords_if_calendar_is_not_set(self, caplog):
-        # Update logger level to silence the logger warning during test runs.
-        caplog.set_level(logging.ERROR)
-
-        ds = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
-
-        del ds.time.attrs["calendar"]
-
-        result = decode_time(ds)
-        assert ds.identical(result)
-
-    def test_skips_decoding_time_coords_if_units_is_set(self, caplog):
+    def test_skips_decoding_time_coords_if_units_is_not_set(self, caplog):
         # Update logger level to silence the logger warning during test runs.
         caplog.set_level(logging.ERROR)
 
@@ -985,23 +984,18 @@ class TestDecodeTime:
 
         assert result.identical(expected)
 
-        # Check the encoding is preserved.
+        # Check encoding is preserved.
         expected.time.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
         expected.time2.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
 
         assert result.time.encoding == expected.time.encoding
+        assert result.time2.encoding == expected.time.encoding
 
     def test_decodes_all_time_coordinates_and_time_bounds(self):
         ds = xr.Dataset(
@@ -1148,16 +1142,10 @@ class TestDecodeTime:
 
         # Check the encoding is preserved.
         expected.time.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
         expected.time2.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
@@ -1171,6 +1159,8 @@ class TestDecodeTime:
             "source": "None",
             "original_shape": (1980, 2),
             "dtype": np.dtype("float64"),
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
         }
 
         assert result.time.encoding == expected.time.encoding
@@ -1252,11 +1242,8 @@ class TestDecodeTime:
 
         # Check the encoding is preserved.
         expected.time.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
-            "units": ds.time.attrs["units"],
-            "calendar": calendar,
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
         }
         expected.time_bnds.encoding = {
             "zlib": False,
@@ -1268,6 +1255,8 @@ class TestDecodeTime:
             "source": "None",
             "original_shape": (1980, 2),
             "dtype": np.dtype("float64"),
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
         }
 
         assert result.time.encoding == expected.time.encoding
@@ -1326,14 +1315,25 @@ class TestDecodeTime:
         )
         assert result.identical(expected)
 
+        # Check the encoding is preserved.
         expected.time.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
-            "units": ds.time.attrs["units"],
-            "calendar": ds.time.attrs["calendar"],
+            "units": "months since 2000-01-15",
+            "calendar": "standard",
         }
-        expected.time_bnds.encoding = ds.time_bnds.encoding
+        expected.time_bnds.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": False,
+            "chunksizes": (1, 2),
+            "source": "None",
+            "original_shape": (1980, 2),
+            "dtype": np.dtype("float64"),
+            "units": "months since 2000-01-15",
+            "calendar": "standard",
+        }
+
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1390,14 +1390,25 @@ class TestDecodeTime:
         )
         assert result.identical(expected)
 
+        # Check the encoding is preserved.
         expected.time.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
-            "units": ds.time.attrs["units"],
-            "calendar": ds.time.attrs["calendar"],
+            "units": "months since 1999-12-31",
+            "calendar": "standard",
         }
-        expected.time_bnds.encoding = ds.time_bnds.encoding
+        expected.time_bnds.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": False,
+            "chunksizes": (1, 2),
+            "source": "None",
+            "original_shape": (1980, 2),
+            "dtype": np.dtype("float64"),
+            "units": "months since 1999-12-31",
+            "calendar": "standard",
+        }
+
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1455,14 +1466,25 @@ class TestDecodeTime:
         )
         assert result.identical(expected)
 
+        # Check the encoding is preserved.
         expected.time.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
-            "units": ds.time.attrs["units"],
-            "calendar": ds.time.attrs["calendar"],
+            "units": "months since 2000-02-29",
+            "calendar": "standard",
         }
-        expected.time_bnds.encoding = ds.time_bnds.encoding
+        expected.time_bnds.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": False,
+            "chunksizes": (1, 2),
+            "source": "None",
+            "original_shape": (1980, 2),
+            "dtype": np.dtype("float64"),
+            "units": "months since 2000-02-29",
+            "calendar": "standard",
+        }
+
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1521,14 +1543,25 @@ class TestDecodeTime:
         )
         assert result.identical(expected)
 
+        # Check the encoding is preserved.
         expected.time.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
-            "units": ds.time.attrs["units"],
-            "calendar": ds.time.attrs["calendar"],
+            "units": "years since 2000-06-01",
+            "calendar": "standard",
         }
-        expected.time_bnds.encoding = ds.time_bnds.encoding
+        expected.time_bnds.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": False,
+            "chunksizes": (1, 2),
+            "source": "None",
+            "original_shape": (1980, 2),
+            "dtype": np.dtype("float64"),
+            "units": "years since 2000-06-01",
+            "calendar": "standard",
+        }
+
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1587,14 +1620,25 @@ class TestDecodeTime:
         )
         assert result.identical(expected)
 
+        # Check the encoding is preserved.
         expected.time.encoding = {
-            "source": "None",
-            "dtype": np.dtype(np.int64),
-            "original_shape": expected.time.data.shape,
-            "units": ds.time.attrs["units"],
-            "calendar": ds.time.attrs["calendar"],
+            "units": "years since 2000-02-29",
+            "calendar": "standard",
         }
-        expected.time_bnds.encoding = ds.time_bnds.encoding
+        expected.time_bnds.encoding = {
+            "zlib": False,
+            "shuffle": False,
+            "complevel": 0,
+            "fletcher32": False,
+            "contiguous": False,
+            "chunksizes": (1, 2),
+            "source": "None",
+            "original_shape": (1980, 2),
+            "dtype": np.dtype("float64"),
+            "units": "years since 2000-02-29",
+            "calendar": "standard",
+        }
+
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1972,16 +2016,3 @@ class Test_KeepSingleVar:
         assert ds.get("lat_bnds") is not None
         assert ds.get("lon_bnds") is not None
         assert ds.get("time_bnds") is not None
-
-
-class Test_SplitTimeUnitsAttr:
-    def test_splits_units_attr_to_unit_and_reference_date(self):
-        assert _split_time_units_attr("months since 1800") == ("months", "1800")
-        assert _split_time_units_attr("months since 1800-01-01") == (
-            "months",
-            "1800-01-01",
-        )
-        assert _split_time_units_attr("months since 1800-01-01 00:00:00") == (
-            "months",
-            "1800-01-01 00:00:00",
-        )
