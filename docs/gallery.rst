@@ -9,6 +9,7 @@ Please checkout the :doc:`contributing` guide.
     :maxdepth: 2
     :hidden:
 
+    examples/introduction-to-xcdat.ipynb
     examples/general-utilities
     examples/spatial-average.ipynb
     examples/temporal-average.ipynb
