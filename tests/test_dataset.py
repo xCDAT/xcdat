@@ -861,17 +861,6 @@ class TestDecodeTime:
             data=[[0, 1], [1, 2], [2, 3]],
             dims=["time", "bnds"],
         )
-        time_bnds.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
-        }
         self.ds = xr.Dataset({"time": time, "time_bnds": time_bnds})
 
     def test_skips_decoding_time_coords_if_units_is_not_set(self, caplog):
@@ -1036,18 +1025,6 @@ class TestDecodeTime:
             },
         )
 
-        ds["time_bnds"].encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
-        }
-
         result = decode_time(ds)
         expected = xr.Dataset(
             coords={
@@ -1150,21 +1127,120 @@ class TestDecodeTime:
             "calendar": "standard",
         }
         expected.time_bnds.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
 
         assert result.time.encoding == expected.time.encoding
         assert result.time2.encoding == expected.time2.encoding
+        assert result.time_bnds.encoding == expected.time_bnds.encoding
+
+    def test_decodes_time_coords_and_bounds_without_calendar_attr_set(self, caplog):
+        # Update logger level to silence the logger warning during test runs.
+        caplog.set_level(logging.ERROR)
+
+        ds = xr.Dataset(
+            coords={
+                "time": xr.DataArray(
+                    name="time",
+                    data=[1, 2, 3],
+                    dims=["time"],
+                    attrs={
+                        "bounds": "time_bnds",
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "units": "months since 2000-01-01",
+                    },
+                ),
+            },
+            data_vars={
+                "time_bnds": xr.DataArray(
+                    name="time_bnds",
+                    data=[[0, 1], [1, 2], [2, 3]],
+                    dims=["time", "bnds"],
+                )
+            },
+        )
+
+        result = decode_time(ds)
+        expected = xr.Dataset(
+            coords={
+                "time": xr.DataArray(
+                    name="time",
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(
+                                2000, 2, 1, 0, 0, 0, 0, has_year_zero=False
+                            ),
+                            cftime.DatetimeGregorian(
+                                2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
+                            ),
+                            cftime.DatetimeGregorian(
+                                2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
+                            ),
+                        ],
+                        dtype="object",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "bounds": "time_bnds",
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                    },
+                ),
+            },
+            data_vars={
+                "time_bnds": xr.DataArray(
+                    name="time_bnds",
+                    data=np.array(
+                        [
+                            [
+                                cftime.DatetimeGregorian(
+                                    2000, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                                ),
+                                cftime.DatetimeGregorian(
+                                    2000, 2, 1, 0, 0, 0, 0, has_year_zero=False
+                                ),
+                            ],
+                            [
+                                cftime.DatetimeGregorian(
+                                    2000, 2, 1, 0, 0, 0, 0, has_year_zero=False
+                                ),
+                                cftime.DatetimeGregorian(
+                                    2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
+                                ),
+                            ],
+                            [
+                                cftime.DatetimeGregorian(
+                                    2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
+                                ),
+                                cftime.DatetimeGregorian(
+                                    2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
+                                ),
+                            ],
+                        ],
+                        dtype="object",
+                    ),
+                    dims=["time", "bnds"],
+                ),
+            },
+        )
+
+        assert result.identical(expected)
+
+        # Check the encoding is preserved.
+        expected.time.encoding = {
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
+        }
+        expected.time_bnds.encoding = {
+            "units": "months since 2000-01-01",
+            "calendar": "standard",
+        }
+
+        assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
     def test_decodes_time_coords_and_bounds_in_months_with_a_reference_date_at_the_start_of_the_month(
@@ -1234,7 +1310,6 @@ class TestDecodeTime:
                         dtype="object",
                     ),
                     dims=["time", "bnds"],
-                    attrs=ds.time_bnds.attrs,
                 ),
             }
         )
@@ -1246,15 +1321,6 @@ class TestDecodeTime:
             "calendar": "standard",
         }
         expected.time_bnds.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
@@ -1321,15 +1387,6 @@ class TestDecodeTime:
             "calendar": "standard",
         }
         expected.time_bnds.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
             "units": "months since 2000-01-15",
             "calendar": "standard",
         }
@@ -1396,15 +1453,6 @@ class TestDecodeTime:
             "calendar": "standard",
         }
         expected.time_bnds.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
             "units": "months since 1999-12-31",
             "calendar": "standard",
         }
@@ -1472,15 +1520,6 @@ class TestDecodeTime:
             "calendar": "standard",
         }
         expected.time_bnds.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
             "units": "months since 2000-02-29",
             "calendar": "standard",
         }
@@ -1549,15 +1588,6 @@ class TestDecodeTime:
             "calendar": "standard",
         }
         expected.time_bnds.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
             "units": "years since 2000-06-01",
             "calendar": "standard",
         }
@@ -1626,15 +1656,6 @@ class TestDecodeTime:
             "calendar": "standard",
         }
         expected.time_bnds.encoding = {
-            "zlib": False,
-            "shuffle": False,
-            "complevel": 0,
-            "fletcher32": False,
-            "contiguous": False,
-            "chunksizes": (1, 2),
-            "source": "None",
-            "original_shape": (1980, 2),
-            "dtype": np.dtype("float64"),
             "units": "years since 2000-02-29",
             "calendar": "standard",
         }

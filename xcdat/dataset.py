@@ -10,6 +10,8 @@ from dateutil import parser
 from dateutil import relativedelta as rd
 from xarray.coding.cftime_offsets import get_date_type
 from xarray.coding.times import convert_times
+from xarray.coding.variables import lazy_elemwise_func, pop_to, unpack_for_decoding
+from xarray.core.variable import as_variable
 
 from xcdat import bounds as bounds_accessor  # noqa: F401
 from xcdat.axis import _get_all_coord_keys
@@ -319,10 +321,9 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
         coords = ds[key].copy()
 
         if _is_decodable(coords) and not _is_decoded(coords):
-            calendar = coords.attrs.get("calendar", None)
 
-            if calendar is None:
-                calendar = "standard"
+            if coords.attrs.get("calendar") is None:
+                coords.attrs["calendar"] = "standard"
                 logger.warning(
                     f"'{coords.name}' does not have a calendar attribute set. "
                     "Defaulting to CF 'standard' calendar."
@@ -337,10 +338,14 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
                 bounds = None
 
             if bounds is not None and not _is_decoded(bounds):
-                # Copy the "units" and "calendar" attributes to the bounds for
-                # decoding, since bounds don't typically carry these attrs.
+                # Bounds don't typically store the "units" and "calendar"
+                # attributes required for decoding, so these attributes need to be
+                # copied from the coordinates.
                 bounds.attrs.update(
-                    {"units": coords.attrs["units"], "calendar": calendar}
+                    {
+                        "units": coords.attrs["units"],
+                        "calendar": coords.attrs["calendar"],
+                    }
                 )
                 decoded_bounds = _decode_time(bounds)
                 ds = ds.assign({bounds.name: decoded_bounds})
@@ -449,16 +454,15 @@ def _is_decodable(coords: xr.DataArray) -> bool:
 
 
 def _is_decoded(da: xr.DataArray) -> bool:
-    """Check if a DataArray of time values is decoded.
+    """Check if a time-based DataArray is decoded.
 
     This is determined by checking if the `encoding` dictionary has "units" and
     "calendar" attributes set.
 
-
     Parameters
     ----------
     da : xr.DataArray
-        An time-based DataArray (e.g,. coordinates, bounds)
+        A time-based DataArray (e.g,. coordinates, bounds)
 
     Returns
     -------
@@ -471,9 +475,9 @@ def _is_decoded(da: xr.DataArray) -> bool:
 
 
 def _decode_time(da: xr.DataArray) -> xr.Variable:
-    """Lazily decodes a DataArray of numerically encoded time values with cftime.
+    """Lazily decodes a DataArray of numerically encoded time with cftime.
 
-    The ``xr.DataArray` is` converted to an ``xr.Variable`` so that
+    The ``xr.DataArray` is converted to an ``xr.Variable`` so that
     ``xr.coding.variables.lazy_elemwise_func`` can be leveraged to lazily decode
     time.
 
@@ -482,21 +486,21 @@ def _decode_time(da: xr.DataArray) -> xr.Variable:
     Parameters
     ----------
     coords : xr.DataArray
-        A DataArray of numerically encoded time values.
+        A DataArray of numerically encoded time.
 
     Returns
     -------
     xr.Variable
-        A Variable of time values decoded as ``cftime`` objects.
+        A Variable of time decoded as ``cftime`` objects.
     """
-    variable = xr.core.variable.as_variable(da)
-    dims, data, attrs, encoding = xr.coding.variables.unpack_for_decoding(variable)
+    variable = as_variable(da)
+    dims, data, attrs, encoding = unpack_for_decoding(variable)
 
-    units = xr.coding.variables.pop_to(attrs, encoding, "units")
-    calendar = xr.coding.variables.pop_to(attrs, encoding, "calendar")
+    units = pop_to(attrs, encoding, "units")
+    calendar = pop_to(attrs, encoding, "calendar")
 
     transform = partial(_get_cftime_coords, units=units, calendar=calendar)
-    data = xr.coding.variables.lazy_elemwise_func(data, transform, np.dtype("object"))
+    data = lazy_elemwise_func(data, transform, np.dtype("object"))
 
     return xr.Variable(dims, data, attrs, encoding)
 
