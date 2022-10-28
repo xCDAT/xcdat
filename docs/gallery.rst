@@ -10,7 +10,7 @@ Please checkout the :doc:`contributing` guide.
     :hidden:
 
     examples/introduction-to-xcdat.ipynb
-    examples/general-utilities
+    examples/general-utilities.ipynb
     examples/spatial-average.ipynb
     examples/temporal-average.ipynb
     examples/climatology-and-departures.ipynb
