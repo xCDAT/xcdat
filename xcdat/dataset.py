@@ -98,9 +98,11 @@ def open_dataset(
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
     ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
-    ds = _postprocess_dataset(
-        ds, data_var, decode_times, center_times, add_bounds, lon_orient
-    )
+
+    if decode_times:
+        ds = decode_time(ds)
+
+    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
     return ds
 
@@ -198,6 +200,8 @@ def open_mfdataset(
 
     .. [2] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
     """
+    preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
+
     ds = xr.open_mfdataset(
         paths,
         decode_times=False,
@@ -206,9 +210,7 @@ def open_mfdataset(
         **kwargs,  # type: ignore
     )
 
-    ds = _postprocess_dataset(
-        ds, data_var, decode_times, center_times, add_bounds, lon_orient
-    )
+    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
     return ds
 
@@ -317,6 +319,13 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
     ds = dataset.copy()
     coord_keys = _get_all_coord_keys(ds, "T")
 
+    if len(coord_keys) == 0:
+        raise KeyError(
+            "No time coordinates were found in this dataset to decode. Make sure that "
+            "either the CF 'axis' or 'standard_name' attribute is set on time "
+            "coordinates and try decoding again."
+        )
+
     for key in coord_keys:
         coords = ds[key].copy()
 
@@ -353,10 +362,56 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
     return ds
 
 
+def _preprocess(
+    ds: xr.Dataset, decode_times: Optional[bool], callable: Optional[Callable] = None
+) -> xr.Dataset:
+    """Preprocesses each dataset passed to ``open_mfdataset()``.
+
+    This function accepts a user specified preprocess function, which is
+    executed before additional internal preprocessing functions.
+
+
+    An internal call to ``decode_time()`` is performed, which decodes
+    both CF and non-CF time coordinates and bounds (if they exist). By default,
+    if ``decode_times=False`` is passed to ``open_mfdataset()``,  xarray will
+    concatenate time values using the first dataset's ``units`` attribute. This
+    results in an issue for cases where the numerically encoded time values are
+    the same and the ``units`` attribute differs between datasets. For example,
+    two files have the same time values, but the units of the first file is
+    "months since 2000-01-01" and the second is "months since 2001-01-01". Since
+    the first dataset's units are used in xarray for concatenating datasets, the
+    time values corresponding to the second file will be dropped since they
+    appear to be the same as the first file. Calling ``decode_time()``
+    on each dataset individually before concatenating solves the aforementioned
+    issue.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The Dataset.
+    callable : Optional[Callable], optional
+        A user specified optional callable function for preprocessing.
+    Returns
+    -------
+    xr.Dataset
+        The preprocessed Dataset.
+    """
+    ds_new = ds.copy()
+
+    # Run the user pre-processing callable function.
+    if callable:
+        ds_new = callable(ds)
+
+    # Attempt to decode time coordinates.
+    if decode_times:
+        ds_new = decode_time(ds_new)
+
+    return ds_new
+
+
 def _postprocess_dataset(
     dataset: xr.Dataset,
     data_var: Optional[str] = None,
-    decode_times: bool = True,
     center_times: bool = False,
     add_bounds: bool = True,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -402,9 +457,6 @@ def _postprocess_dataset(
 
     if data_var is not None:
         ds = _keep_single_var(dataset, data_var)
-
-    if decode_times:
-        ds = decode_time(ds)
 
     if center_times:
         ds = center_times_func(dataset)
