@@ -2,15 +2,14 @@ xCDAT: Xarray Climate Data Analysis Tools
 =========================================
 
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
-serves as the spiritual successor to the Community Data Analysis Tools (`CDAT`_)
-library.
+serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) library.
 
-The goal of xCDAT is to provide generalizable climate domain features and utilities
-that streamline the developer experience for data analysis code. xCDAT's design
-philosophy is to reduce the complexity and overhead required by the user to accomplish
-specific tasks in xarray. Some xCDAT features are inspired by or ported from core CDAT
-functionalities, while others leverage powerful libraries in the xarray ecosystem
-(e.g., `xESMF`_ and `cf_xarray`_) to deliver robust APIs.
+The goal of xCDAT is to provide generalizable features and utilities for simple and
+robust analysis of climate data. xCDAT's design philosophy is focused on reducing the
+overhead required to accomplish certain tasks in xarray. Some key xCDAT features are
+inspired by or ported from the core CDAT library, while others leverage powerful
+libraries in the xarray ecosystem (e.g., `xESMF`_ and `cf_xarray`_) to deliver
+robust APIs.
 
 The xCDAT core team's mission is to provide a maintainable and extensible package
 that serves the needs of the climate community in the long-term. We are excited
@@ -141,13 +140,14 @@ This software is jointly developed by scientists and developers from the Energy 
 Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and
 Intercomparison (`PCMDI`_). The work is performed for the E3SM project, which is
 sponsored by Earth System Model Development (`ESMD`_) program, and the Simplifying ESM
-Analysis Through Standards (SEATS) project, which is sponsored by the Regional and
+Analysis Through Standards (`SEATS`_) project, which is sponsored by the Regional and
 Global Model Analysis (`RGMA`_) program. ESMD and RGMA are programs for the Earth and
 Environmental Systems Sciences Division (`EESSD`_) in the Office of Biological and
 Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of Science`_.
 
 .. _E3SM: https://e3sm.org/
 .. _PCMDI: https://pcmdi.llnl.gov/
+.. _SEATS: https://www.seatstandards.org/
 .. _ESMD: https://climatemodeling.science.energy.gov/program/earth-system-model-development
 .. _RGMA: https://climatemodeling.science.energy.gov/program/regional-global-model-analysis
 .. _EESSD: https://science.osti.gov/ber/Research/eessd
