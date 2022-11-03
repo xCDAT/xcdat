@@ -147,7 +147,7 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 
 .. _E3SM: https://e3sm.org/
 .. _PCMDI: https://pcmdi.llnl.gov/
-.. _SEATS: https://seatstandard.org/
+.. _SEATS: https://www.seatstandards.org/
 .. _ESMD: https://climatemodeling.science.energy.gov/program/earth-system-model-development
 .. _RGMA: https://climatemodeling.science.energy.gov/program/regional-global-model-analysis
 .. _EESSD: https://science.osti.gov/ber/Research/eessd
