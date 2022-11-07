@@ -230,21 +230,6 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
     have a "units" attribute set to a format supported by xcdat ("months since
     ..." or "years since ...").
 
-    How this function decodes time coordinates:
-
-    1. Extract units and reference date strings from the "units" attribute.
-
-       * For example with "months since 1800-01-01", the units are "months" and
-         reference date is "1800-01-01".
-
-    2. Using the reference date, create a reference ``datetime`` object.
-    3. Starting from the reference ``datetime`` object, use the integer offset
-       values since the reference date to create an array of ``cftime`` objects
-       based on the calendar type.
-    4. Create a new xr.DataArray of decoded time coordinates to replace the
-       numerically encoded ones.
-    5. If it exists, create a time bounds DataArray using steps 3 and 4.
-
     Parameters
     ----------
     dataset : xr.Dataset
