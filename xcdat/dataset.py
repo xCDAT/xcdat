@@ -273,7 +273,7 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
     Examples
     --------
 
-    Decode the time coordinates with non-CF units in a Dataset:
+    Decode the time coordinates in a Dataset:
 
     >>> from xcdat.dataset import decode_time
     >>>
@@ -530,7 +530,7 @@ def _is_decoded(da: xr.DataArray) -> bool:
 def _decode_time(da: xr.DataArray) -> xr.Variable:
     """Lazily decodes a DataArray of numerically encoded time with cftime.
 
-    The ``xr.DataArray` is converted to an ``xr.Variable`` so that
+    The ``xr.DataArray`` is converted to an ``xr.Variable`` so that
     ``xr.coding.variables.lazy_elemwise_func`` can be leveraged to lazily decode
     time.
 
@@ -559,7 +559,7 @@ def _decode_time(da: xr.DataArray) -> xr.Variable:
 
 
 def _get_cftime_coords(offsets: np.ndarray, units: str, calendar: str) -> np.ndarray:
-    """Get an array of `cftime` coordinates starting from a reference date.
+    """Get an array of cftime coordinates starting from a reference date.
 
     This function calls xarray's ``decode_cf_datetime()`` if the units are
     CF compliant because ``decode_cf_datetime()`` considers leap days when
@@ -575,7 +575,6 @@ def _get_cftime_coords(offsets: np.ndarray, units: str, calendar: str) -> np.nda
         An array of numerically encoded time offsets from the reference date.
     units : str
         The time units.
-        calendar : str
     calendar : str
         The CF calendar type supported by ``cftime`` . This includes "noleap",
         "360_day", "365_day", "366_day", "gregorian", "proleptic_gregorian",
@@ -584,7 +583,7 @@ def _get_cftime_coords(offsets: np.ndarray, units: str, calendar: str) -> np.nda
     Returns
     -------
     np.ndarray
-        An array of `cftime` coordinates.
+        An array of ``cftime`` coordinates.
     """
     units_type, ref_date = units.split(" since ")
 

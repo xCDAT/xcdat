@@ -235,7 +235,7 @@ class BoundsAccessor:
         meet the following criteria in order to add bounds:
 
           1. The axis for the coordinates are "X", "Y", "T", or "Z"
-          2. Coordinates are a single dimensional, not multidimensional.
+          2. Coordinates are single dimensional, not multidimensional.
           3. Coordinates are a length > 1 (not singleton)
           4. Bounds must not already exist.
              * Determined by attempting to map the coordinate variable's

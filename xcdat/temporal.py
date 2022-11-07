@@ -735,7 +735,7 @@ class TemporalAccessor:
         except KeyError:
             raise KeyError(
                 f"The 'calendar' encoding attribute is not set on the '{data_var}' "
-                "time coordinate variable ({self.dim}). This might indicate that the "
+                f"time coordinate variable ({self.dim}). This might indicate that the "
                 "time coordinates were not decoded, which is required for temporal "
                 "averaging operations. "
             )
