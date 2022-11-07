@@ -1246,6 +1246,219 @@ class TestDecodeTime:
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
+    def test_decode_time_in_days(self):
+        ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
+
+        result = decode_time(ds)
+
+        # Generate an expected dataset with decoded CF compliant time units.
+        expected = ds.copy()
+        expected["time"] = xr.DataArray(
+            name="time",
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(
+                        2000, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 2, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                    cftime.DatetimeGregorian(
+                        2000, 1, 15, 0, 0, 0, 0, has_year_zero=False
+                    ),
+                ],
+                dtype="object",
+            ),
+            dims="time",
+        )
+        expected["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        cftime.DatetimeGregorian(
+                            1999, 12, 31, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 2, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 2, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 15, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                ],
+                dtype="object",
+            ),
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+        expected.time.attrs = {
+            "axis": "T",
+            "long_name": "time",
+            "standard_name": "time",
+            "bounds": "time_bnds",
+        }
+
+        assert result.identical(expected)
+
+        # Check encoding is preserved.
+        expected.time.encoding = {
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+        }
+        expected.time_bnds.encoding = {
+            "units": "days since 2000-01-01",
+            "calendar": "standard",
+        }
+
+        assert result.time.encoding == expected.time.encoding
+        assert result.time_bnds.encoding == expected.time_bnds.encoding
+
     def test_decodes_time_coords_and_bounds_in_months_with_a_reference_date_at_the_start_of_the_month(
         self,
     ):

@@ -9,7 +9,7 @@ import xarray as xr
 from dateutil import parser
 from dateutil import relativedelta as rd
 from xarray.coding.cftime_offsets import get_date_type
-from xarray.coding.times import convert_times
+from xarray.coding.times import convert_times, decode_cf_datetime
 from xarray.coding.variables import lazy_elemwise_func, pop_to, unpack_for_decoding
 from xarray.core.variable import as_variable
 
@@ -581,37 +581,34 @@ def _get_cftime_coords(offsets: np.ndarray, units: str, calendar: str) -> np.nda
     """
     units_type, ref_date = units.split(" since ")
 
-    if units_type in NON_CF_TIME_UNITS:
-        offsets = np.asarray(offsets)
-        flat_offsets = offsets.ravel()
+    if units_type not in NON_CF_TIME_UNITS:
+        return decode_cf_datetime(offsets, units, calendar=calendar, use_cftime=True)
 
-        # Convert offsets to `np.float64` to avoid "TypeError: unsupported type
-        # for timedelta days component: numpy.int64".
-        flat_offsets = flat_offsets.astype("float")
+    offsets = np.asarray(offsets)
+    flat_offsets = offsets.ravel()
 
-        # We don't need to do calendar arithmetic here because the units and
-        # offsets are in "months" or "years", which means leap days should not
-        # be factored.
-        ref_datetime: datetime = parser.parse(ref_date, default=datetime(2000, 1, 1))
-        times = np.array(
-            [
-                ref_datetime + rd.relativedelta(**{units_type: offset})
-                for offset in flat_offsets
-            ],
-            dtype="object",
-        )
-        # Convert the array of `datetime` objects into `cftime` objects based on
-        # the calendar type.
-        date_type = get_date_type(calendar)
-        coords = convert_times(times, date_type=date_type)
+    # Convert offsets to `np.float64` to avoid "TypeError: unsupported type
+    # for timedelta days component: numpy.int64".
+    flat_offsets = flat_offsets.astype("float")
 
-        # Reshape back to the original shape.
-        coords = coords.reshape(offsets.shape)
-    else:
-        xrunits = units + " since " + ref_date
-        coords = xr.coding.times.decode_cf_datetime(
-            offsets, xrunits, calendar=calendar, use_cftime=True
-        )
+    # We don't need to do calendar arithmetic here because the units and
+    # offsets are in "months" or "years", which means leap days should not
+    # be factored.
+    ref_datetime: datetime = parser.parse(ref_date, default=datetime(2000, 1, 1))
+    times = np.array(
+        [
+            ref_datetime + rd.relativedelta(**{units_type: offset})
+            for offset in flat_offsets
+        ],
+        dtype="object",
+    )
+    # Convert the array of `datetime` objects into `cftime` objects based on
+    # the calendar type.
+    date_type = get_date_type(calendar)
+    coords = convert_times(times, date_type=date_type)
+
+    # Reshape back to the original shape.
+    coords = coords.reshape(offsets.shape)
 
     return coords
 
