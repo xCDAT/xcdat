@@ -181,6 +181,32 @@ class TestGetDimCoords:
         with pytest.raises(KeyError):
             get_dim_coords(ds, "Y")
 
+    def test_returns_dataset_dimension_coordinate_vars_using_common_var_names(
+        self,
+    ):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(data=np.ones(3), dims="lat"),
+                "lon": xr.DataArray(data=np.ones(3), dims="lon"),
+                "time": xr.DataArray(data=np.ones(3), dims="time"),
+                "atmosphere_sigma_coordinate": xr.DataArray(
+                    data=np.ones(3), dims="atmosphere_sigma_coordinate"
+                ),
+            }
+        )
+
+        result = get_dim_coords(ds, "X")
+        assert result.identical(ds["lon"])  # type: ignore
+
+        result = get_dim_coords(ds, "Y")
+        assert result.identical(ds["lat"])  # type: ignore
+
+        result = get_dim_coords(ds, "T")
+        assert result.identical(ds["time"])  # type: ignore
+
+        result = get_dim_coords(ds, "Z")
+        assert result.identical(ds["atmosphere_sigma_coordinate"])  # type: ignore
+
     def test_returns_dataset_dimension_coordinate_vars_using_axis_attr(self):
         # For example, E3SM datasets might have "ilev" and "lev" dimensions
         # with the dim coord var attr "axis" both mapped to "Z".

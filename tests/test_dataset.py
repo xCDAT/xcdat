@@ -579,6 +579,38 @@ class TestOpenMfDataset:
         expected = ds1.merge(ds2)
         assert result.identical(expected)
 
+    def test_user_specified_callable_results_in_subsetting_dataset_on_time_slice(self):
+        def callable(ds):
+            return ds.isel(time=slice(0, 1))
+
+        ds = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds.to_netcdf(self.file_path1)
+
+        result = open_mfdataset(self.file_path1, decode_times=True, preprocess=callable)
+        expected = ds.copy().isel(time=slice(0, 1))
+        expected["time"] = xr.DataArray(
+            name="time",
+            data=np.array([cftime.datetime(2000, 1, 1)]),
+            dims=["time"],
+        )
+        expected["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [[cftime.datetime(1999, 12, 1), cftime.datetime(2000, 1, 1)]],
+            ),
+            dims=["time", "bnds"],
+        )
+        expected.time.attrs = {
+            "axis": "T",
+            "long_name": "time",
+            "standard_name": "time",
+            "bounds": "time_bnds",
+        }
+
+        expected.time_bnds.attrs = {"xcdat_bounds": "True"}
+
+        assert result.identical(expected)
+
     def test_decode_time_in_months(self):
         # Generate two dataset files with different variables.
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -865,6 +897,17 @@ class TestDecodeTime:
             dims=["time", "bnds"],
         )
         self.ds = xr.Dataset({"time": time, "time_bnds": time_bnds})
+
+    def test_raises_error_if_no_time_coordinates_could_be_mapped_to(self, caplog):
+        ds = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+
+        # Remove time attributes and rename the coordinate variable before
+        # attempting to decode.
+        ds.time.attrs = {}
+        ds = ds.rename({"time": "invalid_time"})
+
+        with pytest.raises(KeyError):
+            decode_time(ds)
 
     def test_skips_decoding_time_coords_if_units_is_not_set(self, caplog):
         # Update logger level to silence the logger warning during test runs.

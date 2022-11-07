@@ -53,10 +53,12 @@ class TestAverage:
         ds = self.ds.copy()
 
         # Update CF metadata to invalid values so cf_xarray can't interpret them.
-        ds = ds.rename_dims({"lat": "invalid_lat"})
         del ds.lat.attrs["axis"]
         del ds.lat.attrs["standard_name"]
         del ds.lat.attrs["units"]
+        # Update dimension and coordinate names.
+        ds = ds.rename_dims({"lat": "invalid_lat"})
+        ds = ds.rename({"lat": "invalid_lat"})
 
         with pytest.raises(KeyError):
             ds.spatial.average("ts", axis=["X", "Y"])
@@ -65,10 +67,12 @@ class TestAverage:
         ds = self.ds.copy()
 
         # Update CF metadata to invalid values so cf_xarray can't interpret them.
-        ds = ds.rename_dims({"lon": "invalid_lon"})
         del ds.lon.attrs["axis"]
         del ds.lon.attrs["standard_name"]
         del ds.lon.attrs["units"]
+        # Update dimension and coordinate names.
+        ds = ds.rename_dims({"lon": "invalid_lon"})
+        ds = ds.rename({"lon": "invalid_lon"})
 
         with pytest.raises(KeyError):
             ds.spatial.average("ts", axis=["X", "Y"])

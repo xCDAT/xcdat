@@ -321,9 +321,10 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
 
     if len(coord_keys) == 0:
         raise KeyError(
-            "No time coordinates were found in this dataset to decode. Make sure that "
-            "either the CF 'axis' or 'standard_name' attribute is set on time "
-            "coordinates and try decoding again."
+            "Unable to map to time coordinates in this dataset to perform decoding. "
+            "Make sure that the time coordinates have the CF 'axis' or 'standard_name' "
+            "attribute set (e.g., ds['time'].attrs['axis'] = 'T' or "
+            "ds['time'].attrs['standard_name'] = 'time'), and try decoding again. "
         )
 
     for key in coord_keys:

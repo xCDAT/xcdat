@@ -6,6 +6,7 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
+from cf_xarray.criteria import coordinate_criteria
 
 from xcdat.utils import _if_multidim_dask_array_then_load
 
@@ -26,6 +27,16 @@ CF_ATTR_MAP: Dict[CFAxisKey, Dict[str, Union[CFAxisKey, CFStandardNameKey]]] = {
     "Y": {"axis": "Y", "coordinate": "latitude"},
     "T": {"axis": "T", "coordinate": "time"},
     "Z": {"axis": "Z", "coordinate": "vertical"},
+}
+
+# A dictionary that maps common variable names to coordinate variables. This
+# map is used as fall-back when coordinate variables don't have CF attributes
+# set for ``cf_xarray`` to interpret using `CF_ATTR_MAP`.
+VAR_NAME_MAP: Dict[CFAxisKey, List[str]] = {
+    "X": ["longitude", "lon"],
+    "Y": ["latitude", "lat"],
+    "T": ["time"],
+    "Z": coordinate_criteria["Z"]["standard_name"],
 }
 
 
@@ -256,8 +267,12 @@ def _get_all_coord_keys(
 ) -> List[str]:
     """Gets all dimension and non-dimension coordinate keys for an axis.
 
-    This function attempts to map an axis to its coordinate keys using the
-    CF axis and coordinate names with ``cf_xarray`` mapping tables.
+    This function uses ``cf_xarray`` to interpret CF axis and coordinate name
+    metadata to map an ``axis`` to its coordinate keys. Refer to [2]_ for more
+    information on the ``cf_xarray`` mapping tables.
+
+    It also loops over a list of statically defined coordinate variable names to
+    see if they exist in the object, and appends keys that do exist.
 
     Parameters
     ----------
@@ -270,8 +285,13 @@ def _get_all_coord_keys(
     -------
     List[str]
         The axis coordinate variable keys.
+
+    References
+    ----------
+    .. [2] https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axes-and-coordinates
     """
     cf_attrs = CF_ATTR_MAP[axis]
+    var_names = VAR_NAME_MAP[axis]
 
     keys: List[str] = []
 
@@ -284,6 +304,10 @@ def _get_all_coord_keys(
         keys = keys + obj.cf.coordinates[cf_attrs["coordinate"]]
     except KeyError:
         pass
+
+    for name in var_names:
+        if name in obj.coords.keys():
+            keys.append(name)
 
     return list(set(keys))
 
