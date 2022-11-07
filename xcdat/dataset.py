@@ -560,19 +560,25 @@ def _decode_time(da: xr.DataArray) -> xr.Variable:
 def _get_cftime_coords(offsets: np.ndarray, units: str, calendar: str) -> np.ndarray:
     """Get an array of `cftime` coordinates starting from a reference date.
 
-    This function supports multidimensional arrays such as bounds by flattening
-    them first, decoding, then reshaping back to their original shapes.
+    This function calls xarray's ``decode_cf_datetime()`` if the units are
+    CF compliant because ``decode_cf_datetime()`` considers leap days when
+    decoding time offsets to ``cftime`` objects.
+
+    For non-CF compliant units ("[months|years] since ..."), this function
+    performs custom decoding. It flattens the array, performs decoding on the
+    time offsets, then reshapes the array back to its original shape.
 
     Parameters
     ----------
     offsets : np.ndarray
         An array of numerically encoded time offsets from the reference date.
+    units : str
+        The time units.
+        calendar : str
     calendar : str
         The CF calendar type supported by ``cftime`` . This includes "noleap",
         "360_day", "365_day", "366_day", "gregorian", "proleptic_gregorian",
         "julian", "all_leap", and "standard".
-    units : str
-        The time units.
 
     Returns
     -------
