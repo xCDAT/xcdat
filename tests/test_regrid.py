@@ -227,6 +227,7 @@ class TestRegrid2Regridder:
         with pytest.raises(KeyError):
             regridder.horizontal("unknown", self.coarse_2d_ds)
 
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
     def test_regrid_input_mask(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 

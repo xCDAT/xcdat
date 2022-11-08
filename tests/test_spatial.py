@@ -56,9 +56,9 @@ class TestAverage:
         del ds.lat.attrs["axis"]
         del ds.lat.attrs["standard_name"]
         del ds.lat.attrs["units"]
-        # Update dimension and coordinate names.
-        ds = ds.rename_dims({"lat": "invalid_lat"})
+        # Update coordinate name.
         ds = ds.rename({"lat": "invalid_lat"})
+        ds = ds.set_index(invalid_lat="invalid_lat")
 
         with pytest.raises(KeyError):
             ds.spatial.average("ts", axis=["X", "Y"])
@@ -70,9 +70,9 @@ class TestAverage:
         del ds.lon.attrs["axis"]
         del ds.lon.attrs["standard_name"]
         del ds.lon.attrs["units"]
-        # Update dimension and coordinate names.
-        ds = ds.rename_dims({"lon": "invalid_lon"})
+        # Update coordinate name.
         ds = ds.rename({"lon": "invalid_lon"})
+        ds = ds.set_index(invalid_lon="invalid_lon")
 
         with pytest.raises(KeyError):
             ds.spatial.average("ts", axis=["X", "Y"])
