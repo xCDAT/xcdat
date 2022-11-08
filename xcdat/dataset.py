@@ -215,13 +215,13 @@ def open_mfdataset(
     return ds
 
 
-def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
+def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     """Decodes CF and non-CF time coordinates and time bounds using ``cftime``.
 
     By default, ``xarray`` only supports decoding time with CF compliant units
     [3]_. This function enables also decoding time with non-CF compliant units.
     It skips decoding time coordinates that have already been decoded as
-    "datetime64[ns]" or `cftime.datetime`.
+    ``"datetime64[ns]"`` or ``cftime.datetime``.
 
     For time coordinates to be decodable, they must have a "calendar" attribute
     set to a CF calendar type supported by ``cftime``. CF calendar types
@@ -316,7 +316,6 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:  # noqa: C901
         coords = ds[key].copy()
 
         if _is_decodable(coords) and not _is_decoded(coords):
-
             if coords.attrs.get("calendar") is None:
                 coords.attrs["calendar"] = "standard"
                 logger.warning(
@@ -384,11 +383,9 @@ def _preprocess(
     """
     ds_new = ds.copy()
 
-    # Run the user pre-processing callable function.
     if callable:
         ds_new = callable(ds)
 
-    # Attempt to decode time coordinates.
     if decode_times:
         ds_new = decode_time(ds_new)
 
@@ -561,7 +558,7 @@ def _get_cftime_coords(offsets: np.ndarray, units: str, calendar: str) -> np.nda
     units : str
         The time units.
     calendar : str
-        The CF calendar type supported by ``cftime`` . This includes "noleap",
+        The CF calendar type supported by ``cftime``. This includes "noleap",
         "360_day", "365_day", "366_day", "gregorian", "proleptic_gregorian",
         "julian", "all_leap", and "standard".
 
