@@ -14,8 +14,12 @@ logger = logging.getLogger(__name__)
 class TestBoundsAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
-        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=False
+        )
+        self.ds_with_bnds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
     def test__init__(self):
         obj = BoundsAccessor(self.ds)
@@ -54,8 +58,12 @@ class TestBoundsAccessor:
 class TestAddMissingBounds:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
-        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=False
+        )
+        self.ds_with_bnds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
     def test_adds_bounds_to_the_dataset(self):
         ds = self.ds_with_bnds.copy()
@@ -65,37 +73,28 @@ class TestAddMissingBounds:
         result = ds.bounds.add_missing_bounds()
         assert result.identical(self.ds_with_bnds)
 
-    def test_adds_bounds_to_the_dataset_skips_nondimensional_axes(self):
-        # generate dataset with height coordinate
-        ds = generate_dataset(cf_compliant=True, has_bounds=True)
-        ds = ds.assign_coords({"height": 2})
-
-        # drop bounds
-        dsm = ds.drop_vars(["lat_bnds", "lon_bnds"]).copy()
-
-        # test bounds re-generation
-        result = dsm.bounds.add_missing_bounds()
-
-        # dataset with missing bounds added should match dataset with bounds
-        # and added height coordinate
-        assert result.identical(ds)
-
-    def test_skips_adding_bounds_for_coords_that_are_multidimensional_or_len_of_1(self):
-        # Multidimensional
-        lat = xr.DataArray(
-            data=np.array([[0, 1, 2], [3, 4, 5]]),
-            dims=["placeholder_1", "placeholder_2"],
-            attrs={"units": "degrees_north", "axis": "Y"},
-        )
+    def test_skips_adding_bounds_for_coords_that_are_1_dim_singleton(self):
         # Length <=1
         lon = xr.DataArray(
             data=np.array([0]),
             dims=["lon"],
             attrs={"units": "degrees_east", "axis": "X"},
         )
-        ds = xr.Dataset(coords={"lat": lat, "lon": lon})
+        ds = xr.Dataset(coords={"lon": lon})
 
-        result = ds.bounds.add_missing_bounds("Y")
+        result = ds.bounds.add_missing_bounds()
+
+        assert result.identical(ds)
+
+    def test_skips_adding_bounds_for_coords_that_are_0_dim_singleton(self):
+        # 0-dimensional array
+        lon = xr.DataArray(
+            data=float(0),
+            attrs={"units": "degrees_east", "axis": "X"},
+        )
+        ds = xr.Dataset(coords={"lon": lon})
+
+        result = ds.bounds.add_missing_bounds()
 
         assert result.identical(ds)
 
@@ -103,41 +102,20 @@ class TestAddMissingBounds:
 class TestGetBounds:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
-        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=False
+        )
+        self.ds_with_bnds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
     def test_raises_error_with_invalid_axis_key(self):
         with pytest.raises(ValueError):
             self.ds.bounds.get_bounds("incorrect_axis_argument")
 
-    def test_raises_error_if_bounds_attr_is_not_set_on_coord_var(self):
+    def test_raises_error_if_no_bounds_are_found_because_none_exist(self):
         ds = xr.Dataset(
-            coords={
-                "lat": xr.DataArray(data=np.ones(3), dims="lat", attrs={"axis": "Y"})
-            },
-            data_vars={
-                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"])
-            },
-        )
-        with pytest.raises(KeyError):
-            ds.bounds.get_bounds("Y")
-
-    def test_raises_error_if_bounds_attr_is_set_but_no_bounds_data_var_exists(self):
-        ds = xr.Dataset(
-            coords={
-                "lat": xr.DataArray(
-                    data=np.ones(3),
-                    dims="lat",
-                    attrs={"axis": "Y", "bounds": "lat_bnds"},
-                )
-            }
-        )
-
-        with pytest.raises(KeyError):
-            ds.bounds.get_bounds("Y")
-
-    def test_returns_bounds(self):
-        ds = xr.Dataset(
+            data_vars={"ts": xr.DataArray(data=np.ones(3), dims="lat")},
             coords={
                 "lat": xr.DataArray(
                     data=np.ones(3),
@@ -145,46 +123,167 @@ class TestGetBounds:
                     attrs={"axis": "Y", "bounds": "lat_bnds"},
                 )
             },
+        )
+
+        # No "Y" axis bounds are found in the entire dataset.
+        with pytest.raises(KeyError):
+            ds.bounds.get_bounds("Y")
+
+        # No "Y" axis bounds are found for the specified var_key.
+        with pytest.raises(KeyError):
+            ds.bounds.get_bounds("Y", var_key="ts")
+
+    def test_raises_error_if_no_bounds_are_found_because_bounds_attr_not_set(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={"axis": "Y"},
+                )
+            },
+            data_vars={
+                "var": xr.DataArray(data=np.ones((3)), dims=["lat"]),
+                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"]),
+            },
+        )
+
+        with pytest.raises(KeyError):
+            ds.bounds.get_bounds("Y")
+
+    def test_raises_error_if_no_bounds_are_found_with_bounds_attr_set_because_none_exist(
+        self,
+    ):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={"axis": "Y", "bounds": "lat_bnds"},
+                )
+            },
+            data_vars={
+                "var": xr.DataArray(data=np.ones((3)), dims=["lat"]),
+            },
+        )
+
+        with pytest.raises(KeyError):
+            ds.bounds.get_bounds("Y", var_key="var")
+
+    def test_returns_single_coord_var_axis_bounds_as_datarray_object(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={"axis": "Y", "bounds": "lat_bnds"},
+                )
+            },
+            data_vars={
+                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"]),
+            },
+        )
+
+        result = ds.bounds.get_bounds("Y", var_key="lat")
+        expected = ds.lat_bnds
+
+        assert result.identical(expected)
+
+    def test_returns_single_data_var_axis_bounds_as_datarray_object(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={"axis": "Y", "bounds": "lat_bnds"},
+                )
+            },
+            data_vars={
+                "var": xr.DataArray(data=np.ones((3)), dims=["lat"]),
+                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"]),
+            },
+        )
+
+        result = ds.bounds.get_bounds("Y", var_key="var")
+        expected = ds.lat_bnds
+
+        assert result.identical(expected)
+
+    def test_returns_single_dataset_axis_bounds_as_a_dataarray_object(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={"axis": "Y", "bounds": "lat_bnds"},
+                )
+            },
             data_vars={
                 "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"])
             },
         )
 
-        lat_bnds = ds.bounds.get_bounds("Y")
+        result = ds.bounds.get_bounds("Y")
+        expected = ds.lat_bnds
 
-        assert lat_bnds.identical(ds.lat_bnds)
+        assert result.identical(expected)
+
+    def test_returns_multiple_dataset_axis_bounds_as_a_dataset_object(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={
+                        "axis": "Y",
+                        "standard_name": "latitude",
+                        "bounds": "lat_bnds",
+                    },
+                ),
+                "lat2": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat2",
+                    attrs={
+                        "axis": "Y",
+                        "standard_name": "latitude",
+                        "bounds": "lat2_bnds",
+                    },
+                ),
+            },
+            data_vars={
+                "var": xr.DataArray(data=np.ones(3), dims=["lat"]),
+                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"]),
+                "lat2_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat2", "bnds"]),
+            },
+        )
+
+        result = ds.bounds.get_bounds("Y")
+        expected = ds.drop_vars("var")
+
+        assert result.identical(expected)
 
 
 class TestAddBounds:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=False)
-        self.ds_with_bnds = generate_dataset(cf_compliant=True, has_bounds=True)
-
-    def test_raises_error_if_bounds_already_exist(self):
-        ds = self.ds_with_bnds.copy()
-
-        with pytest.raises(ValueError):
-            ds.bounds.add_bounds("Y")
-
-    def test_raises_errors_for_data_dim_and_length(self):
-        # Multidimensional
-        lat = xr.DataArray(
-            data=np.array([[0, 1, 2], [3, 4, 5]]),
-            dims=["placeholder_1", "placeholder_2"],
-            attrs={"units": "degrees_north", "axis": "Y"},
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=False
         )
+        self.ds_with_bnds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+    def test_raises_error_for_singleton_coords(self):
         # Length <=1
         lon = xr.DataArray(
             data=np.array([0]),
             dims=["lon"],
             attrs={"units": "degrees_east", "axis": "X"},
         )
-        ds = xr.Dataset(coords={"lat": lat, "lon": lon})
+        ds = xr.Dataset(coords={"lon": lon})
 
-        # If coords dimensions does not equal 1.
         with pytest.raises(ValueError):
-            ds.bounds.add_bounds("Y")
+            ds.bounds.add_bounds("X")
 
     def test_raises_error_if_lat_coord_var_units_is_not_in_degrees(self):
         lat = xr.DataArray(
@@ -213,8 +312,32 @@ class TestAddBounds:
         assert result.lat.attrs["units"] == "degrees_north"
         assert result.lat.attrs["bounds"] == "lat_bnds"
 
+    def test_skips_adding_bounds_for_coord_vars_with_bounds(self):
+        ds = self.ds_with_bnds.copy()
+        result = ds.bounds.add_bounds("Y")
+
+        assert ds.identical(result)
+
     def test_add_bounds_for_dataset_with_time_coords_as_datetime_objects(self):
         ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+        ds["time"] = xr.DataArray(
+            name="time",
+            data=np.array(
+                [
+                    "2000-01-01T12:00:00.000000000",
+                    "2000-02-01T12:00:00.000000000",
+                    "2000-03-01T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+            },
+        )
 
         result = ds.bounds.add_bounds("Y")
         assert result.lat_bnds.equals(lat_bnds)
@@ -233,21 +356,9 @@ class TestAddBounds:
             name="time_bnds",
             data=np.array(
                 [
-                    ["2000-01-01T12:00:00.000000000", "2000-01-31T12:00:00.000000000"],
-                    ["2000-01-31T12:00:00.000000000", "2000-03-01T12:00:00.000000000"],
-                    ["2000-03-01T12:00:00.000000000", "2000-03-31T18:00:00.000000000"],
-                    ["2000-03-31T18:00:00.000000000", "2000-05-01T06:00:00.000000000"],
-                    ["2000-05-01T06:00:00.000000000", "2000-05-31T18:00:00.000000000"],
-                    ["2000-05-31T18:00:00.000000000", "2000-07-01T06:00:00.000000000"],
-                    ["2000-07-01T06:00:00.000000000", "2000-08-01T00:00:00.000000000"],
-                    ["2000-08-01T00:00:00.000000000", "2000-08-31T18:00:00.000000000"],
-                    ["2000-08-31T18:00:00.000000000", "2000-10-01T06:00:00.000000000"],
-                    ["2000-10-01T06:00:00.000000000", "2000-10-31T18:00:00.000000000"],
-                    ["2000-10-31T18:00:00.000000000", "2000-12-01T06:00:00.000000000"],
-                    ["2000-12-01T06:00:00.000000000", "2001-01-01T00:00:00.000000000"],
-                    ["2001-01-01T00:00:00.000000000", "2001-01-31T06:00:00.000000000"],
-                    ["2001-01-31T06:00:00.000000000", "2001-07-17T06:00:00.000000000"],
-                    ["2001-07-17T06:00:00.000000000", "2002-05-17T18:00:00.000000000"],
+                    ["1999-12-17T00:00:00.000000000", "2000-01-17T00:00:00.000000000"],
+                    ["2000-01-17T00:00:00.000000000", "2000-02-16T00:00:00.000000000"],
+                    ["2000-02-16T00:00:00.000000000", "2000-03-16T00:00:00.000000000"],
                 ],
                 dtype="datetime64[ns]",
             ),

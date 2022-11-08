@@ -141,7 +141,9 @@ class TestRegrid2Regridder:
 
     @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
     def test_output_bounds(self):
-        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
         output_grid = grid.create_gaussian_grid(32)
 
@@ -225,6 +227,7 @@ class TestRegrid2Regridder:
         with pytest.raises(KeyError):
             regridder.horizontal("unknown", self.coarse_2d_ds)
 
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
     def test_regrid_input_mask(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
@@ -416,7 +419,9 @@ class TestRegrid2Regridder:
 class TestXESMFRegridder:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
         self.new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
     @pytest.mark.xfail
@@ -481,7 +486,9 @@ class TestXESMFRegridder:
             )
 
     def test_preserve_bounds(self):
-        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
@@ -573,6 +580,75 @@ class TestGrid:
         assert np.all(mean_grid.lon == np.array([180.0]))
         assert np.all(mean_grid.lon_bnds == np.array([[-22.5, 405]]))
 
+    def test_raises_error_for_global_mean_grid_if_an_axis_has_multiple_dimensions(self):
+        source_grid = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    name="lat",
+                    data=np.array([-80, -40, 0, 40, 80]),
+                    dims="lat",
+                    attrs={"units": "degrees_north", "axis": "Y", "bounds": "lat_bnds"},
+                ),
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([0, 45, 90, 180, 270, 360]),
+                    dims="lon",
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                ),
+            },
+            data_vars={
+                "lat_bnds": xr.DataArray(
+                    name="lat_bnds",
+                    data=np.array(
+                        [
+                            [-90.0, -60.0],
+                            [-60.0, -20.0],
+                            [-20.0, 20.0],
+                            [20.0, 60.0],
+                            [60.0, 90.0],
+                        ]
+                    ),
+                    dims=["lat", "bnds"],
+                    attrs={"units": "degrees_north", "axis": "Y", "bounds": "lat_bnds"},
+                ),
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [-22.5, 22.5],
+                            [22.5, 67.5],
+                            [67.5, 135.0],
+                            [135.0, 225.0],
+                            [225.0, 315.0],
+                            [315.0, 405.0],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"xcdat_bounds": True},
+                ),
+            },
+        )
+
+        source_grid_with_2_lats = source_grid.copy()
+        source_grid_with_2_lats["lat2"] = xr.DataArray(
+            name="lat2",
+            data=np.array([-80, -40, 0, 40, 80]),
+            dims="lat2",
+            attrs={"units": "degrees_north", "axis": "Y", "bounds": "lat_bnds"},
+        )
+        with pytest.raises(ValueError):
+            grid.create_global_mean_grid(source_grid_with_2_lats)
+
+        source_grid_with_2_lons = source_grid.copy()
+        source_grid_with_2_lons["lon2"] = xr.DataArray(
+            name="lon2",
+            data=np.array([0, 45, 90, 180, 270, 360]),
+            dims="lon2",
+            attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+        )
+        with pytest.raises(ValueError):
+            grid.create_global_mean_grid(source_grid_with_2_lons)
+
     def test_zonal_grid(self):
         source_grid = grid.create_grid(
             np.array([-80, -40, 0, 40, 80]), np.array([-160, -80, 80, 160])
@@ -588,6 +664,62 @@ class TestGrid:
         assert np.all(zonal_grid.lon == np.array([0.0]))
         assert np.all(zonal_grid.lon_bnds == np.array([-200, 200]))
 
+    def test_raises_error_for_zonal_grid_if_an_axis_has_multiple_dimensions(self):
+        source_grid = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    name="lat",
+                    data=np.array([-80, -40, 0, 40, 80]),
+                    dims="lat",
+                    attrs={"units": "degrees_north", "axis": "Y", "bounds": "lat_bnds"},
+                ),
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([-160, -80, 80, 160]),
+                    dims="lon",
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                ),
+            },
+            data_vars={
+                "lat_bnds": xr.DataArray(
+                    name="lat_bnds",
+                    data=np.array(
+                        [[-90, -60], [-60, -20], [-20, 20], [20, 60], [60, 90]]
+                    ),
+                    dims=["lat", "bnds"],
+                    attrs={"units": "degrees_north", "axis": "Y", "bounds": "lat_bnds"},
+                ),
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [[-200.0, -120.0], [-120.0, 0.0], [0.0, 120.0], [120.0, 200.0]]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"xcdat_bounds": True},
+                ),
+            },
+        )
+
+        source_grid_with_2_lats = source_grid.copy()
+        source_grid_with_2_lats["lat2"] = xr.DataArray(
+            name="lat2",
+            data=np.array([-80, -40, 0, 40, 80]),
+            dims="lat2",
+            attrs={"units": "degrees_north", "axis": "Y", "bounds": "lat_bnds"},
+        )
+        with pytest.raises(ValueError):
+            grid.create_zonal_grid(source_grid_with_2_lats)
+
+        source_grid_with_2_lons = source_grid.copy()
+        source_grid_with_2_lons["lon2"] = xr.DataArray(
+            name="lon2",
+            data=np.array([0, 45, 90, 180, 270, 360]),
+            dims="lon2",
+            attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+        )
+        with pytest.raises(ValueError):
+            grid.create_zonal_grid(source_grid_with_2_lons)
+
 
 class TestAccessor:
     @pytest.fixture(autouse=True)
@@ -596,7 +728,9 @@ class TestAccessor:
         self.ac = accessor.RegridderAccessor(self.data)
 
     def test_grid_missing_axis(self):
-        ds = fixtures.generate_dataset(True, True)
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=True, has_bounds=True
+        )
 
         ds_no_lat = ds.drop_dims(["lat"])
 
@@ -609,7 +743,9 @@ class TestAccessor:
             ds_no_lon.regridder.grid
 
     def test_grid(self):
-        ds_bounds = fixtures.generate_dataset(True, True)
+        ds_bounds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=True, has_bounds=True
+        )
 
         grid = ds_bounds.regridder.grid
 
@@ -618,7 +754,9 @@ class TestAccessor:
         assert "lat_bnds" in grid
         assert "lon_bnds" in grid
 
-        ds_no_bounds = fixtures.generate_dataset(True, False)
+        ds_no_bounds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=True, has_bounds=False
+        )
 
         grid = ds_no_bounds.regridder.grid
 
@@ -626,6 +764,17 @@ class TestAccessor:
         assert "lon" in grid
         assert "lat_bnds" in grid
         assert "lon_bnds" in grid
+
+    def test_grid_raises_error_when_dataset_has_multiple_dims_for_an_axis(self):
+        ds_bounds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=True, has_bounds=True
+        )
+        ds_bounds.coords["lat2"] = xr.DataArray(
+            data=[], dims="lat2", attrs={"axis": "Y"}
+        )
+
+        with pytest.raises(ValueError):
+            ds_bounds.regridder.grid
 
     def test_valid_tool(self):
         mock_regridder = mock.MagicMock()
@@ -649,7 +798,9 @@ class TestAccessor:
     @requires_xesmf
     @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
     def test_convenience_methods(self):
-        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
         out_grid = grid.create_gaussian_grid(32)
 
@@ -665,7 +816,9 @@ class TestAccessor:
     def test_raises_error_if_xesmf_is_not_installed(self):
         # TODO Find a way to mock the value of `_has_xesmf` to False or
         # to remove the `xesmf` module entirely
-        ds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
         out_grid = grid.create_gaussian_grid(32)
         with pytest.raises(ModuleNotFoundError):
@@ -674,7 +827,9 @@ class TestAccessor:
 
 class TestBase:
     def test_preserve_bounds(self):
-        ds_with_bounds = fixtures.generate_dataset(cf_compliant=True, has_bounds=True)
+        ds_with_bounds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
         ds_without_bounds = ds_with_bounds.drop_vars(["lat_bnds", "lon_bnds"])
 

@@ -16,15 +16,15 @@ from typing import (
 import cf_xarray  # noqa: F401
 import numpy as np
 import xarray as xr
-from dask.array.core import Array
 
 from xcdat.axis import (
     _align_lon_bounds_to_360,
     _get_prime_meridian_index,
-    get_axis_coord,
-    get_axis_dim,
+    get_dim_coords,
+    get_dim_keys,
 )
 from xcdat.dataset import _get_data_var
+from xcdat.utils import _if_multidim_dask_array_then_load
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
 AxisWeights = Dict[Hashable, xr.DataArray]
@@ -188,7 +188,7 @@ class SpatialAccessor:
                 self._validate_region_bounds("Y", lat_bounds)
             if lon_bounds is not None:
                 self._validate_region_bounds("X", lon_bounds)
-            self._weights = self.get_weights(axis, lat_bounds, lon_bounds)
+            self._weights = self.get_weights(axis, lat_bounds, lon_bounds, data_var)
         elif isinstance(weights, xr.DataArray):
             self._weights = weights
 
@@ -205,6 +205,7 @@ class SpatialAccessor:
         axis: List[SpatialAxis],
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
+        data_var: Optional[str] = None,
     ) -> xr.DataArray:
         """
         Get area weights for specified axis keys and an optional target domain.
@@ -229,6 +230,11 @@ class SpatialAccessor:
         lon_bounds : Optional[RegionAxisBounds]
             Tuple of longitude boundaries for regional selection, by default
             None.
+        data_var: Optional[str]
+            The key of the data variable, by default None. Pass this argument
+            when the dataset has more than one bounds per axis (e.g., "lon"
+            and "zlon_bnds" for the "X" axis), or you want weights for a
+            specific data variable.
 
         Returns
         -------
@@ -265,7 +271,16 @@ class SpatialAccessor:
 
         axis_weights: AxisWeights = {}
         for key in axis:
-            d_bounds = self._dataset.bounds.get_bounds(key).copy()
+            d_bounds = self._dataset.bounds.get_bounds(axis=key, var_key=data_var)
+
+            if isinstance(d_bounds, xr.Dataset):
+                raise TypeError(
+                    "Generating area weights requires a single bounds per "
+                    f"axis, but the dataset has multiple bounds for the '{key}' axis "
+                    f"{list(d_bounds.data_vars)}. Pass a `data_var` key "
+                    "to reference a specific data variable's axis bounds."
+                )
+
             # The logic for generating longitude weights depends on the
             # bounds being ordered such that d_bounds[:, 0] < d_bounds[:, 1].
             # They are re-ordered (if need be) for the purpose of creating
@@ -307,7 +322,7 @@ class SpatialAccessor:
                 )
 
             # Check the axis coordinate variable exists in the Dataset.
-            get_axis_coord(self._dataset, key)
+            get_dim_coords(self._dataset, key)
 
     def _force_domain_order_low_to_high(self, domain_bounds: xr.DataArray):
         """Reorders the ``domain_bounds`` low-to-high.
@@ -524,12 +539,8 @@ class SpatialAccessor:
         """
         lon_swap = lon.copy()
 
-        # If chunking, must convert convert the xarray data structure from lazy
-        # Dask arrays into eager, in-memory NumPy arrays before performing
-        # manipulations on the data. Otherwise, it raises `NotImplementedError
-        # xarray can't set arrays with multiple array indices to dask yet`.
-        if type(lon_swap.data) == Array:
-            lon_swap.load()
+        if isinstance(lon_swap, xr.DataArray):
+            _if_multidim_dask_array_then_load(lon_swap)
 
         # Must set keep_attrs=True or the xarray DataArray attrs will get
         # dropped. This has no affect on NumPy arrays.
@@ -582,8 +593,7 @@ class SpatialAccessor:
         d_bounds = domain_bounds.copy()
         r_bounds = region_bounds.copy()
 
-        if type(d_bounds.data) == Array:
-            d_bounds.load()
+        _if_multidim_dask_array_then_load(d_bounds)
 
         # Since longitude is circular, the logic depends on whether the region
         # spans across the prime meridian or not. If a region does not include
@@ -692,7 +702,7 @@ class SpatialAccessor:
 
         # Check the weights includes the same axis as the data variable.
         for key in axis:
-            dim_name = get_axis_dim(data_var, key)
+            dim_name = get_dim_keys(data_var, key)
             if dim_name not in self._weights.dims:
                 raise KeyError(
                     f"The weights DataArray does not include an {key} axis, or the "
@@ -741,7 +751,7 @@ class SpatialAccessor:
 
         dim = []
         for key in axis:
-            dim.append(get_axis_dim(data_var, key))
+            dim.append(get_dim_keys(data_var, key))
 
         with xr.set_options(keep_attrs=True):
             weighted_mean = data_var.cf.weighted(weights).mean(dim=dim)

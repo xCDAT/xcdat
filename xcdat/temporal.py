@@ -11,7 +11,7 @@ from xarray.coding.cftime_offsets import get_date_type
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
-from xcdat.axis import get_axis_coord
+from xcdat.axis import get_dim_coords
 from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
 
@@ -146,20 +146,6 @@ class TemporalAccessor:
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
-        # The name of the time dimension.
-        self._dim = get_axis_coord(self._dataset, "T").name
-
-        try:
-            self.calendar = self._dataset[self._dim].encoding["calendar"]
-            self.date_type = get_date_type(self.calendar)
-        except KeyError:
-            raise KeyError(
-                "This dataset's time coordinates do not have a 'calendar' encoding "
-                "attribute set, which might indicate that the time coordinates were not "
-                "decoded to datetime objects. Ensure that the time coordinates are "
-                "decoded before performing temporal averaging operations."
-            )
-
     def average(self, data_var: str, weighted: bool = True, keep_weights: bool = False):
         """
         Returns a Dataset with the average of a data variable and the time
@@ -205,6 +191,8 @@ class TemporalAccessor:
         >>> ds_month = ds.temporal.average("ts", freq="month")
         >>> ds_month.ts
         """
+        self._set_data_var_attrs(data_var)
+
         freq = self._infer_freq()
 
         return self._averager(data_var, "average", freq, weighted, keep_weights)
@@ -340,6 +328,8 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
+        self._set_data_var_attrs(data_var)
+
         return self._averager(
             data_var, "group_average", freq, weighted, keep_weights, season_config
         )
@@ -475,6 +465,8 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
+        self._set_data_var_attrs(data_var)
+
         return self._averager(
             data_var, "climatology", freq, weighted, keep_weights, season_config
         )
@@ -609,14 +601,15 @@ class TemporalAccessor:
         }
         """
         ds = self._dataset.copy()
-        self._set_obj_attrs("departures", freq, weighted, season_config)
+        self._set_data_var_attrs(data_var)
+        self._set_arg_attrs("departures", freq, weighted, season_config)
 
         # Preprocess the dataset based on method argument values.
         ds = self._preprocess_dataset(ds)
 
         # Group the observation data variable.
         dv_obs = _get_data_var(ds, data_var)
-        self._labeled_time = self._label_time_coords(dv_obs[self._dim])
+        self._labeled_time = self._label_time_coords(dv_obs[self.dim])
         dv_obs_grouped = self._group_data(dv_obs)
 
         # Calculate the climatology of the data variable.
@@ -630,7 +623,7 @@ class TemporalAccessor:
         # to work. Otherwise, the error below is thrown: `ValueError:
         # incompatible dimensions for a grouped binary operation: the group
         # variable '<CHOSEN_FREQ>' is not a dimension on the other argument`
-        dv_climo = dv_climo.rename({self._dim: self._labeled_time.name})
+        dv_climo = dv_climo.rename({self.dim: self._labeled_time.name})
 
         # Calculate the departures for the data variable, which uses the formula
         # observation - climatology.
@@ -666,7 +659,7 @@ class TemporalAccessor:
         Frequency
             The time frequency.
         """
-        time_coords = self._dataset[self._dim]
+        time_coords = self._dataset[self.dim]
         min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
 
         if min_delta < pd.Timedelta(days=1):
@@ -689,15 +682,14 @@ class TemporalAccessor:
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
         ds = self._dataset.copy()
-        self._set_obj_attrs(mode, freq, weighted, season_config)
+        self._set_arg_attrs(mode, freq, weighted, season_config)
 
         # Preprocess the dataset based on method argument values.
         ds = self._preprocess_dataset(ds)
 
-        # Get the data variable and time bounds from the dataset and perform
-        # the averaging operation.
+        # Get the data variable and the required time axis metadata.
         dv = _get_data_var(ds, data_var)
-        time_bounds = ds.bounds.get_bounds("T")
+        time_bounds = ds.bounds.get_bounds("T", var_key=dv.name)
 
         if self._mode == "average":
             dv = self._average(dv, time_bounds)
@@ -708,7 +700,7 @@ class TemporalAccessor:
         # it becomes obsolete after the data variable is averaged. When the
         # averaged data variable is added to the dataset, the new time dimension
         # and its associated coordinates are also added.
-        ds = ds.drop_dims(self._dim)
+        ds = ds.drop_dims(self.dim)
         ds[dv.name] = dv
 
         if keep_weights:
@@ -716,7 +708,39 @@ class TemporalAccessor:
 
         return ds
 
-    def _set_obj_attrs(
+    def _set_data_var_attrs(self, data_var: str):
+        """Set data variable metadata as object attributes.
+
+        This includes the name of the data variable, the time axis dimension
+        name, the calendar type and its corresponding cftime object (date type).
+
+        Parameters
+        ----------
+        data_var : str
+            The key of the data variable.
+
+        Raises
+        ------
+        KeyError
+            If the data variable does not have a "calendar" encoding attribute.
+        """
+        dv = _get_data_var(self._dataset, data_var)
+
+        self.data_var = data_var
+        self.dim = get_dim_coords(dv, "T").name
+
+        try:
+            self.calendar = dv[self.dim].encoding["calendar"]
+            self.date_type = get_date_type(self.calendar)
+        except KeyError:
+            raise KeyError(
+                f"The 'calendar' encoding attribute is not set on the '{data_var}' "
+                f"time coordinate variable ({self.dim}). This might indicate that the "
+                "time coordinates were not decoded, which is required for temporal "
+                "averaging operations. "
+            )
+
+    def _set_arg_attrs(
         self,
         mode: Mode,
         freq: Frequency,
@@ -896,19 +920,19 @@ class TemporalAccessor:
         # method concatenates the time dimension to non-time dimension data
         # vars, which is not a desired behavior.
         ds = dataset.copy()
-        ds_time = ds.get([v for v in ds.data_vars if self._dim in ds[v].dims])  # type: ignore
-        ds_no_time = ds.get([v for v in ds.data_vars if self._dim not in ds[v].dims])  # type: ignore
+        ds_time = ds.get([v for v in ds.data_vars if self.dim in ds[v].dims])  # type: ignore
+        ds_no_time = ds.get([v for v in ds.data_vars if self.dim not in ds[v].dims])  # type: ignore
 
         start_year, end_year = (
-            ds[self._dim].dt.year.values[0],
-            ds[self._dim].dt.year.values[-1],
+            ds[self.dim].dt.year.values[0],
+            ds[self.dim].dt.year.values[-1],
         )
         incomplete_seasons = (f"{start_year}-01", f"{start_year}-02", f"{end_year}-12")
 
         for year_month in incomplete_seasons:
             try:
-                coord_pt = ds.loc[dict(time=year_month)][self._dim][0]
-                ds_time = ds_time.where(ds_time[self._dim] != coord_pt, drop=True)
+                coord_pt = ds.loc[dict(time=year_month)][self.dim][0]
+                ds_time = ds_time.where(ds_time[self.dim] != coord_pt, drop=True)
             except (KeyError, IndexError):
                 continue
 
@@ -935,7 +959,7 @@ class TemporalAccessor:
         xr.Dataset
         """
         ds = ds.sel(  # type: ignore
-            **{self._dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))}
+            **{self.dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))}
         )
         return ds
 
@@ -961,9 +985,9 @@ class TemporalAccessor:
         with xr.set_options(keep_attrs=True):
             if self._weighted:
                 self._weights = self._get_weights(time_bounds)
-                dv = dv.weighted(self._weights).mean(dim=self._dim)
+                dv = dv.weighted(self._weights).mean(dim=self.dim)
             else:
-                dv = dv.mean(dim=self._dim)
+                dv = dv.mean(dim=self.dim)
 
         dv = self._add_operation_attrs(dv)
 
@@ -990,7 +1014,7 @@ class TemporalAccessor:
 
         # Label the time coordinates for grouping weights and the data variable
         # values.
-        self._labeled_time = self._label_time_coords(dv[self._dim])
+        self._labeled_time = self._label_time_coords(dv[self.dim])
 
         if self._weighted:
             self._weights = self._get_weights(time_bounds)
@@ -1020,14 +1044,14 @@ class TemporalAccessor:
         # with "year_season". This dimension needs to be renamed back to
         # the original time dimension name before the data variable is added
         # back to the dataset so that the original name is preserved.
-        dv = dv.rename({self._labeled_time.name: self._dim})
+        dv = dv.rename({self._labeled_time.name: self.dim})
 
         # After grouping and aggregating, the grouped time dimension's
         # attributes are removed. Xarray's `keep_attrs=True` option only keeps
         # attributes for data variables and not their coordinates, so the
         # coordinate attributes have to be restored manually.
-        dv[self._dim].attrs = self._labeled_time.attrs
-        dv[self._dim].encoding = self._labeled_time.encoding
+        dv[self.dim].attrs = self._labeled_time.attrs
+        dv[self.dim].encoding = self._labeled_time.encoding
 
         dv = self._add_operation_attrs(dv)
 
@@ -1076,13 +1100,14 @@ class TemporalAccessor:
         # only select the general DType and not details such as the byte order
         # or time unit (with rare exceptions see release notes). To avoid this
         # warning please use the scalar types `np.float64`, or string notation.`
-        if type(time_lengths.values == Array):
+        if isinstance(time_lengths.data, Array):
             time_lengths.load()
+
         time_lengths = time_lengths.astype(np.float64)
 
         grouped_time_lengths = self._group_data(time_lengths)
         weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()
-        weights.name = f"{self._dim}_wts"
+        weights.name = f"{self.dim}_wts"
 
         # Validate the sum of weights for each group is 1.0.
         actual_sum = self._group_data(weights).sum().values
@@ -1110,7 +1135,7 @@ class TemporalAccessor:
         dv = data_var.copy()
 
         if self._mode == "average":
-            dv_gb = dv.groupby(f"{self._dim}.{self._freq}")
+            dv_gb = dv.groupby(f"{self.dim}.{self._freq}")
         else:
             dv.coords[self._labeled_time.name] = self._labeled_time
             dv_gb = dv.groupby(self._labeled_time.name)
@@ -1167,11 +1192,11 @@ class TemporalAccessor:
         time_grouped = xr.DataArray(
             name="_".join(df_dt_components.columns),
             data=dt_objects,
-            coords={self._dim: time_coords[self._dim]},
-            dims=[self._dim],
-            attrs=time_coords[self._dim].attrs,
+            coords={self.dim: time_coords[self.dim]},
+            dims=[self.dim],
+            attrs=time_coords[self.dim].attrs,
         )
-        time_grouped.encoding = time_coords[self._dim].encoding
+        time_grouped.encoding = time_coords[self.dim].encoding
 
         return time_grouped
 
@@ -1215,7 +1240,7 @@ class TemporalAccessor:
         # Use the TIME_GROUPS dictionary to determine which components
         # are needed to form the labeled time coordinates.
         for component in TIME_GROUPS[self._mode][self._freq]:
-            df[component] = time_coords[f"{self._dim}.{component}"].values
+            df[component] = time_coords[f"{self.dim}.{component}"].values
 
         # The season frequency requires additional datetime components for
         # processing, which are later removed before time coordinates are
@@ -1224,11 +1249,11 @@ class TemporalAccessor:
         # `TIME_GROUPS` represents the final grouping labels.
         if self._freq == "season":
             if self._mode in ["climatology", "departures"]:
-                df["year"] = time_coords[f"{self._dim}.year"].values
-                df["month"] = time_coords[f"{self._dim}.month"].values
+                df["year"] = time_coords[f"{self.dim}.year"].values
+                df["month"] = time_coords[f"{self.dim}.month"].values
 
             if self._mode == "group_average":
-                df["month"] = time_coords[f"{self._dim}.month"].values
+                df["month"] = time_coords[f"{self.dim}.month"].values
 
             df = self._process_season_df(df)
 
@@ -1475,7 +1500,7 @@ class TemporalAccessor:
         # avoid conflict with the grouped time coordinates in the Dataset (can
         # have a different shape).
         if self._mode in ["group_average", "climatology"]:
-            self._weights = self._weights.rename({self._dim: f"{self._dim}_original"})
+            self._weights = self._weights.rename({self.dim: f"{self.dim}_original"})
             # Only keep the original time coordinates, not the ones labeled
             # by group.
             self._weights = self._weights.drop_vars(self._labeled_time.name)
@@ -1483,7 +1508,7 @@ class TemporalAccessor:
         # because the final departures Dataset has the original time coordinates
         # restored after performing grouped subtraction.
         elif self._mode == "departures":
-            self._weights = self._weights.rename({f"{self._dim}_original": self._dim})
+            self._weights = self._weights.rename({f"{self.dim}_original": self.dim})
 
         ds[self._weights.name] = self._weights
 

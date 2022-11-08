@@ -3,7 +3,7 @@ from typing import Optional, Tuple, Union
 import numpy as np
 import xarray as xr
 
-from xcdat.axis import get_axis_coord
+from xcdat.axis import CFAxisKey, get_dim_coords
 
 # First 50 zeros for the bessel function
 # Taken from https://github.com/CDAT/cdms/blob/dd41a8dd3b5bac10a4bfdf6e56f6465e11efc51d/regrid2/Src/_regridmodule.c#L3390-L3402
@@ -378,16 +378,18 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
     xr.Dataset
         A dataset containing the global mean grid.
     """
-    lat = get_axis_coord(grid, "Y")
-    lat_data = np.array([(lat[0] + lat[-1]) / 2.0])
+    lat = get_dim_coords(grid, "Y")
+    _validate_grid_has_single_axis_dim("X", lat)
 
-    lat_bnds = grid.bounds.get_bounds("Y")
+    lat_data = np.array([(lat[0] + lat[-1]) / 2.0])
+    lat_bnds = grid.bounds.get_bounds("Y", var_key=lat.name)
     lat_bnds = np.array([[lat_bnds[0, 0], lat_bnds[-1, 1]]])
 
-    lon = get_axis_coord(grid, "X")
-    lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
+    lon = get_dim_coords(grid, "X")
+    _validate_grid_has_single_axis_dim("Y", lon)
 
-    lon_bnds = grid.bounds.get_bounds("X")
+    lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
+    lon_bnds = grid.bounds.get_bounds("X", var_key=lon.name)
     lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
     return create_grid(lat_data, lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds)
@@ -408,16 +410,22 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     xr.Dataset
         A dataset containing a zonal grid.
     """
-    lon = get_axis_coord(grid, "X")
-    out_lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
+    lon = get_dim_coords(grid, "X")
+    _validate_grid_has_single_axis_dim("X", lon)
 
-    lon_bnds = grid.bounds.get_bounds("X")
+    out_lon_data = np.array([(lon[0] + lon[-1]) / 2.0])
+    lon_bnds = grid.bounds.get_bounds("X", var_key=lon.name)
     lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
-    lat = get_axis_coord(grid, "Y")
-    lat_bnds = grid.bounds.get_bounds("Y")
+    lat = get_dim_coords(grid, "Y")
+    _validate_grid_has_single_axis_dim("Y", lat)
 
-    return create_grid(lat, out_lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds)
+    lat_bnds = grid.bounds.get_bounds("Y", var_key=lat.name)
+
+    # Ignore `Argument 1 to "create_grid" has incompatible type
+    # "Union[Dataset, DataArray]"; expected "Union[ndarray[Any, Any], DataArray]"
+    # mypy(error)` because this arg is validated to be a DataArray beforehand.
+    return create_grid(lat, out_lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds)  # type: ignore
 
 
 def create_grid(
@@ -503,3 +511,32 @@ def create_grid(
     grid = grid.bounds.add_missing_bounds()
 
     return grid
+
+
+def _validate_grid_has_single_axis_dim(
+    axis: CFAxisKey, coord_var: Union[xr.DataArray, xr.Dataset]
+):
+    """Validates that the grid's axis has a single dimension.
+
+    If the grid has multiple dimensions (e.g., "lat" and "latitude" dims), xcdat
+    cannot interpret which one to use for grid operations. If ``coord_var`` is
+    an ``xr.Dataset``, the grid has multiple dimensions.
+
+    Parameters
+    ----------
+    axis : CFAxisKey
+        The CF axis key ("X", "Y", "T", or "Z").
+    coord_var : Union[xr.DataArray, xr.Dataset]
+        The dimension coordinate variable(s) for the axis.
+
+    Raises
+    ------
+    ValueError
+        If the grid has multiple dimensions.
+    """
+    if isinstance(coord_var, xr.Dataset):
+        raise ValueError(
+            f"Multiple '{axis}' axis dims were found in this dataset, "
+            f"{list(coord_var.dims)}. Please drop the unused dimension(s) before "
+            "performing grid operations."
+        )
