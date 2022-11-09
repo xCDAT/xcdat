@@ -60,7 +60,7 @@ Documentation
    https://github.com/xCDAT/xcdat/pull/367
 -  Update project overview, FAQs, and add a link to xarray tutorials by
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/365
--  Update feature list, add metadata interpretation to FAQS, and add
+-  Update feature list, add metadata interpretation to FAQs, and add
    ``ipython`` syntax highlighting for notebooks by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/362
 
