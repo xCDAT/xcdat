@@ -46,7 +46,7 @@ What CF attributes are interpreted using ``cf_xarray`` mapping tables?
 
 .. _dimension coordinates: https://docs.xarray.dev/en/stable/user-guide/data-structures.html#coordinates
 .. _Axis Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axis-names
-.. _Coordinate Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names 
+.. _Coordinate Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names
 .. _Bounds Variables: https://cf-xarray.readthedocs.io/en/latest/bounds.html
 
 Temporal Metadata
@@ -56,12 +56,11 @@ What type of time units are supported?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The units attribute must be in the CF compliant format
-``"<units> since <reference_date>"``. For example, ``"days since 1990-01-01"``
-
+``"<units> since <reference_date>"``. For example, ``"days since 1990-01-01"``.
 
 Supported CF compliant units include ``day``, ``hour``, ``minute``, ``second``,
 which is inherited from ``xarray`` and ``cftime``. Supported non-CF compliant units
-include ``year``, ``month``, which ``xcdat`` is able to parse. Note, the plural form of
+include ``year`` and ``month``, which ``xcdat`` is able to parse. Note, the plural form of
 these units are accepted.
 
 References:
