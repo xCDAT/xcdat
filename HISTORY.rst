@@ -2,6 +2,79 @@
 History
 =======
 
+v0.4.0 (9 November 2022)
+--------------------------
+
+This minor release includes a feature update to support datasets that
+have *N* dimensions mapped to *N* coordinates to represent an axis. This
+means ``xcdat`` APIs are able to intelligently select which axis's
+coordinates and bounds to work with if multiple are present within the
+dataset. Decoding time is now a lazy operation, leading to significant
+upfront runtime improvements when opening datasets with
+``decode_times=True``.
+
+A new notebook called “A Gentle Introduction to xCDAT” was added to the
+documentation gallery to help guide new xarray/xcdat users. xCDAT is now
+hosted on Zenodo with a DOI for citations.
+
+There are various bug fixes for bounds, naming of spatial weights, and a
+missing flag for ``xesmf`` that broke curvilinear regridding.
+
+Features
+~~~~~~~~
+
+-  Support for N axis dimensions mapped to N coordinates by
+   `Tom Vo`_ and `Stephen Po-Chedley`_ in
+   https://github.com/xCDAT/xcdat/pull/343
+
+   -  Rename ``get_axis_coord()`` to ``get_dim_coords()`` and
+      ``get_axis_dim()`` to ``get_dim_keys()``
+   -  Update spatial and temporal accessor class methods to refer to the
+      dimension coordinate variable on the data_var being operated on,
+      rather than the parent dataset
+
+-  Decoding times (``decode_time()``) is now a lazy operation, which
+   results in significant runtime improvements by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/343
+
+Bug Fixes
+~~~~~~~~~
+
+-  Fix ``add_bounds()`` not ignoring 0-dim singleton coords by
+   `Tom Vo`_ and `Stephen Po-Chedley`_ in
+   https://github.com/xCDAT/xcdat/pull/343
+-  Fix name of spatial weights with singleton coord by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/379
+-  Fixes ``xesmf`` flag that was missing which broke curvilinear
+   regridding by `Jason Boutte`_ and `Stephen Po-Chedley`_ in
+   https://github.com/xCDAT/xcdat/pull/374
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Add FAQs section for temporal metadata by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/383
+-  Add gentle introduction notebook by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/373
+-  Link repo to Zenodo and upload GitHub releases by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/367
+-  Update project overview, FAQs, and add a link to xarray tutorials by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/365
+-  Update feature list, add metadata interpretation to FAQs, and add
+   ``ipython`` syntax highlighting for notebooks by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/362
+
+DevOps
+~~~~~~
+
+-  Update release-drafter template by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/371 and
+   https://github.com/xCDAT/xcdat/pull/370
+-  Automate release notes generation by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/368
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.3.3...v0.4.0
+
 v0.3.3 (12 October 2022)
 ------------------------
 

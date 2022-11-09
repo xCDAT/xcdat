@@ -700,7 +700,7 @@ class TemporalAccessor:
         # it becomes obsolete after the data variable is averaged. When the
         # averaged data variable is added to the dataset, the new time dimension
         # and its associated coordinates are also added.
-        ds = ds.drop_dims(self.dim)
+        ds = ds.drop_dims(self.dim)  # type: ignore
         ds[dv.name] = dv
 
         if keep_weights:
@@ -985,9 +985,9 @@ class TemporalAccessor:
         with xr.set_options(keep_attrs=True):
             if self._weighted:
                 self._weights = self._get_weights(time_bounds)
-                dv = dv.weighted(self._weights).mean(dim=self.dim)
+                dv = dv.weighted(self._weights).mean(dim=self.dim)  # type: ignore
             else:
-                dv = dv.mean(dim=self.dim)
+                dv = dv.mean(dim=self.dim)  # type: ignore
 
         dv = self._add_operation_attrs(dv)
 
