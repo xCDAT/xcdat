@@ -1,5 +1,7 @@
 """Dataset module for functions related to an xarray.Dataset."""
+import os
 import pathlib
+import xml.etree.ElementTree as ET
 from datetime import datetime
 from functools import partial
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
@@ -35,8 +37,92 @@ Paths = Union[
 ]
 
 
-def open_dataset(
+def open(
     path: str,
+    data_var: Optional[str] = None,
+    add_bounds: bool = True,
+    decode_times: bool = True,
+    center_times: bool = False,
+    lon_orient: Optional[Tuple[float, float]] = None,
+    **kwargs,
+) -> xr.Dataset:
+    """
+    Documentation to be written when this PR is
+    further along...
+    """
+
+    # inspect path attributes and use either open_dataset
+    # or open_mfdataset as appropriate
+    #   * list (open list of files with open_mfdataset)
+    #   * pathlib.Path (open pathlib.Path with open_mfdataset)
+    #   * deprecated CDAT xml file type
+    #   * directory (opens with open_dataset or open_mfdataset
+    #                depending in number of files)
+    #   * wildcard input (opens data with open_mfdataset)
+
+    # Note: if a directory / xml files / wildcard is provided, we
+    #       will simply glob the entire directory with open_mfdataset.
+    if (type(path) == list) | (type(path) == pathlib.Path):
+        mfdataset = True  # lists/pathlib.paths are handled by open_mfdataset
+    elif path.split(".")[-1] == "xml":
+        # parse the xml file for the directory attribute
+        # then use open_mfdataset with a wildcard search
+        # for all files in that directory
+        tree = ET.parse(path)
+        root = tree.getroot()
+        d = root.attrib["directory"]
+        path = d + "/*"
+        mfdataset = True
+    elif os.path.isdir(path):
+        # if the path is a directory, check the number of files
+        # in that directory. If one file is present, use
+        # open_dataset. If multiple files are present, use
+        # open_mfdataset with a wildcard for all files in that
+        # directory. If no files are present, throw a ValueError.
+        fileList = os.listdir(path)
+        if len(fileList) == 0:
+            ValueError("The supplied directory has no files to open.")
+        elif len(fileList) == 1:
+            mfdataset = False
+            path = path + "/" + fileList[0]
+        else:
+            mfdataset = True
+            path = path + "/*"
+    elif "*" in path:
+        # if path includes a wildcard operator, pass the path
+        # to open_mfdataset
+        mfdataset = True
+    else:
+        # if none of these criteria are fulfilled, try open_dataset
+        mfdataset = False
+
+    # use open_dataset or open_mfdataset depending on provided path
+    if mfdataset:
+        ds = open_mfdataset(
+            path,
+            data_var=data_var,
+            add_bounds=add_bounds,
+            decode_times=decode_times,
+            center_times=center_times,
+            lon_orient=lon_orient,
+            **kwargs,
+        )
+    else:
+        ds = open_dataset(
+            path,
+            data_var=data_var,
+            add_bounds=add_bounds,
+            decode_times=decode_times,
+            center_times=center_times,
+            lon_orient=lon_orient,
+            **kwargs,
+        )
+
+    return ds
+
+
+def open_dataset(
+    path: Paths,
     data_var: Optional[str] = None,
     add_bounds: bool = True,
     decode_times: bool = True,
@@ -97,6 +183,7 @@ def open_dataset(
 
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
+
     ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
 
     if decode_times:
