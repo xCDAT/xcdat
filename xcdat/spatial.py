@@ -493,7 +493,7 @@ class SpatialAccessor:
             domain_bounds = self._scale_domain_to_region(domain_bounds, region_bounds)
 
         d_bounds = np.sin(np.radians(domain_bounds))
-        weights = self._calculate_weights(d_bounds)  # type: ignore
+        weights = self._calculate_weights(d_bounds)
         return weights
 
     def _calculate_weights(self, domain_bounds: xr.DataArray):

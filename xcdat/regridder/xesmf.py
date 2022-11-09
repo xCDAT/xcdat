@@ -1,3 +1,5 @@
+from typing import Optional
+
 import xarray as xr
 
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
@@ -34,9 +36,9 @@ class XESMFRegridder(BaseRegridder):
         output_grid: xr.Dataset,
         method: str,
         periodic: bool = False,
-        extrap_method: str = None,
-        extrap_dist_exponent: float = None,
-        extrap_num_src_pnts: int = None,
+        extrap_method: Optional[str] = None,
+        extrap_dist_exponent: Optional[float] = None,
+        extrap_num_src_pnts: Optional[int] = None,
         ignore_degenerate: bool = True,
         **options,
     ):
@@ -58,14 +60,14 @@ class XESMFRegridder(BaseRegridder):
                - nearest_d2s
         periodic : bool
             Treat longitude as periodic. Used for global grids.
-        extrap_method : str
+        extrap_method : Optional[str]
             Extrapolation method. Options are
                - inverse_dist
                - nearest_s2d
-        extrap_dist_exponent : float
+        extrap_dist_exponent : Optional[float]
             The exponent to raise the distance to when calculating weights for
             the extrapolation method.
-        extrap_num_src_pnts : int
+        extrap_num_src_pnts : Optional[int]
             The number of source points to use for the extrapolation methods
             that use more than one source point.
         ignore_degenerate : bool
