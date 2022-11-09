@@ -22,7 +22,7 @@ from xcdat.logger import setup_custom_logger
 logger = setup_custom_logger(__name__)
 
 #: List of non-CF compliant time units.
-NON_CF_TIME_UNITS: List[str] = ["months", "years"]
+NON_CF_TIME_UNITS: List[str] = ["month", "months", "year", "years"]
 
 # Type annotation for the `paths` arg.
 Paths = Union[
