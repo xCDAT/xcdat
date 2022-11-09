@@ -37,10 +37,10 @@ import xcdat  # noqa: I001, E402
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx_autosummary_accessors",
+    "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx_autosummary_accessors",
     "sphinx_copybutton",
-    "sphinxcontrib.napoleon",
     "nbsphinx",
 ]
 

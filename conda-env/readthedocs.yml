@@ -7,7 +7,7 @@ dependencies:
     # Base
     # ==================
     # NOTE: If versions are updated, also `additional_dependencies` list for mypy in `.pre-commit-config.yaml`
-    - python=3.9.13 # TODO: Update to >=3.10 once sphinxcontrib-napoleon supports it.
+    - python=3.10.6
     - pip=22.3.1
     - cf_xarray=0.7.4
     - cftime=1.6.2
@@ -29,7 +29,6 @@ dependencies:
     # Documentation
     # ==================
     - sphinx=4.5.0
-    - sphinxcontrib-napoleon=0.7
     - sphinx-autosummary-accessors=2022.4.0
     - sphinx-book-theme=0.3.3
     - sphinx-copybutton=0.5.0
