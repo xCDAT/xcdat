@@ -73,7 +73,7 @@ DevOps
 -  Automate release notes generation by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/368
 
-**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.3.3…0.4.0
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.3.3...v0.4.0
 
 v0.3.3 (12 October 2022)
 ------------------------
