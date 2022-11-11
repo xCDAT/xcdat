@@ -19,6 +19,7 @@ dependencies:
     - python-dateutil=2.8.2
     - types-python-dateutil=2.8.19
     - xarray=2022.6.0
+    - xgcm=0.8.0
     # ==================
     # Optional
     # ==================

@@ -64,6 +64,10 @@ class Regrid2Regridder(BaseRegridder):
         self._lat_weights: Any = None
         self._lon_weights: Any = None
 
+    def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+        """Placeholder for base class."""
+        raise NotImplementedError()
+
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Regrid ``data_var`` in ``ds`` to output grid.
 

@@ -3,18 +3,21 @@ from typing import Any, Dict, Literal, Tuple
 import xarray as xr
 
 from xcdat.axis import CFAxisName, get_axis_coord
-from xcdat.regridder import regrid2
+from xcdat.regridder import regrid2, xgcm
 from xcdat.utils import _has_module
 
-RegridTool = Literal["xesmf", "regrid2"]
-REGRID_TOOLS = {"regrid2": regrid2.Regrid2Regridder}
+HorizontalRegridTools = Literal["xesmf", "regrid2"]
+HORIZONTAL_REGRID_TOOLS = {"regrid2": regrid2.Regrid2Regridder}
 
 # TODO: Test this conditional.
 _has_xesmf = _has_module("xesmf")
 if _has_xesmf:  # pragma: no cover
     from xcdat.regridder import xesmf
 
-    REGRID_TOOLS["xesmf"] = xesmf.XESMFRegridder  # type: ignore
+    HORIZONTAL_REGRID_TOOLS["xesmf"] = xesmf.XESMFRegridder  # type: ignore
+
+VerticalRegridTools = Literal["xgcm"]
+VERTICAL_REGRID_TOOLS = {"xgcm": xgcm.XGCMRegridder}
 
 
 @xr.register_dataset_accessor(name="regridder")
@@ -136,7 +139,9 @@ class RegridderAccessor:
         """
         # TODO: Test this conditional.
         if _has_xesmf:  # pragma: no cover
-            regridder = REGRID_TOOLS["xesmf"](self._ds, output_grid, **options)
+            regridder = HORIZONTAL_REGRID_TOOLS["xesmf"](
+                self._ds, output_grid, **options
+            )
 
             return regridder.horizontal(data_var, self._ds)
         else:  # pragma: no cover
@@ -189,7 +194,7 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_regrid2("ts", output_grid)
         """
-        regridder = REGRID_TOOLS["regrid2"](self._ds, output_grid, **options)
+        regridder = HORIZONTAL_REGRID_TOOLS["regrid2"](self._ds, output_grid, **options)
 
         return regridder.horizontal(data_var, self._ds)
 
@@ -197,7 +202,7 @@ class RegridderAccessor:
         self,
         data_var: str,
         output_grid: xr.Dataset,
-        tool: RegridTool = "xesmf",
+        tool: HorizontalRegridTools = "xesmf",
         **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
@@ -265,13 +270,77 @@ class RegridderAccessor:
             )
 
         try:
-            regrid_tool = REGRID_TOOLS[tool]
+            regrid_tool = HORIZONTAL_REGRID_TOOLS[tool]
         except KeyError as e:
             raise ValueError(
-                f"Tool {e!s} does not exist, valid choices {list(REGRID_TOOLS)}"
+                f"Tool {e!s} does not exist, valid choices {list(HORIZONTAL_REGRID_TOOLS)}"
             )
 
         regridder = regrid_tool(self._ds, output_grid, **options)
         output_ds = regridder.horizontal(data_var, self._ds)
+
+        return output_ds
+
+    def vertical(
+        self,
+        data_var: str,
+        output_grid: xr.Dataset,
+        tool: VerticalRegridTools = "xgcm",
+        **options: Dict[str, Any],
+    ) -> xr.Dataset:
+        """
+        Apply vertical regridding to ``data_var`` of the current
+        ``xr.Dataset`` to ``output_grid``.
+
+        Supported tools:
+
+        - xgcm (https://xgcm.readthedocs.io/en/latest/index.html)
+
+        Parameters
+        ----------
+        data_var: str
+            Name of the variable in the ``xr.Dataset`` to regrid.
+        output_grid : xr.Dataset
+            Dataset containing output grid.
+        tool : str
+            Name of the regridding tool.
+        **options : Dict[str, Any]
+            These options are passed to the tool being used for regridding.
+            See specific regridder documentation for available options.
+
+        Returns
+        -------
+        xr.Dataset
+            With the ``data_var`` variable on the grid defined in ``output_grid``.
+
+        Raises
+        ------
+        ValueError
+            If tool is not supported.
+
+        Examples
+        --------
+
+        TODO: Update for vertical regridding
+        Create destination grid:
+
+        >>> output_grid = xcdat.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
+
+        Regrid variable using "xesmf":
+
+        >>> ds.regridder.horizontal("ts", output_grid, tool="xesmf", method="bilinear")
+
+        Regrid variable using "regrid2":
+
+        >>> ds.regridder.horizontal("ts", output_grid, tool="regrid2")
+        """
+        try:
+            regrid_tool = VERTICAL_REGRID_TOOLS[tool]
+        except KeyError as e:
+            raise ValueError(
+                f"Tool {e!s} does not exist, valid choices {list(VERTICAL_REGRID_TOOLS)}"
+            )
+        regridder = regrid_tool(self._ds, output_grid, **options)
+        output_ds = regridder.vertical(data_var, self._ds)
 
         return output_ds

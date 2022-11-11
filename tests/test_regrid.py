@@ -633,7 +633,9 @@ class TestAccessor:
 
         mock_data = mock.MagicMock()
 
-        with mock.patch.dict(accessor.REGRID_TOOLS, {"regrid2": mock_regridder}):
+        with mock.patch.dict(
+            accessor.HORIZONTAL_REGRID_TOOLS, {"regrid2": mock_regridder}
+        ):
             output = self.ac.horizontal("ts", mock_data, "regrid2")
 
         assert output == "output data"
@@ -698,6 +700,9 @@ class TestBase:
         class NewRegridder(base.BaseRegridder):
             def __init__(self, src_grid, dst_grid, **options):
                 super().__init__(src_grid, dst_grid, **options)
+
+            def vertical(self, data_var, ds):
+                return ds
 
             def horizontal(self, data_var, ds):
                 return ds

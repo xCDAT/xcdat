@@ -78,3 +78,7 @@ class BaseRegridder(abc.ABC):
         self, data_var: str, ds: xr.Dataset
     ) -> xr.Dataset:  # pragma: no cover
         pass
+
+    @abc.abstractmethod
+    def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:  # pragma: no cover
+        pass
