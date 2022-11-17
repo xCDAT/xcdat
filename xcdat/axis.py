@@ -212,7 +212,7 @@ def swap_lon_axis(
     ascending order.
 
     Note, based on how datasets are chunked, swapping the longitude dimension
-    and sorting might produce ``PerformanceWarning: Slicing is producing a
+    and sorting might raise ``PerformanceWarning: Slicing is producing a
     large chunk. To accept the large chunk and silence this warning, set the
     option...``. This function uses xarray's arithmetic to swap orientations,
     so this warning seems potentially unavoidable.
