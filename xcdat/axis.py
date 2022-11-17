@@ -211,6 +211,12 @@ def swap_lon_axis(
     exists. Afterwards, it sorts longitude and longitude bounds values in
     ascending order.
 
+    Note, based on how datasets are chunked, swapping the longitude dimension
+    and sorting might raise ``PerformanceWarning: Slicing is producing a
+    large chunk. To accept the large chunk and silence this warning, set the
+    option...``. This function uses xarray's arithmetic to swap orientations,
+    so this warning seems potentially unavoidable.
+
     Parameters
     ----------
     dataset : xr.Dataset
@@ -233,31 +239,31 @@ def swap_lon_axis(
         The Dataset with swapped lon axes orientation.
     """
     ds = dataset.copy()
-    coord_keys = get_dim_coords(ds, "X").coords.keys()
+    coords = get_dim_coords(ds, "X").coords
+    coord_keys = list(coords.keys())
 
     # Attempt to swap the orientation for longitude coordinates.
-    with xr.set_options(keep_attrs=True):
-        for key in coord_keys:
-            new_coord = _swap_lon_axis(ds.coords[key], to)
+    for key in coord_keys:
+        new_coord = _swap_lon_axis(ds.coords[key], to)
 
-            if ds.coords[key].identical(new_coord):
-                continue
+        if ds.coords[key].identical(new_coord):
+            continue
 
-            ds.coords[key] = new_coord
+        ds.coords[key] = new_coord
 
-        try:
-            bounds = ds.bounds.get_bounds("X")
-        except KeyError:
-            bounds = None
+    try:
+        bounds = ds.bounds.get_bounds("X")
+    except KeyError:
+        bounds = None
 
-        if isinstance(bounds, xr.DataArray):
-            ds = _swap_lon_bounds(ds, str(bounds.name), to)
-        elif isinstance(bounds, xr.Dataset):
-            for key in bounds.data_vars.keys():
-                ds = _swap_lon_bounds(ds, str(key), to)
+    if isinstance(bounds, xr.DataArray):
+        ds = _swap_lon_bounds(ds, str(bounds.name), to)
+    elif isinstance(bounds, xr.Dataset):
+        for key in bounds.data_vars.keys():
+            ds = _swap_lon_bounds(ds, str(key), to)
 
     if sort_ascending:
-        ds = ds.sortby(list(coord_keys), ascending=True)
+        ds = ds.sortby(list(coords.dims), ascending=True)
 
     return ds
 
@@ -350,30 +356,37 @@ def _swap_lon_axis(coords: xr.DataArray, to: Tuple[float, float]) -> xr.DataArra
         coordinates are already on the specified axis orientation, the same
         coordinates are returned.
     """
-    if to == (-180, 180):
-        new_coords = ((coords + 180) % 360) - 180
-    elif to == (0, 360):
-        # Swap the coordinates.
-        # Example with 180 coords: [-180, -0, 179] -> [0, 180, 360]
-        # Example with 360 coords: [60, 150, 360] -> [60, 150, 0]
-        new_coords = coords % 360
+    with xr.set_options(keep_attrs=True):
+        if to == (-180, 180):
+            # FIXME: Performance warning produced after swapping and then sorting
+            # based on how datasets are chunked.
+            new_coords = ((coords + 180) % 360) - 180
+        elif to == (0, 360):
+            # Example with 180 coords: [-180, -0, 179] -> [0, 180, 360]
+            # Example with 360 coords: [60, 150, 360] -> [60, 150, 0]
+            # FIXME: Performance warning produced after swapping and then sorting
+            # based on how datasets are chunked.
+            new_coords = coords % 360
 
-        # Check if the original coordinates contain an element with a value of
-        # 360. If this element exists, use its index to revert its swapped
-        # value of 0 (360 % 360 is 0) back to 360. This case usually happens
-        # if the coordinate are already on the (0, 360) axis orientation.
-        # Example with 360 coords: [60, 150, 0] -> [60, 150, 360]
-        index_with_360 = np.where(coords == 360)
+            # Check if the original coordinates contain an element with a value
+            # of 360. If this element exists, use its index to revert its
+            # swapped value of 0 (360 % 360 is 0) back to 360. This case usually
+            # happens if the coordinate are already on the (0, 360) axis
+            # orientation.
+            # Example with 360 coords: [60, 150, 0] -> [60, 150, 360]
+            index_with_360 = np.where(coords == 360)
 
-        if len(index_with_360) > 0:
-            _if_multidim_dask_array_then_load(new_coords)
+            if len(index_with_360) > 0:
+                _if_multidim_dask_array_then_load(new_coords)
 
-            new_coords[index_with_360] = 360
-    else:
-        raise ValueError(
-            "Currently, only (-180, 180) and (0, 360) are supported longitude axis "
-            "orientations."
-        )
+                new_coords[index_with_360] = 360
+        else:
+            raise ValueError(
+                "Currently, only (-180, 180) and (0, 360) are supported longitude axis "
+                "orientations."
+            )
+
+    new_coords.encoding = coords.encoding
 
     return new_coords
 
@@ -406,6 +419,7 @@ def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> Optional[np.ndarray]:
         return None
     elif p_meridian_index.size > 1:
         raise ValueError("More than one grid cell spans prime meridian.")
+
     return p_meridian_index
 
 
