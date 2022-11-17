@@ -318,9 +318,7 @@ def _get_all_coord_keys(
     return list(set(keys))
 
 
-def _swap_lon_bounds(dataset: xr.Dataset, key: str, to: Tuple[float, float]):
-    ds = dataset.copy()
-
+def _swap_lon_bounds(ds: xr.Dataset, key: str, to: Tuple[float, float]):
     bounds = ds[key].copy()
     new_bounds = _swap_lon_axis(bounds, to)
 
@@ -360,19 +358,21 @@ def _swap_lon_axis(coords: xr.DataArray, to: Tuple[float, float]) -> xr.DataArra
     """
     with xr.set_options(keep_attrs=True):
         if to == (-180, 180):
-            # FIXME: Performance warning produced after swapping and then sorting.
+            # FIXME: Performance warning produced after swapping and then sorting
+            # based on how datasets are chunked.
             new_coords = ((coords + 180) % 360) - 180
         elif to == (0, 360):
-            # Swap the coordinates.
             # Example with 180 coords: [-180, -0, 179] -> [0, 180, 360]
             # Example with 360 coords: [60, 150, 360] -> [60, 150, 0]
-            # FIXME: Performance warning produced after swapping and then sorting.
+            # FIXME: Performance warning produced after swapping and then sorting
+            # based on how datasets are chunked.
             new_coords = coords % 360
 
-            # Check if the original coordinates contain an element with a value of
-            # 360. If this element exists, use its index to revert its swapped
-            # value of 0 (360 % 360 is 0) back to 360. This case usually happens
-            # if the coordinate are already on the (0, 360) axis orientation.
+            # Check if the original coordinates contain an element with a value
+            # of 360. If this element exists, use its index to revert its
+            # swapped value of 0 (360 % 360 is 0) back to 360. This case usually
+            # happens if the coordinate are already on the (0, 360) axis
+            # orientation.
             # Example with 360 coords: [60, 150, 0] -> [60, 150, 360]
             index_with_360 = np.where(coords == 360)
 
