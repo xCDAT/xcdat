@@ -2,25 +2,27 @@
 import pathlib
 from datetime import datetime
 from functools import partial
-from glob import glob
-from typing import Any, Callable, Dict, Hashable, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
 from dateutil import parser
 from dateutil import relativedelta as rd
 from xarray.coding.cftime_offsets import get_date_type
-from xarray.coding.times import convert_times
+from xarray.coding.times import convert_times, decode_cf_datetime
+from xarray.coding.variables import lazy_elemwise_func, pop_to, unpack_for_decoding
+from xarray.core.variable import as_variable
 
-from xcdat import bounds  # noqa: F401
+from xcdat import bounds as bounds_accessor  # noqa: F401
+from xcdat.axis import _get_all_coord_keys
 from xcdat.axis import center_times as center_times_func
-from xcdat.axis import get_axis_coord, get_axis_dim, swap_lon_axis
+from xcdat.axis import swap_lon_axis
 from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
 
 #: List of non-CF compliant time units.
-NON_CF_TIME_UNITS: List[str] = ["months", "years"]
+NON_CF_TIME_UNITS: List[str] = ["month", "months", "year", "years"]
 
 # Type annotation for the `paths` arg.
 Paths = Union[
@@ -57,16 +59,16 @@ def open_dataset(
         features.
     decode_times: bool, optional
         If True, attempt to decode times encoded in the standard NetCDF
-        datetime format into datetime objects. Otherwise, leave them encoded
-        as numbers. This keyword may not be supported by all the backends,
-        by default True.
+        datetime format into cftime.datetime objects. Otherwise, leave them
+        encoded as numbers. This keyword may not be supported by all the
+        backends, by default True.
     center_times: bool, optional
-        If True, center time coordinates using the midpoint between its upper
-        and lower bounds. Otherwise, use the provided time coordinates, by
-        default False.
+        If True, attempt to center time coordinates using the midpoint between
+        its upper and lower bounds. Otherwise, use the provided time
+        coordinates, by default False.
     lon_orient: Optional[Tuple[float, float]], optional
-        The orientation to use for the Dataset's longitude axis (if it exists),
-        by default None.
+        The orientation to use for the Dataset's longitude axis (if it exists).
+        Either `(-180, 180)` or `(0, 360)`, by default None.
 
         Supported options:
 
@@ -95,16 +97,10 @@ def open_dataset(
 
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
+    ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
+
     if decode_times:
-        cf_compliant_time: Optional[bool] = _has_cf_compliant_time(path)
-        # xCDAT attempts to decode non-CF compliant time coordinates.
-        if cf_compliant_time is False:
-            ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
-            ds = decode_non_cf_time(ds)
-        else:
-            ds = xr.open_dataset(path, decode_times=True, **kwargs)  # type: ignore
-    else:
-        ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
+        ds = decode_time(ds)
 
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
@@ -140,13 +136,14 @@ def open_mfdataset(
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
     decode_times: bool, optional
-        If True, decode times encoded in the standard NetCDF datetime format
-        into datetime objects. Otherwise, leave them encoded as numbers.
-        This keyword may not be supported by all the backends, by default True.
+        If True, attempt to decode times encoded in the standard NetCDF
+        datetime format into cftime.datetime objects. Otherwise, leave them
+        encoded as numbers. This keyword may not be supported by all the
+        backends, by default True.
     center_times: bool, optional
-        If True, center time coordinates using the midpoint between its upper
-        and lower bounds. Otherwise, use the provided time coordinates, by
-        default False.
+        If True, attempt to center time coordinates using the midpoint between
+        its upper and lower bounds. Otherwise, use the provided time
+        coordinates, by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
@@ -203,67 +200,35 @@ def open_mfdataset(
 
     .. [2] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
     """
-    # `xr.open_mfdataset()` drops the time coordinates encoding dictionary if
-    # multiple files are merged with `decode_times=True` (refer to
-    # https://github.com/pydata/xarray/issues/2436). The workaround is to store
-    # the time encoding from the first dataset as a variable, and add the time
-    # encoding back to final merged dataset.
-    time_encoding = None
-
-    if decode_times:
-        time_encoding = _keep_time_encoding(paths)
-
-        cf_compliant_time: Optional[bool] = _has_cf_compliant_time(paths)
-        # xCDAT attempts to decode non-CF compliant time coordinates using the
-        # preprocess keyword arg with `xr.open_mfdataset()`.
-        if cf_compliant_time is False:
-            decode_times = False
-            preprocess = partial(_preprocess_non_cf_dataset, callable=preprocess)
+    preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
 
     ds = xr.open_mfdataset(
         paths,
-        decode_times=decode_times,
+        decode_times=False,
         data_vars=data_vars,
         preprocess=preprocess,
         **kwargs,  # type: ignore
     )
-    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
-    if time_encoding is not None:
-        time_dim = get_axis_dim(ds, "T")
-        ds[time_dim].encoding = time_encoding
-        # Update "original_shape" to reflect the final time coordinates shape.
-        ds[time_dim].encoding["original_shape"] = ds[time_dim].shape
+    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
     return ds
 
 
-def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
-    """Decodes time coordinates and time bounds with non-CF compliant units.
+def decode_time(dataset: xr.Dataset) -> xr.Dataset:
+    """Decodes CF and non-CF time coordinates and time bounds using ``cftime``.
 
     By default, ``xarray`` only supports decoding time with CF compliant units
-    [3]_. This function enables decoding time with non-CF compliant units.
+    [3]_. This function enables also decoding time with non-CF compliant units.
+    It skips decoding time coordinates that have already been decoded as
+    ``"datetime64[ns]"`` or ``cftime.datetime``.
 
-    The time coordinates must have a "calendar" attribute set to a CF calendar
-    type supported by ``cftime`` ("noleap", "360_day", "365_day", "366_day",
-    "gregorian", "proleptic_gregorian", "julian", "all_leap", or "standard")
-    and a "units" attribute set to a supported format ("months since ..." or
-    "years since ...").
-
-    The logic for this function:
-
-    1. Extract units and reference date strings from the "units" attribute.
-
-       * For example with "months since 1800-01-01", the units are "months" and
-         reference date is "1800-01-01".
-
-    2. Using the reference date, create a reference ``datetime`` object.
-    3. Starting from the reference ``datetime`` object, use the numerically
-       encoded time coordinate values (each representing an offset) to create an
-       array of ``cftime`` objects based on the calendar type.
-    4. Using the array of ``cftime`` objects, create a new xr.DataArray
-       of time coordinates to replace the numerically encoded ones.
-    5. If it exists, create a time bounds DataArray using steps 3 and 4.
+    For time coordinates to be decodable, they must have a "calendar" attribute
+    set to a CF calendar type supported by ``cftime``. CF calendar types
+    include "noleap", "360_day", "365_day", "366_day", "gregorian",
+    "proleptic_gregorian", "julian", "all_leap", or "standard". They must also
+    have a "units" attribute set to a format supported by xcdat ("months since
+    ..." or "years since ...").
 
     Parameters
     ----------
@@ -293,9 +258,9 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
     Examples
     --------
 
-    Decode the time coordinates with non-CF units in a Dataset:
+    Decode the time coordinates in a Dataset:
 
-    >>> from xcdat.dataset import decode_non_cf_time
+    >>> from xcdat.dataset import decode_time
     >>>
     >>> ds.time
     <xarray.DataArray 'time' (time: 3)>
@@ -310,7 +275,7 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
         standard_name:  time
         calendar:       noleap
     >>>
-    >>> ds_decoded = decode_non_cf_time(ds)
+    >>> ds_decoded = decode_time(ds)
     >>> ds_decoded.time
     <xarray.DataArray 'time' (time: 3)>
     array([cftime.DatetimeNoLeap(1850, 1, 1, 0, 0, 0, 0, has_year_zero=True),
@@ -337,206 +302,94 @@ def decode_non_cf_time(dataset: xr.Dataset) -> xr.Dataset:
      'calendar': 'noleap'}
     """
     ds = dataset.copy()
-    time = get_axis_coord(ds, "T")
-    time_attrs = time.attrs
+    coord_keys = _get_all_coord_keys(ds, "T")
 
-    # NOTE: When opening datasets with `decode_times=False`, the "calendar" and
-    # "units" attributes are stored in `.attrs` (unlike `decode_times=True`
-    # which stores them in `.encoding`). Since xCDAT manually decodes non-CF
-    # compliant time coordinates by first setting `decode_times=False`, the
-    # "calendar" and "units" attrs are popped from the `.attrs` dict and stored
-    # in the `.encoding` dict to mimic xarray's behavior.
-    calendar = time_attrs.pop("calendar", None)
-    units_attr = time_attrs.pop("units", None)
-
-    if calendar is None:
-        logger.warning(
-            "This dataset's time coordinates do not have a 'calendar' attribute set, "
-            "so time coordinates could not be decoded. Set the 'calendar' attribute "
-            f"(`ds.{time.name}.attrs['calendar]`) and try decoding the time "
-            "coordinates again."
+    if len(coord_keys) == 0:
+        raise KeyError(
+            "Unable to map to time coordinates in this dataset to perform decoding. "
+            "Make sure that the time coordinates have the CF 'axis' or 'standard_name' "
+            "attribute set (e.g., ds['time'].attrs['axis'] = 'T' or "
+            "ds['time'].attrs['standard_name'] = 'time'), and try decoding again. "
         )
-        return ds
 
-    if units_attr is None:
-        logger.warning(
-            "This dataset's time coordinates do not have a 'units' attribute set, "
-            "so the time coordinates could not be decoded. Set the 'units' attribute "
-            f"(`ds.{time.name}.attrs['units']`) and try decoding the time "
-            "coordinates again."
-        )
-        return ds
+    for key in coord_keys:
+        coords = ds[key].copy()
 
-    try:
-        units, ref_date = _split_time_units_attr(units_attr)
-    except ValueError:
-        logger.warning(
-            f"This dataset's time coordinates 'units' attribute ('{units_attr}') is "
-            "not in a supported format ('months since...' or 'years since...'), so the "
-            "time coordinates could not be decoded."
-        )
-        return ds
+        if _is_decodable(coords) and not _is_decoded(coords):
+            if coords.attrs.get("calendar") is None:
+                coords.attrs["calendar"] = "standard"
+                logger.warning(
+                    f"'{coords.name}' does not have a calendar attribute set. "
+                    "Defaulting to CF 'standard' calendar."
+                )
 
-    data = _get_cftime_coords(ref_date, time.values, calendar, units)
-    decoded_time = xr.DataArray(
-        name=time.name,
-        data=data,
-        dims=time.dims,
-        coords={time.name: data},
-        # As mentioned in a comment above, the units and calendar attributes are
-        # popped from the `.attrs` dict.
-        attrs=time_attrs,
-    )
-    decoded_time.encoding = {
-        "source": ds.encoding.get("source", "None"),
-        "dtype": time.dtype,
-        "original_shape": time.shape,
-        # The units and calendar attributes are now saved in the `.encoding`
-        # dict.
-        "units": units_attr,
-        "calendar": calendar,
-    }
-    ds = ds.assign_coords({time.name: decoded_time})
+            decoded_time = _decode_time(coords)
+            ds = ds.assign_coords({coords.name: decoded_time})
 
-    try:
-        time_bounds = ds.bounds.get_bounds("T")
-    except KeyError:
-        time_bounds = None
+            try:
+                bounds = ds.bounds.get_bounds("T", var_key=coords.name)
+            except KeyError:
+                bounds = None
 
-    if time_bounds is not None:
-        lowers = _get_cftime_coords(ref_date, time_bounds.values[:, 0], calendar, units)
-        uppers = _get_cftime_coords(ref_date, time_bounds.values[:, 1], calendar, units)
-        data_bounds = np.vstack((lowers, uppers)).T
-
-        decoded_time_bnds = xr.DataArray(
-            name=time_bounds.name,
-            data=data_bounds,
-            dims=time_bounds.dims,
-            coords=time_bounds.coords,
-            attrs=time_bounds.attrs,
-        )
-        decoded_time_bnds.coords[time.name] = decoded_time
-        decoded_time_bnds.encoding = time_bounds.encoding
-        ds = ds.assign({time_bounds.name: decoded_time_bnds})
+            if bounds is not None and not _is_decoded(bounds):
+                # Bounds don't typically store the "units" and "calendar"
+                # attributes required for decoding, so these attributes need to be
+                # copied from the coordinates.
+                bounds.attrs.update(
+                    {
+                        "units": coords.attrs["units"],
+                        "calendar": coords.attrs["calendar"],
+                    }
+                )
+                decoded_bounds = _decode_time(bounds)
+                ds = ds.assign({bounds.name: decoded_bounds})
 
     return ds
 
 
-def _keep_time_encoding(paths: Paths) -> Dict[Hashable, Any]:
-    """
-    Returns the time encoding attributes from the first dataset in a list of
-    paths.
+def _preprocess(
+    ds: xr.Dataset, decode_times: Optional[bool], callable: Optional[Callable] = None
+) -> xr.Dataset:
+    """Preprocesses each dataset passed to ``open_mfdataset()``.
 
-    Time encoding information is critical for several xCDAT operations such as
-    temporal averaging (e.g., uses the "calendar" attr). This function is a
-    workaround to the undesired xarray behavior/quirk with
-    `xr.open_mfdataset()`, which drops the `.encoding` dict from the final
-    merged dataset (refer to https://github.com/pydata/xarray/issues/2436).
-
-    Parameters
-    ----------
-    paths: Paths
-        The paths to the dataset(s).
-
-    Returns
-    -------
-    Dict[Hashable, Any]
-        The time encoding dictionary.
-    """
-    first_path = _get_first_path(paths)
-
-    # xcdat.open_dataset() is called instead of xr.open_dataset() because
-    # we want to handle decoding non-CF compliant as well.
-    # FIXME: Remove `type: ignore` comment after properly handling the type
-    # annotations in `_get_first_path()`.
-    ds = open_dataset(first_path, decode_times=True, add_bounds=False)  # type: ignore
-    time_coord = get_axis_coord(ds, "T")
-
-    time_encoding = time_coord.encoding
-    time_encoding["source"] = paths
-
-    return time_coord.encoding
+    This function accepts a user specified preprocess function, which is
+    executed before additional internal preprocessing functions.
 
 
-def _has_cf_compliant_time(paths: Paths) -> Optional[bool]:
-    """Checks if a dataset has time coordinates with CF compliant units.
-
-    If the dataset does not contain a time dimension, None is returned.
-    Otherwise, the units attribute is extracted from the time coordinates to
-    determine whether it is CF or non-CF compliant.
+    An internal call to ``decode_time()`` is performed, which decodes
+    both CF and non-CF time coordinates and bounds (if they exist). By default,
+    if ``decode_times=False`` is passed to ``open_mfdataset()``,  xarray will
+    concatenate time values using the first dataset's ``units`` attribute. This
+    results in an issue for cases where the numerically encoded time values are
+    the same and the ``units`` attribute differs between datasets. For example,
+    two files have the same time values, but the units of the first file is
+    "months since 2000-01-01" and the second is "months since 2001-01-01". Since
+    the first dataset's units are used in xarray for concatenating datasets, the
+    time values corresponding to the second file will be dropped since they
+    appear to be the same as the first file. Calling ``decode_time()``
+    on each dataset individually before concatenating solves the aforementioned
+    issue.
 
     Parameters
     ----------
-    path : Union[str, pathlib.Path, List[str], List[pathlib.Path], \
-         List[List[str]], List[List[pathlib.Path]]]
-        Either a file (``"file.nc"``), a string glob in the form
-        ``"path/to/my/files/*.nc"``, or an explicit list of files to open.
-        Paths can be given as strings or as pathlib Paths. If concatenation
-        along more than one dimension is desired, then ``paths`` must be a
-        nested list-of-lists (see ``combine_nested`` for details). (A string
-        glob will be expanded to a 1-dimensional list.)
-
+    ds : xr.Dataset
+        The Dataset.
+    callable : Optional[Callable], optional
+        A user specified optional callable function for preprocessing.
     Returns
     -------
-    Optional[bool]
-        None if time dimension does not exist, True if CF compliant, or False if
-        non-CF compliant.
-
-    Notes
-    -----
-    This function only checks one file for multi-file datasets to optimize
-    performance because it is slower to combine all files then check for CF
-    compliance.
+    xr.Dataset
+        The preprocessed Dataset.
     """
-    first_path = _get_first_path(paths)
-    ds = xr.open_dataset(first_path, decode_times=False)  # type: ignore
+    ds_new = ds.copy()
 
-    if ds.cf.dims.get("T") is None:
-        return None
+    if callable:
+        ds_new = callable(ds)
 
-    time = ds.cf["T"]
+    if decode_times:
+        ds_new = decode_time(ds_new)
 
-    # If the time units attr cannot be split, it is not cf_compliant.
-    try:
-        units = _split_time_units_attr(time.attrs.get("units"))[0]
-    except ValueError:
-        return False
-
-    cf_compliant = units not in NON_CF_TIME_UNITS
-
-    return cf_compliant
-
-
-def _get_first_path(path: Paths) -> Optional[Union[pathlib.Path, str]]:
-    """Returns the first path from a list of paths.
-
-    Parameters
-    ----------
-    path : Paths
-        A list of paths.
-
-    Returns
-    -------
-    str
-        Returns the first path from a list of paths.
-    """
-    # FIXME: This function should throw an exception if the first file
-    # is not a supported type.
-    # FIXME: The `type: ignore` comments should be removed after properly
-    # handling the types.
-    first_file: Optional[Union[pathlib.Path, str]] = None
-
-    if isinstance(path, str) and "*" in path:
-        first_file = glob(path)[0]
-    elif isinstance(path, str) or isinstance(path, pathlib.Path):
-        first_file = path
-    elif isinstance(path, list):
-        if any(isinstance(sublist, list) for sublist in path):
-            first_file = path[0][0]  # type: ignore
-        else:
-            first_file = path[0]  # type: ignore
-
-    return first_file
+    return ds_new
 
 
 def _postprocess_dataset(
@@ -583,27 +436,169 @@ def _postprocess_dataset(
     ValueError
         If ``lon_orient is not None`` but there are no longitude coordinates.
     """
+    ds = dataset.copy()
+
     if data_var is not None:
-        dataset = _keep_single_var(dataset, data_var)
+        ds = _keep_single_var(dataset, data_var)
 
     if center_times:
-        if dataset.cf.dims.get("T") is not None:
-            dataset = center_times_func(dataset)
-        else:
-            raise ValueError("This dataset does not have a time coordinates to center.")
+        ds = center_times_func(dataset)
 
     if add_bounds:
-        dataset = dataset.bounds.add_missing_bounds()
+        ds = ds.bounds.add_missing_bounds()
 
     if lon_orient is not None:
-        if dataset.cf.dims.get("X") is not None:
-            dataset = swap_lon_axis(dataset, to=lon_orient, sort_ascending=True)
-        else:
-            raise ValueError(
-                "This dataset does not have longitude coordinates to reorient."
-            )
+        ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)
 
-    return dataset
+    return ds
+
+
+def _is_decodable(coords: xr.DataArray) -> bool:
+    """Checks if time coordinates are decodable.
+
+    Time coordinates must have a "units" attribute in a supported format
+    to be decodable.
+
+    Parameters
+    ----------
+    coords : xr.DataArray
+        The time coordinates.
+
+    Returns
+    -------
+    bool
+    """
+    units = coords.attrs.get("units")
+
+    if units is None:
+        logger.warning(
+            f"'{coords.name}' does not have a 'units' attribute set so it "
+            "could not be decoded. Try setting the 'units' attribute "
+            "(`ds.{coords.name}.attrs['units']`) and try decoding again."
+        )
+        return False
+
+    if isinstance(units, str) and "since" not in units:
+        logger.warning(
+            f"The 'units' attribute ({units}) for '{coords.name}' is not in the "
+            "supported format 'X since Y', so it could not be decoded."
+        )
+        return False
+
+    return True
+
+
+def _is_decoded(da: xr.DataArray) -> bool:
+    """Check if a time-based DataArray is decoded.
+
+    This is determined by checking if the `encoding` dictionary has "units" and
+    "calendar" attributes set.
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        A time-based DataArray (e.g,. coordinates, bounds)
+
+    Returns
+    -------
+    bool
+    """
+    units = da.encoding.get("units")
+    calendar = da.encoding.get("calendar")
+
+    return calendar is not None and units is not None
+
+
+def _decode_time(da: xr.DataArray) -> xr.Variable:
+    """Lazily decodes a DataArray of numerically encoded time with cftime.
+
+    The ``xr.DataArray`` is converted to an ``xr.Variable`` so that
+    ``xr.coding.variables.lazy_elemwise_func`` can be leveraged to lazily decode
+    time.
+
+    This function is based on ``xarray.coding.times.CFDatetimeCoder.decode``.
+
+    Parameters
+    ----------
+    coords : xr.DataArray
+        A DataArray of numerically encoded time.
+
+    Returns
+    -------
+    xr.Variable
+        A Variable of time decoded as ``cftime`` objects.
+    """
+    variable = as_variable(da)
+    dims, data, attrs, encoding = unpack_for_decoding(variable)
+
+    units = pop_to(attrs, encoding, "units")
+    calendar = pop_to(attrs, encoding, "calendar")
+
+    transform = partial(_get_cftime_coords, units=units, calendar=calendar)
+    data = lazy_elemwise_func(data, transform, np.dtype("object"))
+
+    return xr.Variable(dims, data, attrs, encoding)
+
+
+def _get_cftime_coords(offsets: np.ndarray, units: str, calendar: str) -> np.ndarray:
+    """Get an array of cftime coordinates starting from a reference date.
+
+    This function calls xarray's ``decode_cf_datetime()`` if the units are
+    CF compliant because ``decode_cf_datetime()`` considers leap days when
+    decoding time offsets to ``cftime`` objects.
+
+    For non-CF compliant units ("[months|years] since ..."), this function
+    performs custom decoding. It flattens the array, performs decoding on the
+    time offsets, then reshapes the array back to its original shape.
+
+    Parameters
+    ----------
+    offsets : np.ndarray
+        An array of numerically encoded time offsets from the reference date.
+    units : str
+        The time units.
+    calendar : str
+        The CF calendar type supported by ``cftime``. This includes "noleap",
+        "360_day", "365_day", "366_day", "gregorian", "proleptic_gregorian",
+        "julian", "all_leap", and "standard".
+
+    Returns
+    -------
+    np.ndarray
+        An array of ``cftime`` coordinates.
+    """
+    units_type, ref_date = units.split(" since ")
+
+    if units_type not in NON_CF_TIME_UNITS:
+        return decode_cf_datetime(offsets, units, calendar=calendar, use_cftime=True)
+
+    offsets = np.asarray(offsets)
+    flat_offsets = offsets.ravel()
+
+    # Convert offsets to `np.float64` to avoid "TypeError: unsupported type
+    # for timedelta days component: numpy.int64".
+    flat_offsets = flat_offsets.astype("float")
+
+    # We don't need to do calendar arithmetic here because the units and
+    # offsets are in "months" or "years", which means leap days should not
+    # be factored.
+    ref_datetime: datetime = parser.parse(ref_date, default=datetime(2000, 1, 1))
+    times = np.array(
+        [
+            ref_datetime + rd.relativedelta(**{units_type: offset})
+            for offset in flat_offsets
+        ],
+        dtype="object",
+    )
+    # Convert the array of `datetime` objects into `cftime` objects based on
+    # the calendar type.
+    date_type = get_date_type(calendar)
+    coords = convert_times(times, date_type=date_type)
+
+    # Reshape back to the original shape.
+    coords = coords.reshape(offsets.shape)
+
+    return coords
 
 
 def _keep_single_var(dataset: xr.Dataset, key: str) -> xr.Dataset:
@@ -676,123 +671,3 @@ def _get_data_var(dataset: xr.Dataset, key: str) -> xr.DataArray:
         raise KeyError(f"The data variable '{key}' does not exist in the Dataset.")
 
     return dv.copy()
-
-
-def _preprocess_non_cf_dataset(
-    ds: xr.Dataset, callable: Optional[Callable] = None
-) -> xr.Dataset:
-    """Preprocessing for each non-CF compliant dataset in ``open_mfdataset()``.
-
-    This function accepts a user specified preprocess function, which is
-    executed before additional internal preprocessing functions.
-
-    One call is performed to ``decode_non_cf_time()`` for decoding each
-    dataset's time coordinates and time bounds (if they exist) with non-CF
-    compliant units. By default, if ``decode_times=False`` is passed, xarray
-    will concatenate time values using the first dataset's ``units`` attribute.
-    This is an issue for cases where the numerically encoded time values are the
-    same and the ``units`` attribute differs between datasets.
-
-    For example, two files have the same time values, but the units of the first
-    file is "months since 2000-01-01" and the second is "months since
-    2001-01-01". Since the first dataset's units are used in xarray for
-    concatenating datasets, the time values corresponding to the second file
-    will be dropped since they appear to be the same as the first file.
-
-    Calling ``decode_non_cf_time()`` on each dataset individually before
-    concatenating solves the aforementioned issue.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        The Dataset.
-    callable : Optional[Callable], optional
-        A user specified optional callable function for preprocessing.
-
-    Returns
-    -------
-    xr.Dataset
-        The preprocessed Dataset.
-    """
-    ds_new = ds.copy()
-
-    if callable:
-        ds_new = callable(ds)
-
-    # Attempt to decode non-cf-compliant time axis.
-    ds_new = decode_non_cf_time(ds_new)
-
-    return ds_new
-
-
-def _split_time_units_attr(units_attr: str) -> Tuple[str, str]:
-    """Splits the time coordinates' units attr into units and reference date.
-
-    Parameters
-    ----------
-    units_attr : str
-        The units attribute (e.g., "months since 1800-01-01").
-
-    Returns
-    -------
-    Tuple[str, str]
-        The units (e.g, "months") and the reference date (e.g., "1800-01-01").
-
-    Raises
-    ------
-    KeyError
-        If the time units attribute was not found.
-
-    ValueError
-        If the time units attribute is not of the form `X since Y`.
-    """
-    if "since" in units_attr:
-        units, reference_date = units_attr.split(" since ")
-    else:
-        raise ValueError(
-            "This dataset does not have time coordinates of the form 'X since Y'."
-        )
-
-    return units, reference_date
-
-
-def _get_cftime_coords(
-    ref_date: str, offsets: np.ndarray, calendar: str, units: str
-) -> np.ndarray:
-    """Get an array of `cftime` coordinates starting from a reference date.
-
-    Parameters
-    ----------
-    ref_date : str
-        The starting reference date.
-    offsets : np.ndarray
-        An array of numerically encoded time offsets from the reference date.
-    calendar : str
-        The CF calendar type supported by ``cftime``. This includes "noleap",
-        "360_day", "365_day", "366_day", "gregorian", "proleptic_gregorian",
-        "julian", "all_leap", and "standard".
-    units : str
-        The time units.
-
-    Returns
-    -------
-    np.ndarray
-        An array of `cftime` coordinates.
-    """
-    # Starting from the reference date, create an array of `datetime` objects
-    # by adding each offset (a numerically encoded value) to the reference date.
-    # The `parse.parse` default is set to datetime(2000, 1, 1), with each
-    # component being a placeholder if the value does not exist. For example, 1
-    # and 1 are placeholders for month and day if those values don't exist.
-    ref_datetime: datetime = parser.parse(ref_date, default=datetime(2000, 1, 1))
-    offsets = np.array(
-        [ref_datetime + rd.relativedelta(**{units: offset}) for offset in offsets],
-        dtype="object",
-    )
-
-    # Convert the array of `datetime` objects into `cftime` objects based on
-    # the calendar type.
-    date_type = get_date_type(calendar)
-    coords = convert_times(offsets, date_type=date_type)
-
-    return coords

@@ -10,7 +10,9 @@ from xcdat.spatial import SpatialAccessor
 class TestSpatialAccessor:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
     def test__init__(self):
         ds = self.ds.copy()
@@ -28,7 +30,9 @@ class TestSpatialAccessor:
 class TestAverage:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
         # Limit to just 3 data points to simplify testing.
         self.ds = self.ds.isel(time=slice(None, 3))
@@ -48,9 +52,13 @@ class TestAverage:
     def test_raises_error_if_lat_axis_coords_cant_be_found(self):
         ds = self.ds.copy()
 
-        ds = ds.rename_dims({"lat": "invalid_lat"})
+        # Update CF metadata to invalid values so cf_xarray can't interpret them.
         del ds.lat.attrs["axis"]
         del ds.lat.attrs["standard_name"]
+        del ds.lat.attrs["units"]
+        # Update coordinate name.
+        ds = ds.rename({"lat": "invalid_lat"})
+        ds = ds.set_index(invalid_lat="invalid_lat")
 
         with pytest.raises(KeyError):
             ds.spatial.average("ts", axis=["X", "Y"])
@@ -58,9 +66,14 @@ class TestAverage:
     def test_raises_error_if_lon_axis_coords_cant_be_found(self):
         ds = self.ds.copy()
 
-        ds = ds.rename_dims({"lon": "invalid_lon"})
+        # Update CF metadata to invalid values so cf_xarray can't interpret them.
         del ds.lon.attrs["axis"]
         del ds.lon.attrs["standard_name"]
+        del ds.lon.attrs["units"]
+        # Update coordinate name.
+        ds = ds.rename({"lon": "invalid_lon"})
+        ds = ds.set_index(invalid_lon="invalid_lon")
+
         with pytest.raises(KeyError):
             ds.spatial.average("ts", axis=["X", "Y"])
 
@@ -252,7 +265,9 @@ class TestAverage:
 class TestGetWeights:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
     def test_bounds_reordered_when_upper_indexed_first(self):
         domain_bounds = xr.DataArray(
@@ -275,7 +290,42 @@ class TestGetWeights:
         )
         assert result.identical(expected_domain_bounds)
 
-    def test_weights_for_region_in_lat_and_lon_domains(self):
+    def test_raises_error_if_dataset_has_multiple_bounds_variables_for_an_axis(self):
+        ds = self.ds.copy()
+
+        # Create a second "Y" axis dimension and associated bounds
+        ds["lat2"] = ds.lat.copy()
+        ds["lat2"].name = "lat2"
+        ds["lat2"].attrs["bounds"] = "lat_bnds2"
+        ds["lat_bnds2"] = ds.lat_bnds.copy()
+        ds["lat_bnds2"].name = "lat_bnds2"
+
+        # Check raises error when there are > 1 bounds for the dataset.
+        with pytest.raises(TypeError):
+            ds.spatial.get_weights(axis=["Y", "X"])
+
+    def test_data_var_weights_for_region_in_lat_and_lon_domains(self):
+        ds = self.ds.copy()
+
+        result = ds.spatial.get_weights(
+            axis=["Y", "X"], lat_bounds=(-5, 5), lon_bounds=(-170, -120), data_var="ts"
+        )
+        expected = xr.DataArray(
+            data=np.array(
+                [
+                    [0.0, 0.0, 0.0, 0.0],
+                    [0.0, 0.0, 4.35778714, 0.0],
+                    [0.0, 0.0, 4.35778714, 0.0],
+                    [0.0, 0.0, 0.0, 0.0],
+                ]
+            ),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_dataset_weights_for_region_in_lat_and_lon_domains(self):
         result = self.ds.spatial.get_weights(
             axis=["Y", "X"], lat_bounds=(-5, 5), lon_bounds=(-170, -120)
         )
@@ -294,7 +344,7 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_area_weights_for_region_in_lat_domain(self):
+    def test_dataset_weights_for_region_in_lat_domain(self):
         result = self.ds.spatial.get_weights(
             axis=["Y", "X"], lat_bounds=(-5, 5), lon_bounds=None
         )
@@ -332,7 +382,9 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_weights_for_region_in_lon_domain_with_region_spanning_p_meridian(self):
+    def test_dataset_weights_for_region_in_lon_domain_with_region_spanning_p_meridian(
+        self,
+    ):
         ds = self.ds.copy()
 
         result = ds.spatial._get_longitude_weights(
@@ -348,7 +400,7 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_weights_all_longitudes_for_equal_region_bounds(self):
+    def test_dataset_weights_all_longitudes_for_equal_region_bounds(self):
         expected = xr.DataArray(
             data=np.array(
                 [1.875, 178.125, 178.125, 1.875],
@@ -357,14 +409,14 @@ class TestGetWeights:
             dims=["lon"],
         )
         result = self.ds.spatial.get_weights(
-            axis=["X"],
-            lat_bounds=None,
-            lon_bounds=np.array([0.0, 360.0]),
+            axis=["X"], lat_bounds=None, lon_bounds=np.array([0.0, 360.0])
         )
 
         xr.testing.assert_allclose(result, expected)
 
-    def test_weights_for_equal_region_bounds_representing_entire_lon_domain(self):
+    def test_dataset_weights_for_equal_region_bounds_representing_entire_lon_domain(
+        self,
+    ):
         expected = xr.DataArray(
             data=np.array(
                 [1.875, 178.125, 178.125, 1.875],
@@ -384,7 +436,9 @@ class Test_SwapLonAxis:
     # converting it to a public method in the future.
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
     def test_raises_error_with_incorrect_orientation_to_swap_to(self):
         domain = xr.DataArray(
@@ -532,7 +586,9 @@ class Test_ScaleDimToRegion:
     # that has edge cases with some complexities.
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds = generate_dataset(cf_compliant=True, has_bounds=True)
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
 
     @requires_dask
     def test_scales_chunked_lat_bounds_when_not_wrapping_around_prime_meridian(self):

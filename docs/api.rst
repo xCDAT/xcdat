@@ -22,11 +22,11 @@ Below is a list of top-level API functions available in ``xcdat``.
     open_dataset
     open_mfdataset
     center_times
-    decode_non_cf_time
+    decode_time
     swap_lon_axis
     compare_datasets
-    get_axis_coord
-    get_axis_dim
+    get_dim_coords
+    get_dim_keys
     create_gaussian_grid
     create_global_mean_grid
     create_grid
@@ -165,7 +165,7 @@ It is especially useful for those who are transitioning over from CDAT to xarray
      - ``Dataset.spatial.average("VAR_KEY", axis=["X", "Y"])`` specifying ``lat_bounds`` and ``lon_bounds``
      - ``cdutil.averager(TransientVariable, axis="xy")``, optionally subset ``TransientVariable`` with ``cdutil.region.domain()``
    * - Decode time coordinates with CF/Non-CF units?
-     - ``xr.decode_cf()`` specifying ``decode_times=True``, or ``xcdat.decode_non_cf_time()``
+     - ``xr.decode_cf()`` specifying ``decode_times=True``, or ``xcdat.decode_time()``
      - ``cdms2.axis.Axis.asComponentTime()``
    * - Temporally averaging with a single time-averaged snapshot and time coordinates removed?
      - ``Dataset.temporal.average("VAR_KEY")``

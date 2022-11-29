@@ -9,7 +9,8 @@ Please checkout the :doc:`contributing` guide.
     :maxdepth: 2
     :hidden:
 
-    examples/general-utilities
+    examples/introduction-to-xcdat.ipynb
+    examples/general-utilities.ipynb
     examples/spatial-average.ipynb
     examples/temporal-average.ipynb
     examples/climatology-and-departures.ipynb

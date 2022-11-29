@@ -1,8 +1,8 @@
-from typing import Any, Dict, Literal, Tuple
+from typing import Any, Dict, Literal, Optional, Tuple
 
 import xarray as xr
 
-from xcdat.axis import CFAxisName, get_axis_coord
+from xcdat.axis import CFAxisKey, get_dim_coords
 from xcdat.regridder import regrid2, xgcm
 from xcdat.utils import _has_module
 
@@ -63,7 +63,9 @@ class RegridderAccessor:
         Raises
         ------
         ValueError
-            If axis data variable is not correctly identified.
+            If axis dimension coordinate variable is not correctly identified.
+        ValueError
+            If axis has multiple dimensions (only one is expected).
         """
         x, x_bnds = self._get_axis_data("X")
         y, y_bnds = self._get_axis_data("Y")
@@ -83,11 +85,20 @@ class RegridderAccessor:
 
         return ds
 
-    def _get_axis_data(self, name: CFAxisName) -> Tuple[xr.DataArray, xr.DataArray]:
-        coord_var = get_axis_coord(self._ds, name)
+    def _get_axis_data(
+        self, name: CFAxisKey
+    ) -> Tuple[xr.DataArray, Optional[xr.DataArray]]:
+        coord_var = get_dim_coords(self._ds, name)
+
+        if isinstance(coord_var, xr.Dataset):
+            raise ValueError(
+                f"Multiple '{name}' axis dims were found in this dataset, "
+                f"{list(coord_var.dims)}. Please drop the unused dimension(s) before"
+                "getting grid information."
+            )
 
         try:
-            bounds_var = self._ds.bounds.get_bounds(name)
+            bounds_var = self._ds.bounds.get_bounds(name, coord_var.name)
         except KeyError:
             bounds_var = None
 

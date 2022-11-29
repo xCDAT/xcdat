@@ -49,6 +49,65 @@ What CF attributes are interpreted using ``cf_xarray`` mapping tables?
 .. _Coordinate Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names
 .. _Bounds Variables: https://cf-xarray.readthedocs.io/en/latest/bounds.html
 
+Temporal Metadata
+-----------------
+
+What type of time units are supported?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The units attribute must be in the CF compliant format
+``"<units> since <reference_date>"``. For example, ``"days since 1990-01-01"``.
+
+Supported CF compliant units include ``day``, ``hour``, ``minute``, ``second``,
+which is inherited from ``xarray`` and ``cftime``. Supported non-CF compliant units
+include ``year`` and ``month``, which ``xcdat`` is able to parse. Note, the plural form of
+these units are accepted.
+
+References:
+
+* https://cfconventions.org/cf-conventions/cf-conventions#time-coordinate
+
+What type of calendars are supported?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+``xcdat`` supports that same CF convention calendars as ``xarray`` (based on
+``cftime`` and ``netCDF4-python`` package).
+
+Supported calendars include:
+
+* ``'standard'``
+* ``'gregorian'``
+* ``'proleptic_gregorian'``
+* ``'noleap'``
+* ``'365_day'``
+* ``'360_day'``
+* ``'julian'``
+* ``'all_leap'``
+* ``'366_day'``
+
+References:
+
+* https://cfconventions.org/cf-conventions/cf-conventions#calendar
+
+Why does ``xcdat`` decode time coordinates as ``cftime`` objects instead of ``datetime64[ns]``?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+One unfortunate limitation of using ``datetime64[ns]`` is that it limits the native
+representation of dates to those that fall between the years 1678 and 2262. This affects
+climate modeling datasets that have time coordinates outside of this range.
+
+As a workaround, ``xarray`` uses the ``cftime`` library when decoding/encoding
+datetimes for non-standard calendars or for dates before year 1678 or after year 2262.
+
+``xcdat`` opted to decode time coordinates exclusively with ``cftime`` because it
+has no timestamp range limitations, simplifies implementation, and the output object
+type is deterministic.
+
+References:
+
+* https://github.com/pydata/xarray/issues/789
+* https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
+
 Data Wrangling
 --------------
 

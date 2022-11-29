@@ -1,8 +1,9 @@
 import importlib
 import json
-from typing import Dict, List
+from typing import Dict, List, Optional, Union
 
 import xarray as xr
+from dask.array.core import Array
 
 
 def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> Dict[str, List[str]]:
@@ -107,3 +108,27 @@ def _has_module(modname: str) -> bool:  # pragma: no cover
         has = False
 
     return has
+
+
+def _if_multidim_dask_array_then_load(
+    obj: Union[xr.DataArray, xr.Dataset]
+) -> Optional[Union[xr.DataArray, xr.Dataset]]:
+    """
+    If the underlying array for an xr.DataArray or xr.Dataset is a
+    multidimensional, lazy Dask Array, load it into an in-memory NumPy array.
+
+    This function must be called before manipulating values in a
+    multidimensional Dask Array, which xarray does not support directly.
+    Otherwise, it raises `NotImplementedError xarray can't set arrays with
+    multiple array indices to dask yet`.
+
+    Parameters
+    ----------
+    obj : Union[xr.DataArray, xr.Dataset]
+        The xr.DataArray or xr.Dataset. If the xarray object is chunked,
+        the underlying array will be a Dask Array.
+    """
+    if isinstance(obj.data, Array) and obj.ndim > 1:
+        return obj.load()
+
+    return None

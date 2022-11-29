@@ -37,10 +37,10 @@ import xcdat  # noqa: I001, E402
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.autosummary",
-    "sphinx_autosummary_accessors",
+    "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
+    "sphinx_autosummary_accessors",
     "sphinx_copybutton",
-    "sphinxcontrib.napoleon",
     "nbsphinx",
 ]
 
@@ -122,7 +122,7 @@ html_theme = "sphinx_book_theme"
 #
 # sphinx_book_theme configurations
 # https://sphinx-book-theme.readthedocs.io/en/latest/configure.html
-html_logo = "_static/xcdat_logo.png"
+html_logo = "_static/xcdat-logo.png"
 html_title = "xCDAT Documentation"
 html_theme_options = {
     "repository_url": "https://github.com/xCDAT/xcdat",
