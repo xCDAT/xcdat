@@ -1,12 +1,17 @@
 import abc
-from typing import Any
+from typing import Any, Tuple, Union
 
+import numpy as np
 import xarray as xr
 
 import xcdat.bounds  # noqa: F401
 from xcdat.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
+
+Coord = Union[np.ndarray, xr.DataArray]
+
+CoordOptionalBnds = Union[Coord, Tuple[Coord, Coord]]
 
 
 def preserve_bounds(

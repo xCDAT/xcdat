@@ -500,13 +500,22 @@ class TestXESMFRegridder:
 
 
 class TestGrid:
+    def test_create_grid_lev(self):
+        lev = np.linspace(1000, 1, 2)
+        lev_bnds = np.array([[1499.5, 500.5], [500.5, -498.5]])
+
+        new_grid = grid.create_grid(lev=lev)
+
+        assert np.array_equal(new_grid.lev, lev)
+        assert np.array_equal(new_grid.lev_bnds, lev_bnds)
+
     def test_create_grid(self):
         lat = np.array([-45, 0, 45])
         lon = np.array([30, 60, 90, 120, 150])
         lat_bnds = np.array([[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
         lon_bnds = np.array([[15, 45], [45, 75], [75, 105], [105, 135], [135, 165]])
 
-        new_grid = grid.create_grid(lat, lon)
+        new_grid = grid.create_grid(lat=lat, lon=lon)
 
         assert np.array_equal(new_grid.lat, lat)
         assert np.array_equal(new_grid.lat_bnds, lat_bnds)
@@ -531,7 +540,7 @@ class TestGrid:
         da_lon_bnds = xr.DataArray(name="lon_bnds", data=lon_bnds, dims=["lon", "bnds"])
 
         new_grid = grid.create_grid(
-            da_lat, da_lon, lat_bnds=da_lat_bnds, lon_bnds=da_lon_bnds
+            lat=(da_lat, da_lat_bnds), lon=(da_lon, da_lon_bnds)
         )
 
         assert np.array_equal(new_grid.lat, lat)
@@ -570,7 +579,8 @@ class TestGrid:
 
     def test_global_mean_grid(self):
         source_grid = grid.create_grid(
-            np.array([-80, -40, 0, 40, 80]), np.array([0, 45, 90, 180, 270, 360])
+            lat=np.array([-80, -40, 0, 40, 80]),
+            lon=np.array([0, 45, 90, 180, 270, 360]),
         )
 
         mean_grid = grid.create_global_mean_grid(source_grid)
@@ -651,7 +661,7 @@ class TestGrid:
 
     def test_zonal_grid(self):
         source_grid = grid.create_grid(
-            np.array([-80, -40, 0, 40, 80]), np.array([-160, -80, 80, 160])
+            lat=np.array([-80, -40, 0, 40, 80]), lon=np.array([-160, -80, 80, 160])
         )
 
         zonal_grid = grid.create_zonal_grid(source_grid)
