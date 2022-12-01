@@ -108,7 +108,7 @@ class RegridderAccessor:
         self,
         data_var: str,
         output_grid: xr.Dataset,
-        **options: Dict[str, Any],
+        **options: Any,
     ) -> xr.Dataset:
         """
         Wraps the xESMF library providing access to regridding between
@@ -297,7 +297,7 @@ class RegridderAccessor:
         data_var: str,
         output_grid: xr.Dataset,
         tool: VerticalRegridTools = "xgcm",
-        **options: Dict[str, Any],
+        **options: Any,
     ) -> xr.Dataset:
         """
         Apply vertical regridding to ``data_var`` of the current
