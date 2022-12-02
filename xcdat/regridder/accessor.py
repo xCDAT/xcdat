@@ -67,17 +67,19 @@ class RegridderAccessor:
         ValueError
             If axis has multiple dimensions (only one is expected).
         """
-        x, x_bnds = self._get_axis_data("X")
-        y, y_bnds = self._get_axis_data("Y")
-
         with xr.set_options(keep_attrs=True):
-            coords = {x.name: x.copy(), y.name: y.copy()}
+            coords = {}
 
-            if x_bnds is not None:
-                coords[x_bnds.name] = x_bnds.copy()
+            for axis in ("X", "Y", "Z"):
+                try:
+                    data, bnds = self._get_axis_data(axis)
+                except KeyError:
+                    continue
 
-            if y_bnds is not None:
-                coords[y_bnds.name] = y_bnds.copy()
+                coords[data.name] = data.copy()
+
+                if bnds is not None:
+                    coords[bnds.name] = bnds.copy()
 
         ds = xr.Dataset(coords, attrs=self._ds.attrs)
 
