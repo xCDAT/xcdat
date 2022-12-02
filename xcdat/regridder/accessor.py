@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 import xarray as xr
 
@@ -69,8 +69,9 @@ class RegridderAccessor:
         """
         with xr.set_options(keep_attrs=True):
             coords = {}
+            axis_names: List[CFAxisKey] = ["X", "Y", "Z"]
 
-            for axis in ("X", "Y", "Z"):
+            for axis in axis_names:
                 try:
                     data, bnds = self._get_axis_data(axis)
                 except KeyError:
