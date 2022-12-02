@@ -93,7 +93,7 @@ class RegridderAccessor:
         if isinstance(coord_var, xr.Dataset):
             raise ValueError(
                 f"Multiple '{name}' axis dims were found in this dataset, "
-                f"{list(coord_var.dims)}. Please drop the unused dimension(s) before"
+                f"{list(coord_var.dims)}. Please drop the unused dimension(s) before "
                 "getting grid information."
             )
 
@@ -331,19 +331,13 @@ class RegridderAccessor:
 
         Examples
         --------
-
-        TODO: Update for vertical regridding
         Create destination grid:
 
-        >>> output_grid = xcdat.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
+        >>> output_grid = xcdat.create_grid(lev=np.linspace(1000, 1, 20))
 
-        Regrid variable using "xesmf":
+        Regrid variable using "xgcm":
 
-        >>> ds.regridder.horizontal("ts", output_grid, tool="xesmf", method="bilinear")
-
-        Regrid variable using "regrid2":
-
-        >>> ds.regridder.horizontal("ts", output_grid, tool="regrid2")
+        >>> ds.regridder.vertical("T", output_grid, method="linear", theta="pressure")
         """
         try:
             regrid_tool = VERTICAL_REGRID_TOOLS[tool]

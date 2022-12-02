@@ -444,19 +444,13 @@ def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
 
     Parameters
     ----------
-    lat : Union[np.ndarray, xr.DataArray]
-        Array of latitude values.
-    lon : Union[np.ndarray, xr.DataArray]
-        Array of longitude values.
-    lat_bnds : Optional[Union[np.ndarray, xr.DataArray]]
-        Array of bounds for latitude values.
-    lon_bnds : Optional[Union[np.ndarray, xr.DataArray]]
-        Array of bounds for longitude values.
+    **kwargs : CoordOptionalBnds
+        Mapping of coordinate name and data with optional bounds.
 
     Returns
     -------
     xr.Dataset
-        Dataset with lat/lon grid.
+        Dataset with grid.
 
     Examples
     --------
@@ -464,9 +458,20 @@ def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
 
     >>> import xcdat
     >>> import numpy as np
+    >>>
     >>> lat = np.arange(-90, 90, 2.5)
     >>> lon = np.arange(1.25, 360, 2.5)
-    >>> xcdat.create_grid(lat, lon)
+    >>>
+    >>> xcdat.create_grid(lat=lat, lon=lon)
+
+    Create grid with bounds:
+
+    >>> lat_bnds = np.vstack((lat - (2.5 / 2), lat + (2.5 / 2))).T
+    >>> xcdat.create_grid(lat=(lat, lat_bnds), lon=lon)
+
+    Create vertical grid:
+
+    >>> xcdat.create_grid(lev=np.linspace(1000, 1, 20))
     """
     if len(kwargs) == 0:
         raise ValueError("Must pass atleast 1 coordinate.")

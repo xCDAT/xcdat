@@ -107,7 +107,7 @@ class XESMFRegridder(BaseRegridder):
 
         Regrid data:
 
-        >>> data_new_grid = regridder.horizontal("ts", ds, periodic=True)
+        >>> data_new_grid = regridder.horizontal("ts", ds)
         """
         super().__init__(input_grid, output_grid)
 
