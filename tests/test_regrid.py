@@ -737,21 +737,6 @@ class TestAccessor:
         self.data = mock.MagicMock()
         self.ac = accessor.RegridderAccessor(self.data)
 
-    def test_grid_missing_axis(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=True, has_bounds=True
-        )
-
-        ds_no_lat = ds.drop_dims(["lat"])
-
-        with pytest.raises(KeyError):
-            ds_no_lat.regridder.grid
-
-        ds_no_lon = ds.drop_dims(["lon"])
-
-        with pytest.raises(KeyError):
-            ds_no_lon.regridder.grid
-
     def test_grid(self):
         ds_bounds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=True, has_bounds=True
