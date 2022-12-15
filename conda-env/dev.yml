@@ -23,6 +23,8 @@ dependencies:
     # Optional
     # ==================
     - xesmf=0.6.3
+    # pin esmpy until next release of xesmf https://github.com/pangeo-data/xESMF/issues/212
+    - esmpy=8.3.1
     # ==================
     # Documentation
     # ==================
