@@ -8,7 +8,7 @@ import pytest
 import xarray as xr
 
 from tests import fixtures, has_xesmf, requires_xesmf
-from xcdat.regridder import accessor, base, grid, regrid2
+from xcdat.regridder import accessor, base, grid, regrid2, xgcm
 
 if has_xesmf:
     from xcdat.regridder import xesmf
@@ -32,6 +32,43 @@ def gen_uniform_axis(start, stop, step, name, axis):
     )
 
     return xr.DataArray(bounds, dims=[name, "bnds"], coords={name: data})
+
+
+class TestXGCMRegridder:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = fixtures.generate_lev_dataset()
+
+        self.output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+
+    def test_vertical_regrid(self):
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", theta=None)
+
+        output_data = regridder.vertical("so", self.ds)
+
+        assert output_data.so.shape == (15, 2, 4, 4)
+
+    def test_horizontal_placeholder(self):
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", theta=None)
+
+        with pytest.raises(NotImplementedError):
+            regridder.horizontal("so", self.ds)
+
+    def test_methods(self):
+        xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", theta=None)
+
+        with pytest.raises(ValueError, match="'dummy' is invalid, possible choices"):
+            xgcm.XGCMRegridder(self.ds, self.output_grid, method="dummy", theta=None)
+
+    def test_missing_z_coord(self):
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+        regridder = xgcm.XGCMRegridder(ds, self.output_grid, method="linear", theta=None)
+
+        with pytest.raises(RuntimeError, match='Could not determine "Z" coordinate in dataset'):
+            regridder.vertical("ts", ds)
 
 
 class TestRegrid2Regridder:
@@ -138,6 +175,18 @@ class TestRegrid2Regridder:
                 "lon_bnds": self.fine_lon_bnds,
             }
         )
+
+    def test_vertical_placeholder(self):
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+        output_grid = grid.create_gaussian_grid(32)
+
+        regridder = regrid2.Regrid2Regridder(ds, output_grid)
+
+        with pytest.raises(NotImplementedError, match=""):
+            regridder.vertical("so", ds)
 
     @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
     def test_output_bounds(self):
@@ -431,6 +480,14 @@ class TestXESMFRegridder:
         with pytest.raises(ModuleNotFoundError):
             xesmf.XESMFRegridder(self.ds, self.new_grid, "bilinear")
 
+    def test_vertical_placeholder(self):
+        ds = self.ds.copy()
+
+        regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear")
+
+        with pytest.raises(NotImplementedError, match=""):
+            regridder.vertical("ts", ds)
+
     def test_regrid(self):
         ds = self.ds.copy()
 
@@ -500,6 +557,17 @@ class TestXESMFRegridder:
 
 
 class TestGrid:
+    def test_empty_grid(self):
+        with pytest.raises(ValueError, match="Must pass atleast 1 coordinate."):
+            grid.create_grid()
+
+    def test_unexpected_coordinate(self):
+        lev = np.linspace(1000, 1, 2)
+        new_grid = grid.create_grid(lev=lev, mass=np.linspace(10, 20, 2))
+
+        assert np.array_equal(new_grid.lev, lev)
+        assert "mass" not in new_grid.coords
+
     def test_create_grid_lev(self):
         lev = np.linspace(1000, 1, 2)
         lev_bnds = np.array([[1499.5, 500.5], [500.5, -498.5]])
@@ -771,7 +839,7 @@ class TestAccessor:
         with pytest.raises(ValueError):
             ds_bounds.regridder.grid
 
-    def test_valid_tool(self):
+    def test_horizontal_tool_check(self):
         mock_regridder = mock.MagicMock()
         mock_regridder.return_value.horizontal.return_value = "output data"
 
@@ -780,17 +848,36 @@ class TestAccessor:
         with mock.patch.dict(
             accessor.HORIZONTAL_REGRID_TOOLS, {"regrid2": mock_regridder}
         ):
-            output = self.ac.horizontal("ts", mock_data, "regrid2")
+            output = self.ac.horizontal("ts", mock_data, tool="regrid2")
 
         assert output == "output data"
 
         mock_regridder.return_value.horizontal.assert_called_with("ts", self.data)
 
-    def test_invalid_tool(self):
         with pytest.raises(
             ValueError, match=r"Tool 'test' does not exist, valid choices"
         ):
-            self.ac.horizontal("ts", mock.MagicMock(), "test")  # type: ignore
+            self.ac.horizontal("ts", mock_data, tool="test")
+
+    def test_vertical_tool_check(self):
+        mock_regridder = mock.MagicMock()
+        mock_regridder.return_value.vertical.return_value = "output data"
+
+        mock_data = mock.MagicMock()
+
+        with mock.patch.dict(
+            accessor.VERTICAL_REGRID_TOOLS, {"xgcm": mock_regridder}
+        ):
+            output = self.ac.vertical("ts", mock_data, tool="xgcm", theta=None)
+
+        assert output == "output data"
+
+        mock_regridder.return_value.vertical.assert_called_with("ts", self.data)
+
+        with pytest.raises(
+            ValueError, match=r"Tool 'dummy' does not exist, valid choices"
+        ):
+            self.ac.vertical("ts", mock_data, tool="dummy", theta=None)
 
     @requires_xesmf
     @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")

@@ -487,7 +487,7 @@ def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
         elif name in _VAR_NAME_MAP["Z"]:
             coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["Z"])
         else:
-            pass
+            continue
 
         coords[name] = coord
 
