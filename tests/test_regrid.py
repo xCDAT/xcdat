@@ -42,14 +42,18 @@ class TestXGCMRegridder:
         self.output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
 
     def test_vertical_regrid(self):
-        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", theta=None)
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", theta=None
+        )
 
         output_data = regridder.vertical("so", self.ds)
 
         assert output_data.so.shape == (15, 2, 4, 4)
 
     def test_horizontal_placeholder(self):
-        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", theta=None)
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", theta=None
+        )
 
         with pytest.raises(NotImplementedError):
             regridder.horizontal("so", self.ds)
@@ -65,9 +69,13 @@ class TestXGCMRegridder:
             decode_times=True, cf_compliant=False, has_bounds=True
         )
 
-        regridder = xgcm.XGCMRegridder(ds, self.output_grid, method="linear", theta=None)
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", theta=None
+        )
 
-        with pytest.raises(RuntimeError, match='Could not determine "Z" coordinate in dataset'):
+        with pytest.raises(
+            RuntimeError, match='Could not determine "Z" coordinate in dataset'
+        ):
             regridder.vertical("ts", ds)
 
 
@@ -855,9 +863,9 @@ class TestAccessor:
         mock_regridder.return_value.horizontal.assert_called_with("ts", self.data)
 
         with pytest.raises(
-            ValueError, match=r"Tool 'test' does not exist, valid choices"
+            ValueError, match=r"Tool 'dummy' does not exist, valid choices"
         ):
-            self.ac.horizontal("ts", mock_data, tool="test")
+            self.ac.horizontal("ts", mock_data, tool="dummy")  # type: ignore
 
     def test_vertical_tool_check(self):
         mock_regridder = mock.MagicMock()
@@ -865,9 +873,7 @@ class TestAccessor:
 
         mock_data = mock.MagicMock()
 
-        with mock.patch.dict(
-            accessor.VERTICAL_REGRID_TOOLS, {"xgcm": mock_regridder}
-        ):
+        with mock.patch.dict(accessor.VERTICAL_REGRID_TOOLS, {"xgcm": mock_regridder}):
             output = self.ac.vertical("ts", mock_data, tool="xgcm", theta=None)
 
         assert output == "output data"
@@ -877,7 +883,7 @@ class TestAccessor:
         with pytest.raises(
             ValueError, match=r"Tool 'dummy' does not exist, valid choices"
         ):
-            self.ac.vertical("ts", mock_data, tool="dummy", theta=None)
+            self.ac.vertical("ts", mock_data, tool="dummy", theta=None)  # type: ignore
 
     @requires_xesmf
     @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")

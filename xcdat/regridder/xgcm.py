@@ -1,3 +1,5 @@
+from typing import Optional
+
 import xarray as xr
 from xgcm import Grid
 
@@ -12,7 +14,7 @@ class XGCMRegridder(BaseRegridder):
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
         method: str,
-        theta: str,
+        theta: Optional[str],
         **options,
     ):
         """Wrapper class for xgcm package.

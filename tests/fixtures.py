@@ -219,7 +219,12 @@ def generate_lev_dataset() -> xr.Dataset:
                 coords={"time": time_decoded, "lev": lev, "lat": lat, "lon": lon},
             ),
         },
-        coords={"lat": lat.copy(), "lon": lon.copy(), "time": time_decoded.copy(), "lev": lev.copy()},
+        coords={
+            "lat": lat.copy(),
+            "lon": lon.copy(),
+            "time": time_decoded.copy(),
+            "lev": lev.copy(),
+        },
     )
 
     return ds
