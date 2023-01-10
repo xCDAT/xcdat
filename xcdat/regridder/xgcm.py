@@ -119,7 +119,7 @@ class XGCMRegridder(BaseRegridder):
         >>> data_new_grid = regridder.verical("T", ds)
         """
         try:
-            coord_z = ds.cf["Z"]
+            coord_z = self._input_grid.cf["Z"]
         except KeyError:
             raise RuntimeError('Could not determine "Z" coordinate in dataset')
 
