@@ -227,6 +227,8 @@ def generate_lev_dataset() -> xr.Dataset:
         },
     )
 
+    ds = ds.bounds.add_missing_bounds()
+
     return ds
 
 

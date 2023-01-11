@@ -50,6 +50,23 @@ class TestXGCMRegridder:
 
         assert output_data.so.shape == (15, 2, 4, 4)
 
+    def test_conservative(self):
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="conservative", theta=None
+        )
+
+        with pytest.raises(RuntimeError, match="Conservative regridding requires a second point position, pass these manually"):
+            regridder.vertical("so", self.ds)
+
+    def test_manual_grid_positions(self):
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", theta=None, grid_positions={"left": "lev"},
+        )
+
+        output_data = regridder.vertical("so", self.ds)
+
+        assert output_data.so.shape == (15, 2, 4, 4)
+
     def test_horizontal_placeholder(self):
         regridder = xgcm.XGCMRegridder(
             self.ds, self.output_grid, method="linear", theta=None
@@ -64,7 +81,7 @@ class TestXGCMRegridder:
         with pytest.raises(ValueError, match="'dummy' is invalid, possible choices"):
             xgcm.XGCMRegridder(self.ds, self.output_grid, method="dummy", theta=None)
 
-    def test_missing_z_coord(self):
+    def test_missing_input_z_coord(self):
         ds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
@@ -74,9 +91,37 @@ class TestXGCMRegridder:
         )
 
         with pytest.raises(
-            RuntimeError, match='Could not determine "Z" coordinate in dataset'
+            RuntimeError, match="Could not determine 'Z' coordinate in input dataset"
         ):
             regridder.vertical("ts", ds)
+
+    def test_missing_output_z_coord(self):
+        ds = fixtures.generate_lev_dataset()
+
+        self.output_grid = self.output_grid.drop_vars(["lev"])
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", theta=None
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Could not determine 'Z' coordinate in output dataset"
+        ):
+            regridder.vertical("so", ds)
+
+    def test_missing_input_z_bounds(self):
+        ds = fixtures.generate_lev_dataset()
+
+        ds = ds.drop_vars(["lev_bnds"])
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", theta=None
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Could not determine 'Z' bounds in input dataset"
+        ):
+            regridder.vertical("so", ds)
 
 
 class TestRegrid2Regridder:
