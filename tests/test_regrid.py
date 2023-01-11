@@ -55,12 +55,19 @@ class TestXGCMRegridder:
             self.ds, self.output_grid, method="conservative", theta=None
         )
 
-        with pytest.raises(RuntimeError, match="Conservative regridding requires a second point position, pass these manually"):
+        with pytest.raises(
+            RuntimeError,
+            match="Conservative regridding requires a second point position, pass these manually",
+        ):
             regridder.vertical("so", self.ds)
 
     def test_manual_grid_positions(self):
         regridder = xgcm.XGCMRegridder(
-            self.ds, self.output_grid, method="linear", theta=None, grid_positions={"left": "lev"},
+            self.ds,
+            self.output_grid,
+            method="linear",
+            theta=None,
+            grid_positions={"left": "lev"},
         )
 
         output_data = regridder.vertical("so", self.ds)

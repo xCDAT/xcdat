@@ -136,12 +136,12 @@ class XGCMRegridder(BaseRegridder):
             raise RuntimeError("Could not determine 'Z' coordinate in output dataset")
 
         if self._grid_coords is None:
-            self._grid_coords = self._get_grid_coords()
+            grid_coords = self._get_grid_coords()
         else:
             # correctly format argument
-            self._grid_coords = {"Z": self._grid_coords}
+            grid_coords = {"Z": self._grid_coords}
 
-        grid = Grid(ds, coords=self._grid_coords, periodic=False)
+        grid = Grid(ds, coords=grid_coords, periodic=False)
 
         # assumes new verical coordinate has been calculated and stored as `pressure`
         # TODO: auto calculate pressure reference http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#parametric-v-coord
@@ -166,7 +166,9 @@ class XGCMRegridder(BaseRegridder):
 
     def _get_grid_coords(self) -> dict[str, dict[str, str]]:
         if self._method == "conservative":
-            raise RuntimeError("Conservative regridding requires a second point position, pass these manually")
+            raise RuntimeError(
+                "Conservative regridding requires a second point position, pass these manually"
+            )
 
         try:
             coord_z = self._input_grid.cf["Z"]
@@ -179,14 +181,17 @@ class XGCMRegridder(BaseRegridder):
             raise RuntimeError("Could not determine 'Z' bounds in input dataset")
 
         # handle simple point positions based on point and bounds
-        if ((coord_z[0] > bounds_z[0][0] and coord_z[0] < bounds_z[0][1]) or
-                (coord_z[0] < bounds_z[0][0] and coord_z[0] > bounds_z[0][1])):
+        if (coord_z[0] > bounds_z[0][0] and coord_z[0] < bounds_z[0][1]) or (
+            coord_z[0] < bounds_z[0][0] and coord_z[0] > bounds_z[0][1]
+        ):
             grid_positions = {"center": coord_z.name}
         elif coord_z[0] == bounds_z[0][0]:
             grid_positions = {"left": coord_z.name}
         elif coord_z[0] == bounds_z[0][1]:
             grid_positions = {"right": coord_z.name}
         else:
-            raise RuntimeError("Could not determine the grid point positions, pass these manually")
+            raise RuntimeError(
+                "Could not determine the grid point positions, pass these manually"
+            )
 
         return {"Z": grid_positions}
