@@ -210,7 +210,7 @@ ts_encoded = xr.DataArray(
 
 
 # TODO merge with generate_dataset to allow 4th dimension
-def generate_lev_dataset() -> xr.Dataset:
+def generate_lev_dataset(position="center") -> xr.Dataset:
     ds = xr.Dataset(
         data_vars={
             "so": xr.DataArray(
@@ -228,6 +228,16 @@ def generate_lev_dataset() -> xr.Dataset:
     )
 
     ds = ds.bounds.add_missing_bounds()
+
+    if position == "left":
+        ds["lev"] = ds["lev_bnds"][:, 0]
+    elif position == "right":
+        ds["lev"] = ds["lev_bnds"][:, 1]
+    elif position == "malformed":
+        ds["lev"] = np.random.random(ds["lev"].shape)
+
+    ds["lev"].attrs["axis"] = "Z"
+    ds["lev"].attrs["bounds"] = "lev_bnds"
 
     return ds
 

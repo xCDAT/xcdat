@@ -61,6 +61,37 @@ class TestXGCMRegridder:
         ):
             regridder.vertical("so", self.ds)
 
+    @pytest.mark.parametrize("position", ("left", "center", "right"))
+    def test_grid_positions(self, position):
+        ds = fixtures.generate_lev_dataset(position=position)
+
+        regridder = xgcm.XGCMRegridder(
+            ds,
+            self.output_grid,
+            method="linear",
+            theta=None,
+        )
+
+        output_data = regridder.vertical("so", ds)
+
+        assert output_data.so.shape == (15, 2, 4, 4)
+
+    def test_grid_positions_malformed(self):
+        ds = fixtures.generate_lev_dataset(position="malformed")
+
+        regridder = xgcm.XGCMRegridder(
+            ds,
+            self.output_grid,
+            method="linear",
+            theta=None,
+        )
+
+        with pytest.raises(
+            RuntimeError,
+            match="Could not determine the grid point positions, pass these manually",
+        ):
+            regridder.vertical("so", ds)
+
     def test_manual_grid_positions(self):
         regridder = xgcm.XGCMRegridder(
             self.ds,
