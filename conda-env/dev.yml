@@ -8,20 +8,20 @@ dependencies:
     # Base
     # ==================
     # NOTE: If versions are updated, also `additional_dependencies` list for mypy in `.pre-commit-config.yaml`
-    - python=3.10.6
+    - python=3.10.8
     - pip=22.3.1
-    - cf_xarray=0.7.4
+    - cf_xarray=0.7.7
     - cftime=1.6.2
-    - dask=2022.10.2
-    - netcdf4=1.6.1
-    - numpy=1.23.4
-    - pandas=1.5.1
+    - dask=2023.1.0
+    - netcdf4=1.6.2
+    - numpy=1.23.5
+    - pandas=1.5.3
     - python-dateutil=2.8.2
-    - xarray=2022.11.0
+    - xarray=2023.1.0
     # ==================
     # Optional
     # ==================
-    - xesmf=0.6.3
+    - xesmf=0.7.0
     # ==================
     # Documentation
     # ==================
@@ -29,29 +29,29 @@ dependencies:
     - sphinx-autosummary-accessors=2022.4.0
     - sphinx-book-theme=0.3.3
     - sphinx-copybutton=0.5.0
-    - nbsphinx=0.8.9
+    - nbsphinx=0.8.12
     - pandoc=2.19.2
-    - ipython=8.5.0 # Required for nbsphinx syntax highlighting
+    - ipython=8.8.0 # Required for nbsphinx syntax highlighting
     # ==================
     # Quality Assurance
     # ==================
     # NOTE: If versions are updated, also update 'rev' in `.pre-commit.config.yaml`
-    - black=22.10.0
-    - flake8=5.0.4
-    - flake8-isort=5.0.0
-    - isort=5.10.1
-    - mypy=0.990
-    - pre-commit=2.20.0
+    - black=22.12.0
+    - flake8=6.0.0
+    - flake8-isort=6.0.0
+    - isort=5.11.4
+    - mypy=0.991
+    - pre-commit=2.21.0
     - types-python-dateutil=2.8.19
     # ==================
     # Testing
     # ==================
-    - pytest=7.2.0
+    - pytest=7.2.1
     - pytest-cov=4.0.0
     # ==================
     # Developer Tools
     # ==================
-    - matplotlib=3.6.2
-    - jupyterlab=3.5.0
+    - matplotlib=3.6.3
+    - jupyterlab=3.5.3
     - tbump=6.9.0
 prefix: /opt/miniconda3/envs/xcdat_dev

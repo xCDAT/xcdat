@@ -4,14 +4,13 @@ contact_links:
       url: https://github.com/xCDAT/xcdat/discussions
       about: |
           Ask questions and discuss with other xCDAT community members here. Please
-          refer to the documentation xCDAT documentation first before asking a
+          browse the xCDAT Discussions Forum or xCDAT documentation first before asking a
           question to make sure it is not already answered. If you can't find an
           answer, please include a self-contained reproducible example with your
-          question if possible.
+          question if possible. Thanks!
 
     - name: Usage question (xarray)
       url: https://github.com/pydata/xarray/discussions
       about: |
           If your questions or discussions are related to xarray, please visit this page
           to reach out to xarray community members.
-

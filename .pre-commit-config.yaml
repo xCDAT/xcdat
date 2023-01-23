@@ -4,26 +4,26 @@ fail_fast: true
 
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v4.3.0
+      rev: v4.4.0
       hooks:
           - id: trailing-whitespace
           - id: end-of-file-fixer
           - id: check-yaml
 
     - repo: https://github.com/psf/black
-      rev: 22.10.0
+      rev: 22.12.0
       hooks:
           - id: black
 
     - repo: https://github.com/timothycrosley/isort
-      rev: 5.10.1
+      rev: 5.11.4
       hooks:
           - id: isort
 
     # Need to use flake8 GitHub mirror due to CentOS git issue with GitLab
     # https://github.com/pre-commit/pre-commit/issues/1206
     - repo: https://github.com/pycqa/flake8
-      rev: 5.0.4
+      rev: 6.0.0
       hooks:
           - id: flake8
             args: ["--config=setup.cfg"]
@@ -37,8 +37,8 @@ repos:
             additional_dependencies:
                 [
                     dask==2022.10.2,
-                    numpy==1.23.4,
-                    pandas==1.5.1,
-                    xarray==2022.11.0,
+                    numpy==1.23.5,
+                    pandas==1.5.3,
+                    xarray==2023.1.0,
                     types-python-dateutil==2.8.19,
                 ]
