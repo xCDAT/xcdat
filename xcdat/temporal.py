@@ -188,7 +188,7 @@ class TemporalAccessor:
 
         Get weighted averages for a monthly time series data variable:
 
-        >>> ds_month = ds.temporal.average("ts", freq="month")
+        >>> ds_month = ds.temporal.average("ts")
         >>> ds_month.ts
         """
         self._set_data_var_attrs(data_var)
@@ -513,7 +513,6 @@ class TemporalAccessor:
             * "day": groups by (month, day) for the daily cycle departures. Leap
               days (if present) are dropped if the CF calendar type is
               ``"gregorian"``, ``"proleptic_gregorian"``, or ``"standard"``
-
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
