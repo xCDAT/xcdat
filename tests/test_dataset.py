@@ -27,6 +27,28 @@ class TestOpenDataset:
         dir.mkdir()
         self.file_path = f"{dir}/file.nc"
 
+    def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
+        ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
+        ds = ds.drop_dims("time")
+        ds.to_netcdf(self.file_path)
+
+        result = open_dataset(self.file_path)
+        expected = generate_dataset(
+            decode_times=False,
+            cf_compliant=True,
+            has_bounds=True,
+        )
+        expected = expected.drop_dims("time")
+
+        assert result.identical(expected)
+        assert (
+            "No time coordinates were found in this dataset to decode. Make sure time "
+            "coordinates exist and their CF 'axis' or 'standard_name' attribute is set "
+            "(e.g., ds['time'].attrs['axis'] = 'T' or "
+            "ds['time'].attrs['standard_name'] = 'time'). Afterwards, try decoding "
+            "with `decode_time()` again."
+        ) in caplog.text
+
     def test_skip_decoding_time_explicitly(self):
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds.to_netcdf(self.file_path)
@@ -566,6 +588,28 @@ class TestOpenMfDataset:
         dir.mkdir()
         self.file_path1 = f"{dir}/file1.nc"
         self.file_path2 = f"{dir}/file2.nc"
+
+    def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
+        ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
+        ds = ds.drop_dims("time")
+        ds.to_netcdf(self.file_path1)
+
+        result = open_mfdataset(self.file_path1)
+        expected = generate_dataset(
+            decode_times=False,
+            cf_compliant=True,
+            has_bounds=True,
+        )
+        expected = expected.drop_dims("time")
+
+        assert result.identical(expected)
+        assert (
+            "No time coordinates were found in this dataset to decode. Make sure time "
+            "coordinates exist and their CF 'axis' or 'standard_name' attribute is set "
+            "(e.g., ds['time'].attrs['axis'] = 'T' or "
+            "ds['time'].attrs['standard_name'] = 'time'). Afterwards, try decoding "
+            "with `decode_time()` again."
+        ) in caplog.text
 
     def test_skip_decoding_times_explicitly(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)

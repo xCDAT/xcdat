@@ -100,7 +100,10 @@ def open_dataset(
     ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
 
     if decode_times:
-        ds = decode_time(ds)
+        try:
+            ds = decode_time(ds)
+        except KeyError as e:
+            logger.warning(e)
 
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
@@ -243,6 +246,13 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
         Dataset with decoded time coordinates and time bounds (if they exist) as
         ``cftime`` objects.
 
+    Raises
+    ------
+    KeyError
+        If time coordinates are not found in the dataset, either because they
+        don't exist at all or they can't be mapped to via CF attributes (e.g.,
+        'axis' or 'standard_name').
+
     Notes
     -----
     Time coordinates are represented by ``cftime.datetime`` objects because
@@ -306,10 +316,11 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
 
     if len(coord_keys) == 0:
         raise KeyError(
-            "Unable to map to time coordinates in this dataset to perform decoding. "
-            "Make sure that the time coordinates have the CF 'axis' or 'standard_name' "
-            "attribute set (e.g., ds['time'].attrs['axis'] = 'T' or "
-            "ds['time'].attrs['standard_name'] = 'time'), and try decoding again. "
+            "No time coordinates were found in this dataset to decode. Make sure time "
+            "coordinates exist and their CF 'axis' or 'standard_name' attribute is set "
+            "(e.g., ds['time'].attrs['axis'] = 'T' or "
+            "ds['time'].attrs['standard_name'] = 'time'). Afterwards, try decoding "
+            "with `decode_time()` again."
         )
 
     for key in coord_keys:
@@ -376,6 +387,7 @@ def _preprocess(
         The Dataset.
     callable : Optional[Callable], optional
         A user specified optional callable function for preprocessing.
+
     Returns
     -------
     xr.Dataset
@@ -387,7 +399,10 @@ def _preprocess(
         ds_new = callable(ds)
 
     if decode_times:
-        ds_new = decode_time(ds_new)
+        try:
+            ds_new = decode_time(ds_new)
+        except KeyError as e:
+            logger.warning(e)
 
     return ds_new
 
