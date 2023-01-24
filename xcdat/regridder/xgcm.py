@@ -16,7 +16,7 @@ class XGCMRegridder(BaseRegridder):
         self,
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
-        method: XGCMVerticalMethods,
+        method: XGCMVerticalMethods = "linear",
         theta: Optional[str] = None,
         grid_positions: Optional[dict[str, str]] = None,
         **options,
