@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import get_args, Literal, Optional
 
 import xarray as xr
 from xgcm import Grid
@@ -6,7 +6,7 @@ from xgcm import Grid
 from xcdat.logger import setup_custom_logger
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
 
-VALID_METHODS = ["linear", "conservative", "log"]
+XGCMVerticalMethods = Literal["linear", "conservative", "log"]
 
 logger = setup_custom_logger(__name__)
 
@@ -16,7 +16,7 @@ class XGCMRegridder(BaseRegridder):
         self,
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
-        method: str,
+        method: XGCMVerticalMethods,
         theta: Optional[str] = None,
         grid_positions: Optional[dict[str, str]] = None,
         **options,
@@ -80,9 +80,9 @@ class XGCMRegridder(BaseRegridder):
         """
         super().__init__(input_grid, output_grid)
 
-        if method not in VALID_METHODS:
+        if method not in get_args(XGCMVerticalMethods):
             raise ValueError(
-                f"{method!r} is invalid, possible choices: {', '.join(VALID_METHODS)}"
+                f"{method!r} is invalid, possible choices: {', '.join(get_args(XGCMVerticalMethods))}"
             )
 
         self._method = method
