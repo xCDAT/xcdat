@@ -22,6 +22,8 @@ dependencies:
     # Optional
     # ==================
     - xesmf=0.7.0
+    - matplotlib=3.6.3
+    - nc-time-axis=1.4.1
     # ==================
     # Documentation
     # ==================
@@ -51,7 +53,6 @@ dependencies:
     # ==================
     # Developer Tools
     # ==================
-    - matplotlib=3.6.3
     - jupyterlab=3.5.3
     - tbump=6.9.0
 prefix: /opt/miniconda3/envs/xcdat_dev
