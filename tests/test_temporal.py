@@ -1654,6 +1654,9 @@ class TestDepartures:
             "ds['time'].encoding['calendar'] = 'noleap') and try again."
         ) in caplog.text
 
+    def test_weighted_seasonal_departures_with_DJF_and_reference_period(self):
+        pass
+
     def test_weighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
 

@@ -1,4 +1,5 @@
 """Module containing temporal functions."""
+from datetime import datetime
 from itertools import chain
 from typing import Dict, List, Literal, Optional, Tuple, TypedDict, get_args
 
@@ -196,7 +197,9 @@ class TemporalAccessor:
 
         freq = self._infer_freq()
 
-        return self._averager(data_var, "average", freq, weighted, keep_weights)
+        return self._averager(
+            data_var, "average", freq, weighted=weighted, keep_weights=keep_weights
+        )
 
     def group_average(
         self,
@@ -332,7 +335,12 @@ class TemporalAccessor:
         self._set_data_var_attrs(data_var)
 
         return self._averager(
-            data_var, "group_average", freq, weighted, keep_weights, season_config
+            data_var,
+            "group_average",
+            freq,
+            weighted=weighted,
+            keep_weights=keep_weights,
+            season_config=season_config,
         )
 
     def climatology(
@@ -341,6 +349,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         keep_weights: bool = False,
+        reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with the climatology of a data variable.
@@ -375,6 +384,10 @@ class TemporalAccessor:
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
+        reference_period : Optional[Tuple[str, str]], optional
+            The climatological reference period, which is a subset of the entire
+            time series. This parameter accepts a tuple of strings in the format
+            'yyyy-mm-dd'. For example, ('1850-01-01', 1899-12-31').
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -476,7 +489,13 @@ class TemporalAccessor:
         self._set_data_var_attrs(data_var)
 
         return self._averager(
-            data_var, "climatology", freq, weighted, keep_weights, season_config
+            data_var,
+            "climatology",
+            freq,
+            weighted,
+            keep_weights,
+            reference_period,
+            season_config,
         )
 
     def departures(
@@ -485,6 +504,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         keep_weights: bool = False,
+        reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """
@@ -539,6 +559,11 @@ class TemporalAccessor:
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
+        reference_period : Optional[Tuple[str, str]], optional
+            The climatological reference period, which is a subset of the entire
+            time series and used for calculating departures. This parameter
+            accepts a tuple of strings in the format 'yyyy-mm-dd'. For example,
+            ('1850-01-01', 1899-12-31').
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -613,7 +638,7 @@ class TemporalAccessor:
         """
         ds = self._dataset.copy()
         self._set_data_var_attrs(data_var)
-        self._set_arg_attrs("departures", freq, weighted, season_config)
+        self._set_arg_attrs("departures", freq, weighted, season_config=season_config)
 
         # Preprocess the dataset based on method argument values.
         ds = self._preprocess_dataset(ds)
@@ -625,7 +650,12 @@ class TemporalAccessor:
 
         # Calculate the climatology of the data variable.
         ds_climo = ds.temporal.climatology(
-            data_var, freq, weighted, keep_weights, season_config
+            data_var,
+            freq,
+            weighted,
+            keep_weights,
+            reference_period,
+            season_config,
         )
         dv_climo = ds_climo[data_var]
 
@@ -689,11 +719,12 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         keep_weights: bool = False,
+        reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
         ds = self._dataset.copy()
-        self._set_arg_attrs(mode, freq, weighted, season_config)
+        self._set_arg_attrs(mode, freq, weighted, reference_period, season_config)
 
         # Preprocess the dataset based on method argument values.
         ds = self._preprocess_dataset(ds)
@@ -775,6 +806,7 @@ class TemporalAccessor:
         mode: Mode,
         freq: Frequency,
         weighted: bool,
+        reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Validates method arguments and sets them as object attributes.
@@ -819,6 +851,12 @@ class TemporalAccessor:
         self._freq = freq
         self._weighted = weighted
 
+        # TODO: Add validation for reference_period
+        # https://stackoverflow.com/questions/16870663/how-do-i-validate-a-date-string-format-in-python
+        if reference_period is not None:
+            self._is_valid_reference_period(reference_period)
+            self._reference_period = reference_period
+
         # "season" frequency specific configuration attributes.
         for key in season_config.keys():
             if key not in DEFAULT_SEASON_CONFIG.keys():
@@ -843,6 +881,17 @@ class TemporalAccessor:
                 self._season_config["drop_incomplete_djf"] = drop_incomplete_djf
         else:
             self._season_config["custom_seasons"] = self._form_seasons(custom_seasons)
+
+    def _is_valid_reference_period(self, reference_period: Tuple[str, str]):
+        try:
+            datetime.strptime(reference_period[0], "%Y-%m-%d")
+            datetime.strptime(reference_period[1], "%Y-%m-%d")
+        except ValueError:
+            raise ValueError(
+                "Reference periods must be a tuple of strings with the format "
+                "'yyyy-mm-dd'. For example, reference_period=('1850-01-01', "
+                "'1899-12-31')."
+            )
 
     def _form_seasons(self, custom_seasons: List[List[str]]) -> Dict[str, List[str]]:
         """Forms custom seasons from a nested list of months.
@@ -923,6 +972,12 @@ class TemporalAccessor:
             and self.calendar in ["gregorian", "proleptic_gregorian", "standard"]
         ):
             ds = self._drop_leap_days(ds)
+
+        # TODO: Add subsetting based on reference period
+        if self._reference_period is not None:
+            ds = ds.sel(
+                {self.dim: slice(self._reference_period[0], self._reference_period[1])}
+            )
 
         return ds
 
