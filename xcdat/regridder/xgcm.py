@@ -1,4 +1,4 @@
-from typing import get_args, Literal, Optional
+from typing import get_args, Literal, Optional, Union
 
 import xarray as xr
 from xgcm import Grid
@@ -17,7 +17,7 @@ class XGCMRegridder(BaseRegridder):
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
         method: XGCMVerticalMethods = "linear",
-        theta: Optional[str] = None,
+        target_data: Optional[Union[str, xr.DataArray]] = None,
         grid_positions: Optional[dict[str, str]] = None,
         **options,
     ):
@@ -39,10 +39,10 @@ class XGCMRegridder(BaseRegridder):
                - linear
                - log
                - conservative
+        target_data : Union[str, xr.DataArray]
+            Data to transform target data onto.
         grid_positions : dict[str, str]
             Mapping of dimension positions, if ``None`` then an attempt is made to derive this argument.
-        theta : str
-            Name of the theta variable used for vertical regridding.
 
         Raises
         ------
@@ -86,7 +86,7 @@ class XGCMRegridder(BaseRegridder):
             )
 
         self._method = method
-        self._theta = theta
+        self._target_data = target_data
         self._grid_coords = grid_positions
         self._extra_options = options
 
@@ -124,7 +124,7 @@ class XGCMRegridder(BaseRegridder):
 
         Create regridder:
 
-        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", theta="pressure")
+        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", target_data="pressure")
 
         Regrid data:
 
@@ -143,6 +143,16 @@ class XGCMRegridder(BaseRegridder):
 
         grid = Grid(ds, coords=grid_coords, periodic=False)
 
+        try:
+            target_data = ds[self._target_data]
+        except ValueError:
+            target_data = self._target_data
+        except KeyError:
+            if self._target_data is not None and isinstance(self._target_data, str):
+                raise RuntimeError(f"Could not find target variable {self._target_data!r} in dataset")
+
+            target_data = None
+
         # assumes new verical coordinate has been calculated and stored as `pressure`
         # TODO: auto calculate pressure reference http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#parametric-v-coord
         #       cf_xarray only supports two ocean s-coordinate and ocean_sigma_coordinate
@@ -150,7 +160,7 @@ class XGCMRegridder(BaseRegridder):
             ds[data_var],
             "Z",
             output_coord_z,
-            target_data=ds[self._theta] if self._theta is not None else None,
+            target_data=target_data,
             method=self._method,
         )
 

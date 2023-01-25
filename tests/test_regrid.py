@@ -43,12 +43,77 @@ class TestXGCMRegridder:
 
     def test_vertical_regrid(self):
         regridder = xgcm.XGCMRegridder(
-            self.ds, self.output_grid, method="linear", theta=None
+            self.ds, self.output_grid, method="linear"
         )
 
         output_data = regridder.vertical("so", self.ds)
 
         assert output_data.so.shape == (15, 2, 4, 4)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_target_data(self, grid):
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear"
+        )
+
+        regridder.vertical("so", self.ds)
+
+        assert grid.return_value.transform.call_args[0][1] == "Z"
+
+        call_kwargs = grid.return_value.transform.call_args[1]
+
+        assert "method" in call_kwargs and call_kwargs["method"] == "linear"
+        assert "target_data" in call_kwargs and call_kwargs["target_data"] is None
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_target_data_da(self, grid):
+        target_data = np.random.normal(size=self.ds["so"].shape)
+
+        target_da = xr.DataArray(target_data, dims=self.ds.so.dims, coords=self.ds.so.coords)
+
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", target_data=target_da
+        )
+
+        regridder.vertical("so", self.ds)
+
+        assert grid.return_value.transform.call_args[0][1] == "Z"
+
+        call_kwargs = grid.return_value.transform.call_args[1]
+
+        assert "method" in call_kwargs and call_kwargs["method"] == "linear"
+        assert "target_data" in call_kwargs
+
+        xr.testing.assert_allclose(call_kwargs["target_data"], target_da)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_target_data_ds(self, grid):
+        target_data = np.random.normal(size=self.ds["so"].shape)
+
+        self.ds["pressure"] = xr.DataArray(target_data, dims=self.ds.so.dims, coords=self.ds.so.coords)
+
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", target_data="pressure"
+        )
+
+        regridder.vertical("so", self.ds)
+
+        assert grid.return_value.transform.call_args[0][1] == "Z"
+
+        call_kwargs = grid.return_value.transform.call_args[1]
+
+        assert "method" in call_kwargs and call_kwargs["method"] == "linear"
+        assert "target_data" in call_kwargs
+
+        xr.testing.assert_allclose(call_kwargs["target_data"], self.ds["pressure"])
+
+    def test_target_data_error(self):
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", target_data="pressure"
+        )
+
+        with pytest.raises(RuntimeError, match="Could not find target variable 'pressure' in dataset"):
+            regridder.vertical("so", self.ds)
 
     def test_conservative(self):
         regridder = xgcm.XGCMRegridder(
