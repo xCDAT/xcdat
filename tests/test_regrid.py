@@ -42,9 +42,7 @@ class TestXGCMRegridder:
         self.output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
 
     def test_vertical_regrid(self):
-        regridder = xgcm.XGCMRegridder(
-            self.ds, self.output_grid, method="linear"
-        )
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
 
         output_data = regridder.vertical("so", self.ds)
 
@@ -52,9 +50,7 @@ class TestXGCMRegridder:
 
     @mock.patch("xcdat.regridder.xgcm.Grid")
     def test_target_data(self, grid):
-        regridder = xgcm.XGCMRegridder(
-            self.ds, self.output_grid, method="linear"
-        )
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
 
         regridder.vertical("so", self.ds)
 
@@ -69,7 +65,9 @@ class TestXGCMRegridder:
     def test_target_data_da(self, grid):
         target_data = np.random.normal(size=self.ds["so"].shape)
 
-        target_da = xr.DataArray(target_data, dims=self.ds.so.dims, coords=self.ds.so.coords)
+        target_da = xr.DataArray(
+            target_data, dims=self.ds.so.dims, coords=self.ds.so.coords
+        )
 
         regridder = xgcm.XGCMRegridder(
             self.ds, self.output_grid, method="linear", target_data=target_da
@@ -90,7 +88,9 @@ class TestXGCMRegridder:
     def test_target_data_ds(self, grid):
         target_data = np.random.normal(size=self.ds["so"].shape)
 
-        self.ds["pressure"] = xr.DataArray(target_data, dims=self.ds.so.dims, coords=self.ds.so.coords)
+        self.ds["pressure"] = xr.DataArray(
+            target_data, dims=self.ds.so.dims, coords=self.ds.so.coords
+        )
 
         regridder = xgcm.XGCMRegridder(
             self.ds, self.output_grid, method="linear", target_data="pressure"
@@ -112,7 +112,9 @@ class TestXGCMRegridder:
             self.ds, self.output_grid, method="linear", target_data="pressure"
         )
 
-        with pytest.raises(RuntimeError, match="Could not find target variable 'pressure' in dataset"):
+        with pytest.raises(
+            RuntimeError, match="Could not find target variable 'pressure' in dataset"
+        ):
             regridder.vertical("so", self.ds)
 
     def test_conservative(self):
@@ -182,7 +184,7 @@ class TestXGCMRegridder:
         xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", theta=None)
 
         with pytest.raises(ValueError, match="'dummy' is invalid, possible choices"):
-            xgcm.XGCMRegridder(self.ds, self.output_grid, method="dummy", theta=None)
+            xgcm.XGCMRegridder(self.ds, self.output_grid, method="dummy", theta=None)  # type: ignore
 
     def test_missing_input_z_coord(self):
         ds = fixtures.generate_dataset(

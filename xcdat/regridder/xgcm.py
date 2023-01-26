@@ -1,4 +1,4 @@
-from typing import get_args, Literal, Optional, Union
+from typing import Literal, Optional, Union, get_args
 
 import xarray as xr
 from xgcm import Grid
@@ -17,7 +17,7 @@ class XGCMRegridder(BaseRegridder):
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
         method: XGCMVerticalMethods = "linear",
-        target_data: Optional[Union[str, xr.DataArray]] = None,
+        target_data: Optional[Union[str, xr.DataArray, None]] = None,
         grid_positions: Optional[dict[str, str]] = None,
         **options,
     ):
@@ -143,13 +143,17 @@ class XGCMRegridder(BaseRegridder):
 
         grid = Grid(ds, coords=grid_coords, periodic=False)
 
+        target_data: str | xr.DataArray | None = None
+
         try:
             target_data = ds[self._target_data]
         except ValueError:
             target_data = self._target_data
         except KeyError:
             if self._target_data is not None and isinstance(self._target_data, str):
-                raise RuntimeError(f"Could not find target variable {self._target_data!r} in dataset")
+                raise RuntimeError(
+                    f"Could not find target variable {self._target_data!r} in dataset"
+                )
 
             target_data = None
 
