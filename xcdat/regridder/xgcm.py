@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Union, get_args
+from typing import Any, Literal, Optional, Union, get_args
 
 import xarray as xr
 from xgcm import Grid
@@ -19,6 +19,8 @@ class XGCMRegridder(BaseRegridder):
         method: XGCMVerticalMethods = "linear",
         target_data: Optional[Union[str, xr.DataArray, None]] = None,
         grid_positions: Optional[dict[str, str]] = None,
+        periodic: Optional[bool] = False,
+        extra_init_options: Optional[dict[str, Any]] = None,
         **options,
     ):
         """Wrapper class for xgcm package.
@@ -43,6 +45,12 @@ class XGCMRegridder(BaseRegridder):
             Data to transform target data onto.
         grid_positions : dict[str, str]
             Mapping of dimension positions, if ``None`` then an attempt is made to derive this argument.
+        periodic : bool
+            Whether the grid is periodic.
+        extra_init_options : dict[str, Any]
+            Extra options passed to the ``xgcm.Grid`` constructor.
+        options : dict[str, Any]
+            Extra options passed to the ``xgcm.Grid.trasnform`` method.
 
         Raises
         ------
@@ -72,7 +80,7 @@ class XGCMRegridder(BaseRegridder):
 
         Create regridder:
 
-        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", theta="pressure")
+        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", target_data="pressure")
 
         Regrid data:
 
@@ -88,6 +96,13 @@ class XGCMRegridder(BaseRegridder):
         self._method = method
         self._target_data = target_data
         self._grid_coords = grid_positions
+
+        if extra_init_options is None:
+            extra_init_options = {}
+
+        extra_init_options["periodic"] = periodic
+
+        self._extra_init_options = extra_init_options
         self._extra_options = options
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
@@ -141,7 +156,7 @@ class XGCMRegridder(BaseRegridder):
             # correctly format argument
             grid_coords = {"Z": self._grid_coords}
 
-        grid = Grid(ds, coords=grid_coords, periodic=False)
+        grid = Grid(ds, coords=grid_coords, **self._extra_init_options)
 
         target_data: str | xr.DataArray | None = None
 
@@ -166,6 +181,7 @@ class XGCMRegridder(BaseRegridder):
             output_coord_z,
             target_data=target_data,
             method=self._method,
+            **self._extra_options,
         )
 
         output_da = output_da.transpose(*ds[data_var].dims)

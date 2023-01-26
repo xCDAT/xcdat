@@ -119,7 +119,7 @@ class TestXGCMRegridder:
 
     def test_conservative(self):
         regridder = xgcm.XGCMRegridder(
-            self.ds, self.output_grid, method="conservative", theta=None
+            self.ds, self.output_grid, method="conservative", target_data=None
         )
 
         with pytest.raises(
@@ -136,7 +136,7 @@ class TestXGCMRegridder:
             ds,
             self.output_grid,
             method="linear",
-            theta=None,
+            target_data=None,
         )
 
         output_data = regridder.vertical("so", ds)
@@ -150,7 +150,7 @@ class TestXGCMRegridder:
             ds,
             self.output_grid,
             method="linear",
-            theta=None,
+            target_data=None,
         )
 
         with pytest.raises(
@@ -164,7 +164,7 @@ class TestXGCMRegridder:
             self.ds,
             self.output_grid,
             method="linear",
-            theta=None,
+            target_data=None,
             grid_positions={"left": "lev"},
         )
 
@@ -174,17 +174,17 @@ class TestXGCMRegridder:
 
     def test_horizontal_placeholder(self):
         regridder = xgcm.XGCMRegridder(
-            self.ds, self.output_grid, method="linear", theta=None
+            self.ds, self.output_grid, method="linear", target_data=None
         )
 
         with pytest.raises(NotImplementedError):
             regridder.horizontal("so", self.ds)
 
     def test_methods(self):
-        xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", theta=None)
+        xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", target_data=None)
 
         with pytest.raises(ValueError, match="'dummy' is invalid, possible choices"):
-            xgcm.XGCMRegridder(self.ds, self.output_grid, method="dummy", theta=None)  # type: ignore
+            xgcm.XGCMRegridder(self.ds, self.output_grid, method="dummy", target_data=None)  # type: ignore
 
     def test_missing_input_z_coord(self):
         ds = fixtures.generate_dataset(
@@ -192,7 +192,7 @@ class TestXGCMRegridder:
         )
 
         regridder = xgcm.XGCMRegridder(
-            ds, self.output_grid, method="linear", theta=None
+            ds, self.output_grid, method="linear", target_data=None
         )
 
         with pytest.raises(
@@ -206,7 +206,7 @@ class TestXGCMRegridder:
         self.output_grid = self.output_grid.drop_vars(["lev"])
 
         regridder = xgcm.XGCMRegridder(
-            ds, self.output_grid, method="linear", theta=None
+            ds, self.output_grid, method="linear", target_data=None
         )
 
         with pytest.raises(
@@ -220,7 +220,7 @@ class TestXGCMRegridder:
         ds = ds.drop_vars(["lev_bnds"])
 
         regridder = xgcm.XGCMRegridder(
-            ds, self.output_grid, method="linear", theta=None
+            ds, self.output_grid, method="linear", target_data=None
         )
 
         with pytest.raises(
@@ -1024,7 +1024,7 @@ class TestAccessor:
         mock_data = mock.MagicMock()
 
         with mock.patch.dict(accessor.VERTICAL_REGRID_TOOLS, {"xgcm": mock_regridder}):
-            output = self.ac.vertical("ts", mock_data, tool="xgcm", theta=None)
+            output = self.ac.vertical("ts", mock_data, tool="xgcm", target_data=None)
 
         assert output == "output data"
 
@@ -1033,7 +1033,7 @@ class TestAccessor:
         with pytest.raises(
             ValueError, match=r"Tool 'dummy' does not exist, valid choices"
         ):
-            self.ac.vertical("ts", mock_data, tool="dummy", theta=None)  # type: ignore
+            self.ac.vertical("ts", mock_data, tool="dummy", target_data=None)  # type: ignore
 
     @requires_xesmf
     @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
