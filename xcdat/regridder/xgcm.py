@@ -23,7 +23,11 @@ class XGCMRegridder(BaseRegridder):
         extra_init_options: Optional[dict[str, Any]] = None,
         **options,
     ):
-        """Wrapper class for xgcm package.
+        """Extension of ``xgcm`` regridder.
+
+        The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the ``Grid`` object, 
+        transposing the output data to match the input data's dimension order and ensuring missing
+        bounds are generated on the output data.
 
         Linear and log methods require a single dimension position, which can usually be automatically
         dervied.
