@@ -102,8 +102,8 @@ def open_dataset(
     if decode_times:
         try:
             ds = decode_time(ds)
-        except KeyError as e:
-            logger.warning(e)
+        except KeyError as err:
+            logger.warning(err)
 
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
@@ -249,9 +249,9 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     Raises
     ------
     KeyError
-        If time coordinates are not found in the dataset, either because they
-        don't exist at all or they can't be mapped to via CF attributes (e.g.,
-        'axis' or 'standard_name').
+        If time coordinates were not detected in the dataset, either because they
+        don't exist at all or their CF attributes (e.g., 'axis' or
+        'standard_name') are not set.
 
     Notes
     -----
@@ -316,11 +316,12 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
 
     if len(coord_keys) == 0:
         raise KeyError(
-            "No time coordinates were found in this dataset to decode. Make sure time "
-            "coordinates exist and their CF 'axis' or 'standard_name' attribute is set "
-            "(e.g., ds['time'].attrs['axis'] = 'T' or "
+            "No time coordinates were found in this dataset to decode. If time "
+            "coordinates were expected to exist, make sure they are detectable by "
+            "setting the CF 'axis' or 'standard_name' attribute (e.g., "
+            "ds['time'].attrs['axis'] = 'T' or "
             "ds['time'].attrs['standard_name'] = 'time'). Afterwards, try decoding "
-            "with `decode_time()` again."
+            "again with `xcdat.decode_time`."
         )
 
     for key in coord_keys:
@@ -401,8 +402,8 @@ def _preprocess(
     if decode_times:
         try:
             ds_new = decode_time(ds_new)
-        except KeyError as e:
-            logger.warning(e)
+        except KeyError as err:
+            logger.warning(err)
 
     return ds_new
 

@@ -42,11 +42,12 @@ class TestOpenDataset:
 
         assert result.identical(expected)
         assert (
-            "No time coordinates were found in this dataset to decode. Make sure time "
-            "coordinates exist and their CF 'axis' or 'standard_name' attribute is set "
-            "(e.g., ds['time'].attrs['axis'] = 'T' or "
+            "No time coordinates were found in this dataset to decode. If time "
+            "coordinates were expected to exist, make sure they are detectable by "
+            "setting the CF 'axis' or 'standard_name' attribute (e.g., "
+            "ds['time'].attrs['axis'] = 'T' or "
             "ds['time'].attrs['standard_name'] = 'time'). Afterwards, try decoding "
-            "with `decode_time()` again."
+            "again with `xcdat.decode_time`."
         ) in caplog.text
 
     def test_skip_decoding_time_explicitly(self):
@@ -604,11 +605,12 @@ class TestOpenMfDataset:
 
         assert result.identical(expected)
         assert (
-            "No time coordinates were found in this dataset to decode. Make sure time "
-            "coordinates exist and their CF 'axis' or 'standard_name' attribute is set "
-            "(e.g., ds['time'].attrs['axis'] = 'T' or "
-            "ds['time'].attrs['standard_name'] = 'time'). Afterwards, try decoding "
-            "with `decode_time()` again."
+            "No time coordinates were found in this dataset to decode. If time "
+            "coordinates were expected to exist, make sure they are detectable by "
+            "setting the CF 'axis' or 'standard_name' attribute (e.g., "
+            "ds['time'].attrs['axis'] = 'T' or "
+            "ds['time'].attrs['standard_name'] = 'time'). "
+            "Afterwards, try decoding again with `xcdat.decode_time`."
         ) in caplog.text
 
     def test_skip_decoding_times_explicitly(self):
