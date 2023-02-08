@@ -522,7 +522,7 @@ class TemporalAccessor:
               If the CF calendar type is ``"gregorian"``,
               ``"proleptic_gregorian"``, or ``"standard"``, leap days (if
               present) are dropped to avoid inconsistencies when calculating
-              climatologies. Refer to [3]_ for more details on this
+              climatologies. Refer to [2]_ for more details on this
               implementation decision.
 
         weighted : bool, optional
@@ -586,12 +586,12 @@ class TemporalAccessor:
 
         Notes
         -----
-        Refer to [2]_ to learn more about how xarray's grouped arithmetic works.
+        Refer to [3]_ to learn more about how xarray's grouped arithmetic works.
 
         References
         ----------
-        .. [2] https://xarray.pydata.org/en/stable/user-guide/groupby.html#grouped-arithmetic
-        .. [3] https://github.com/xCDAT/xcdat/discussions/332
+        .. [2] https://github.com/xCDAT/xcdat/discussions/332
+        .. [3] https://xarray.pydata.org/en/stable/user-guide/groupby.html#grouped-arithmetic
 
         Examples
         --------
@@ -1113,11 +1113,11 @@ class TemporalAccessor:
 
         Notes
         -----
-        Refer to [5]_ for the supported CF convention calendar types.
+        Refer to [4]_ for the supported CF convention calendar types.
 
         References
         ----------
-        .. [5] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
+        .. [4] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
         with xr.set_options(keep_attrs=True):
             time_lengths: xr.DataArray = time_bounds[:, 1] - time_bounds[:, 0]
@@ -1257,11 +1257,11 @@ class TemporalAccessor:
 
         Notes
         -----
-        Refer to [2]_ for information on xarray datetime accessor components.
+        Refer to [5]_ for information on xarray datetime accessor components.
 
         References
         ----------
-        .. [2] https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
+        .. [5] https://xarray.pydata.org/en/stable/user-guide/time-series.html#datetime-components
         """
         df = pd.DataFrame()
 
@@ -1486,14 +1486,13 @@ class TemporalAccessor:
 
         Notes
         -----
-        Refer to [4]_ and [5]_ for more information on Timestamp-valid range.
+        Refer to [6]_ and [7]_ for more information on Timestamp-valid range.
         We use cftime.datetime objects to avoid these time range issues.
 
         References
         ----------
-        .. [4] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
-
-        .. [5] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
+        .. [6] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
+        .. [7] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
         """
         df_new = df.copy()
 
