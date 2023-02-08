@@ -51,7 +51,8 @@ class TestAverage:
             "'time' does not have a calendar encoding attribute set, "
             "which is used to determine the `cftime.datetime` object type for the "
             "output time coordinates. Defaulting to CF 'standard' calendar. "
-            "Otherwise, set the calendar type and try again."
+            "Otherwise, set the calendar type (e.g., "
+            "ds['time'].encoding['calendar'] = 'noleap') and try again."
         ) in caplog.text
 
     def test_averages_for_yearly_time_series(self):
@@ -469,7 +470,8 @@ class TestGroupAverage:
             "'time' does not have a calendar encoding attribute set, "
             "which is used to determine the `cftime.datetime` object type for the "
             "output time coordinates. Defaulting to CF 'standard' calendar. "
-            "Otherwise, set the calendar type and try again."
+            "Otherwise, set the calendar type (e.g., "
+            "ds['time'].encoding['calendar'] = 'noleap') and try again."
         ) in caplog.text
 
     def test_weighted_annual_averages(self):
@@ -1047,7 +1049,8 @@ class TestClimatology:
             "'time' does not have a calendar encoding attribute set, "
             "which is used to determine the `cftime.datetime` object type for the "
             "output time coordinates. Defaulting to CF 'standard' calendar. "
-            "Otherwise, set the calendar type and try again."
+            "Otherwise, set the calendar type (e.g., "
+            "ds['time'].encoding['calendar'] = 'noleap') and try again."
         ) in caplog.text
 
     def test_weighted_seasonal_climatology_with_DJF(self):
@@ -1647,7 +1650,8 @@ class TestDepartures:
             "'time' does not have a calendar encoding attribute set, "
             "which is used to determine the `cftime.datetime` object type for the "
             "output time coordinates. Defaulting to CF 'standard' calendar. "
-            "Otherwise, set the calendar type and try again."
+            "Otherwise, set the calendar type (e.g., "
+            "ds['time'].encoding['calendar'] = 'noleap') and try again."
         ) in caplog.text
 
     def test_weighted_seasonal_departures_with_DJF(self):

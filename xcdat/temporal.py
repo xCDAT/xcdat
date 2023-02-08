@@ -753,7 +753,7 @@ class TemporalAccessor:
 
         # Get the `cftime` date type based on the CF calendar attribute.
         # The date type is used to get the correct cftime.datetime sub-class
-        # type for creating new grouped time coordinates after averaging.
+        # type for creating new grouped time coordinates for averaging.
         try:
             self.calendar = dv[self.dim].encoding["calendar"]
         except KeyError:
@@ -762,7 +762,8 @@ class TemporalAccessor:
                 f"'{self.dim}' does not have a calendar encoding attribute set, "
                 "which is used to determine the `cftime.datetime` object type for the "
                 "output time coordinates. Defaulting to CF 'standard' calendar. "
-                "Otherwise, set the calendar type and try again."
+                "Otherwise, set the calendar type (e.g., "
+                "ds['time'].encoding['calendar'] = 'noleap') and try again."
             )
 
         self.date_type = get_date_type(self.calendar)
