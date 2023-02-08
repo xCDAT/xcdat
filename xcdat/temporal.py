@@ -3,6 +3,7 @@ from itertools import chain
 from typing import Dict, List, Literal, Optional, Tuple, TypedDict, get_args
 
 import cf_xarray  # noqa: F401
+import cftime
 import numpy as np
 import pandas as pd
 import xarray as xr
@@ -354,8 +355,11 @@ class TemporalAccessor:
             * "season": groups by season for the seasonal cycle climatology.
             * "month": groups by month for the annual cycle climatology.
             * "day": groups by (month, day) for the daily cycle climatology.
-              Leap days (if present) are dropped if the CF calendar type is
-              ``"gregorian"``, ``"proleptic_gregorian"``, or ``"standard"``
+              If the CF calendar type is ``"gregorian"``,
+              ``"proleptic_gregorian"``, or ``"standard"``, leap days (if
+              present) are dropped to avoid inconsistencies when calculating
+              climatologies. Refer to [1]_ for more details on this
+              implementation decision.
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
@@ -415,6 +419,10 @@ class TemporalAccessor:
         -------
         xr.Dataset
             Dataset with the climatology of a data variable.
+
+        References
+        ----------
+        .. [1] https://github.com/xCDAT/xcdat/discussions/332
 
         Examples
         --------
@@ -510,9 +518,12 @@ class TemporalAccessor:
 
             * "season": groups by season for the seasonal cycle departures.
             * "month": groups by month for the annual cycle departures.
-            * "day": groups by (month, day) for the daily cycle departures. Leap
-              days (if present) are dropped if the CF calendar type is
-              ``"gregorian"``, ``"proleptic_gregorian"``, or ``"standard"``
+            * "day": groups by (month, day) for the daily cycle departures.
+              If the CF calendar type is ``"gregorian"``,
+              ``"proleptic_gregorian"``, or ``"standard"``, leap days (if
+              present) are dropped to avoid inconsistencies when calculating
+              climatologies. Refer to [3]_ for more details on this
+              implementation decision.
 
         weighted : bool, optional
             Calculate averages using weights, by default True.
@@ -575,11 +586,12 @@ class TemporalAccessor:
 
         Notes
         -----
-        Refer to [1]_ to learn more about how xarray's grouped arithmetic works.
+        Refer to [2]_ to learn more about how xarray's grouped arithmetic works.
 
         References
         ----------
-        .. [1] https://xarray.pydata.org/en/stable/user-guide/groupby.html#grouped-arithmetic
+        .. [2] https://xarray.pydata.org/en/stable/user-guide/groupby.html#grouped-arithmetic
+        .. [3] https://github.com/xCDAT/xcdat/discussions/332
 
         Examples
         --------
@@ -728,16 +740,32 @@ class TemporalAccessor:
         self.data_var = data_var
         self.dim = get_dim_coords(dv, "T").name
 
+        first_time_coord = dv[self.dim].values[0]
+        is_decoded = isinstance(first_time_coord, cftime.datetime) or isinstance(
+            first_time_coord, np.datetime64
+        )
+        if not is_decoded:
+            raise ValueError(
+                f"The time coordinates type is {type(first_time_coord)}, not "
+                "'cftime.datetime' or 'np.datetime64'. Time coordinates must be "
+                "decoded as datetime before using TemporalAccessor methods. "
+            )
+
+        # Get the `cftime` date type based on the CF calendar attribute.
+        # The date type is used to get the correct cftime.datetime sub-class
+        # type for creating new grouped time coordinates after averaging.
         try:
             self.calendar = dv[self.dim].encoding["calendar"]
-            self.date_type = get_date_type(self.calendar)
         except KeyError:
-            raise KeyError(
-                f"The 'calendar' encoding attribute is not set on the '{data_var}' "
-                f"time coordinate variable ({self.dim}). This might indicate that the "
-                "time coordinates were not decoded, which is required for temporal "
-                "averaging operations. "
+            self.calendar = "standard"
+            logger.warning(
+                f"'{self.dim}' does not have a calendar encoding attribute set, "
+                "which is used to determine the `cftime.datetime` object type for the "
+                "output time coordinates. Defaulting to CF 'standard' calendar. "
+                "Otherwise, set the calendar type and try again."
             )
+
+        self.date_type = get_date_type(self.calendar)
 
     def _set_arg_attrs(
         self,
@@ -1457,14 +1485,14 @@ class TemporalAccessor:
 
         Notes
         -----
-        Refer to [3]_ and [4]_ for more information on Timestamp-valid range.
+        Refer to [4]_ and [5]_ for more information on Timestamp-valid range.
         We use cftime.datetime objects to avoid these time range issues.
 
         References
         ----------
-        .. [3] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
+        .. [4] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
 
-        .. [4] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
+        .. [5] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
         """
         df_new = df.copy()
 

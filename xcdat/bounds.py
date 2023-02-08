@@ -216,9 +216,11 @@ class BoundsAccessor:
 
         if len(bounds_keys) == 0:
             raise KeyError(
-                f"No bounds were found for the '{axis}' axis. Make sure bounds vars "
-                "exist in the Dataset with names that match the 'bounds' keys, or try "
-                "adding bounds."
+                f"No bounds data variables were found for the '{axis}' axis. Make sure "
+                "the dataset has bound data vars and their names match the 'bounds' "
+                "attributes found on their related time coordinate variables. "
+                "Alternatively, you can add bounds with `xcdat.add_missing_bounds` "
+                "or `xcdat.add_bounds`."
             )
 
         bounds: Union[xr.Dataset, xr.DataArray] = self._dataset[

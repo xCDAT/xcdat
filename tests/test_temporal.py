@@ -6,7 +6,10 @@ from xarray.coding.cftime_offsets import get_date_type
 from xarray.tests import requires_dask
 
 from tests.fixtures import generate_dataset
+from xcdat.logger import setup_custom_logger
 from xcdat.temporal import TemporalAccessor
+
+logger = setup_custom_logger("xcdat.temporal", propagate=True)
 
 
 class TestTemporalAccessor:
@@ -26,16 +29,30 @@ class TestTemporalAccessor:
 
 
 class TestAverage:
-    def test_raises_error_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
-        self,
+    def test_raises_error_if_time_coords_are_not_decoded(self):
+        ds: xr.Dataset = generate_dataset(
+            decode_times=False, cf_compliant=False, has_bounds=True
+        )
+
+        with pytest.raises(ValueError):
+            ds.temporal.average("ts")
+
+    def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
+        self, caplog
     ):
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
         ds.ts.time.encoding = {}
 
-        with pytest.raises(KeyError):
-            ds.temporal.average("ts")
+        ds.temporal.average("ts")
+
+        assert (
+            "'time' does not have a calendar encoding attribute set, "
+            "which is used to determine the `cftime.datetime` object type for the "
+            "output time coordinates. Defaulting to CF 'standard' calendar. "
+            "Otherwise, set the calendar type and try again."
+        ) in caplog.text
 
     def test_averages_for_yearly_time_series(self):
         ds = xr.Dataset(
@@ -430,16 +447,30 @@ class TestGroupAverage:
             attrs={"test_attr": "test"},
         )
 
-    def test_raises_error_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
-        self,
+    def test_raises_error_if_time_coords_are_not_decoded(self):
+        ds: xr.Dataset = generate_dataset(
+            decode_times=False, cf_compliant=False, has_bounds=True
+        )
+
+        with pytest.raises(ValueError):
+            ds.temporal.group_average("ts", freq="year")
+
+    def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
+        self, caplog
     ):
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
         ds.ts.time.encoding = {}
 
-        with pytest.raises(KeyError):
-            ds.temporal.group_average("ts", freq="year")
+        ds.temporal.group_average("ts", freq="year")
+
+        assert (
+            "'time' does not have a calendar encoding attribute set, "
+            "which is used to determine the `cftime.datetime` object type for the "
+            "output time coordinates. Defaulting to CF 'standard' calendar. "
+            "Otherwise, set the calendar type and try again."
+        ) in caplog.text
 
     def test_weighted_annual_averages(self):
         ds = self.ds.copy()
@@ -994,16 +1025,30 @@ class TestClimatology:
             decode_times=True, cf_compliant=False, has_bounds=True
         )
 
-    def test_raises_error_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
-        self,
+    def test_raises_error_if_time_coords_are_not_decoded(self):
+        ds: xr.Dataset = generate_dataset(
+            decode_times=False, cf_compliant=False, has_bounds=True
+        )
+
+        with pytest.raises(ValueError):
+            ds.temporal.climatology("ts", freq="year")
+
+    def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
+        self, caplog
     ):
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
         ds.ts.time.encoding = {}
 
-        with pytest.raises(KeyError):
-            ds.temporal.climatology("ts", freq="season")
+        ds.temporal.climatology("ts", freq="season")
+
+        assert (
+            "'time' does not have a calendar encoding attribute set, "
+            "which is used to determine the `cftime.datetime` object type for the "
+            "output time coordinates. Defaulting to CF 'standard' calendar. "
+            "Otherwise, set the calendar type and try again."
+        ) in caplog.text
 
     def test_weighted_seasonal_climatology_with_DJF(self):
         ds = self.ds.copy()
@@ -1580,16 +1625,30 @@ class TestDepartures:
 
         self.seasons = ["JJA", "MAM", "SON", "DJF"]
 
-    def test_raises_error_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
-        self,
+    def test_raises_error_if_time_coords_are_not_decoded(self):
+        ds: xr.Dataset = generate_dataset(
+            decode_times=False, cf_compliant=False, has_bounds=True
+        )
+
+        with pytest.raises(ValueError):
+            ds.temporal.departures("ts", freq="season")
+
+    def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
+        self, caplog
     ):
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
         ds.ts.time.encoding = {}
 
-        with pytest.raises(KeyError):
-            ds.temporal.departures("ts", freq="year")
+        ds.temporal.departures("ts", freq="season")
+
+        assert (
+            "'time' does not have a calendar encoding attribute set, "
+            "which is used to determine the `cftime.datetime` object type for the "
+            "output time coordinates. Defaulting to CF 'standard' calendar. "
+            "Otherwise, set the calendar type and try again."
+        ) in caplog.text
 
     def test_weighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
