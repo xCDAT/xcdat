@@ -850,8 +850,6 @@ class TemporalAccessor:
         self._freq = freq
         self._weighted = weighted
 
-        # TODO: Add validation for reference_period
-        # https://stackoverflow.com/questions/16870663/how-do-i-validate-a-date-string-format-in-python
         self._reference_period = None
         if reference_period is not None:
             self._is_valid_reference_period(reference_period)
