@@ -642,7 +642,9 @@ class TemporalAccessor:
         ds = self._preprocess_dataset(ds)
 
         # 1. Get the grouped average of the observation data variable.
-        ds_avg = ds.temporal.group_average(data_var, self._freq)
+        ds_avg = ds.temporal.group_average(
+            data_var, self._freq, weighted, keep_weights, season_config=season_config
+        )
         dv_obs = ds_avg[data_var].copy()
 
         # 2. Group the observation data variable by the departures frequency.
@@ -670,12 +672,13 @@ class TemporalAccessor:
         ds_climo = ds_climo.rename({self.dim: self._labeled_time.name})
         dv_climo = ds_climo[data_var]
 
-        # 4. Calculate the departures for the data variable.
-        # The formula: grouped observation data - climatology
+        # 4. Calculate the departures for the data variable using the formula,
+        # grouped observation data - climatology.
         with xr.set_options(keep_attrs=True):
             dv_departs = dv_obs_grouped - dv_climo
             dv_departs = self._add_operation_attrs(dv_departs)
-            ds_avg[f"{data_var}_departures"] = dv_departs
+            ds_avg[data_var] = dv_departs
+            ds_avg = ds_avg.drop_vars(self._labeled_time.name)
 
         if weighted and keep_weights:
             self._weights = ds_climo.time_wts
@@ -1586,11 +1589,6 @@ class TemporalAccessor:
             # Only keep the original time coordinates, not the ones labeled
             # by group.
             self._weights = self._weights.drop_vars(self._labeled_time.name)
-        # Strip "_original" from the name of the weights` time coordinates
-        # because the final departures Dataset has the original time coordinates
-        # restored after performing grouped subtraction.
-        elif self._mode == "departures":
-            self._weights = self._weights.rename({f"{self.dim}_original": self.dim})
 
         ds[self._weights.name] = self._weights
 
