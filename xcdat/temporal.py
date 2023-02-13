@@ -720,7 +720,9 @@ class TemporalAccessor:
         return ds
 
     def _set_data_var_attrs(self, data_var: str):
-        """Set data variable metadata as object attributes.
+        """
+        Set data variable metadata as object attributes and checks whether the
+        time axis is decoded.
 
         This includes the name of the data variable, the time axis dimension
         name, the calendar type and its corresponding cftime object (date type).
