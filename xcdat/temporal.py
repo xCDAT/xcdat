@@ -387,7 +387,7 @@ class TemporalAccessor:
         reference_period : Optional[Tuple[str, str]], optional
             The climatological reference period, which is a subset of the entire
             time series. This parameter accepts a tuple of strings in the format
-            'yyyy-mm-dd'. For example, ('1850-01-01', 1899-12-31').
+            'yyyy-mm-dd'. For example, ``('1850-01-01', 1899-12-31')``.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -516,17 +516,6 @@ class TemporalAccessor:
         temperature) and the long-term average value for that time interval
         (e.g., the average surface temperature over the last 30 Januaries).
 
-        This method uses xarray's grouped arithmetic as a shortcut for mapping
-        over all unique labels. Grouped arithmetic works by assigning a grouping
-        label to each time coordinate of the observation data based on the
-        averaging mode and frequency. Afterwards, the corresponding climatology
-        is removed from the observation data at each time coordinate based on
-        the matching labels.
-
-        xarray's grouped arithmetic operates over each value of the DataArray
-        corresponding to each grouping label without changing the size of the
-        DataArray. For example,the original monthly time coordinates are
-        maintained when calculating seasonal departures on monthly data.
 
         Parameters
         ----------
@@ -563,7 +552,7 @@ class TemporalAccessor:
             The climatological reference period, which is a subset of the entire
             time series and used for calculating departures. This parameter
             accepts a tuple of strings in the format 'yyyy-mm-dd'. For example,
-            ('1850-01-01', 1899-12-31').
+            ``('1850-01-01', 1899-12-31')``.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
@@ -611,6 +600,13 @@ class TemporalAccessor:
 
         Notes
         -----
+        This method uses xarray's grouped arithmetic as a shortcut for mapping
+        over all unique labels. Grouped arithmetic works by assigning a grouping
+        label to each time coordinate of the observation data based on the
+        averaging mode and frequency. Afterwards, the corresponding climatology
+        is removed from the observation data at each time coordinate based on
+        the matching labels.
+
         Refer to [3]_ to learn more about how xarray's grouped arithmetic works.
 
         References
@@ -636,19 +632,33 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
-        ds = self._dataset.copy()
+        # Set the class attributes based on data variable attributes and method
+        # arguments.
         self._set_data_var_attrs(data_var)
         self._set_arg_attrs("departures", freq, weighted, season_config=season_config)
 
-        # Preprocess the dataset based on method argument values.
+        # Preprocess the dataset based on the method arguments.
+        ds = self._dataset.copy()
         ds = self._preprocess_dataset(ds)
 
-        # Group the observation data variable.
-        dv_obs = _get_data_var(ds, data_var)
+        # 1. Get the grouped average of the observation data variable.
+        ds_avg = ds.temporal.group_average(data_var, self._freq)
+        dv_obs = ds_avg[data_var].copy()
+
+        # 2. Group the observation data variable by the departures frequency.
+        # This step allows us to perform xarray's grouped arithmetic to calculate
+        # departures.
         self._labeled_time = self._label_time_coords(dv_obs[self.dim])
         dv_obs_grouped = self._group_data(dv_obs)
 
-        # Calculate the climatology of the data variable.
+        # 3. Calculate the climatology of the data variable.
+        # The resulting time dimension is renamed to the labeled time
+        # dimension (e.g., "time" -> "season"). Renaming is necessary because
+        # the climatology is subtracted from the grouped observation data
+        # using xarray's grouped arithmetic, which requires dimension names
+        # to be aligned. Otherwise, this error is raised: "`ValueError:
+        # incompatible dimensions for a grouped binary operation: the group
+        # variable '<CHOSEN_FREQ>' is not a dimension on the other argument`".
         ds_climo = ds.temporal.climatology(
             data_var,
             freq,
@@ -657,32 +667,21 @@ class TemporalAccessor:
             reference_period,
             season_config,
         )
+        ds_climo = ds_climo.rename({self.dim: self._labeled_time.name})
         dv_climo = ds_climo[data_var]
 
-        # Rename the time dimension using the name from the grouped observation
-        # data. The dimension names must align for xarray's grouped arithmetic
-        # to work. Otherwise, the error below is thrown: `ValueError:
-        # incompatible dimensions for a grouped binary operation: the group
-        # variable '<CHOSEN_FREQ>' is not a dimension on the other argument`
-        dv_climo = dv_climo.rename({self.dim: self._labeled_time.name})
-
-        # Calculate the departures for the data variable, which uses the formula
-        # observation - climatology.
+        # 4. Calculate the departures for the data variable.
+        # The formula: grouped observation data - climatology
         with xr.set_options(keep_attrs=True):
-            ds_departs = ds.copy()
-            ds_departs[data_var] = dv_obs_grouped - dv_climo
-            ds_departs[data_var] = self._add_operation_attrs(ds_departs[data_var])
-
-            # The original time coordinates are restored after grouped
-            # subtraction. The grouped time coordinates are dropped since they
-            # are no longer required.
-            ds_departs = ds_departs.drop_vars(self._labeled_time.name)
+            dv_departs = dv_obs_grouped - dv_climo
+            dv_departs = self._add_operation_attrs(dv_departs)
+            ds_avg[f"{data_var}_departures"] = dv_departs
 
         if weighted and keep_weights:
             self._weights = ds_climo.time_wts
-            ds_departs = self._keep_weights(ds_departs)
+            ds_avg = self._keep_weights(ds_avg)
 
-        return ds_departs
+        return ds_avg
 
     def _infer_freq(self) -> Frequency:
         """Infers the time frequency from the coordinates.
@@ -853,6 +852,7 @@ class TemporalAccessor:
 
         # TODO: Add validation for reference_period
         # https://stackoverflow.com/questions/16870663/how-do-i-validate-a-date-string-format-in-python
+        self._reference_period = None
         if reference_period is not None:
             self._is_valid_reference_period(reference_period)
             self._reference_period = reference_period
@@ -886,7 +886,7 @@ class TemporalAccessor:
         try:
             datetime.strptime(reference_period[0], "%Y-%m-%d")
             datetime.strptime(reference_period[1], "%Y-%m-%d")
-        except ValueError:
+        except (IndexError, ValueError):
             raise ValueError(
                 "Reference periods must be a tuple of strings with the format "
                 "'yyyy-mm-dd'. For example, reference_period=('1850-01-01', "
@@ -974,7 +974,7 @@ class TemporalAccessor:
             ds = self._drop_leap_days(ds)
 
         # TODO: Add subsetting based on reference period
-        if self._reference_period is not None:
+        if self._mode == "climatology" and self._reference_period is not None:
             ds = ds.sel(
                 {self.dim: slice(self._reference_period[0], self._reference_period[1])}
             )
