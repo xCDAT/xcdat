@@ -974,7 +974,6 @@ class TemporalAccessor:
         ):
             ds = self._drop_leap_days(ds)
 
-        # TODO: Add subsetting based on reference period
         if self._mode == "climatology" and self._reference_period is not None:
             ds = ds.sel(
                 {self.dim: slice(self._reference_period[0], self._reference_period[1])}
