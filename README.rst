@@ -1,7 +1,7 @@
 .. raw:: html
 
    <p align="center">
-      <img src="./docs/_static/xcdat-logo.png" alt="xCDAT logo"/>
+      <img src="./docs/_static/xcdat-logo.png" alt="xCDAT logo" style="width:450px;"/>
    </p>
 
 .. container::
