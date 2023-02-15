@@ -33,7 +33,7 @@ class XGCMRegridder(BaseRegridder):
         dervied.
 
         Conservative regridding requires multiple dimension positions, e.g. {"center": "xc", "left": "xg"}.
-        
+
 
         Parameters
         ----------
