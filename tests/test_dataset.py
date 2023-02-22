@@ -627,11 +627,6 @@ class TestOpenMfDataset:
         assert result.identical(expected)
 
     def test_raises_error_if_xml_does_not_have_root_direcory(self):
-        """
-        The structure of CDAT xml files (climate data markup language) is a dialect of xml files that have a defined set of attributes.
-        We only care that the xml file has a directory attribute – we can probably just return an error saying "the xml file provided does not have a root directory attribute" or something like that
-        XML probably isn't used that widely by the broad climate community, but it is used pretty widely by former CDAT users
-        """
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
         ds1.to_netcdf(self.file_path1)
         ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
