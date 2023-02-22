@@ -205,11 +205,11 @@ def open_mfdataset(
     ----------
     .. [2] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
     """
-    if isinstance(paths, str):
-        if paths.split(".")[-1] == "xml":
-            paths = _parse_xml_for_nc_glob(paths)
+    if not isinstance(paths, list):
+        if _is_paths_to_xml(paths):
+            paths = _parse_xml_for_nc_glob(paths)  # type: ignore
         elif os.path.isdir(paths):
-            paths = _parse_dir_for_nc_glob(paths)
+            paths = _parse_dir_for_nc_glob(paths)  # type: ignore
 
     preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
 
@@ -365,6 +365,24 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
                 ds = ds.assign({bounds.name: decoded_bounds})
 
     return ds
+
+
+def _is_paths_to_xml(paths: Union[str, pathlib.Path]) -> bool:
+    """Checks if the ``paths`` argument is a path to an XML file.
+
+    Parameters
+    ----------
+    paths : Union[str, pathlib.Path]
+        A string or pathlib.Path represnting a file path.
+
+    Returns
+    -------
+    bool
+    """
+    if isinstance(paths, str):
+        return paths.split(".")[-1] == "xml"
+    elif isinstance(paths, pathlib.Path):
+        return paths.parts[-1].endswith("xml")
 
 
 def _parse_xml_for_nc_glob(xml_path: str) -> str:
