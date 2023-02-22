@@ -38,7 +38,7 @@ Paths = Union[
 
 
 def open_dataset(
-    path: Paths,
+    path: str,
     data_var: Optional[str] = None,
     add_bounds: bool = True,
     decode_times: bool = True,
