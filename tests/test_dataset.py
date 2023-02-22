@@ -5,6 +5,7 @@ import cftime
 import numpy as np
 import pytest
 import xarray as xr
+from lxml import etree
 
 from tests.fixtures import generate_dataset
 from xcdat.dataset import (
@@ -585,10 +586,10 @@ class TestOpenMfDataset:
     @pytest.fixture(autouse=True)
     def setUp(self, tmp_path):
         # Create temporary directory to save files.
-        dir = tmp_path / "input_data"
-        dir.mkdir()
-        self.file_path1 = f"{dir}/file1.nc"
-        self.file_path2 = f"{dir}/file2.nc"
+        self.dir = tmp_path / "input_data"
+        self.dir.mkdir()
+        self.file_path1 = f"{self.dir}/file1.nc"
+        self.file_path2 = f"{self.dir}/file2.nc"
 
     def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
@@ -624,6 +625,61 @@ class TestOpenMfDataset:
 
         expected = ds1.merge(ds2)
         assert result.identical(expected)
+
+    def test_raises_error_if_xml_does_not_have_root_direcory(self):
+        """
+        The structure of CDAT xml files (climate data markup language) is a dialect of xml files that have a defined set of attributes.
+        We only care that the xml file has a directory attribute – we can probably just return an error saying "the xml file provided does not have a root directory attribute" or something like that
+        XML probably isn't used that widely by the broad climate community, but it is used pretty widely by former CDAT users
+        """
+        ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds1.to_netcdf(self.file_path1)
+        ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds2 = ds2.rename_vars({"ts": "tas"})
+        ds2.to_netcdf(self.file_path2)
+
+        # Create the XML file
+        xml_path = f"{self.dir}/datasets.xml"
+        page = etree.Element("dataset")
+        doc = etree.ElementTree(page)
+        doc.write(xml_path, xml_declaration=True, encoding="utf-16")
+
+        with pytest.raises(KeyError):
+            open_mfdataset(xml_path, decode_times=True)
+
+    def test_opens_datasets_from_xml(self):
+        ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds1.to_netcdf(self.file_path1)
+        ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds2 = ds2.rename_vars({"ts": "tas"})
+        ds2.to_netcdf(self.file_path2)
+
+        # Create the XML file
+        xml_path = f"{self.dir}/datasets.xml"
+        page = etree.Element("dataset", directory=str(self.dir))
+        doc = etree.ElementTree(page)
+        doc.write(xml_path, xml_declaration=True, encoding="utf-16")
+
+        result = open_mfdataset(xml_path, decode_times=True)
+        expected = ds1.merge(ds2)
+
+        result.identical(expected)
+
+    def test_raises_error_if_directory_has_no_netcdf_files(self):
+        with pytest.raises(ValueError):
+            open_mfdataset(str(self.dir), decode_times=True)
+
+    def test_opens_netcdf_files_in_a_directory(self):
+        ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds1.to_netcdf(self.file_path1)
+        ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds2 = ds2.rename_vars({"ts": "tas"})
+        ds2.to_netcdf(self.file_path2)
+
+        result = open_mfdataset(str(self.dir), decode_times=True)
+        expected = ds1.merge(ds2)
+
+        result.identical(expected)
 
     def test_user_specified_callable_results_in_subsetting_dataset_on_time_slice(self):
         def callable(ds):
