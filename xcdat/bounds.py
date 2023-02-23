@@ -115,7 +115,7 @@ class BoundsAccessor:
             )
         )
 
-    def add_missing_bounds(self) -> xr.Dataset:
+    def add_missing_bounds(self, axes: List[CFAxisKey] = ["X", "Y"]) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
         This function loops through the Dataset's axes and attempts to adds
@@ -129,12 +129,16 @@ class BoundsAccessor:
              * Determined by attempting to map the coordinate variable's
              "bounds" attr (if set) to the bounds data variable of the same key.
 
+        Parameters
+        ----------
+        axes : List[str], optional
+            List of CF axes that function should operate on, default ["X", "Y"].
+
         Returns
         -------
         xr.Dataset
         """
         ds = self._dataset.copy()
-        axes = CF_ATTR_MAP.keys()
 
         for axis in axes:
             try:
