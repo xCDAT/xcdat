@@ -73,6 +73,16 @@ class TestAddMissingBounds:
         result = ds.bounds.add_missing_bounds()
         assert result.identical(self.ds_with_bnds)
 
+    def test_time_bounds_not_added_to_the_dataset_if_not_specified(self):
+        ds = self.ds_with_bnds.copy()
+        ds_no_time_bnds = ds.copy()
+
+        ds = ds.drop_vars(["time_bnds"])
+        ds_no_time_bnds = ds_no_time_bnds.drop_vars(["time_bnds"])
+
+        result = ds.bounds.add_missing_bounds()
+        assert result.identical(ds_no_time_bnds)
+
     def test_skips_adding_bounds_for_coords_that_are_1_dim_singleton(self):
         # Length <=1
         lon = xr.DataArray(
