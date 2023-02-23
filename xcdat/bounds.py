@@ -115,7 +115,7 @@ class BoundsAccessor:
             )
         )
 
-    def add_missing_bounds(self, width: float = 0.5) -> xr.Dataset:
+    def add_missing_bounds(self) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
         This function loops through the Dataset's axes and attempts to adds
@@ -128,12 +128,6 @@ class BoundsAccessor:
           4. Bounds must not already exist.
              * Determined by attempting to map the coordinate variable's
              "bounds" attr (if set) to the bounds data variable of the same key.
-
-        Parameters
-        ----------
-        width : float, optional
-            Width of the bounds relative to the position of the nearest points,
-            by default 0.5.
 
         Returns
         -------
@@ -156,7 +150,7 @@ class BoundsAccessor:
                     pass
 
                 try:
-                    bounds = self._create_bounds(axis, coord, width)
+                    bounds = self._create_bounds(axis, coord)
                     ds[bounds.name] = bounds
                     ds[coord.name].attrs["bounds"] = bounds.name
                 except ValueError:
@@ -229,7 +223,7 @@ class BoundsAccessor:
 
         return bounds
 
-    def add_bounds(self, axis: CFAxisKey, width: float = 0.5) -> xr.Dataset:
+    def add_bounds(self, axis: CFAxisKey) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
 
         This method loops over the axis's coordinate variables and attempts to
@@ -247,9 +241,6 @@ class BoundsAccessor:
         ----------
         axis : CFAxisKey
             The CF axis key ("X", "Y", "T", or "Z").
-        width : float, optional
-            Width of the bounds relative to the position of the nearest points,
-            by default 0.5.
 
         Returns
         -------
@@ -278,7 +269,7 @@ class BoundsAccessor:
 
                 continue
             except KeyError:
-                bounds = self._create_bounds(axis, coord, width)
+                bounds = self._create_bounds(axis, coord)
 
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
@@ -318,9 +309,7 @@ class BoundsAccessor:
 
         return list(set(keys))
 
-    def _create_bounds(
-        self, axis: CFAxisKey, coord_var: xr.DataArray, width: float
-    ) -> xr.DataArray:
+    def _create_bounds(self, axis: CFAxisKey, coord_var: xr.DataArray) -> xr.DataArray:
         """Creates bounds for an axis using its coordinate points.
 
         Parameters
@@ -329,8 +318,6 @@ class BoundsAccessor:
             The CF axis key ("X", "Y", "T" ,"Z").
         coord_var : xr.DataArray
             The coordinate variable for the axis.
-        width : float
-            Width of the bounds relative to the position of the nearest points.
 
         Returns
         -------
@@ -374,6 +361,9 @@ class BoundsAccessor:
         # to `timedelta` objects.
         if axis == "T" and issubclass(type(coord_var.values[0]), cftime.datetime):
             diffs = pd.to_timedelta(diffs)
+
+        # width parameter: determines bounds location relative to midpoints
+        width = 0.5
 
         # FIXME: These lines produces the warning: `PerformanceWarning:
         # Adding/subtracting object-dtype array to TimedeltaArray not
