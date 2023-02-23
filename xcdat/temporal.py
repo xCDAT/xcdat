@@ -153,11 +153,13 @@ class TemporalAccessor:
         Returns a Dataset with the average of a data variable and the time
         dimension removed.
 
-        This method is particularly useful for calculating the weighted averages
-        of monthly or yearly time series data because the number of days per
-        month/year can vary based on the calendar type, which can affect
-        weighting. For other frequencies, the distribution of weights will be
-        equal so ``weighted=True`` is the same as ``weighted=False``.
+        This method infers the time grouping frequency by checking the distance
+        between a set of upper and lower time bounds. This method is
+        particularly useful for calculating the weighted averages of monthly or
+        yearly time series data because the number of days per month/year can
+        vary based on the calendar type, which can affect weighting. For other
+        frequencies, the distribution of weights will be equal so
+        ``weighted=True`` is the same as ``weighted=False``.
 
         Parameters
         ----------
@@ -193,6 +195,7 @@ class TemporalAccessor:
         >>> ds_month = ds.temporal.average("ts")
         >>> ds_month.ts
         """
+        # Set the data variable related attributes (e.g., dim name, calendar)
         self._set_data_var_attrs(data_var)
 
         freq = self._infer_freq()
@@ -632,35 +635,34 @@ class TemporalAccessor:
             'drop_incomplete_djf': 'False'
         }
         """
-        # Set the class attributes based on data variable attributes and method
-        # arguments.
+        # 1. Set the attributes for this instance of `TemporalAccessor`.
+        # ----------------------------------------------------------------------
+        self._set_arg_attrs(
+            "departures", freq, weighted, reference_period, season_config
+        )
         self._set_data_var_attrs(data_var)
-        self._set_arg_attrs("departures", freq, weighted, season_config=season_config)
 
-        # Preprocess the dataset based on the method arguments.
+        # 2. Copy the original dataset and preprocess (if needed) for reuse.
+        # ----------------------------------------------------------------------
         ds = self._dataset.copy()
+
+        # Preprocess ahead of time to avoid needing to preprocess again when
+        # calling the group average or climatology APIs in step #3.
         ds = self._preprocess_dataset(ds)
 
-        # 1. Get the grouped average of the observation data variable.
+        # 3. Calculate the grouped average and climatology of the data variable.
+        # ----------------------------------------------------------------------
+        # The climatology and grouped average APIs are called on the copied
+        # dataset to create separate instances of the `TemporalAccessor` class.
+        # This is done to avoid overriding the attributes of the current
+        # instance of `TemporalAccessor` (set in step #1 above).
         ds_avg = ds.temporal.group_average(
-            data_var, self._freq, weighted, keep_weights, season_config=season_config
+            data_var,
+            freq,
+            weighted,
+            keep_weights,
+            season_config,
         )
-        dv_obs = ds_avg[data_var].copy()
-
-        # 2. Group the observation data variable by the departures frequency.
-        # This step allows us to perform xarray's grouped arithmetic to calculate
-        # departures.
-        self._labeled_time = self._label_time_coords(dv_obs[self.dim])
-        dv_obs_grouped = self._group_data(dv_obs)
-
-        # 3. Calculate the climatology of the data variable.
-        # The resulting time dimension is renamed to the labeled time
-        # dimension (e.g., "time" -> "season"). Renaming is necessary because
-        # the climatology is subtracted from the grouped observation data
-        # using xarray's grouped arithmetic, which requires dimension names
-        # to be aligned. Otherwise, this error is raised: "`ValueError:
-        # incompatible dimensions for a grouped binary operation: the group
-        # variable '<CHOSEN_FREQ>' is not a dimension on the other argument`".
         ds_climo = ds.temporal.climatology(
             data_var,
             freq,
@@ -669,15 +671,38 @@ class TemporalAccessor:
             reference_period,
             season_config,
         )
-        ds_climo = ds_climo.rename({self.dim: self._labeled_time.name})
-        dv_climo = ds_climo[data_var]
 
-        # 4. Calculate the departures for the data variable using the formula,
-        # grouped observation data - climatology.
+        # 4. Group the averaged data variable values by the time `freq`.
+        # ----------------------------------------------------------------------
+        # This step allows us to perform xarray's grouped arithmetic to
+        # calculate departures.
+        dv_obs = ds_avg[data_var].copy()
+        self._labeled_time = self._label_time_coords(dv_obs[self.dim])
+        dv_obs_grouped = self._group_data(dv_obs)
+
+        # 5. Align time dimension names using the labeled time dimension name.
+        # ----------------------------------------------------------------------
+        # The climatology's time dimension is renamed to the labeled time
+        # dimension in step #4 above (e.g., "time" -> "season"). xarray requires
+        # dimension names to be aligned to perform grouped arithmetic, which we
+        # use for calculating departures in step #5. Otherwise, this error is
+        # raised: "`ValueError: incompatible dimensions for a grouped binary
+        # operation: the group variable '<FREQ ARG>' is not a dimension on the
+        # other argument`".
+        dv_climo = ds_climo[data_var]
+        dv_climo = dv_climo.rename({self.dim: self._labeled_time.name})
+
+        # 6. Calculate the departures for the data variable.
+        # ----------------------------------------------------------------------
+        # departures = observation - climatology
         with xr.set_options(keep_attrs=True):
             dv_departs = dv_obs_grouped - dv_climo
             dv_departs = self._add_operation_attrs(dv_departs)
             ds_avg[data_var] = dv_departs
+
+            # The original time dimension name is restored after grouped
+            # arithmetic, so the labeled time dimension name is no longer needed
+            # and therefore dropped.
             ds_avg = ds_avg.drop_vars(self._labeled_time.name)
 
         if weighted and keep_weights:
