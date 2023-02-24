@@ -8,10 +8,12 @@ import cftime
 import numpy as np
 import pandas as pd
 import xarray as xr
+from xarray.coding.cftime_offsets import get_date_type
 
 from xcdat.axis import CF_ATTR_MAP, CFAxisKey, get_dim_coords
+from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
-from xcdat.spatial import _get_data_var
+from xcdat.temporal import _month_add
 
 logger = setup_custom_logger(__name__)
 
@@ -227,7 +229,9 @@ class BoundsAccessor:
 
         return bounds
 
-    def add_bounds(self, axis: CFAxisKey) -> xr.Dataset:
+    def add_bounds(
+        self, axis: CFAxisKey, bounds: Optional[xr.DataArray] = None
+    ) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
 
         This method loops over the axis's coordinate variables and attempts to
@@ -245,6 +249,8 @@ class BoundsAccessor:
         ----------
         axis : CFAxisKey
             The CF axis key ("X", "Y", "T", or "Z").
+        bounds : xr.DataArray, optional
+            DataArray of bounds to add
 
         Returns
         -------
@@ -273,7 +279,10 @@ class BoundsAccessor:
 
                 continue
             except KeyError:
-                bounds = self._create_bounds(axis, coord)
+                if bounds is not None:
+                    pass
+                else:
+                    bounds = self._create_bounds(axis, coord)
 
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
@@ -423,3 +432,62 @@ class BoundsAccessor:
             )
 
         get_dim_coords(self._dataset, axis)
+
+    def _get_monthly_time_bounds(self, end_of_month=False):
+        """Sets the time bounds to the start and end of the month
+        for each timestep (this corresponds to 00:00:00 on the first
+        of the month and 00:00:00 on the first of the subsequent month.
+
+        Parameters
+        ----------
+        end_of_month : bool, optional, default False
+            Flag to note that the timepoint is saved at the end of the monthly
+            interval (see Note).
+
+        Returns
+        -------
+        xr.DataArray
+            The monthly time bounds array
+
+        Note
+        ----
+        Some timepoints are saved at the end of the interval, e.g., Feb. 1 00:00
+        for the time interval Jan. 1 00:00 - Feb. 1 00:00. Since this routine
+        determines the month and year from the time vector, the bounds will be set
+        incorrectly if the timepoint is set to the end of the time interval. For these
+        cases, set end_of_month to True.
+
+        """
+        # get time axis and calendar
+        time = get_dim_coords(self._dataset, "T")
+        calendar = time.encoding["calendar"]
+
+        # get cftime class to create new cftime objects
+        cf_obj = get_date_type(calendar)
+
+        # loop over time values and compute bounds
+        time_bnds = []
+        for step in time.values:  # type: ignore
+            # if end of time interval and first day of year
+            # subtract one month so bounds will be calculated
+            # correctly
+            if (end_of_month) & (step.day < 2):
+                step = _month_add(step, -1, calendar)
+            # get year / month
+            year, month = step.year, step.month
+            # calculate bounds
+            l_bnd = cf_obj(year, month, 1, 0, 0)
+            u_bnd = _month_add(l_bnd, 1, calendar)
+            # store
+            time_bnds.append([l_bnd, u_bnd])
+
+        # create dataarray
+        time_bnds = xr.DataArray(  # type: ignore
+            name=f"{time.name}_bnds",
+            data=time_bnds,
+            coords=dict(time=time),
+            dims=[*time.dims, "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        return time_bnds
