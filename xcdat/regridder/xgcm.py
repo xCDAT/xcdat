@@ -1,4 +1,4 @@
-from typing import Any, Literal, Optional, Union, get_args
+from typing import Any, Dict, Literal, Optional, Union, get_args
 
 import xarray as xr
 from xgcm import Grid
@@ -18,9 +18,9 @@ class XGCMRegridder(BaseRegridder):
         output_grid: xr.Dataset,
         method: XGCMVerticalMethods = "linear",
         target_data: Optional[Union[str, xr.DataArray, None]] = None,
-        grid_positions: Optional[dict[str, str]] = None,
+        grid_positions: Optional[Dict[str, str]] = None,
         periodic: Optional[bool] = False,
-        extra_init_options: Optional[dict[str, Any]] = None,
+        extra_init_options: Optional[Dict[str, Any]] = None,
         **options,
     ):
         """Extension of ``xgcm`` regridder.
@@ -48,13 +48,13 @@ class XGCMRegridder(BaseRegridder):
                - conservative
         target_data : Union[str, xr.DataArray]
             Data to transform target data onto.
-        grid_positions : dict[str, str]
+        grid_positions : Dict[str, str]
             Mapping of dimension positions, if ``None`` then an attempt is made to derive this argument.
         periodic : bool
             Whether the grid is periodic.
-        extra_init_options : dict[str, Any]
+        extra_init_options : Dict[str, Any]
             Extra options passed to the ``xgcm.Grid`` constructor.
-        options : dict[str, Any]
+        options : Dict[str, Any]
             Extra options passed to the ``xgcm.Grid.trasnform`` method.
 
         Raises
@@ -163,7 +163,7 @@ class XGCMRegridder(BaseRegridder):
 
         grid = Grid(ds, coords=grid_coords, **self._extra_init_options)
 
-        target_data: str | xr.DataArray | None = None
+        target_data: Union[str, xr.DataArray, None] = None
 
         try:
             target_data = ds[self._target_data]
@@ -199,7 +199,7 @@ class XGCMRegridder(BaseRegridder):
 
         return output_ds
 
-    def _get_grid_coords(self) -> dict[str, dict[str, str]]:
+    def _get_grid_coords(self) -> Dict[str, Dict[str, str]]:
         if self._method == "conservative":
             raise RuntimeError(
                 "Conservative regridding requires a second point position, pass these manually"
