@@ -7,6 +7,7 @@ import xarray as xr
 
 from tests.fixtures import generate_dataset, lat_bnds, lon_bnds
 from xcdat.bounds import BoundsAccessor
+from xcdat.temporal import _month_add
 
 logger = logging.getLogger(__name__)
 
@@ -424,3 +425,54 @@ class TestAddBounds:
         )
 
         assert result.time_bnds.identical(expected_time_bnds)
+
+    def test_set_and_add_monthly_bounds(self):
+        # reference dataset has bounds
+        ds_with_bnds = self.ds_with_bnds.copy()
+        # create test dataset
+        ds = self.ds_with_bnds.copy()
+        # drop bounds to see if _get_monthly_time_bounds
+        # reproduces reference
+        ds = ds.drop("time_bnds")
+        # generate time bounds
+        time_bnds = ds.bounds._get_monthly_time_bounds()
+        # add bounds to test dataset
+        result = ds.bounds.add_bounds("T", bounds=time_bnds)
+
+        assert result.identical(ds_with_bnds)
+
+    def test_generate_monthly_bounds_for_eom_set_true(self):
+        # reference dataset
+        ds_with_bnds = self.ds_with_bnds.copy()
+        # get time axis
+        time = ds_with_bnds.time
+        # create new axis with time set to first day of month
+        # this is required for this test
+        new_time = []
+        for i, t in enumerate(time.values):
+            y = t.year
+            m = t.month
+            nt = cftime.DatetimeGregorian(y, m, 1, 0)
+            new_time.append(nt)
+        attrs = time.attrs
+        time = xr.DataArray(
+            name="time",
+            data=new_time,
+            coords=dict(time=time),
+            dims=[*time.dims],
+            attrs=attrs,
+        )
+        time.encoding = {"calendar": "standard"}
+        ds_with_bnds["time"] = time
+        # test dataset
+        ds = ds_with_bnds.drop("time_bnds")
+        # expect time bounds minus one month
+        expected_time_bnds = ds_with_bnds.time_bnds
+        lower = _month_add(expected_time_bnds[:, 0], -1, "standard")
+        upper = _month_add(expected_time_bnds[:, 1], -1, "standard")
+        expected_time_bnds[:, 0] = lower
+        expected_time_bnds[:, 1] = upper
+        # test bounds generation
+        result = ds.bounds._get_monthly_time_bounds(end_of_month=True)
+
+        assert result.identical(expected_time_bnds)

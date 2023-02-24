@@ -1669,3 +1669,76 @@ class TemporalAccessor:
                 data_var.attrs["custom_seasons"] = list(custom_seasons.keys())
 
         return data_var
+
+
+def _month_add(times, delta: int, calendar):
+    """Adds delta months from a cftime object or iterable of cftime objects.
+    The delta value can be positive or negative (for subtraction). Refer to
+    [1]_ for logic.
+
+    Parameters
+    ----------
+    times : cftime object or sequence of cftime objects
+        List or single time value
+
+    delta : int
+        Integer months to be added to times (can be positive or negative)
+
+    calendar : str
+        Calendar used for times. Supported calendars include "noleap",
+        "360_day", "365_day", "366_day", "gregorian", "proleptic_gregorian",
+        "julian", "all_leap", and "standard".
+
+    Returns
+    -------
+    cftime object or xr.DataArray of cftime objects
+        The times with delta months added.
+
+    References
+    ----------
+    [1] https://stackoverflow.com/a/4131114
+
+    """
+    # ensure iterable
+    try:
+        iter(times)
+        single_value = False
+    except TypeError:
+        times = [times]
+        single_value = True
+
+    if type(times) == xr.DataArray:
+        times = times.values
+
+    # create new array to store modified values
+    times_new = times.copy()
+
+    # get cftime class to create new cftime objects
+    cf_obj = get_date_type(calendar)
+
+    # loop over each time step to compute time + delta months
+    for i, step in enumerate(times):
+        # compute new month and year
+        month = step.month - 1 + delta
+        year = step.year + month // 12
+        month = month % 12 + 1
+        # re-use existing hour/minute/second/microsecond
+        hour = step.hour
+        minute = step.minute
+        second = step.second
+        microsecond = step.microsecond
+        # days in month
+        day = step.day
+        dim = cf_obj(year, month, 1).daysinmonth
+        # if day is greater than days in month
+        # use days in month as day
+        day = min(day, dim)
+        # create new cftime object
+        new_step = cf_obj(year, month, day, hour, minute, second, microsecond)
+        times_new[i] = new_step
+
+    # if single value, get rid of list
+    if single_value:
+        times_new = times_new[0]
+
+    return times_new
