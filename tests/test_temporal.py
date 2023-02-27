@@ -1826,6 +1826,91 @@ class TestDepartures:
 
         assert result.identical(expected)
 
+    def test_monthly_departures_relative_to_climatology_reference_period_with_same_output_freq(
+        self,
+    ):
+        ds = self.ds.copy()
+
+        result = ds.temporal.departures(
+            "ts",
+            "month",
+            weighted=True,
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            reference_period=("2000-01-01", "2000-06-01"),
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[0.0]], [[0.0]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-16T12:00:00.000000000",
+                            "2000-03-16T12:00:00.000000000",
+                            "2000-06-16T00:00:00.000000000",
+                            "2000-09-16T00:00:00.000000000",
+                            "2001-02-15T12:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "month",
+                "weighted": "True",
+            },
+        )
+        expected["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-02-01T00:00:00.000000000",
+                    ],
+                    [
+                        "2000-03-01T00:00:00.000000000",
+                        "2000-04-01T00:00:00.000000000",
+                    ],
+                    [
+                        "2000-06-01T00:00:00.000000000",
+                        "2000-07-01T00:00:00.000000000",
+                    ],
+                    [
+                        "2000-09-01T00:00:00.000000000",
+                        "2000-10-01T00:00:00.000000000",
+                    ],
+                    [
+                        "2001-02-01T00:00:00.000000000",
+                        "2001-03-01T00:00:00.000000000",
+                    ],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time", "bnds"],
+            attrs={
+                "xcdat_bounds": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
     def test_weighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
 

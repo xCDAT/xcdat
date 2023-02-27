@@ -557,8 +557,8 @@ class TemporalAccessor:
             The climatological reference period, which is a subset of the entire
             time series and used for calculating departures. This parameter
             accepts a tuple of strings in the format 'yyyy-mm-dd'. For example,
-            ``('1850-01-01', 1899-12-31')``. If no value is provided, the 
-            climatological reference period will be the full period covered by 
+            ``('1850-01-01', 1899-12-31')``. If no value is provided, the
+            climatological reference period will be the full period covered by
             the dataset.
         season_config: SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
@@ -660,13 +660,20 @@ class TemporalAccessor:
         # dataset to create separate instances of the `TemporalAccessor` class.
         # This is done to avoid overriding the attributes of the current
         # instance of `TemporalAccessor` (set in step #1 above).
-        ds_avg = ds.temporal.group_average(
-            data_var,
-            freq,
-            weighted,
-            keep_weights,
-            season_config,
-        )
+
+        # Group averaging is only required if the dataset's frequency (input)
+        # differs from the `freq` arg (output).
+        ds_obs = ds.copy()
+        inferred_freq = self._infer_freq()
+        if inferred_freq != freq:
+            ds_obs = ds_obs.temporal.group_average(
+                data_var,
+                freq,
+                weighted,
+                keep_weights,
+                season_config,
+            )
+
         ds_climo = ds.temporal.climatology(
             data_var,
             freq,
@@ -680,7 +687,7 @@ class TemporalAccessor:
         # ----------------------------------------------------------------------
         # This step allows us to perform xarray's grouped arithmetic to
         # calculate departures.
-        dv_obs = ds_avg[data_var].copy()
+        dv_obs = ds_obs[data_var].copy()
         self._labeled_time = self._label_time_coords(dv_obs[self.dim])
         dv_obs_grouped = self._group_data(dv_obs)
 
@@ -702,18 +709,18 @@ class TemporalAccessor:
         with xr.set_options(keep_attrs=True):
             dv_departs = dv_obs_grouped - dv_climo
             dv_departs = self._add_operation_attrs(dv_departs)
-            ds_avg[data_var] = dv_departs
+            ds_obs[data_var] = dv_departs
 
             # The original time dimension name is restored after grouped
             # arithmetic, so the labeled time dimension name is no longer needed
             # and therefore dropped.
-            ds_avg = ds_avg.drop_vars(self._labeled_time.name)
+            ds_obs = ds_obs.drop_vars(self._labeled_time.name)
 
         if weighted and keep_weights:
             self._weights = ds_climo.time_wts
-            ds_avg = self._keep_weights(ds_avg)
+            ds_obs = self._keep_weights(ds_obs)
 
-        return ds_avg
+        return ds_obs
 
     def _infer_freq(self) -> Frequency:
         """Infers the time frequency from the coordinates.
