@@ -997,10 +997,6 @@ class TemporalAccessor:
         predefined_months = list(MONTH_INT_TO_STR.values())
         input_months = list(chain.from_iterable(custom_seasons))
 
-        if len(input_months) != len(predefined_months):
-            raise ValueError(
-                "Exactly 12 months were not passed in the list of custom seasons."
-            )
         if len(input_months) != len(set(input_months)):
             raise ValueError(
                 "Duplicate month(s) were found in the list of custom seasons."
