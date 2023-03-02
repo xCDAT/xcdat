@@ -7,5 +7,5 @@ This page includes relevant xCDAT presentations, demos, and papers.
     :maxdepth: 2
     :hidden:
 
-    demos/1-25-23-cwss-seminar/introduction-to-xcdat.ipynb
     AMS 2023 Abstract <https://ams.confex.com/ams/103ANNUAL/meetingapp.cgi/Paper/412648>
+    demos/1-25-23-cwss-seminar/introduction-to-xcdat.ipynb
