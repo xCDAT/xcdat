@@ -172,6 +172,7 @@ See `LICENSE <LICENSE>`_ for details
    Getting Started <getting-started>
    xCDAT on HPC / Jupyter <getting-started-hpc-jupyter>
    Gallery <gallery>
+   Presentations and Demos <demos>
    API Reference <api>
    Changelog <history>
    Frequently Asked Questions <faqs>
