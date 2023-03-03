@@ -1509,11 +1509,17 @@ class TemporalAccessor:
         custom_seasons = self._season_config["custom_seasons"]
 
         span_months: List[int] = []
+
+        # Loop over the custom seasons and get the list of months for the
+        # current season. Convert those months to their integer representations.
+        # If 1 ("Jan") is in the list of months and it is NOT the first element,
+        # then get all elements before it (aka the spanning months).
         for months in custom_seasons.values():  # type: ignore
             month_nums = [MONTH_STR_TO_INT[month] for month in months]
             try:
                 jan_index = month_nums.index(1)
-                span_months = span_months + month_nums[:jan_index]
+                if jan_index != 0:
+                    span_months = span_months + month_nums[:jan_index]
                 break
             except ValueError:
                 continue
