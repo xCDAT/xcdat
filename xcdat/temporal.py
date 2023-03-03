@@ -104,6 +104,7 @@ MONTH_INT_TO_STR: Dict[int, str] = {
     11: "Nov",
     12: "Dec",
 }
+MONTH_STR_TO_INT = {v: k for k, v in MONTH_INT_TO_STR.items()}
 
 # A dictionary mapping pre-defined seasons to their middle month. This
 # dictionary is used during the creation of datetime objects, which don't
@@ -1421,6 +1422,7 @@ class TemporalAccessor:
 
         if custom_seasons is not None:
             df_new = self._map_months_to_custom_seasons(df_new)
+            df_new = self._shift_spanning_months(df_new)
         else:
             if dec_mode == "DJF":
                 df_new = self._shift_decembers(df_new)
@@ -1463,6 +1465,64 @@ class TemporalAccessor:
 
         return df_new
 
+    def _shift_spanning_months(self, df: pd.DataFrame) -> pd.DataFrame:
+        """Shifts months in seasons spanning the previous year to the next year.
+
+        A season spans the previous year if it includes the month of "Jan" and
+        "Jan" is not the first month of the season. For example, let's say we
+        define ``custom_seasons = ["Nov", "Dec", "Jan", "Feb", "Mar"]`` to
+        represent the southern hemisphere growing seasons, "NDJFM".
+          - ["Nov", "Dec"] are from the previous year since they are listed
+            before "Jan".
+          - ["Jan", "Feb", "Mar"] are from the current year.
+
+        Therefore, we need to shift ["Nov", "Dec"] a year forward in order for
+        xarray to group seasons correctly. Refer to the examples section below
+        for a visual demonstration.
+
+        Parameters
+        ----------
+        df : pd.Dataframe
+            The DataFrame of xarray datetime components produced using the
+            "season" frequency".
+
+        Returns
+        -------
+        pd.DataFrame
+            The DataFrame of xarray dataetime copmonents with months spanning
+            previous year shifted over to the next year.
+
+        Examples
+        --------
+
+        Before and after shifting months for "NDJFM" seasons:
+
+        >>> # Before shifting months
+        >>> [(2000, "NDJFM", 11), (2000, "NDJFM", 12), (2001, "NDJFM", 1),
+        >>>  (2001, "NDJFM", 2), (2001, "NDJFM", 3)]
+
+        >>> # After shifting months
+        >>> [(2001, "NDJFM", 11), (2001, "NDJFM", 12), (2001, "NDJFM", 1),
+        >>>  (2001, "NDJFM", 1), (2001, "NDJFM", 2)]
+        """
+        df_new = df.copy()
+        custom_seasons = self._season_config["custom_seasons"]
+
+        span_months: List[int] = []
+        for months in custom_seasons.values():  # type: ignore
+            month_nums = [MONTH_STR_TO_INT[month] for month in months]
+            try:
+                jan_index = month_nums.index(1)
+                span_months = span_months + month_nums[:jan_index]
+                break
+            except ValueError:
+                continue
+
+        if len(span_months) > 0:
+            df_new.loc[df_new["month"].isin(span_months), "year"] = df_new["year"] + 1
+
+        return df_new
+
     def _shift_decembers(self, df_season: pd.DataFrame) -> pd.DataFrame:
         """Shifts Decembers over to the next year for "DJF" seasons in-place.
 
@@ -1496,7 +1556,6 @@ class TemporalAccessor:
         >>> # "DJF" (shifted Decembers)
         >>> [(2000, "DJF", 1), (2000, "DJF", 2), (2001, "DJF", 12),
         >>>  (2001, "DJF", 1), (2001, "DJF", 2)]
-
         """
         df_season.loc[df_season["month"] == 12, "year"] = df_season["year"] + 1
 
