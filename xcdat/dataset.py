@@ -41,7 +41,7 @@ def open_dataset(
     path: str,
     data_var: Optional[str] = None,
     add_bounds: bool = True,
-    axes: Optional[List[str]] = ["X", "Y"],
+    bounds_axes: Optional[List[str]] = ["X", "Y"],
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -60,7 +60,7 @@ def open_dataset(
         If True, add bounds for supported axes (X, Y, T) if they are missing in
         the Dataset, by default True. Bounds are required for many xCDAT
         features.
-    axes : List[str], optional
+    bounds_axes : List[str], optional
         List of CF axes to add bounds to (if missing), default ["X", "Y"].
     decode_times: bool, optional
         If True, attempt to decode times encoded in the standard NetCDF
@@ -111,7 +111,9 @@ def open_dataset(
         except KeyError as err:
             logger.warning(err)
 
-    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, axes, lon_orient)
+    ds = _postprocess_dataset(
+        ds, data_var, center_times, add_bounds, bounds_axes, lon_orient
+    )
 
     return ds
 
@@ -120,7 +122,7 @@ def open_mfdataset(
     paths: Paths,
     data_var: Optional[str] = None,
     add_bounds: bool = True,
-    axes: Optional[List[str]] = ["X", "Y"],
+    bounds_axes: Optional[List[str]] = ["X", "Y"],
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -143,7 +145,7 @@ def open_mfdataset(
         If True, add bounds for supported axes (X, Y, T) if they are missing in
         the Dataset, by default True. Bounds are required for many xCDAT
         features.
-    axes : List[str], optional
+    bounds_axes : List[str], optional
         List of CF axes to add bounds to (if missing), default ["X", "Y"].
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
@@ -227,7 +229,9 @@ def open_mfdataset(
         **kwargs,  # type: ignore
     )
 
-    ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, axes, lon_orient)
+    ds = _postprocess_dataset(
+        ds, data_var, center_times, add_bounds, bounds_axes, lon_orient
+    )
 
     return ds
 
@@ -516,7 +520,7 @@ def _postprocess_dataset(
     data_var: Optional[str] = None,
     center_times: bool = False,
     add_bounds: bool = True,
-    axes: Optional[List[str]] = ["X", "Y"],
+    bounds_axes: Optional[List[str]] = ["X", "Y"],
     lon_orient: Optional[Tuple[float, float]] = None,
 ) -> xr.Dataset:
     """Post-processes a Dataset object.
@@ -565,7 +569,7 @@ def _postprocess_dataset(
         ds = center_times_func(dataset)
 
     if add_bounds:
-        ds = ds.bounds.add_missing_bounds(axes=axes)
+        ds = ds.bounds.add_missing_bounds(axes=bounds_axes)
 
     if lon_orient is not None:
         ds = swap_lon_axis(ds, to=lon_orient, sort_ascending=True)

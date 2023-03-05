@@ -2284,18 +2284,35 @@ class Test_PostProcessDataset:
         with pytest.raises(KeyError):
             _postprocess_dataset(ds, center_times=True)
 
-    def test_adds_missing_lat_and_lon_bounds(self):
+    def test_adds_missing_lat_and_lon_bounds_does_not_add_time_bounds(self):
         # Create expected dataset without bounds.
         ds = generate_dataset(decode_times=True, cf_compliant=False, has_bounds=False)
 
         data_vars = list(ds.data_vars.keys())
         assert "lat_bnds" not in data_vars
         assert "lon_bnds" not in data_vars
+        assert "time_bnds" not in data_vars
 
         result = _postprocess_dataset(ds, add_bounds=True)
         result_data_vars = list(result.data_vars.keys())
         assert "lat_bnds" in result_data_vars
         assert "lon_bnds" in result_data_vars
+        assert "time_bnds" not in result_data_vars
+
+    def test_adds_missing_lat_and_lon_and_time_bounds(self):
+        # Create expected dataset without bounds.
+        ds = generate_dataset(decode_times=True, cf_compliant=False, has_bounds=False)
+
+        data_vars = list(ds.data_vars.keys())
+        assert "lat_bnds" not in data_vars
+        assert "lon_bnds" not in data_vars
+        assert "time_bnds" not in data_vars
+
+        result = _postprocess_dataset(ds, add_bounds=True, bounds_axes=["X", "Y", "T"])
+        result_data_vars = list(result.data_vars.keys())
+        assert "lat_bnds" in result_data_vars
+        assert "lon_bnds" in result_data_vars
+        assert "time_bnds" in result_data_vars
 
     def test_orients_longitude_bounds_from_180_to_360_and_sorts_with_prime_meridian_cell(
         self,
