@@ -87,12 +87,13 @@ class TestAddMissingBounds:
 
     def test_time_bounds_not_added_to_the_dataset_if_not_specified(self):
         ds = self.ds_with_bnds.copy()
+        # generate datasets without time bounds
         ds_no_time_bnds = ds.copy()
-
-        ds = ds.drop_vars(["time_bnds"])
         ds_no_time_bnds = ds_no_time_bnds.drop_vars(["time_bnds"])
-
+        ds = ds.drop_vars(["time_bnds"])
+        # add bounds
         result = ds.bounds.add_missing_bounds()
+        # ensure time bounds are not added
         assert result.identical(ds_no_time_bnds)
 
     def test_skips_adding_bounds_for_coords_that_are_1_dim_singleton(self):
@@ -294,6 +295,7 @@ class TestAddBounds:
         self.ds_with_bnds = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
+        # generate datasets of varying temporal frequencies
         self.ds_yearly_with_bnds = generate_dataset_by_frequency(freq="year")
         self.ds_daily_with_bnds = generate_dataset_by_frequency(freq="day")
         self.ds_hourly_with_bnds = generate_dataset_by_frequency(freq="hour")
