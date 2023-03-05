@@ -11,7 +11,13 @@ from tests.fixtures import (
     lat_bnds,
     lon_bnds,
 )
-from xcdat.bounds import BoundsAccessor
+from xcdat.bounds import (
+    BoundsAccessor,
+    get_daily_time_bounds,
+    get_monthly_time_bounds,
+    get_time_bounds,
+    get_yearly_time_bounds,
+)
 from xcdat.temporal import _month_add
 
 logger = logging.getLogger(__name__)
@@ -291,6 +297,7 @@ class TestAddBounds:
         self.ds_yearly_with_bnds = generate_dataset_by_frequency(freq="year")
         self.ds_daily_with_bnds = generate_dataset_by_frequency(freq="day")
         self.ds_hourly_with_bnds = generate_dataset_by_frequency(freq="hour")
+        self.ds_subhourly_with_bnds = generate_dataset_by_frequency(freq="subhour")
 
     def test_raises_error_for_singleton_coords(self):
         # Length <=1
@@ -401,12 +408,9 @@ class TestAddBounds:
                 ],
             ),
             dims=["time"],
-            attrs={
-                "axis": "T",
-                "long_name": "time",
-                "standard_name": "time",
-            },
+            attrs={"axis": "T", "long_name": "time", "standard_name": "time"},
         )
+        ds["time"].encoding["calendar"] = "noleap"
 
         result = ds.bounds.add_bounds("T")
         expected_time_bnds = xr.DataArray(
@@ -414,16 +418,16 @@ class TestAddBounds:
             data=np.array(
                 [
                     [
-                        cftime.DatetimeNoLeap(1849, 12, 16, 12),
-                        cftime.DatetimeNoLeap(1850, 1, 16, 12),
+                        cftime.DatetimeNoLeap(1850, 1, 1),
+                        cftime.DatetimeNoLeap(1850, 2, 1),
                     ],
                     [
-                        cftime.DatetimeNoLeap(1850, 1, 16, 12),
-                        cftime.DatetimeNoLeap(1850, 2, 15, 0),
+                        cftime.DatetimeNoLeap(1850, 2, 1),
+                        cftime.DatetimeNoLeap(1850, 3, 1),
                     ],
                     [
-                        cftime.DatetimeNoLeap(1850, 2, 15, 0),
-                        cftime.DatetimeNoLeap(1850, 3, 15, 0),
+                        cftime.DatetimeNoLeap(1850, 3, 1),
+                        cftime.DatetimeNoLeap(1850, 4, 1),
                     ],
                 ],
             ),
@@ -439,11 +443,11 @@ class TestAddBounds:
         ds_with_bnds = self.ds_with_bnds.copy()
         # create test dataset
         ds = self.ds_with_bnds.copy()
-        # drop bounds to see if _get_monthly_time_bounds
+        # drop bounds to see if get_monthly_time_bounds
         # reproduces reference
         ds = ds.drop_vars("time_bnds")
         # generate time bounds
-        time_bnds = ds.bounds._get_monthly_time_bounds()
+        time_bnds = get_monthly_time_bounds(ds.time)
         # add bounds to test dataset
         result = ds.bounds.add_bounds("T", bounds=time_bnds)
 
@@ -454,11 +458,11 @@ class TestAddBounds:
         ds_with_bnds = self.ds_yearly_with_bnds.copy()
         # create test dataset
         ds = self.ds_yearly_with_bnds.copy()
-        # drop bounds to see if _get_monthly_time_bounds
+        # drop bounds to see if get_yearly_time_bounds
         # reproduces reference
         ds = ds.drop_vars("time_bnds")
         # generate time bounds
-        time_bnds = ds.bounds._get_yearly_time_bounds()
+        time_bnds = get_yearly_time_bounds(ds.time)
         # add bounds to test dataset
         result = ds.bounds.add_bounds("T", bounds=time_bnds)
 
@@ -469,11 +473,11 @@ class TestAddBounds:
         ds_with_bnds = self.ds_daily_with_bnds.copy()
         # create test dataset
         ds = self.ds_daily_with_bnds.copy()
-        # drop bounds to see if _get_monthly_time_bounds
+        # drop bounds to see if get_daily_time_bounds
         # reproduces reference
         ds = ds.drop_vars("time_bnds")
         # generate time bounds
-        time_bnds = ds.bounds._get_daily_time_bounds()
+        time_bnds = get_daily_time_bounds(ds.time)
         # add bounds to test dataset
         result = ds.bounds.add_bounds("T", bounds=time_bnds)
 
@@ -484,11 +488,11 @@ class TestAddBounds:
         ds_with_bnds = self.ds_hourly_with_bnds.copy()
         # create test dataset
         ds = self.ds_hourly_with_bnds.copy()
-        # drop bounds to see if _get_monthly_time_bounds
+        # drop bounds to see if get_daily_time_bounds
         # reproduces reference
         ds = ds.drop_vars("time_bnds")
         # generate time bounds
-        time_bnds = ds.bounds._get_daily_time_bounds(frequency=24)
+        time_bnds = get_daily_time_bounds(ds.time, frequency=24)
         # add bounds to test dataset
         result = ds.bounds.add_bounds("T", bounds=time_bnds)
 
@@ -526,6 +530,36 @@ class TestAddBounds:
         expected_time_bnds[:, 0] = lower
         expected_time_bnds[:, 1] = upper
         # test bounds generation
-        result = ds.bounds._get_monthly_time_bounds(end_of_month=True)
+        result = get_monthly_time_bounds(ds.time, end_of_month=True)
 
         assert result.identical(expected_time_bnds)
+
+    def test_generic_get_time_bounds_function(self):
+        # get reference datasets
+        ds_subhrly_with_bnds = self.ds_subhourly_with_bnds.copy()
+        ds_hrly_with_bnds = self.ds_hourly_with_bnds.copy()
+        ds_daily_with_bnds = self.ds_daily_with_bnds.copy()
+        ds_monthly_with_bnds = self.ds_with_bnds.copy()
+        ds_yearly_with_bnds = self.ds_yearly_with_bnds.copy()
+
+        # drop bounds for testing
+        ds_subhrly_wo_bnds = ds_subhrly_with_bnds.drop_vars("time_bnds")
+        ds_hrly_wo_bnds = ds_hrly_with_bnds.drop_vars("time_bnds")
+        ds_daily_wo_bnds = ds_daily_with_bnds.drop_vars("time_bnds")
+        ds_monthly_wo_bnds = ds_monthly_with_bnds.drop_vars("time_bnds")
+        ds_yearly_wo_bnds = ds_yearly_with_bnds.drop_vars("time_bnds")
+
+        # test adding bounds
+        hourly_bounds = get_time_bounds(ds_hrly_wo_bnds.time)
+        daily_bounds = get_time_bounds(ds_daily_wo_bnds.time)
+        monthly_bounds = get_time_bounds(ds_monthly_wo_bnds.time)
+        yearly_bounds = get_time_bounds(ds_yearly_wo_bnds.time)
+        # sub hourly data is not supported
+        with pytest.raises(ValueError):
+            get_time_bounds(ds_subhrly_wo_bnds.time)
+
+        # ensure identical
+        assert hourly_bounds.identical(ds_hrly_with_bnds.time_bnds)
+        assert daily_bounds.identical(ds_daily_with_bnds.time_bnds)
+        assert monthly_bounds.identical(ds_monthly_with_bnds.time_bnds)
+        assert yearly_bounds.identical(ds_yearly_with_bnds.time_bnds)

@@ -198,7 +198,7 @@ class TemporalAccessor:
         # Set the data variable related attributes (e.g., dim name, calendar)
         self._set_data_var_attrs(data_var)
 
-        freq = self._infer_freq()
+        freq = _infer_freq(self._dataset[self.dim])
 
         return self._averager(
             data_var, "average", freq, weighted=weighted, keep_weights=keep_weights
@@ -721,34 +721,6 @@ class TemporalAccessor:
             ds_obs = self._keep_weights(ds_obs)
 
         return ds_obs
-
-    def _infer_freq(self) -> Frequency:
-        """Infers the time frequency from the coordinates.
-
-        This method infers the time frequency from the coordinates by
-        calculating the minimum delta and comparing it against a set of
-        conditionals.
-
-        The native ``xr.infer_freq()`` method does not work for all cases
-        because the frequency can be irregular (e.g., different hour
-        measurements), which ends up returning None.
-
-        Returns
-        -------
-        Frequency
-            The time frequency.
-        """
-        time_coords = self._dataset[self.dim]
-        min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
-
-        if min_delta < pd.Timedelta(days=1):
-            return "hour"
-        elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=28):
-            return "day"
-        elif min_delta >= pd.Timedelta(days=28) and min_delta < pd.Timedelta(days=365):
-            return "month"
-        else:
-            return "year"
 
     def _averager(
         self,
@@ -1742,3 +1714,36 @@ def _month_add(times, delta: int, calendar):
         times_new = times_new[0]
 
     return times_new
+
+
+def _infer_freq(time_coords: xr.DataArray) -> Frequency:
+    """Infers the time frequency from the coordinates.
+
+    This method infers the time frequency from the coordinates by
+    calculating the minimum delta and comparing it against a set of
+    conditionals.
+
+    The native ``xr.infer_freq()`` method does not work for all cases
+    because the frequency can be irregular (e.g., different hour
+    measurements), which ends up returning None.
+
+    Parameters
+    ----------
+    time_coords : xr.DataArray
+        A DataArray for the time dimension coordinate variable.
+
+    Returns
+    -------
+    Frequency
+        The time frequency.
+    """
+    min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
+
+    if min_delta < pd.Timedelta(days=1):
+        return "hour"
+    elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=28):
+        return "day"
+    elif min_delta >= pd.Timedelta(days=28) and min_delta < pd.Timedelta(days=365):
+        return "month"
+    else:
+        return "year"

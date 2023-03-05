@@ -90,6 +90,22 @@ time_hourly = xr.DataArray(
         "standard_name": "time",
     },
 )
+time_subhourly = xr.DataArray(
+    data=np.array(
+        [
+            cftime.DatetimeGregorian(2000, 1, 1, 0, 15, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 1, 1, 0, 45, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 1, 2, 1, 15, 0, 0, has_year_zero=False),
+        ],
+        dtype=object,
+    ),
+    dims=["time"],
+    attrs={
+        "axis": "T",
+        "long_name": "time",
+        "standard_name": "time",
+    },
+)
 time_encoded = xr.DataArray(
     data=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
     dims=["time"],
@@ -162,6 +178,30 @@ time_bnds_hourly = xr.DataArray(
             [
                 cftime.DatetimeGregorian(2000, 1, 1, 2, 0, 0, 0, has_year_zero=False),
                 cftime.DatetimeGregorian(2000, 1, 1, 3, 0, 0, 0, has_year_zero=False),
+            ],
+        ],
+        dtype=object,
+    ),
+    dims=["time", "bnds"],
+    attrs={
+        "xcdat_bounds": "True",
+    },
+)
+time_bnds_subhourly = xr.DataArray(
+    name="time_bnds",
+    data=np.array(
+        [
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 30, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 30, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 1, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 1, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 1, 30, 0, 0, has_year_zero=False),
             ],
         ],
         dtype=object,
@@ -406,8 +446,8 @@ def generate_dataset_by_frequency(freq: str = "month") -> xr.Dataset:
     Parameters
     ----------
     freq : str, optional
-        Frequency of time step (and bounds). Options include hour, day,
-        month, and year. Default is 'month'.
+        Frequency of time step (and bounds). Options include subhour, hour,
+        day, month, and year. Default is 'month'.
 
     Returns
     -------
@@ -427,6 +467,9 @@ def generate_dataset_by_frequency(freq: str = "month") -> xr.Dataset:
     if freq == "hour":
         time = time_hourly.copy()
         time_bnds = time_bnds_hourly.copy()
+    if freq == "subhour":
+        time = time_subhourly.copy()
+        time_bnds = time_bnds_subhourly.copy()
 
     # Create dataset
     ds = xr.Dataset(
