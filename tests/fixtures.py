@@ -369,23 +369,13 @@ def generate_dataset(
     ----------
     decode_times : bool
         If True, represent time coordinates `cftime` objects. If False,
-        represent time coordinates as numbers. Note that
-        decode_times = False only works with monthly time steps (i.e.,
-        freq='month').
+        represent time coordinates as numbers.
     cf_compliant : bool
         If True, use CF compliant time units ("days since ..."). If False,
         use non-CF compliant time units ("months since ...").
     has_bounds : bool
         Include bounds for coordinates. This also adds the "bounds" attribute
         to existing coordinates to link them to their respective bounds.
-    freq : str
-        Frequency of time step (and bounds). Options include hour, day,
-        month, and year. Default is 'month'.
-
-    Raises
-    ------
-    ValueError
-        If an incompatible ``freq`` argument is passed.
 
     Returns
     -------
@@ -440,8 +430,9 @@ def generate_dataset(
 
 
 def generate_dataset_by_frequency(freq: str = "month") -> xr.Dataset:
-    """Generates a dataset using coordinate and data variable fixtures.
-    The generated dataset is decoded, cf-compliant, and includes bounds.
+    """Generates a dataset of a given temporal frequency using coordinate
+    and data variable fixtures. The generated dataset is decoded,
+    cf-compliant, and includes bounds.
 
     Parameters
     ----------

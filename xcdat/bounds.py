@@ -348,8 +348,8 @@ class BoundsAccessor:
         Notes
         -----
         Based on [1]_ ``iris.coords._guess_bounds`` and [2]_ ``cf_xarray.accessor.add_bounds.``
-        For temporal coordinates `_create_bounds` will attempt to set the bounds to the start
-        and end of each time step's period. Time axes are expected to be composed of `cftime`
+        For temporal coordinates ``_create_bounds`` will attempt to set the bounds to the start
+        and end of each time step's period. Time axes are expected to be composed of ``cftime``
         objects.
 
         References
