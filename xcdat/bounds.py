@@ -231,9 +231,7 @@ class BoundsAccessor:
 
         return bounds
 
-    def add_bounds(
-        self, axis: CFAxisKey, bounds: Optional[xr.DataArray] = None
-    ) -> xr.Dataset:
+    def add_bounds(self, axis: CFAxisKey) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
 
         This method loops over the axis's coordinate variables and attempts to
@@ -252,8 +250,6 @@ class BoundsAccessor:
         ----------
         axis : CFAxisKey
             The CF axis key ("X", "Y", "T", or "Z").
-        bounds : xr.DataArray, optional
-            DataArray of bounds to add
 
         Returns
         -------
@@ -282,10 +278,7 @@ class BoundsAccessor:
 
                 continue
             except KeyError:
-                if bounds is not None:
-                    pass
-                else:
-                    bounds = self._create_bounds(axis, coord)
+                bounds = self._create_bounds(axis, coord)
 
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
