@@ -395,7 +395,7 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str:
 
     Parameters
     ----------
-    xml_path : str
+    xml_path : Union[str, pathlib.Path]
         The CDML XML file path.
 
     Returns
