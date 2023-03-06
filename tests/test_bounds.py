@@ -440,7 +440,7 @@ class TestAddBounds:
 
         assert result.time_bnds.identical(expected_time_bnds)
 
-    def test_set_and_add_monthly_bounds(self):
+    def test_get_monthly_bounds(self):
         # reference dataset has bounds
         ds_with_bnds = self.ds_with_bnds.copy()
         # create test dataset
@@ -449,13 +449,11 @@ class TestAddBounds:
         # reproduces reference
         ds = ds.drop_vars("time_bnds")
         # generate time bounds
-        time_bnds = get_monthly_time_bounds(ds.time)
-        # add bounds to test dataset
-        result = ds.bounds.add_bounds("T", bounds=time_bnds)
+        result = get_monthly_time_bounds(ds.time)
 
-        assert result.identical(ds_with_bnds)
+        assert result.identical(ds_with_bnds.time_bnds)
 
-    def test_set_and_add_yearly_bounds(self):
+    def test_get_yearly_bounds(self):
         # reference dataset has bounds
         ds_with_bnds = self.ds_yearly_with_bnds.copy()
         # create test dataset
@@ -464,13 +462,11 @@ class TestAddBounds:
         # reproduces reference
         ds = ds.drop_vars("time_bnds")
         # generate time bounds
-        time_bnds = get_yearly_time_bounds(ds.time)
-        # add bounds to test dataset
-        result = ds.bounds.add_bounds("T", bounds=time_bnds)
+        result = get_yearly_time_bounds(ds.time)
 
-        assert result.identical(ds_with_bnds)
+        assert result.identical(ds_with_bnds.time_bnds)
 
-    def test_set_and_add_daily_bounds(self):
+    def test_get_daily_bounds(self):
         # reference dataset has bounds
         ds_with_bnds = self.ds_daily_with_bnds.copy()
         # create test dataset
@@ -479,13 +475,11 @@ class TestAddBounds:
         # reproduces reference
         ds = ds.drop_vars("time_bnds")
         # generate time bounds
-        time_bnds = get_daily_time_bounds(ds.time)
-        # add bounds to test dataset
-        result = ds.bounds.add_bounds("T", bounds=time_bnds)
+        result = get_daily_time_bounds(ds.time)
 
-        assert result.identical(ds_with_bnds)
+        assert result.identical(ds_with_bnds.time_bnds)
 
-    def test_set_and_add_hourly_bounds(self):
+    def test_get_hourly_bounds(self):
         # reference dataset has bounds
         ds_with_bnds = self.ds_hourly_with_bnds.copy()
         # create test dataset
@@ -494,11 +488,9 @@ class TestAddBounds:
         # reproduces reference
         ds = ds.drop_vars("time_bnds")
         # generate time bounds
-        time_bnds = get_daily_time_bounds(ds.time, frequency=24)
-        # add bounds to test dataset
-        result = ds.bounds.add_bounds("T", bounds=time_bnds)
+        result = get_daily_time_bounds(ds.time, frequency=24)
 
-        assert result.identical(ds_with_bnds)
+        assert result.identical(ds_with_bnds.time_bnds)
 
     def test_generate_monthly_bounds_for_eom_set_true(self):
         # reference dataset
