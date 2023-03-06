@@ -626,7 +626,7 @@ class TestOpenMfDataset:
         expected = ds1.merge(ds2)
         assert result.identical(expected)
 
-    def test_raises_error_if_xml_does_not_have_root_direcory(self):
+    def test_raises_error_if_xml_does_not_have_root_directory_attr(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
         ds1.to_netcdf(self.file_path1)
         ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
