@@ -207,7 +207,7 @@ def open_mfdataset(
     """
     if not isinstance(paths, list):
         if _is_paths_to_xml(paths):
-            paths = _parse_xml_for_nc_glob(paths)  # type: ignore
+            paths = _parse_xml_for_nc_glob(paths)
         elif os.path.isdir(paths):
             paths = _parse_dir_for_nc_glob(paths)  # type: ignore
 
