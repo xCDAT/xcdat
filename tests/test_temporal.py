@@ -581,7 +581,7 @@ class TestGroupAverage:
         result = ds.temporal.group_average(
             "ts",
             "season",
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
         )
         expected = ds.copy()
         # Drop the incomplete DJF seasons
@@ -619,7 +619,7 @@ class TestGroupAverage:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
+                "drop_incomplete_seasons": "True",
             },
         )
 
@@ -633,7 +633,7 @@ class TestGroupAverage:
         result = ds.temporal.group_average(
             "ts",
             "season",
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": False},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": False},
         )
         expected = ds.copy()
         expected = expected.drop_dims("time")
@@ -670,7 +670,7 @@ class TestGroupAverage:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "False",
+                "drop_incomplete_seasons": "False",
             },
         )
 
@@ -735,6 +735,35 @@ class TestGroupAverage:
 
         assert result.identical(expected)
 
+    def test_raises_error_with_incorrect_custom_seasons_argument(self):
+        # Test raises error with non-3 letter strings
+        with pytest.raises(ValueError):
+            custom_seasons = [
+                ["J", "Feb", "Mar"],
+                ["Apr", "May", "Jun"],
+                ["Jul", "Aug", "Sep"],
+                ["Oct", "Nov", "Dec"],
+            ]
+            self.ds.temporal.group_average(
+                "ts",
+                "season",
+                season_config={"custom_seasons": custom_seasons},
+            )
+
+        # Test raises error if duplicate month(s) were found
+        with pytest.raises(ValueError):
+            custom_seasons = [
+                ["Jan", "Jan", "Mar"],
+                ["Apr", "May", "Jun"],
+                ["Jul", "Aug", "Sep"],
+                ["Oct", "Nov", "Dec"],
+            ]
+            self.ds.temporal.group_average(
+                "ts",
+                "season",
+                season_config={"custom_seasons": custom_seasons},
+            )
+
     def test_weighted_custom_seasonal_averages(self):
         ds = self.ds.copy()
 
@@ -793,48 +822,117 @@ class TestGroupAverage:
 
         assert result.identical(expected)
 
-    def test_raises_error_with_incorrect_custom_seasons_argument(self):
-        # Test raises error with non-3 letter strings
-        with pytest.raises(ValueError):
-            custom_seasons = [
-                ["J", "Feb", "Mar"],
-                ["Apr", "May", "Jun"],
-                ["Jul", "Aug", "Sep"],
-                ["Oct", "Nov", "Dec"],
-            ]
-            self.ds.temporal.group_average(
-                "ts",
-                "season",
-                season_config={"custom_seasons": custom_seasons},
-            )
+    def test_weighted_custom_seasonal_averages_drops_incomplete_seasons(self):
+        ds = self.ds.copy()
+        ds["time"].values[:] = np.array(
+            [
+                "2000-11-16T12:00:00.000000000",
+                "2000-12-16T12:00:00.000000000",
+                "2001-01-16T00:00:00.000000000",
+                "2001-02-16T00:00:00.000000000",
+                "2001-03-16T00:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
 
-        # Test raises error with missing month(s)
-        with pytest.raises(ValueError):
-            custom_seasons = [
-                ["Feb", "Mar"],
-                ["Apr", "May", "Jun"],
-                ["Jul", "Aug", "Sep"],
-                ["Oct", "Nov", "Dec"],
-            ]
-            self.ds.temporal.group_average(
-                "ts",
-                "season",
-                season_config={"custom_seasons": custom_seasons},
-            )
+        custom_seasons = [["Nov", "Dec"], ["Feb", "Mar", "Apr"]]
 
-        # Test raises error if duplicate month(s) were found
-        with pytest.raises(ValueError):
-            custom_seasons = [
-                ["Jan", "Jan", "Mar"],
-                ["Apr", "May", "Jun"],
-                ["Jul", "Aug", "Sep"],
-                ["Oct", "Nov", "Dec"],
-            ]
-            self.ds.temporal.group_average(
-                "ts",
-                "season",
-                season_config={"custom_seasons": custom_seasons},
-            )
+        result = ds.temporal.group_average(
+            "ts",
+            "season",
+            season_config={
+                "drop_incomplete_seasons": True,
+                "custom_seasons": custom_seasons,
+            },
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[1.5]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array([cftime.datetime(2000, 12, 1)], dtype=object),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "season",
+                "custom_seasons": ["NovDec", "FebMarApr"],
+                "weighted": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_custom_seasonal_averages_with_seasons_spanning_calendar_years(
+        self,
+    ):
+        ds = self.ds.copy()
+        ds["time"].values[:] = np.array(
+            [
+                "2000-11-16T12:00:00.000000000",
+                "2000-12-16T12:00:00.000000000",
+                "2001-01-16T00:00:00.000000000",
+                "2001-02-16T00:00:00.000000000",
+                "2001-03-16T00:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+
+        custom_seasons = [
+            ["Nov", "Dec", "Jan", "Feb", "Mar"],
+        ]
+
+        result = ds.temporal.group_average(
+            "ts",
+            "season",
+            season_config={"custom_seasons": custom_seasons},
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[1.3933333]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array([cftime.datetime(2001, 1, 1)], dtype=object),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "season",
+                "custom_seasons": ["NovDecJanFebMar"],
+                "weighted": "True",
+            },
+        )
+
+        xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
 
     def test_weighted_monthly_averages(self):
         ds = self.ds.copy()
@@ -1059,7 +1157,7 @@ class TestClimatology:
         result = ds.temporal.climatology(
             "ts",
             "season",
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
         )
 
         expected = ds.copy()
@@ -1101,7 +1199,7 @@ class TestClimatology:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
+                "drop_incomplete_seasons": "True",
             },
         )
 
@@ -1114,7 +1212,7 @@ class TestClimatology:
         result = ds.temporal.climatology(
             "ts",
             "season",
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
         )
 
         expected = ds.copy()
@@ -1156,7 +1254,7 @@ class TestClimatology:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
+                "drop_incomplete_seasons": "True",
             },
         )
 
@@ -1224,6 +1322,77 @@ class TestClimatology:
         ]
         result = ds.temporal.climatology(
             "ts", "season", season_config={"custom_seasons": custom_seasons}
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(1, 2, 1),
+                    cftime.DatetimeGregorian(1, 5, 1),
+                    cftime.DatetimeGregorian(1, 8, 1),
+                    cftime.DatetimeGregorian(1, 11, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.DatetimeGregorian(1, 2, 1),
+                        cftime.DatetimeGregorian(1, 5, 1),
+                        cftime.DatetimeGregorian(1, 8, 1),
+                        cftime.DatetimeGregorian(1, 11, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((4, 4, 4)),
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "custom_seasons": [
+                    "JanFebMar",
+                    "AprMayJun",
+                    "JulAugSep",
+                    "OctNovDec",
+                ],
+            },
+        )
+
+        assert result.identical(expected)
+
+    @pytest.mark.xfail
+    def test_weighted_custom_seasonal_climatology_with_seasons_spanning_calendar_years(
+        self,
+    ):
+        ds = self.ds.copy()
+
+        custom_seasons = [
+            ["Jan", "Feb", "Mar"],
+            ["Apr", "May", "Jun"],
+            ["Jul", "Aug", "Sep"],
+            ["Oct", "Nov", "Dec"],
+        ]
+        result = ds.temporal.climatology(
+            "ts",
+            "season",
+            season_config={
+                "custom_seasons": custom_seasons,
+                "drop_incomplete_seasons": True,
+            },
         )
 
         expected = ds.copy()
@@ -1664,7 +1833,7 @@ class TestDepartures:
         result = ds.temporal.departures(
             "ts",
             "season",
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
         )
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
@@ -1681,7 +1850,7 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
+                "drop_incomplete_seasons": "True",
             },
         )
 
@@ -1699,7 +1868,7 @@ class TestDepartures:
             "season",
             weighted=True,
             keep_weights=True,
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
         )
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
@@ -1716,7 +1885,7 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
+                "drop_incomplete_seasons": "True",
             },
         )
         expected["time_wts"] = xr.DataArray(
@@ -1753,7 +1922,7 @@ class TestDepartures:
             "ts",
             "season",
             weighted=False,
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
         )
         expected = ds.copy()
         expected["ts"] = xr.DataArray(
@@ -1770,7 +1939,7 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "False",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
+                "drop_incomplete_seasons": "True",
             },
         )
 
@@ -2956,7 +3125,7 @@ class Test_Averager:
                 weighted=True,
                 season_config={
                     "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
+                    "drop_incomplete_seasons": False,
                     "custom_seasons": None,
                 },
             )
@@ -2972,7 +3141,7 @@ class Test_Averager:
                 weighted=True,
                 season_config={
                     "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
+                    "drop_incomplete_seasons": False,
                     "custom_seasons": None,
                 },
             )
@@ -2984,7 +3153,7 @@ class Test_Averager:
                 weighted=True,
                 season_config={
                     "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
+                    "drop_incomplete_seasons": False,
                     "custom_seasons": None,
                 },
             )
@@ -2996,7 +3165,7 @@ class Test_Averager:
                 weighted=True,
                 season_config={
                     "dec_mode": "DJF",
-                    "drop_incomplete_djf": False,
+                    "drop_incomplete_seasons": False,
                     "custom_seasons": None,
                 },
             )
@@ -3022,7 +3191,7 @@ class Test_Averager:
                 weighted=True,
                 season_config={
                     "dec_mode": "unsupported",
-                    "drop_incomplete_djf": False,
+                    "drop_incomplete_seasons": False,
                     "custom_seasons": None,
                 },
             )
