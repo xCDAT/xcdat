@@ -1,4 +1,5 @@
 """Dataset module for functions related to an xarray.Dataset."""
+import os
 import pathlib
 from datetime import datetime
 from functools import partial
@@ -8,6 +9,7 @@ import numpy as np
 import xarray as xr
 from dateutil import parser
 from dateutil import relativedelta as rd
+from lxml import etree
 from xarray.coding.cftime_offsets import get_date_type
 from xarray.coding.times import convert_times, decode_cf_datetime
 from xarray.coding.variables import lazy_elemwise_func, pop_to, unpack_for_decoding
@@ -97,6 +99,7 @@ def open_dataset(
 
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
+
     ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
 
     if decode_times:
@@ -125,7 +128,7 @@ def open_mfdataset(
 
     Parameters
     ----------
-    path : Union[str, pathlib.Path, List[str], List[pathlib.Path], \
+    paths : Union[str, pathlib.Path, List[str], List[pathlib.Path], \
          List[List[str]], List[List[pathlib.Path]]]
         Either a string glob in the form ``"path/to/my/files/*.nc"`` or an
         explicit list of files to open. Paths can be given as strings or as
@@ -200,9 +203,14 @@ def open_mfdataset(
 
     References
     ----------
-
     .. [2] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
     """
+    if not isinstance(paths, list):
+        if _is_paths_to_xml(paths):
+            paths = _parse_xml_for_nc_glob(paths)
+        elif os.path.isdir(paths):
+            paths = _parse_dir_for_nc_glob(paths)  # type: ignore
+
     preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
 
     ds = xr.open_mfdataset(
@@ -357,6 +365,95 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
                 ds = ds.assign({bounds.name: decoded_bounds})
 
     return ds
+
+
+def _is_paths_to_xml(paths: Union[str, pathlib.Path]) -> bool:
+    """Checks if the ``paths`` argument is a path to an XML file.
+
+    Parameters
+    ----------
+    paths : Union[str, pathlib.Path]
+        A string or pathlib.Path represnting a file path.
+
+    Returns
+    -------
+    bool
+    """
+    if isinstance(paths, str):
+        return paths.split(".")[-1] == "xml"
+    elif isinstance(paths, pathlib.Path):
+        return paths.parts[-1].endswith("xml")
+
+
+def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str:
+    """Parses a CDAT XML file for a glob of `*.nc` paths.
+
+    The CDAT "Climate Data Markup Language" (CDML) is a dialect of XML with a
+    defined set of attributes. The "directory" attribute pointing to a directory
+    of `.nc` files is extracted from the specified XML file. Refer to [6]_ for
+    more information on CDML.
+
+    Parameters
+    ----------
+    xml_path : Union[str, pathlib.Path]
+        The CDML XML file path.
+
+    Returns
+    -------
+    str
+        A glob of `*.nc` paths in the directory.
+
+    Notes
+    -----
+    CDML is a deprecated XML dialect that is still used by current and former
+    users in the CDAT community. xCDAT supports CDML to enable these users to
+    more easily integrate xCDAT into their existing CDML/CDAT-based workflows.
+
+    References
+    ----------
+    .. [6] https://cdms.readthedocs.io/en/latest/manual/cdms_6.html
+    """
+    # `resolve_entities=False` and `no_network=True` guards against XXE attacks.
+    # Source: https://rules.sonarsource.com/python/RSPEC-2755
+    parser = etree.XMLParser(resolve_entities=False, no_network=True)
+    tree = etree.parse(xml_path, parser)
+    root = tree.getroot()
+
+    dir_attr = root.attrib.get("directory")
+    if dir_attr is None:
+        raise KeyError(
+            f"The XML file ({xml_path}) does not have a 'directory' attribute "
+            "that points to a directory of `.nc` dataset files."
+        )
+
+    glob_path = dir_attr + "/*.nc"
+
+    return glob_path
+
+
+def _parse_dir_for_nc_glob(dir_path: str) -> str:
+    """Parses a directory for a glob of `*.nc` paths.
+
+    Parameters
+    ----------
+    dir_path : str
+        The directory.
+
+    Returns
+    -------
+    str
+        A glob of `*.nc` paths in the directory.
+    """
+    file_list = os.listdir(dir_path)
+
+    if len(file_list) == 0:
+        raise ValueError(
+            f"The directory {dir_path} has no netcdf (`.nc`) files to open."
+        )
+
+    glob_path = dir_path + "/*.nc"
+
+    return glob_path
 
 
 def _preprocess(

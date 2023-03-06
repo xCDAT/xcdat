@@ -13,6 +13,7 @@ dependencies:
     - cftime
     - dask
     - esmpy
+    - lxml
     - netcdf4
     - numpy
     - pandas

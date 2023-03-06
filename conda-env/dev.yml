@@ -13,6 +13,7 @@ dependencies:
     - cf_xarray=0.7.7
     - cftime=1.6.2
     - dask=2023.1.0
+    - lxml=4.9.2
     - netcdf4=1.6.2
     - numpy=1.23.5
     - pandas=1.5.3
