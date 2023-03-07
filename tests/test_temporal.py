@@ -571,56 +571,6 @@ class TestGroupAverage:
         assert result.ts.attrs == expected.ts.attrs
         assert result.time.attrs == expected.time.attrs
 
-    def test_weighted_seasonal_averages_with_DJF_and_drop_incomplete_seasons(self):
-        ds = self.ds.copy()
-
-        result = ds.temporal.group_average(
-            "ts",
-            "season",
-            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
-        )
-        expected = ds.copy()
-        # Drop the incomplete DJF seasons
-        expected = expected.isel(time=slice(2, -1))
-        expected = expected.drop_dims("time")
-        expected["ts"] = xr.DataArray(
-            name="ts",
-            data=np.array([[[1]], [[1]], [[1]], [[2.0]]]),
-            coords={
-                "lat": expected.lat,
-                "lon": expected.lon,
-                "time": xr.DataArray(
-                    data=np.array(
-                        [
-                            cftime.DatetimeGregorian(2000, 4, 1),
-                            cftime.DatetimeGregorian(2000, 7, 1),
-                            cftime.DatetimeGregorian(2000, 10, 1),
-                            cftime.DatetimeGregorian(2001, 1, 1),
-                        ],
-                    ),
-                    dims=["time"],
-                    attrs={
-                        "axis": "T",
-                        "long_name": "time",
-                        "standard_name": "time",
-                        "bounds": "time_bnds",
-                    },
-                ),
-            },
-            dims=["time", "lat", "lon"],
-            attrs={
-                "test_attr": "test",
-                "operation": "temporal_avg",
-                "mode": "group_average",
-                "freq": "season",
-                "weighted": "True",
-                "dec_mode": "DJF",
-                "drop_incomplete_seasons": "True",
-            },
-        )
-
-        xr.testing.assert_identical(result, expected)
-
     def test_weighted_seasonal_averages_with_DJF_without_dropping_incomplete_seasons(
         self,
     ):
@@ -665,8 +615,56 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
-                "dec_mode": "DJF",
                 "drop_incomplete_seasons": "False",
+                "dec_mode": "DJF",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_seasonal_averages_with_DJF_and_drop_incomplete_seasons(self):
+        ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=True)
+
+        result = ds.temporal.group_average(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((4, 4, 4)),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "True",
+                "dec_mode": "DJF",
             },
         )
 
@@ -725,6 +723,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
         )
@@ -806,13 +805,14 @@ class TestGroupAverage:
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "False",
                 "custom_seasons": [
                     "JanFebMar",
                     "AprMayJun",
                     "JulAugSep",
                     "OctNovDec",
                 ],
-                "weighted": "True",
             },
         )
 
@@ -866,8 +866,9 @@ class TestGroupAverage:
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "season",
-                "custom_seasons": ["NovDec", "FebMarApr"],
                 "weighted": "True",
+                "drop_incomplete_seasons": "True",
+                "custom_seasons": ["NovDec", "FebMarApr"],
             },
         )
 
@@ -922,8 +923,9 @@ class TestGroupAverage:
                 "operation": "temporal_avg",
                 "mode": "group_average",
                 "freq": "season",
-                "custom_seasons": ["NovDecJanFebMar"],
                 "weighted": "True",
+                "drop_incomplete_seasons": "False",
+                "custom_seasons": ["NovDecJanFebMar"],
             },
         )
 
@@ -1252,8 +1254,8 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
-                "dec_mode": "DJF",
                 "drop_incomplete_seasons": "True",
+                "dec_mode": "DJF",
             },
         )
 
@@ -1359,6 +1361,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
         )
@@ -1417,6 +1420,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "drop_incomplete_seasons": "False",
                 "custom_seasons": [
                     "JanFebMar",
                     "AprMayJun",
@@ -1428,24 +1432,18 @@ class TestClimatology:
 
         xr.testing.assert_identical(result, expected)
 
-    @pytest.mark.xfail
     def test_weighted_custom_seasonal_climatology_with_seasons_spanning_calendar_years(
         self,
     ):
         ds = self.ds.copy()
 
-        custom_seasons = [
-            ["Jan", "Feb", "Mar"],
-            ["Apr", "May", "Jun"],
-            ["Jul", "Aug", "Sep"],
-            ["Oct", "Nov", "Dec"],
-        ]
+        custom_seasons = [["Nov", "Dec", "Jan", "Feb", "Mar"]]
         result = ds.temporal.climatology(
             "ts",
             "season",
             season_config={
+                "drop_incomplete_seasons": False,
                 "custom_seasons": custom_seasons,
-                "drop_incomplete_seasons": True,
             },
         )
 
@@ -1453,21 +1451,11 @@ class TestClimatology:
         expected = expected.drop_dims("time")
         expected_time = xr.DataArray(
             data=np.array(
-                [
-                    cftime.DatetimeGregorian(1, 2, 1),
-                    cftime.DatetimeGregorian(1, 5, 1),
-                    cftime.DatetimeGregorian(1, 8, 1),
-                    cftime.DatetimeGregorian(1, 11, 1),
-                ],
+                [cftime.DatetimeGregorian(1, 1, 1)],
             ),
             coords={
                 "time": np.array(
-                    [
-                        cftime.DatetimeGregorian(1, 2, 1),
-                        cftime.DatetimeGregorian(1, 5, 1),
-                        cftime.DatetimeGregorian(1, 8, 1),
-                        cftime.DatetimeGregorian(1, 11, 1),
-                    ],
+                    [cftime.DatetimeGregorian(1, 1, 1)],
                 ),
             },
             attrs={
@@ -1488,12 +1476,8 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
-                "custom_seasons": [
-                    "JanFebMar",
-                    "AprMayJun",
-                    "JulAugSep",
-                    "OctNovDec",
-                ],
+                "drop_incomplete_seasons": "False",
+                "custom_seasons": ["NovDecJanFebMar"],
             },
         )
 
@@ -2235,8 +2219,8 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "False",
-                "dec_mode": "DJF",
                 "drop_incomplete_seasons": "True",
+                "dec_mode": "DJF",
             },
         )
 
@@ -2286,6 +2270,7 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "False",
+                "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
         )
