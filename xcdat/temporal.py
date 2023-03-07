@@ -66,8 +66,8 @@ TIME_GROUPS: Dict[Mode, Dict[Frequency, Tuple[DateTimeComponent, ...]]] = {
 SeasonConfigInput = TypedDict(
     "SeasonConfigInput",
     {
-        "dec_mode": Literal["DJF", "JFD"],
         "drop_incomplete_seasons": bool,
+        "dec_mode": Literal["DJF", "JFD"],
         "custom_seasons": Optional[List[List[str]]],
     },
     total=False,
@@ -76,16 +76,16 @@ SeasonConfigInput = TypedDict(
 SeasonConfigAttr = TypedDict(
     "SeasonConfigAttr",
     {
-        "dec_mode": Literal["DJF", "JFD"],
         "drop_incomplete_seasons": bool,
+        "dec_mode": Literal["DJF", "JFD"],
         "custom_seasons": Optional[Dict[str, List[str]]],
     },
     total=False,
 )
 
 DEFAULT_SEASON_CONFIG: SeasonConfigInput = {
-    "dec_mode": "DJF",
     "drop_incomplete_seasons": False,
+    "dec_mode": "DJF",
     "custom_seasons": None,
 }
 
@@ -286,16 +286,6 @@ class TemporalAccessor:
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
 
-            Configs for predefined seasons:
-
-            * "dec_mode" (Literal["DJF", "JFD"], by default "DJF")
-                The mode for the season that includes December.
-
-                * "DJF": season includes the previous year December.
-                * "JFD": season includes the same year December.
-                    Xarray labels the season with December as "DJF", but it is
-                    actually "JFD".
-
             * "drop_incomplete_seasons" (bool, by default False)
                 Seasons are considered incomplete if they do not have all of
                 the required months to form the season. For example, if we have
@@ -309,11 +299,19 @@ class TemporalAccessor:
                   season because it only has "Jan" and "Feb". Therefore, these
                   time coordinates are dropped.
 
-            Configs for custom seasons:
+            * "dec_mode" (Literal["DJF", "JFD"], by default "DJF")
+                The mode for the season that includes December in the list of
+                list of pre-defined seasons ("DJF"/"JFD", "MAM", "JJA", "SON").
+                This config is ignored if the ``custom_seasons`` config is set.
+
+                * "DJF": season includes the previous year December.
+                * "JFD": season includes the same year December.
+                    Xarray labels the season with December as "DJF", but it is
+                    actually "JFD".
 
             * "custom_seasons" ([List[List[str]]], by default None)
                 List of sublists containing month strings, with each sublist
-                representing a custom season.
+                representing a custom season. This config overrides the `decod
 
                 * Month strings must be in the three letter format (e.g., 'Jan')
                 * Each month must be included once in a custom season
@@ -468,8 +466,6 @@ class TemporalAccessor:
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
 
-            General configs:
-
             * "drop_incomplete_seasons" (bool, by default False)
                 Seasons are considered incomplete if they do not have all of
                 the required months to form the season. For example, if we have
@@ -483,21 +479,19 @@ class TemporalAccessor:
                   season because it only has "Jan" and "Feb". Therefore, these
                   time coordinates are dropped.
 
-            Configs for predefined seasons:
-
             * "dec_mode" (Literal["DJF", "JFD"], by default "DJF")
-               The mode for the season that includes December.
+                The mode for the season that includes December in the list of
+                list of pre-defined seasons ("DJF"/"JFD", "MAM", "JJA", "SON").
+                This config is ignored if the ``custom_seasons`` config is set.
 
                 * "DJF": season includes the previous year December.
                 * "JFD": season includes the same year December.
                     Xarray labels the season with December as "DJF", but it is
                     actually "JFD".
 
-            Configs for custom seasons:
-
             * "custom_seasons" ([List[List[str]]], by default None)
                 List of sublists containing month strings, with each sublist
-                representing a custom season.
+                representing a custom season. This config overrides the `decod
 
                 * Month strings must be in the three letter format (e.g., 'Jan')
                 * Each month must be included once in a custom season
@@ -1058,7 +1052,22 @@ class TemporalAccessor:
         """
         if (
             self._freq == "season"
-            and self._season_config.get("drop_incomplete_seasons") is True
+            and self._season_config.get("custom_seasons") is not None
+        ):
+            # Get a flat list of all of the months included in the custom
+            # seasons to determine if the dataset needs to be subsetted
+            # on just those months. For example, if we define a custom season
+            # "NDJFM", we should subset the dataset for time coordinates
+            # belonging to those months.
+            months = self._season_config["custom_seasons"].values()  # type: ignore
+            months = list(chain.from_iterable(months.values()))  # type: ignore
+
+            if len(months) != 12:
+                ds = self._subset_coords_for_custom_seasons(ds, months)
+
+        if (
+            self._freq == "season"
+            and self._season_config["drop_incomplete_seasons"] is True
         ):
             ds = self._drop_incomplete_seasons(ds)
 
@@ -1075,6 +1084,34 @@ class TemporalAccessor:
             )
 
         return ds
+
+    def _subset_coords_for_custom_seasons(
+        self, ds: xr.Dataset, months: List[str]
+    ) -> xr.Dataset:
+        """Subsets time coordinates to the months included in custom seasons.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            The dataset.
+        months : List[str]
+            A list of months included in custom seasons.
+            Example: ["Nov", "Dec", "Jan"]
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset with time coordinate subsetted to months used in
+            custom seasons.
+        """
+        months_ints = sorted([MONTH_STR_TO_INT[month] for month in months])
+
+        coords_by_month = ds.time.groupby(f"{self.dim}.month").groups
+        months_idxs = {k: coords_by_month[k] for k in months_ints}
+        months_idxs = sorted(list(chain.from_iterable(months_idxs.values())))  # type: ignore
+        ds_new = ds.isel({f"{self.dim}": months_idxs})
+
+        return ds_new
 
     def _drop_incomplete_seasons(self, ds: xr.Dataset) -> xr.Dataset:
         """Drops incomplete seasons within a continuous time series.
@@ -1102,37 +1139,34 @@ class TemporalAccessor:
             A DataFrame of seasonal datetime components with only complete
             seasons.
         """
-        # Algorithm
-        # Prereq - This needs to be done AFTER time coordinates are labeled
-        # and BEFORE obsoelete columns are dropped because custom seasons can be
-        # assigned to the time coordiantes first.
-        # 1. Get the count of months per season (pre-defined seasons by xarray
-        # all have 3), otherwise use custom seasons count
-        # 2. Label all time coordinates by groups
-        # 3. Group the time coordinates by group and the get count
-        # 4. Drop time coordinates where count != expected count for season
-        ds_new = ds.copy()
-        time_coords = ds[self.dim].copy()
-
         # Transform the time coords into a DataFrame of seasonal datetime
         # components based on the grouping mode.
+        time_coords = ds[self.dim].copy()
         df = self._get_df_dt_components(time_coords, drop_obsolete_cols=False)
 
-        # Add a column for the expected count of months for that season
-        # For example, "NovDec" is split into ["Nov", "Dec"] which equals an
-        # expected count of 2 months.
+        # Get the expected and actual number of months for each season group.
         df["expected_months"] = df["season"].str.split(r"(?<=.)(?=[A-Z])").str.len()
-        # Add a column for the actual count of months for that season.
-        df["actual_months"] = df.groupby(["season"])["year"].transform("count")
+        df["actual_months"] = df.groupby(["year", "season"])["year"].transform("count")
 
         # Get the incomplete seasons and drop the time coordinates that are in
         # those incomplete seasons.
         indexes_to_drop = df[df["expected_months"] != df["actual_months"]].index
         if len(indexes_to_drop) > 0:
-            coords_to_drop = time_coords.values[indexes_to_drop]
-            ds_new = ds_new.where(~time_coords.isin(coords_to_drop), drop=True)
+            # The dataset needs to be split into a dataset with and a dataset
+            # without the time dimension because the xarray `.where()` method
+            # concatenates the time dimension to non-time dimension data vars,
+            # which is an undesired behavior.
+            ds_no_time = ds.get([v for v in ds.data_vars if self.dim not in ds[v].dims])  # type: ignore
+            ds_time = ds.get([v for v in ds.data_vars if self.dim in ds[v].dims])  # type: ignore
 
-        return ds_new
+            coords_to_drop = time_coords.values[indexes_to_drop]
+            ds_time = ds_time.where(~time_coords.isin(coords_to_drop), drop=True)
+
+            ds_new = xr.merge([ds_time, ds_no_time])
+
+            return ds_new
+
+        return ds
 
     def _drop_leap_days(self, ds: xr.Dataset):
         """Drop leap days from time coordinates.
@@ -1789,8 +1823,8 @@ class TemporalAccessor:
         )
 
         if self._freq == "season":
-            data_var.attrs["drop_incomplete_seasons"] = self._season_config.get(
-                "drop_incomplete_seasons"
+            data_var.attrs["drop_incomplete_seasons"] = str(
+                self._season_config["drop_incomplete_seasons"]
             )
 
             custom_seasons = self._season_config.get("custom_seasons")
