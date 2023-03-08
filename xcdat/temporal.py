@@ -115,6 +115,11 @@ class TemporalAccessor:
     An accessor class that provides temporal attributes and methods on xarray
     Datasets through the ``.temporal`` attribute.
 
+    This accessor class requires the dataset's time coordinates to be decoded as
+    ``datetime.datetime`` or ``cftime.datetime`` objects. The dataset must also
+    have time bounds to generate weights for weighted calculations and to infer
+    the grouping time frequency in ``average()`` (single-snap shot average).
+
     Examples
     --------
 
@@ -664,7 +669,7 @@ class TemporalAccessor:
         # Group averaging is only required if the dataset's frequency (input)
         # differs from the `freq` arg (output).
         ds_obs = ds.copy()
-        inferred_freq = self._infer_freq()
+        inferred_freq = _infer_freq(ds[self.dim])
         if inferred_freq != freq:
             ds_obs = ds_obs.temporal.group_average(
                 data_var,
