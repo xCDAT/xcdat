@@ -2130,7 +2130,7 @@ class TestDepartures:
                 "operation": "temporal_avg",
                 "mode": "departures",
                 "freq": "season",
-                "weighted": "True",
+                "weighted": "False",
                 "dec_mode": "JFD",
             },
         )
