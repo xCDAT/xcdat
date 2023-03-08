@@ -166,6 +166,10 @@ class TemporalAccessor:
         frequencies, the distribution of weights will be equal so
         ``weighted=True`` is the same as ``weighted=False``.
 
+        Time bounds are used for inferring the time series frequency and for
+        generating weights (refer to the ``weighted`` parameter documentation
+        below).
+
         Parameters
         ----------
         data_var: str
@@ -218,6 +222,9 @@ class TemporalAccessor:
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with average of a data variable by time group.
+
+        Time bounds are used for generating weights to calculate weighted group
+        averages (refer to the ``weighted`` parameter documentation below).
 
         Parameters
         ----------
@@ -361,6 +368,9 @@ class TemporalAccessor:
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with the climatology of a data variable.
+
+        Time bounds are used for generating weights to calculate weighted
+        climatology (refer to the ``weighted`` parameter documentation below).
 
         Parameters
         ----------
@@ -526,6 +536,8 @@ class TemporalAccessor:
         temperature) and the long-term average value for that time interval
         (e.g., the average surface temperature over the last 30 Januaries).
 
+        Time bounds are used for generating weights to calculate weighted
+        climatology (refer to the ``weighted`` parameter documentation below).
 
         Parameters
         ----------
