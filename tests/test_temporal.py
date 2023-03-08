@@ -2093,7 +2093,7 @@ class TestDepartures:
         result = ds.temporal.departures(
             "ts",
             "season",
-            weighted=True,
+            weighted=False,
             season_config={"dec_mode": "JFD"},
         )
 
