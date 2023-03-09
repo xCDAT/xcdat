@@ -46,6 +46,14 @@ extensions = [
 
 # autosummary and autodoc configurations
 autosummary_generate = True
+
+# We need to mock "ESMF" imports because xesmf depends on ESMpy which depends on
+# ESMF (has C modules). The Read The Docs build system does not have the
+# dependencies for building these C modules which causes a Python ImportError
+# with xesmf.
+# Related issue: https://github.com/readthedocs/readthedocs.org/issues/5512
+# Solution: https://docs.readthedocs.io/en/stable/faq.html#why-do-i-get-import-errors-from-libraries-depending-on-c-modules
+autodoc_mock_imports = ["ESMF"]
 autodoc_member_order = "bysource"
 autodoc_default_options = {
     "members": True,
