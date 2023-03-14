@@ -42,7 +42,10 @@ class XESMFRegridder(BaseRegridder):
         ignore_degenerate: bool = True,
         **options,
     ):
-        """Wrapper class for xESMF regridder class.
+        """Extension of ``xESMF`` regridder.
+
+        The ``XESMFRegridder`` extends ``xESMF`` by automatically constructing the ``xe.XESMFRegridder`` object,
+        preserving source bounds and generating missing bounds.
 
         Parameters
         ----------
