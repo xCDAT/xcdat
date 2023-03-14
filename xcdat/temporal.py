@@ -1754,6 +1754,7 @@ def _infer_freq(time_coords: xr.DataArray) -> Frequency:
     Frequency
         The time frequency.
     """
+    # TODO: Raise exception if the frequency cannot be inferred.
     min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
 
     if min_delta < pd.Timedelta(days=1):

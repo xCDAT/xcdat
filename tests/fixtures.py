@@ -1,4 +1,6 @@
 """This module stores reusable test fixtures."""
+from typing import Literal
+
 import cftime
 import numpy as np
 import xarray as xr
@@ -382,7 +384,7 @@ def generate_dataset(
     xr.Dataset
         Test dataset.
     """
-    # get correct data_var, time axis, and time_bnds
+    # Get the data_var, time axis, and time_bnds based on if time is decoded.
     if decode_times:
         ts = ts_decoded.copy()
         time = time_decoded.copy()
@@ -392,11 +394,9 @@ def generate_dataset(
         time = time_encoded.copy()
         time_bnds = time_bnds_encoded.copy()
 
-    # Create dataset
+    # Create the base dataset.
     ds = xr.Dataset(
-        data_vars={
-            "ts": ts,
-        },
+        data_vars={"ts": ts},
         coords={"lat": lat.copy(), "lon": lon.copy(), "time": time},
     )
 
@@ -429,16 +429,18 @@ def generate_dataset(
     return ds
 
 
-def generate_dataset_by_frequency(freq: str = "month") -> xr.Dataset:
-    """Generates a dataset of a given temporal frequency using coordinate
-    and data variable fixtures. The generated dataset is decoded,
-    cf-compliant, and includes bounds.
+def generate_dataset_by_frequency(
+    freq: Literal["subhour", "hour", "day", "month", "year"] = "month"
+) -> xr.Dataset:
+    """Generates a dataset for a given temporal frequency.
+
+    This function uses the coordinate and data variable fixtures to generate a
+    dataset that is decoded, cf-compliant, and includes bounds.
 
     Parameters
     ----------
-    freq : str, optional
-        Frequency of time step (and bounds). Options include subhour, hour,
-        day, month, and year. Default is 'month'.
+    freq : Literal["subhour", "hour", "day", "month", "year"], optional
+        Frequency of time step (and bounds), by default 'month'.
 
     Returns
     -------
@@ -449,24 +451,22 @@ def generate_dataset_by_frequency(freq: str = "month") -> xr.Dataset:
     if freq == "month":
         time = time_decoded.copy()
         time_bnds = time_bnds_decoded.copy()
-    if freq == "year":
+    elif freq == "year":
         time = time_yearly.copy()
         time_bnds = time_bnds_yearly.copy()
-    if freq == "day":
+    elif freq == "day":
         time = time_daily.copy()
         time_bnds = time_bnds_daily.copy()
-    if freq == "hour":
+    elif freq == "hour":
         time = time_hourly.copy()
         time_bnds = time_bnds_hourly.copy()
-    if freq == "subhour":
+    elif freq == "subhour":
         time = time_subhourly.copy()
         time_bnds = time_bnds_subhourly.copy()
 
-    # Create dataset
+    # Create the base dataset.
     ds = xr.Dataset(
-        data_vars={
-            "ts": ts_decoded,
-        },
+        data_vars={"ts": ts_decoded},
         coords={"lat": lat.copy(), "lon": lon.copy(), "time": time},
     )
 
