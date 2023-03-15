@@ -1,13 +1,11 @@
 """Bounds module for functions related to coordinate bounds."""
 import collections
 import datetime
-import warnings
 from typing import Dict, List, Literal, Optional, Union
 
 import cf_xarray as cfxr  # noqa: F401
 import cftime
 import numpy as np
-import pandas as pd
 import xarray as xr
 from xarray.coding.cftime_offsets import get_date_type
 
@@ -61,7 +59,7 @@ class BoundsAccessor:
 
     Add missing coordinate bounds for supported axes in the Dataset:
 
-    >>> ds = ds.bounds.add_missing_bounds()
+    >>> ds = ds.bounds.add_missing_bounds(axes=["X", "Y", "T"])
 
     Get coordinate bounds if they exist:
 
@@ -118,7 +116,12 @@ class BoundsAccessor:
             )
         )
 
-    def add_missing_bounds(self, axes: List[CFAxisKey] = ["X", "Y"]) -> xr.Dataset:
+    def add_missing_bounds(  # noqa: C901
+        self,
+        axes: List[CFAxisKey] = ["X", "Y"],
+        time_freq: Optional[Literal["year", "month", "day", "hour"]] = None,
+        daily_time_freq: Optional[Literal[1, 2, 3, 4, 6, 8, 12, 24]] = None,
+    ) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
         This function loops through the Dataset's axes and attempts to adds
@@ -137,6 +140,24 @@ class BoundsAccessor:
         ----------
         axes : List[str], optional
             List of CF axes that function should operate on, default ["X", "Y"].
+        time_freq : Optional[Literal["year", "month", "day", "hour"]]
+            If ``axis`` includes "T", this parameter specifies the time
+            frequency for creating time bounds, by default None (infer the
+            frequency).
+        daily_time_freq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
+            If ``time_freq=="hour"``, this parameter sets the number of
+            timepoints per day for bounds, by default None. If greater than 1,
+            sub-daily bounds are created.
+
+            * ``daily_time_freq=None`` infers the daily time frequency from the
+              time coordinates.
+            * ``daily_time_freq=1`` is daily
+            * ``daily_time_freq=2`` is twice daily
+            * ``daily_time_freq=4`` is 6-hourly
+            * ``daily_time_freq=8`` is 3-hourly
+            * ``daily_time_freq=12`` is 2-hourly
+            * ``daily_time_freq=24`` is hourly
+
 
         Returns
         -------
@@ -157,12 +178,16 @@ class BoundsAccessor:
                 except KeyError:
                     pass
 
-                try:
-                    bounds = self._create_bounds(axis, coord)
-                    ds[bounds.name] = bounds
-                    ds[coord.name].attrs["bounds"] = bounds.name
-                except ValueError:
-                    continue
+                if axis in ["X", "Y", "Z"]:
+                    try:
+                        bounds = self._create_bounds(axis, coord)
+                    except ValueError:
+                        continue
+                elif axis == "T":
+                    bounds = self._create_time_bounds(coord, time_freq, daily_time_freq)
+
+                ds[bounds.name] = bounds
+                ds[coord.name].attrs["bounds"] = bounds.name
 
         return ds
 
@@ -231,25 +256,41 @@ class BoundsAccessor:
 
         return bounds
 
-    def add_bounds(self, axis: CFAxisKey) -> xr.Dataset:
+    def add_bounds(
+        self,
+        axis: CFAxisKey,
+        time_freq: Optional[Literal["year", "month", "day", "hour"]] = None,
+        daily_time_freq: Optional[Literal[1, 2, 3, 4, 6, 8, 12, 24]] = None,
+    ) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
 
         This method loops over the axis's coordinate variables and attempts to
-        add bounds for each of them if they don't exist. The coordinates must
-        meet the following criteria in order to add bounds:
-
-          1. The axis for the coordinates are "X", "Y", "T", or "Z"
-          2. Coordinates are single dimensional, not multidimensional
-          3. Coordinates are a length > 1 (not singleton)
-          4. Bounds must not already exist.
-             * Determined by attempting to map the coordinate variable's
-             "bounds" attr (if set) to the bounds data variable of the same key.
-          5. Time axes should be composed of `cftime` objects.
+        add bounds for each of them if they don't exist. If ``axis`` is "X",
+        "Y", or "Z", each coordinate point is the midpoint between their lower
+        and upper bounds. If the axis is "T", bounds will be set to the start
+        and end of each time step's period using either the inferred or specified
+        time frequency (``time_freq`` parameter).
 
         Parameters
         ----------
         axis : CFAxisKey
             The CF axis key ("X", "Y", "T", or "Z").
+        time_freq : Optional[Literal["year", "month", "day", "hour"]]
+            If ``axis="T"``, this parameter specifies the time frequency for
+            creating time bounds, by default None (infer the frequency).
+        daily_time_freq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
+            If ``time_freq=="hour"``, this parameter sets the number of
+            timepoints per day for bounds, by default None. If greater than 1,
+            sub-daily bounds are created.
+
+            * ``daily_time_freq=None`` infers the daily time frequency from the
+              time coordinates.
+            * ``daily_time_freq=1`` is daily
+            * ``daily_time_freq=2`` is twice daily
+            * ``daily_time_freq=4`` is 6-hourly
+            * ``daily_time_freq=8`` is 3-hourly
+            * ``daily_time_freq=12`` is 2-hourly
+            * ``daily_time_freq=24`` is hourly
 
         Returns
         -------
@@ -261,11 +302,17 @@ class BoundsAccessor:
         ValueError
             If bounds already exist. They must be dropped first.
 
-        Notes
-        -----
-        For temporal coordinates ``add_bounds`` will attempt to set the bounds
-        to the start and end of each time step's period. Time axes are expected
-        to be composed of ``cftime`` objects.
+        Note
+        ----
+        To add time bounds for an axis, its coordinates must be the following
+        criteria:
+
+          1. The axis for the coordinates are "X", "Y", "T", or "Z"
+          2. Coordinates are single dimensional, not multidimensional
+          3. Coordinates are a length > 1 (not singleton)
+          4. Bounds must not already exist
+             * Determined by attempting to map the coordinate variable's
+             "bounds" attr (if set) to the bounds data variable of the same key
         """
         ds = self._dataset.copy()
         self._validate_axis_arg(axis)
@@ -283,7 +330,10 @@ class BoundsAccessor:
 
                 continue
             except KeyError:
-                bounds = self._create_bounds(axis, coord)
+                if axis in ["X", "Y", "Z"]:
+                    bounds = self._create_bounds(axis, coord)
+                elif axis == "T":
+                    bounds = self._create_time_bounds(coord, time_freq, daily_time_freq)
 
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
@@ -325,6 +375,9 @@ class BoundsAccessor:
 
     def _create_bounds(self, axis: CFAxisKey, coord_var: xr.DataArray) -> xr.DataArray:
         """Creates bounds for an axis using its coordinate points.
+
+        This method uses each coordinate point as the midpoint between its
+        lower and upper bound.
 
         Parameters
         ----------
@@ -374,26 +427,12 @@ class BoundsAccessor:
         diffs = np.insert(diffs, 0, diffs[0])
         diffs = np.append(diffs, diffs[-1])
 
-        # `cftime` objects only support arithmetic using `timedelta` objects, so
-        # the values of  `diffs` must be casted from `dtype="timedelta64[ns]"`
-        # to `timedelta` objects.
-        if axis == "T" and issubclass(type(coord_var.values[0]), cftime.datetime):
-            bounds = create_time_bounds(coord_var)
-            return bounds
-
         # width parameter: determines bounds location relative to midpoints
         width = 0.5
 
-        # FIXME: These lines produces the warning: `PerformanceWarning:
-        # Adding/subtracting object-dtype array to TimedeltaArray not
-        # vectorized` after converting diffs to `timedelta`. I (Tom) was not
-        # able to find an alternative, vectorized solution at the time of this
-        # implementation.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
-            # Get lower and upper bounds by using the width relative to nearest point.
-            lower_bounds = coord_var - diffs[:-1] * width
-            upper_bounds = coord_var + diffs[1:] * (1 - width)
+        # Get lower and upper bounds by using the width relative to nearest point.
+        lower_bounds = coord_var - diffs[:-1] * width
+        upper_bounds = coord_var + diffs[1:] * (1 - width)
 
         # Transpose both bound arrays into a 2D array.
         data = np.array([lower_bounds, upper_bounds]).transpose()
@@ -428,6 +467,231 @@ class BoundsAccessor:
 
         return bounds
 
+    def _create_time_bounds(
+        self,
+        time: xr.DataArray,
+        freq: Optional[Literal["year", "month", "day", "hour"]] = None,
+        daily_freq: Optional[Literal[1, 2, 3, 4, 6, 8, 12, 24]] = None,
+    ) -> xr.DataArray:
+        """Creates time bounds for each timestep of the time coordinate axis.
+
+        This function uses ``_infer_freq`` to determine the temporal resolution and
+        then calls ``get_yearly_time_bounds``, ``get_monthly_time_bounds``, or
+        ``get_daily_time_bounds`` as appropriate. See the docstrings for these
+        functions for more details.
+
+        Parameters
+        ----------
+        time : xr.DataArray
+            The temporal coordinate variable for the axis.
+        freq : Optional[Literal["year", "month", "day", "hour"]]
+            The time frequency for creating time bounds, by default None (infer
+            the frequency).
+        daily_freq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
+            If ``freq=="hour"``, this parameter sets the number of timepoints
+            per day for bounds, by default None. If greater than 1, sub-daily
+            bounds are created.
+
+            * ``daily_freq=None`` infers the freq from the time coords (default)
+            * ``daily_freq=1`` is daily
+            * ``daily_freq=2`` is twice daily
+            * ``daily_freq=4`` is 6-hourly
+            * ``daily_freq=8`` is 3-hourly
+            * ``daily_freq=12`` is 2-hourly
+            * ``daily_freq=24`` is hourly
+
+        Returns
+        -------
+        xr.DataArray
+            A DataArray storing bounds for the time axis.
+
+        Raises
+        ------
+        TypeError
+            If time coordinates are not composed of ``cftime.datetime`` object.
+        """
+
+        freq = _infer_freq(time) if freq is None else freq  # type: ignore
+
+        if freq == "year":
+            time_bnds = self._create_yearly_time_bounds(time)
+        elif freq == "month":
+            time_bnds = self._create_monthly_time_bounds(time)
+        elif freq == "day":
+            time_bnds = self._create_daily_time_bounds(time)
+        elif freq == "hour":
+            # Determine the daily frequency for generating time  bounds.
+            if daily_freq is None:
+                diff = time.values[1] - time.values[0]
+                hrs = diff.seconds / 3600
+                daily_freq = int(24 / hrs)  # type: ignore
+
+            time_bnds = self._create_daily_time_bounds(time, freq=daily_freq)  # type: ignore
+
+        # Create the bounds data array
+        da_time_bnds = xr.DataArray(
+            name=f"{time.name}_bnds",
+            data=time_bnds,
+            coords={time.name: time},
+            dims=[*time.dims, "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        return da_time_bnds
+
+    def _create_yearly_time_bounds(self, time: xr.DataArray) -> List[cftime.datetime]:
+        """Creates time bounds for each timestep with the start and end of the year.
+
+        Bounds for each timestep correspond to Jan. 1 00:00:00 of the year of the
+        timestep and Jan. 1 00:00:00 of the subsequent year.
+
+        Parameters
+        ----------
+        time : xr.DataArray
+            The temporal coordinate variable for the axis.
+
+        Returns
+        -------
+        List[cftime.datetime]
+            A list of time bound values.
+        """
+        # Get the calendar type from the time coordinates to determine the `cftime`
+        # object to represent bounds values.
+        calendar = time.encoding["calendar"]
+        cf_obj = get_date_type(calendar)
+
+        time_bnds: List[cftime.datetime] = []
+
+        # Loop over the time values to create time bounds for each.
+        for step in time.values:
+            year = step.year
+
+            l_bnd = cf_obj(year, 1, 1, 0, 0)
+            u_bnd = cf_obj(year + 1, 1, 1, 0, 0)
+
+            time_bnds.append([l_bnd, u_bnd])
+
+        return time_bnds
+
+    def _create_monthly_time_bounds(
+        self, time: xr.DataArray, end_of_month: bool = False
+    ) -> List[cftime.datetime]:
+        """Creates time bounds for each timestep with the start and end of the month.
+
+        Bounds for each timestep correspond to 00:00:00 on the first of the month
+        and 00:00:00 on the first of the subsequent month.
+
+        Parameters
+        ----------
+        time : xr.DataArray
+            The temporal coordinate variable for the axis.
+        end_of_month : bool, optional
+            Flag to note that the timepoint is saved at the end of the monthly
+            interval (see Note), by default False.
+
+        Returns
+        -------
+        List[cftime.datetime]
+            A list of time bound values.
+
+        Note
+        ----
+        Some timepoints are saved at the end of the interval, e.g., Feb. 1 00:00
+        for the time interval Jan. 1 00:00 - Feb. 1 00:00. Since this function
+        determines the month and year from the time vector, the bounds will be set
+        incorrectly if the timepoint is set to the end of the time interval. For
+        these cases, set ``end_of_month=True``.
+        """
+        # Get the calendar type from the time coordinates to determine the `cftime`
+        # object to represent bounds values.
+        calendar = time.encoding["calendar"]
+        cf_obj = get_date_type(calendar)
+
+        time_bnds: List[cftime.datetime] = []
+
+        # Loop over the time values to create time bounds for each.
+        for step in time.values:
+            # If end of time interval and first day of year then subtract one month
+            # so bounds will be calculated correctly.
+            if (end_of_month) & (step.day < 2):
+                step = _month_add(step, -1, calendar)
+
+            year, month = step.year, step.month
+
+            l_bnd = cf_obj(year, month, 1, 0, 0)
+            u_bnd = _month_add(l_bnd, 1, calendar)
+
+            time_bnds.append([l_bnd, u_bnd])
+
+        return time_bnds
+
+    def _create_daily_time_bounds(
+        self, time: xr.DataArray, freq: Literal[1, 2, 3, 4, 6, 8, 12, 24] = 1
+    ) -> List[cftime.datetime]:
+        """Creates time bounds for each timestep with the start and end of the day.
+
+        Bounds for each timestep corresponds to 00:00:00 timepoint on the
+        current day and 00:00:00 on the subsequent day.
+
+        Parameters
+        ----------
+        time : xr.DataArray
+            The temporal coordinate variable for the axis.
+        freq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
+            Number of timepoints per day, by default 1. If greater than 1, sub-daily
+            bounds are created.
+
+            * ``freq=1`` is daily (default)
+            * ``freq=2`` is twice daily
+            * ``freq=4`` is 6-hourly
+            * ``freq=8`` is 3-hourly
+            * ``freq=12`` is 2-hourly
+            * ``freq=24`` is hourly
+
+        Returns
+        -------
+        List[cftime.datetime]
+            A list of time bound values.
+
+        Raises
+        ------
+        ValueError
+            If an incorrect ``freq`` argument is passed. Should be 1, 2, 3, 4, 6, 8,
+            12, or 24.
+
+        Notes
+        -----
+        This function is intended to reproduce CDAT's ``setAxisTimeBoundsDaily``
+        method [3]_.
+
+        References
+        ----------
+        .. [3] https://github.com/CDAT/cdutil/blob/master/cdutil/times.py#L1093
+        """
+        if (freq > 24) | (np.mod(24, freq)):
+            raise ValueError(
+                "Incorrect `freq` argument. Supported values include 1, 2, 3, 4, 6, 8, 12, "
+                "and 24."
+            )
+
+        # Get the calendar type from the time coordinates to determine the `cftime`
+        # object to represent bounds values.
+        calendar = time.encoding["calendar"]
+        cf_obj = get_date_type(calendar)
+
+        time_bnds: List[cftime.datetime] = []
+
+        # Loop over the time values to create time bounds for each.
+        for step in time.values:
+            y, m, d, h = step.year, step.month, step.day, step.hour
+            for f in range(freq):
+                if f * (24 // freq) <= h < (f + 1) * (24 // freq):
+                    l_bnd = cf_obj(y, m, d, f * (24 // freq))
+                    u_bnd = l_bnd + datetime.timedelta(hours=(24 // freq))
+            time_bnds.append([l_bnd, u_bnd])
+
+        return time_bnds
+
     def _validate_axis_arg(self, axis: CFAxisKey):
         cf_axis_keys = CF_ATTR_MAP.keys()
 
@@ -438,229 +702,3 @@ class BoundsAccessor:
             )
 
         get_dim_coords(self._dataset, axis)
-
-
-def create_yearly_time_bounds(time: xr.DataArray) -> xr.DataArray:
-    """Creates time bounds for each timestep with the start and end of the year.
-
-    Bounds for each timestep correspond to Jan. 1 00:00:00 of the year of the
-    timestep and Jan. 1 00:00:00 of the subsequent year.
-
-    Parameters
-    ----------
-    time : xr.DataArray
-        The temporal coordinate variable for the axis.
-
-    Returns
-    -------
-    xr.DataArray
-        The monthly time bounds array.
-    """
-    # Get the calendar type from the time coordinates to determine the `cftime`
-    # object to represent bounds values.
-    calendar = time.encoding["calendar"]
-    cf_obj = get_date_type(calendar)
-
-    # Loop over the time values to generate a bounds DataArray.
-    time_bnds = []
-    for step in time.values:
-        year = step.year
-
-        l_bnd = cf_obj(year, 1, 1, 0, 0)
-        u_bnd = cf_obj(year + 1, 1, 1, 0, 0)
-
-        time_bnds.append([l_bnd, u_bnd])
-
-    da_time_bnds = xr.DataArray(
-        name=f"{time.name}_bnds",
-        data=time_bnds,
-        coords=dict(time=time),
-        dims=[*time.dims, "bnds"],
-        attrs={"xcdat_bounds": "True"},
-    )
-
-    return da_time_bnds
-
-
-def create_monthly_time_bounds(
-    time: xr.DataArray, end_of_month: bool = False
-) -> xr.DataArray:
-    """Creates time bounds for each timestep with the start and end of the month.
-
-    Bounds for each timestep correspond to 00:00:00 on the first of the month
-    and 00:00:00 on the first of the subsequent month.
-
-    Parameters
-    ----------
-    time : xr.DataArray
-        The temporal coordinate variable for the axis.
-    end_of_month : bool, optional
-        Flag to note that the timepoint is saved at the end of the monthly
-        interval (see Note), by default False.
-
-    Returns
-    -------
-    xr.DataArray
-        The monthly time bounds array
-
-    Note
-    ----
-    Some timepoints are saved at the end of the interval, e.g., Feb. 1 00:00
-    for the time interval Jan. 1 00:00 - Feb. 1 00:00. Since this function
-    determines the month and year from the time vector, the bounds will be set
-    incorrectly if the timepoint is set to the end of the time interval. For
-    these cases, set ``end_of_month=True``.
-    """
-    # Get the calendar type from the time coordinates to determine the `cftime`
-    # object to represent bounds values.
-    calendar = time.encoding["calendar"]
-    cf_obj = get_date_type(calendar)
-
-    # Loop over the time values to generate a bounds DataArray.
-    time_bnds = []
-    for step in time.values:
-        # If end of time interval and first day of year then subtract one month
-        # so bounds will be calculated correctly.
-        if (end_of_month) & (step.day < 2):
-            step = _month_add(step, -1, calendar)
-
-        year, month = step.year, step.month
-
-        l_bnd = cf_obj(year, month, 1, 0, 0)
-        u_bnd = _month_add(l_bnd, 1, calendar)
-
-        time_bnds.append([l_bnd, u_bnd])
-
-    da_time_bnds = xr.DataArray(
-        name=f"{time.name}_bnds",
-        data=time_bnds,
-        coords=dict(time=time),
-        dims=[*time.dims, "bnds"],
-        attrs={"xcdat_bounds": "True"},
-    )
-
-    return da_time_bnds
-
-
-def create_daily_time_bounds(
-    time: xr.DataArray, freq: Literal[1, 2, 3, 4, 6, 8, 12, 24] = 1
-) -> xr.DataArray:
-    """Creates time bounds for each timestep with the start and end of the day.
-
-    Bounds for each timestep corresponds to 00:00:00 timepoint on the
-    current day and 00:00:00 on the subsequent day.
-
-    Parameters
-    ----------
-    time : xr.DataArray
-        The temporal coordinate variable for the axis.
-    freq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
-        Number of timepoints per day, by default 1. If greater than 1, sub-daily
-        bounds are created.
-
-         * ``freq=1`` is daily (default)
-         * ``freq=2`` is twice daily
-         * ``freq=4`` is 6-hourly
-         * ``freq=8`` is 3-hourly
-         * ``freq=12`` is 2-hourly
-         * ``freq=24`` is hourly
-
-    Returns
-    -------
-    xr.DataArray
-        The daily or sub-daily time bounds array
-
-    Raises
-    ------
-    ValueError
-        If an incorrect ``freq`` argument is passed. Should be 1, 2, 3, 4, 6, 8,
-        12, or 24.
-
-    Notes
-    -----
-    This function is intended to reproduce CDAT's ``setAxisTimeBoundsDaily``
-    method [3]_.
-
-    References
-    ----------
-    .. [3] https://github.com/CDAT/cdutil/blob/master/cdutil/times.py#L1093
-    """
-    if (freq > 24) | (np.mod(24, freq)):
-        raise ValueError(
-            "Incorrect `freq` argument. Supported values include 1, 2, 3, 4, 6, 8, 12, "
-            "and 24."
-        )
-
-    # Get the calendar type from the time coordinates to determine the `cftime`
-    # object to represent bounds values.
-    calendar = time.encoding["calendar"]
-    cf_obj = get_date_type(calendar)
-
-    # Loop over the time values to generate a bounds DataArray.
-    time_bnds = []
-    for step in time.values:
-        y, m, d, h = step.year, step.month, step.day, step.hour
-        for f in range(freq):
-            if f * (24 // freq) <= h < (f + 1) * (24 // freq):
-                l_bnd = cf_obj(y, m, d, f * (24 // freq))
-                u_bnd = l_bnd + datetime.timedelta(hours=(24 // freq))
-        time_bnds.append([l_bnd, u_bnd])
-
-    da_time_bnds = xr.DataArray(
-        name=f"{time.name}_bnds",
-        data=time_bnds,
-        coords=dict(time=time),
-        dims=[*time.dims, "bnds"],
-        attrs={"xcdat_bounds": "True"},
-    )
-
-    return da_time_bnds
-
-
-def create_time_bounds(time: xr.DataArray) -> xr.DataArray:
-    """Creates time bounds for each timestep of the time coordinate axis.
-
-    This function uses ``_infer_freq`` to determine the temporal resolution and
-    then calls ``get_yearly_time_bounds``, ``get_monthly_time_bounds``, or
-    ``get_daily_time_bounds`` as appropriate. See the docstrings for these
-    functions for more details.
-
-    Parameters
-    ----------
-    time : xr.DataArray
-        The temporal coordinate variable for the axis.
-
-    Returns
-    -------
-    xr.DataArray
-        The bounds for the time axis.
-
-    Examples
-    --------
-    # TODO
-    """
-    freq = _infer_freq(time)
-    if freq == "year":
-        time_bnds = create_yearly_time_bounds(time)
-    elif freq == "month":
-        time_bnds = create_monthly_time_bounds(time)
-    elif freq == "day":
-        time_bnds = create_daily_time_bounds(time)
-    elif freq == "hour":
-        # Determine the daily frequency for generating time  bounds.
-        diff = time.values[1] - time.values[0]
-        hrs = diff.seconds / 3600
-        daily_freq = int(24 / hrs)
-
-        time_bnds = create_daily_time_bounds(time, freq=daily_freq)  # type: ignore
-
-    # Create the bounds data array
-    time_bnds = xr.DataArray(
-        name=f"{time.name}_bnds",
-        data=time_bnds,
-        coords={time.name: time},
-        dims=[*time.dims, "bnds"],
-        attrs={"xcdat_bounds": "True"},
-    )
-
-    return time_bnds

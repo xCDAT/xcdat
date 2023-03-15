@@ -27,10 +27,6 @@ Below is a list of top-level API functions available in ``xcdat``.
     compare_datasets
     get_dim_coords
     get_dim_keys
-    create_time_bounds
-    create_yearly_time_bounds
-    create_monthly_time_bounds
-    create_daily_time_bounds
     create_gaussian_grid
     create_global_mean_grid
     create_grid
