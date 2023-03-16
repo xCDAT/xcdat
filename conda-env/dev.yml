@@ -35,6 +35,7 @@ dependencies:
     - nbsphinx=0.8.12
     - pandoc=2.19.2
     - ipython=8.8.0 # Required for nbsphinx syntax highlighting
+    - gsw_xarray # Required for vertical regridding example
     # ==================
     # Quality Assurance
     # ==================
