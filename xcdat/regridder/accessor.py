@@ -215,7 +215,14 @@ class RegridderAccessor:
         Apply horizontal regridding to ``data_var`` of the current
         ``xr.Dataset`` to ``output_grid``.
 
-        Supported tools:
+        When might ``Regrid2`` be preferred over ``xESMF``?
+
+        If performing conservative regridding from a high/medium resolution lat/lon grid to a
+        coarse lat/lon target, ``Regrid2`` may provide better results as it assumes grid cells
+        with constant latitudes and longitudes while ``xESMF`` assumes the cells are connected
+        by Great Circles [1]_.
+
+        Supported tools, methods and grids:
 
         - xESMF (https://pangeo-xesmf.readthedocs.io/en/latest/)
            - Methods:
@@ -237,7 +244,7 @@ class RegridderAccessor:
              - Conservative
            - Grids:
 
-             - Rectinlinear
+             - Rectilinear
            - Find options at :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`
 
         Parameters
@@ -261,6 +268,10 @@ class RegridderAccessor:
         ------
         ValueError
             If tool is not supported.
+
+        References
+        ----------
+        .. [1] https://earthsystemmodeling.org/docs/release/ESMF_8_1_0/ESMF_refdoc/node5.html#SECTION05012900000000000000
 
         Examples
         --------
