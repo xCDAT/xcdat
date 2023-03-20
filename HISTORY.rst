@@ -2,6 +2,23 @@
 History
 =======
 
+v0.5.0 (TBD)
+--------------------------
+
+Features
+~~~~~~~~
+TODO
+
+Bug Fixes
+~~~~~~~~~
+TODO
+
+Documentation
+~~~~~~~~~~~~~
+TODO
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.4.0...v0.5.0
+
 v0.4.0 (9 November 2022)
 --------------------------
 
