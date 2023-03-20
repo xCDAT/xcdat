@@ -6,13 +6,14 @@ from typing import Dict, List, Literal, Optional, Union
 import cf_xarray as cfxr  # noqa: F401
 import cftime
 import numpy as np
+import pandas as pd
 import xarray as xr
 from xarray.coding.cftime_offsets import get_date_type
 
 from xcdat.axis import CF_ATTR_MAP, CFAxisKey, get_dim_coords
 from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
-from xcdat.temporal import _infer_freq, _month_add
+from xcdat.temporal import _infer_freq
 
 logger = setup_custom_logger(__name__)
 
@@ -510,15 +511,36 @@ class BoundsAccessor:
         TypeError
             If time coordinates are not composed of ``cftime.datetime`` object.
         """
-
         freq = _infer_freq(time) if freq is None else freq  # type: ignore
+        timesteps = time.values
+
+        # Determine the object type for creating time bounds based on the
+        # object type/dtype of the time coordinates.
+        if np.issubdtype(timesteps.dtype, np.datetime64):
+            # Cast time values from `np.datetime64` to `pd.Timestamp` (a
+            # sub-class of `np.datetime64`) in order to get access to the
+            # pandas time/date components which simplifies creating bounds.
+            # https://pandas.pydata.org/docs/user_guide/timeseries.html#time-date-components
+            timesteps = pd.to_datetime(timesteps)
+            obj_type = pd.Timestamp
+        elif issubclass(type(timesteps[0]), cftime.datetime):
+            # Get the `cftime.datetime` sub-class object type based on the
+            # CF calendar type.
+            calendar = time.encoding["calendar"]
+            obj_type = get_date_type(calendar)
+        else:
+            raise TypeError(
+                f"Bounds cannot be created for '{time.name}' coordinates because it is "
+                "not decoded as `cftime.datetime` or `datetime.datetime`. Try decoding "
+                f"'{time.name}' first then adding bounds."
+            )
 
         if freq == "year":
-            time_bnds = self._create_yearly_time_bounds(time)
+            time_bnds = self._create_yearly_time_bounds(timesteps, obj_type)
         elif freq == "month":
-            time_bnds = self._create_monthly_time_bounds(time)
+            time_bnds = self._create_monthly_time_bounds(timesteps, obj_type)
         elif freq == "day":
-            time_bnds = self._create_daily_time_bounds(time)
+            time_bnds = self._create_daily_time_bounds(timesteps, obj_type)
         elif freq == "hour":
             # Determine the daily frequency for generating time  bounds.
             if daily_freq is None:
@@ -526,7 +548,7 @@ class BoundsAccessor:
                 hrs = diff.seconds / 3600
                 daily_freq = int(24 / hrs)  # type: ignore
 
-            time_bnds = self._create_daily_time_bounds(time, freq=daily_freq)  # type: ignore
+            time_bnds = self._create_daily_time_bounds(timesteps, obj_type, freq=daily_freq)  # type: ignore
 
         # Create the bounds data array
         da_time_bnds = xr.DataArray(
@@ -539,7 +561,11 @@ class BoundsAccessor:
 
         return da_time_bnds
 
-    def _create_yearly_time_bounds(self, time: xr.DataArray) -> List[cftime.datetime]:
+    def _create_yearly_time_bounds(
+        self,
+        timesteps: np.ndarray,
+        obj_type: Union[cftime.datetime, pd.Timestamp],
+    ) -> List[Union[cftime.datetime, pd.Timestamp]]:
         """Creates time bounds for each timestep with the start and end of the year.
 
         Bounds for each timestep correspond to Jan. 1 00:00:00 of the year of the
@@ -547,35 +573,37 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        time : xr.DataArray
-            The temporal coordinate variable for the axis.
+        timesteps : np.ndarray
+            An array of timesteps, represented as either `cftime.datetime` or
+            `pd.Timestamp` (casted from `np.datetime64[ns]` to support pandas
+            time/date components).
+        obj_type : Union[cftime.datetime, pd.Timestamp]
+            The object type for time bounds based on the dtype of
+            ``time_values``.
 
         Returns
         -------
         List[cftime.datetime]
             A list of time bound values.
         """
-        # Get the calendar type from the time coordinates to determine the `cftime`
-        # object to represent bounds values.
-        calendar = time.encoding["calendar"]
-        cf_obj = get_date_type(calendar)
-
         time_bnds: List[cftime.datetime] = []
 
-        # Loop over the time values to create time bounds for each.
-        for step in time.values:
+        for step in timesteps:
             year = step.year
 
-            l_bnd = cf_obj(year, 1, 1, 0, 0)
-            u_bnd = cf_obj(year + 1, 1, 1, 0, 0)
+            l_bnd = obj_type(year, 1, 1, 0, 0)
+            u_bnd = obj_type(year + 1, 1, 1, 0, 0)
 
             time_bnds.append([l_bnd, u_bnd])
 
         return time_bnds
 
     def _create_monthly_time_bounds(
-        self, time: xr.DataArray, end_of_month: bool = False
-    ) -> List[cftime.datetime]:
+        self,
+        timesteps: np.ndarray,
+        obj_type: Union[cftime.datetime, pd.Timestamp],
+        end_of_month: bool = False,
+    ) -> List[Union[cftime.datetime, pd.Timestamp]]:
         """Creates time bounds for each timestep with the start and end of the month.
 
         Bounds for each timestep correspond to 00:00:00 on the first of the month
@@ -583,15 +611,20 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        time : xr.DataArray
-            The temporal coordinate variable for the axis.
+        timesteps : np.ndarray
+            An array of timesteps, represented as either `cftime.datetime` or
+            `pd.Timestamp` (casted from `np.datetime64[ns]` to support pandas
+            time/date components).
+        obj_type : Union[cftime.datetime, pd.Timestamp]
+            The object type for time bounds based on the dtype of
+            ``time_values``.
         end_of_month : bool, optional
             Flag to note that the timepoint is saved at the end of the monthly
             interval (see Note), by default False.
 
         Returns
         -------
-        List[cftime.datetime]
+        List[Union[cftime.datetime, pd.Timestamp]]
             A list of time bound values.
 
         Note
@@ -602,32 +635,84 @@ class BoundsAccessor:
         incorrectly if the timepoint is set to the end of the time interval. For
         these cases, set ``end_of_month=True``.
         """
-        # Get the calendar type from the time coordinates to determine the `cftime`
-        # object to represent bounds values.
-        calendar = time.encoding["calendar"]
-        cf_obj = get_date_type(calendar)
+        time_bnds = []
 
-        time_bnds: List[cftime.datetime] = []
-
-        # Loop over the time values to create time bounds for each.
-        for step in time.values:
-            # If end of time interval and first day of year then subtract one month
-            # so bounds will be calculated correctly.
+        for step in timesteps:
+            # If end of time interval and first day of year then subtract one
+            # month so bounds will be calculated correctly.
+            # FIXME: ``end_of_month`` needs to be determined internally because
+            # we don't provide this flag with `ds.bounds.add_bounds()` so it can
+            # never be set to True. Adding this manual flag would make
+            # `.add_bounds` less intuitive. After this logic is implemented, we
+            # can remove the ``end_of_month `` parameter here.
             if (end_of_month) & (step.day < 2):
-                step = _month_add(step, -1, calendar)
+                step = self._add_months_to_timestep(step, obj_type, delta=-1)
 
             year, month = step.year, step.month
 
-            l_bnd = cf_obj(year, month, 1, 0, 0)
-            u_bnd = _month_add(l_bnd, 1, calendar)
+            l_bnd = obj_type(year, month, 1, 0, 0)
+            u_bnd = self._add_months_to_timestep(l_bnd, obj_type, delta=1)
 
             time_bnds.append([l_bnd, u_bnd])
 
         return time_bnds
 
+    def _add_months_to_timestep(
+        self,
+        timestep: Union[cftime.datetime, pd.Timestamp],
+        obj_type: Union[cftime.datetime, pd.Timestamp],
+        delta: int,
+    ) -> Union[cftime.datetime, pd.Timestamp]:
+        """Adds delta month(s) to a timestep.
+
+        The delta value can be positive or negative (for subtraction). Refer to [1]_
+        for logic.
+
+        Parameters
+        ----------
+        timesep : Union[cftime.datime, pd.Timestamp]
+            A timestep represented as ``cftime.datetime`` or ``pd.Timestamp``.
+        obj_type : Union[cftime.datetime, pd.Timestamp]
+                The object type for time bounds based on the dtype of
+                ``timestep``.
+        delta : int
+            Integer months to be added to times (can be positive or negative)
+
+        Returns
+        -------
+        Union[cftime.datetime, pd.Timestamp]
+
+        References
+        ----------
+        [1] https://stackoverflow.com/a/4131114
+        """
+        # Compute the new month and year with the delta month(s).
+        month = timestep.month - 1 + delta
+        year = timestep.year + month // 12
+        month = month % 12 + 1
+
+        # Re-use existing hour/minute/second/microsecond.
+        hour = timestep.hour
+        minute = timestep.minute
+        second = timestep.second
+        microsecond = timestep.microsecond
+
+        # If day is greater than days in month use days in month as day.
+        day = timestep.day
+        dim = obj_type(year, month, 1).daysinmonth
+        day = min(day, dim)
+
+        # Create the new timestep.
+        new_timestep = obj_type(year, month, day, hour, minute, second, microsecond)
+
+        return new_timestep
+
     def _create_daily_time_bounds(
-        self, time: xr.DataArray, freq: Literal[1, 2, 3, 4, 6, 8, 12, 24] = 1
-    ) -> List[cftime.datetime]:
+        self,
+        timesteps: np.ndarray,
+        obj_type: Union[cftime.datetime, pd.Timestamp],
+        freq: Literal[1, 2, 3, 4, 6, 8, 12, 24] = 1,
+    ) -> List[Union[cftime.datetime, pd.Timestamp]]:
         """Creates time bounds for each timestep with the start and end of the day.
 
         Bounds for each timestep corresponds to 00:00:00 timepoint on the
@@ -635,8 +720,13 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        time : xr.DataArray
-            The temporal coordinate variable for the axis.
+        timesteps : np.ndarray
+            An array of timesteps, represented as either `cftime.datetime` or
+            `pd.Timestamp` (casted from `np.datetime64[ns]` to support pandas
+            time/date components).
+        obj_type : Union[cftime.datetime, pd.Timestamp]
+            The object type for time bounds based on the dtype of
+            ``time_values``.
         freq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
             Number of timepoints per day, by default 1. If greater than 1, sub-daily
             bounds are created.
@@ -650,7 +740,7 @@ class BoundsAccessor:
 
         Returns
         -------
-        List[cftime.datetime]
+        List[Union[cftime.datetime, pd.Timestamp]]
             A list of time bound values.
 
         Raises
@@ -674,20 +764,16 @@ class BoundsAccessor:
                 "and 24."
             )
 
-        # Get the calendar type from the time coordinates to determine the `cftime`
-        # object to represent bounds values.
-        calendar = time.encoding["calendar"]
-        cf_obj = get_date_type(calendar)
+        time_bnds = []
 
-        time_bnds: List[cftime.datetime] = []
-
-        # Loop over the time values to create time bounds for each.
-        for step in time.values:
+        for step in timesteps:
             y, m, d, h = step.year, step.month, step.day, step.hour
+
             for f in range(freq):
                 if f * (24 // freq) <= h < (f + 1) * (24 // freq):
-                    l_bnd = cf_obj(y, m, d, f * (24 // freq))
+                    l_bnd = obj_type(y, m, d, f * (24 // freq))
                     u_bnd = l_bnd + datetime.timedelta(hours=(24 // freq))
+
             time_bnds.append([l_bnd, u_bnd])
 
         return time_bnds

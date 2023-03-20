@@ -377,9 +377,9 @@ class TestAddBounds:
             name="time_bnds",
             data=np.array(
                 [
-                    ["1999-12-17T00:00:00.000000000", "2000-01-17T00:00:00.000000000"],
-                    ["2000-01-17T00:00:00.000000000", "2000-02-16T00:00:00.000000000"],
-                    ["2000-02-16T00:00:00.000000000", "2000-03-16T00:00:00.000000000"],
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
                 ],
                 dtype="datetime64[ns]",
             ),
@@ -389,6 +389,23 @@ class TestAddBounds:
         )
 
         assert result.time_bnds.identical(expected_time_bnds)
+
+    def test_raises_error_for_non_decoded_time_coords(self):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+        ds["time"] = xr.DataArray(
+            name="time",
+            data=np.array([0, 1, 2], dtype="int64"),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+            },
+        )
+
+        with pytest.raises(TypeError):
+            ds.bounds.add_bounds("T")
 
     def test_returns_bounds_for_dataset_with_time_coords_as_cftime_objects(self):
         ds = self.ds.copy()
@@ -433,57 +450,36 @@ class TestAddBounds:
 
         assert result.time_bnds.identical(expected_time_bnds)
 
-    # def test_create_monthly_bounds(self):
-    #     # reference dataset has bounds
-    #     ds_with_bnds = self.ds_with_bnds.copy()
-    #     # create test dataset
-    #     ds = self.ds_with_bnds.copy()
-    #     # drop bounds to see if get_monthly_time_bounds
-    #     # reproduces reference
-    #     ds = ds.drop_vars("time_bnds")
-    #     # generate time bounds
-    #     result = create_monthly_time_bounds(ds.time)
+    def test_add_bounds_for_time_coords_with_different_frequencies(self):
+        # get reference datasets
+        ds_subhrly_with_bnds = self.ds_subhourly_with_bnds.copy()
+        ds_hrly_with_bnds = self.ds_hourly_with_bnds.copy()
+        ds_daily_with_bnds = self.ds_daily_with_bnds.copy()
+        ds_monthly_with_bnds = self.ds_with_bnds.copy()
+        ds_yearly_with_bnds = self.ds_yearly_with_bnds.copy()
 
-    #     assert result.identical(ds_with_bnds.time_bnds)
+        # drop bounds for testing
+        ds_subhrly_wo_bnds = ds_subhrly_with_bnds.drop_vars("time_bnds")
+        ds_hrly_wo_bnds = ds_hrly_with_bnds.drop_vars("time_bnds")
+        ds_daily_wo_bnds = ds_daily_with_bnds.drop_vars("time_bnds")
+        ds_monthly_wo_bnds = ds_monthly_with_bnds.drop_vars("time_bnds")
+        ds_yearly_wo_bnds = ds_yearly_with_bnds.drop_vars("time_bnds")
 
-    # def test_create_yearly_bounds(self):
-    #     # reference dataset has bounds
-    #     ds_with_bnds = self.ds_yearly_with_bnds.copy()
-    #     # create test dataset
-    #     ds = self.ds_yearly_with_bnds.copy()
-    #     # drop bounds to see if get_yearly_time_bounds
-    #     # reproduces reference
-    #     ds = ds.drop_vars("time_bnds")
-    #     # generate time bounds
-    #     result = create_yearly_time_bounds(ds.time)
+        # test adding bounds
+        hourly_bounds = ds_hrly_wo_bnds.bounds.add_bounds(axis="T")
+        daily_bounds = ds_daily_wo_bnds.bounds.add_bounds(axis="T")
+        monthly_bounds = ds_monthly_wo_bnds.bounds.add_bounds(axis="T")
+        yearly_bounds = ds_yearly_wo_bnds.bounds.add_bounds(axis="T")
 
-    #     assert result.identical(ds_with_bnds.time_bnds)
+        # sub hourly data is not supported
+        with pytest.raises(ValueError):
+            ds_subhrly_wo_bnds.bounds.add_bounds(axis="T")
 
-    # def test_create_daily_bounds(self):
-    #     # reference dataset has bounds
-    #     ds_with_bnds = self.ds_daily_with_bnds.copy()
-    #     # create test dataset
-    #     ds = self.ds_daily_with_bnds.copy()
-    #     # drop bounds to see if get_daily_time_bounds
-    #     # reproduces reference
-    #     ds = ds.drop_vars("time_bnds")
-    #     # generate time bounds
-    #     result = create_daily_time_bounds(ds.time)
-
-    #     assert result.identical(ds_with_bnds.time_bnds)
-
-    # def test_create_hourly_bounds(self):
-    #     # reference dataset has bounds
-    #     ds_with_bnds = self.ds_hourly_with_bnds.copy()
-    #     # create test dataset
-    #     ds = self.ds_hourly_with_bnds.copy()
-    #     # drop bounds to see if get_daily_time_bounds
-    #     # reproduces reference
-    #     ds = ds.drop_vars("time_bnds")
-    #     # generate time bounds
-    #     result = create_daily_time_bounds(ds.time, freq=24)
-
-    #     assert result.identical(ds_with_bnds.time_bnds)
+        # ensure identical
+        assert hourly_bounds.identical(ds_hrly_with_bnds)
+        assert daily_bounds.identical(ds_daily_with_bnds)
+        assert monthly_bounds.identical(ds_monthly_with_bnds)
+        assert yearly_bounds.identical(ds_yearly_with_bnds)
 
     # def test_create_monthly_bounds_for_eom_set_true(self):
     #     # reference dataset
@@ -520,33 +516,3 @@ class TestAddBounds:
     #     result = create_monthly_time_bounds(ds.time, end_of_month=True)
 
     #     assert result.identical(expected_time_bnds)
-
-    # def test_generic_create_time_bounds_function(self):
-    #     # get reference datasets
-    #     ds_subhrly_with_bnds = self.ds_subhourly_with_bnds.copy()
-    #     ds_hrly_with_bnds = self.ds_hourly_with_bnds.copy()
-    #     ds_daily_with_bnds = self.ds_daily_with_bnds.copy()
-    #     ds_monthly_with_bnds = self.ds_with_bnds.copy()
-    #     ds_yearly_with_bnds = self.ds_yearly_with_bnds.copy()
-
-    #     # drop bounds for testing
-    #     ds_subhrly_wo_bnds = ds_subhrly_with_bnds.drop_vars("time_bnds")
-    #     ds_hrly_wo_bnds = ds_hrly_with_bnds.drop_vars("time_bnds")
-    #     ds_daily_wo_bnds = ds_daily_with_bnds.drop_vars("time_bnds")
-    #     ds_monthly_wo_bnds = ds_monthly_with_bnds.drop_vars("time_bnds")
-    #     ds_yearly_wo_bnds = ds_yearly_with_bnds.drop_vars("time_bnds")
-
-    #     # test adding bounds
-    #     hourly_bounds = create_time_bounds(ds_hrly_wo_bnds.time)
-    #     daily_bounds = create_time_bounds(ds_daily_wo_bnds.time)
-    #     monthly_bounds = create_time_bounds(ds_monthly_wo_bnds.time)
-    #     yearly_bounds = create_time_bounds(ds_yearly_wo_bnds.time)
-    #     # sub hourly data is not supported
-    #     with pytest.raises(ValueError):
-    #         create_time_bounds(ds_subhrly_wo_bnds.time)
-
-    #     # ensure identical
-    #     assert hourly_bounds.identical(ds_hrly_with_bnds.time_bnds)
-    #     assert daily_bounds.identical(ds_daily_with_bnds.time_bnds)
-    #     assert monthly_bounds.identical(ds_monthly_with_bnds.time_bnds)
-    #     assert yearly_bounds.identical(ds_yearly_with_bnds.time_bnds)
