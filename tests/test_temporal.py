@@ -7,7 +7,7 @@ from xarray.tests import requires_dask
 
 from tests.fixtures import generate_dataset
 from xcdat.logger import setup_custom_logger
-from xcdat.temporal import TemporalAccessor, _month_add
+from xcdat.temporal import TemporalAccessor
 
 logger = setup_custom_logger("xcdat.temporal", propagate=True)
 
@@ -3330,91 +3330,3 @@ class Test_Averager:
                     "custom_seasons": None,
                 },
             )
-
-
-class TestTemporalFunctions:
-    def test_month_add_plus_minus(self):
-
-        # add a single month
-        time_slice = cftime.DatetimeGregorian(2000, 1, 15, 0, 0, 0)
-        expected = cftime.DatetimeGregorian(2000, 2, 15, 0, 0, 0)
-        result = _month_add(time_slice, 1, "standard")
-
-        assert result == expected
-
-        # add 99 years and 5 months
-        time_slice = cftime.DatetimeGregorian(2000, 1, 15, 0, 0, 0)
-        expected = cftime.DatetimeGregorian(2099, 6, 15, 0, 0, 0)
-        result = _month_add(time_slice, 1193, "standard")
-
-        assert result == expected
-
-        # subtract 18 months
-        time_slice = cftime.DatetimeGregorian(2000, 1, 15, 0, 0, 0)
-        expected = cftime.DatetimeGregorian(1998, 7, 15, 0, 0, 0)
-        result = _month_add(time_slice, -18, "standard")
-
-        assert result == expected
-
-        # subtract a vector
-        ds = generate_dataset(decode_times=True, cf_compliant=False, has_bounds=True)
-
-        time_vector = ds.time
-        expected = np.array(
-            [
-                cftime.DatetimeGregorian(
-                    1998, 12, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-                cftime.DatetimeGregorian(1999, 1, 15, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 2, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 3, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 4, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 5, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 6, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 7, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 8, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 9, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 10, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(
-                    1999, 11, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-                cftime.DatetimeGregorian(
-                    1999, 12, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-                cftime.DatetimeGregorian(2000, 1, 15, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(
-                    2000, 11, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-            ],
-            dtype=object,
-        )
-        result = _month_add(time_vector, -13, "standard")
-
-        assert np.alltrue(result == expected)
-
-        # add a vector
-        expected = np.array(
-            [
-                cftime.DatetimeGregorian(2005, 7, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2005, 8, 15, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2005, 9, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2005, 10, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(
-                    2005, 11, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-                cftime.DatetimeGregorian(2005, 12, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 1, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 2, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 3, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 4, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 5, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 6, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 7, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 8, 15, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2007, 6, 16, 12, 0, 0, 0, has_year_zero=False),
-            ],
-            dtype=object,
-        )
-        result = _month_add(time_vector, 66, "standard")
-
-        assert np.alltrue(result == expected)
