@@ -476,10 +476,6 @@ class BoundsAccessor:
     ) -> xr.DataArray:
         """Creates time bounds for each timestep of the time coordinate axis.
 
-        This function uses ``_infer_freq`` to determine the temporal resolution and
-        then calls ``get_yearly_time_bounds``, ``get_monthly_time_bounds``, or
-        ``get_daily_time_bounds`` as appropriate. See the docstrings for these
-        functions for more details.
 
         Parameters
         ----------
