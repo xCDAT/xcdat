@@ -42,7 +42,11 @@ class XESMFRegridder(BaseRegridder):
         ignore_degenerate: bool = True,
         **options,
     ):
-        """Wrapper class for xESMF regridder class.
+        """Extension of ``xESMF`` regridder.
+
+        The ``XESMFRegridder`` extends ``xESMF`` by automatically constructing
+        the ``xe.XESMFRegridder`` object, preserving source bounds and
+        generating missing bounds.
 
         Parameters
         ----------
@@ -51,7 +55,9 @@ class XESMFRegridder(BaseRegridder):
         output_grid : xr.Dataset
             Contains desintation grid coordinates.
         method : str
-            Regridding method. Options are
+            Regridding method.
+
+            Options:
                - bilinear
                - conservative
                - conservative_normed
@@ -61,7 +67,9 @@ class XESMFRegridder(BaseRegridder):
         periodic : bool
             Treat longitude as periodic. Used for global grids.
         extrap_method : Optional[str]
-            Extrapolation method. Options are
+            Extrapolation method.
+
+            Options:
                - inverse_dist
                - nearest_s2d
         extrap_dist_exponent : Optional[float]
