@@ -44,8 +44,9 @@ class XESMFRegridder(BaseRegridder):
     ):
         """Extension of ``xESMF`` regridder.
 
-        The ``XESMFRegridder`` extends ``xESMF`` by automatically constructing the ``xe.XESMFRegridder`` object,
-        preserving source bounds and generating missing bounds.
+        The ``XESMFRegridder`` extends ``xESMF`` by automatically constructing
+        the ``xe.XESMFRegridder`` object, preserving source bounds and
+        generating missing bounds.
 
         Parameters
         ----------

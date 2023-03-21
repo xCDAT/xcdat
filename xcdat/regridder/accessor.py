@@ -108,10 +108,13 @@ class RegridderAccessor:
         **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
-        Wraps the xESMF library providing access to regridding between
-        structured rectilinear and curvilinear grids.
+        Extends the xESMF library for horizontal regridding between structured
+        rectilinear and curvilinear grids.
 
-        Regrids ``data_var`` in dataset to ``output_grid``.
+        This method extends ``xESMF`` by automatically constructing the
+        ``xe.XESMFRegridder`` object, preserving source bounds, and generating
+        missing bounds. It regrids ``data_var`` in the dataset to
+        ``output_grid``.
 
         Option documentation :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
 
