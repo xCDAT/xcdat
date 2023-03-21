@@ -579,7 +579,7 @@ class BoundsAccessor:
 
         Returns
         -------
-        List[cftime.datetime]
+        List[Union[cftime.datetime, pd.Timestamp]]
             A list of time bound values.
         """
         time_bnds: List[cftime.datetime] = []
