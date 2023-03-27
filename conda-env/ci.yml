@@ -17,9 +17,11 @@ dependencies:
     - netcdf4
     - numpy
     - pandas
+    - python-dateutil
     - xarray
     - xesmf
-    - python-dateutil
+    # Quality Assurance
+    # ==================
     - types-python-dateutil
     # Testing
     # ==================
