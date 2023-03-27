@@ -2,6 +2,61 @@
 History
 =======
 
+v0.5.0 (27 March 2023)
+--------------------------
+
+This long-awaited minor release includes feature updates to support an
+optional user-specified climatology reference period when calculating
+climatologies and departures, support for opening datasets using the
+``directory`` key of the legacy CDAT `Climate Data Markup Language
+(CDML) <https://cdms.readthedocs.io/en/latest/manual/cdms_6.html>`__
+format (an XML dialect), and improved support for using custom time
+coordinates in temporal APIs.
+
+This release also includes a bug fix for singleton coordinates breaking
+the ``swap_lon_axis()`` function. Additionally, Jupyter Notebooks for
+presentations and demos have been added to the documentation.
+
+Features
+~~~~~~~~
+
+-  Update departures and climatology APIs with reference period by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/417
+-  Wrap open_dataset and open_mfdataset to flexibly open datasets by
+   `Stephen Po-Chedley`_ in https://github.com/xCDAT/xcdat/pull/385
+-  Add better support for using custom time coordinates in temporal APIs
+   by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/415
+
+Bug Fixes
+~~~~~~~~~
+
+-  Raise warning if no time coords found with ``decode_times`` by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/409
+-  Bump conda env dependencies by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/408
+-  Fix ``swap_lon_axis()`` breaking when sorting with singleton coords
+   by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/392
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Update xsearch-xcdat-example.ipynb by `Stephen Po-Chedley`_ in
+   https://github.com/xCDAT/xcdat/pull/425
+-  Updates xesmf docs by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/432
+-  Add presentations and demos to sphinx toctree by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/422
+-  Update temporal ``.average`` and ``.departures`` docstrings by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/407
+
+DevOps
+~~~~~~
+
+-  Bump conda env dependencies by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/408
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.4.0...v0.5.0
+
 v0.4.0 (9 November 2022)
 --------------------------
 

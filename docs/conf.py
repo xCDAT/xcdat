@@ -146,7 +146,6 @@ html_theme_options = {
     "use_issues_button": True,
     "use_download_button": True,
     "use_fullscreen_button": True,
-    "logo_only": True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
