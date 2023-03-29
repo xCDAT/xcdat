@@ -62,6 +62,11 @@ def open_dataset(
         features.
     bounds_axes : List[str], optional
         List of CF axes to add bounds to (if missing), default ["X", "Y"].
+        Supported CF axes include "X", "Y", "Z", and "T". Bounds are required
+        for many xCDAT features. As an alternative to passing "T" to generate
+        time bounds here, it is recommended to use the ``add_time_bounds()``
+        bounds accessor method if you need more granular configuration. For more
+        information, refer to ``xcdat.Bounds.BoundsAccessor.add_time_bounds()``.
     decode_times: bool, optional
         If True, attempt to decode times encoded in the standard NetCDF
         datetime format into cftime.datetime objects. Otherwise, leave them
@@ -102,7 +107,6 @@ def open_dataset(
 
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
-
     ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
 
     if decode_times:
@@ -147,6 +151,11 @@ def open_mfdataset(
         features.
     bounds_axes : List[str], optional
         List of CF axes to add bounds to (if missing), default ["X", "Y"].
+        Supported CF axes include "X", "Y", "Z", and "T". Bounds are required
+        for many xCDAT features. As an alternative to passing "T" to generate
+        time bounds here, it is recommended to use the ``add_time_bounds()``
+        bounds accessor method if you need more granular configuration. For more
+        information, refer to ``xcdat.Bounds.BoundsAccessor.add_time_bounds()``.
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
     decode_times: bool, optional

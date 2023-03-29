@@ -75,19 +75,8 @@ class TestAddMissingBounds:
 
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
-        result = ds.bounds.add_missing_bounds()
+        result = ds.bounds.add_missing_bounds(axes=["X", "Y"])
         assert result.identical(self.ds_with_bnds)
-
-    def test_time_bounds_not_added_to_the_dataset_if_not_specified(self):
-        ds = self.ds_with_bnds.copy()
-        # generate datasets without time bounds
-        ds_no_time_bnds = ds.copy()
-        ds_no_time_bnds = ds_no_time_bnds.drop_vars(["time_bnds"])
-        ds = ds.drop_vars(["time_bnds"])
-        # add bounds
-        result = ds.bounds.add_missing_bounds()
-        # ensure time bounds are not added
-        assert result.identical(ds_no_time_bnds)
 
     def test_skips_adding_bounds_for_coords_that_are_1_dim_singleton(self):
         # Length <=1
@@ -98,7 +87,7 @@ class TestAddMissingBounds:
         )
         ds = xr.Dataset(coords={"lon": lon})
 
-        result = ds.bounds.add_missing_bounds()
+        result = ds.bounds.add_missing_bounds(axes=["X"])
 
         assert result.identical(ds)
 
@@ -110,7 +99,34 @@ class TestAddMissingBounds:
         )
         ds = xr.Dataset(coords={"lon": lon})
 
-        result = ds.bounds.add_missing_bounds()
+        result = ds.bounds.add_missing_bounds(axes=["X"])
+
+        assert result.identical(ds)
+
+    def test_skips_adding_time_bounds_for_coords_that_are_1_dim_singleton(self):
+        # Length <=1
+        time = xr.DataArray(
+            data=np.array(["2000-01-01T12:00:00.000000000"], dtype="datetime64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+        ds = xr.Dataset(coords={"time": time})
+
+        result = ds.bounds.add_missing_bounds(axes=["T"])
+
+        assert result.identical(ds)
+
+    def test_skips_adding_time_bounds_for_coords_that_are_not_datetime_like_objects(
+        self,
+    ):
+        time = xr.DataArray(
+            data=np.array([0, 1, 2]),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+        ds = xr.Dataset(coords={"time": time})
+
+        result = ds.bounds.add_missing_bounds(axes=["T"])
 
         assert result.identical(ds)
 
@@ -288,11 +304,6 @@ class TestAddBounds:
         self.ds_with_bnds = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
-        # generate datasets of varying temporal frequencies
-        self.ds_yearly_with_bnds = generate_dataset_by_frequency(freq="year")
-        self.ds_daily_with_bnds = generate_dataset_by_frequency(freq="day")
-        self.ds_hourly_with_bnds = generate_dataset_by_frequency(freq="hour")
-        self.ds_subhourly_with_bnds = generate_dataset_by_frequency(freq="subhour")
 
     def test_raises_error_for_singleton_coords(self):
         # Length <=1
@@ -339,7 +350,7 @@ class TestAddBounds:
 
         assert ds.identical(result)
 
-    def test_add_bounds_for_dataset_with_time_coords_as_datetime_objects(self):
+    def test_adds_y_and_x_axis_bounds(self):
         ds = self.ds.copy()
         ds = ds.drop_dims("time")
         ds["time"] = xr.DataArray(
@@ -370,7 +381,70 @@ class TestAddBounds:
         assert result.lon_bnds.xcdat_bounds == "True"
         assert result.lon.attrs["bounds"] == "lon_bnds"
 
-        result = ds.bounds.add_bounds("T")
+
+class TestAddTimeBounds:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=False
+        )
+        self.ds_with_bnds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+        # generate datasets of varying temporal frequencies
+        self.ds_yearly_with_bnds = generate_dataset_by_frequency(freq="year")
+        self.ds_daily_with_bnds = generate_dataset_by_frequency(freq="day")
+        self.ds_hourly_with_bnds = generate_dataset_by_frequency(freq="hour")
+        self.ds_subhourly_with_bnds = generate_dataset_by_frequency(freq="subhour")
+
+    def test_raises_error_for_non_decoded_time_coords(self):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+        ds["time"] = xr.DataArray(
+            name="time",
+            data=np.array([0, 1, 2], dtype="int64"),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+            },
+        )
+
+        with pytest.raises(TypeError):
+            ds.bounds.add_time_bounds(method="midpoint")
+
+        with pytest.raises(TypeError):
+            ds.bounds.add_time_bounds(method="freq")
+
+    def test_skips_adding_bounds_for_coord_vars_with_bounds(self):
+        ds = self.ds_with_bnds.copy()
+        result = ds.bounds.add_time_bounds(method="freq")
+
+        assert ds.identical(result)
+
+    def test_add_bounds_for_np_datetime_time_coords_using_freq(self):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+        ds["time"] = xr.DataArray(
+            name="time",
+            data=np.array(
+                [
+                    "2000-01-01T12:00:00.000000000",
+                    "2000-02-01T12:00:00.000000000",
+                    "2000-03-01T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+            },
+        )
+
+        result = ds.bounds.add_time_bounds(method="freq")
         # NOTE: The algorithm for generating time bounds doesn't extend the
         # upper bound into the next month.
         expected_time_bnds = xr.DataArray(
@@ -390,12 +464,19 @@ class TestAddBounds:
 
         assert result.time_bnds.identical(expected_time_bnds)
 
-    def test_raises_error_for_non_decoded_time_coords(self):
+    def test_add_bounds_for_np_datetime_time_coords_as_midpoints(self):
         ds = self.ds.copy()
         ds = ds.drop_dims("time")
         ds["time"] = xr.DataArray(
             name="time",
-            data=np.array([0, 1, 2], dtype="int64"),
+            data=np.array(
+                [
+                    "2000-01-01T12:00:00.000000000",
+                    "2000-02-01T12:00:00.000000000",
+                    "2000-03-01T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
             dims=["time"],
             attrs={
                 "axis": "T",
@@ -403,11 +484,27 @@ class TestAddBounds:
                 "standard_name": "time",
             },
         )
+        result = ds.bounds.add_time_bounds(method="midpoint")
+        # NOTE: The algorithm for generating time bounds doesn't extend the
+        # upper bound into the next month.
+        expected_time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["1999-12-17T00:00:00.000000000", "2000-01-17T00:00:00.000000000"],
+                    ["2000-01-17T00:00:00.000000000", "2000-02-16T00:00:00.000000000"],
+                    ["2000-02-16T00:00:00.000000000", "2000-03-16T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": ds.time.assign_attrs({"bounds": "time_bnds"})},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
 
-        with pytest.raises(TypeError):
-            ds.bounds.add_bounds("T")
+        assert result.time_bnds.identical(expected_time_bnds)
 
-    def test_returns_bounds_for_dataset_with_time_coords_as_cftime_objects(self):
+    def test_returns_bounds_for_cftime_time_coords_using_freq(self):
         ds = self.ds.copy()
         ds = ds.drop_dims("time")
         ds["time"] = xr.DataArray(
@@ -424,7 +521,7 @@ class TestAddBounds:
         )
         ds["time"].encoding["calendar"] = "noleap"
 
-        result = ds.bounds.add_bounds("T")
+        result = ds.bounds.add_time_bounds(method="freq")
         expected_time_bnds = xr.DataArray(
             name="time_bnds",
             data=np.array(
@@ -450,6 +547,87 @@ class TestAddBounds:
 
         assert result.time_bnds.identical(expected_time_bnds)
 
+    def test_returns_bounds_for_cftime_time_coords_as_midpoints(self):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+        ds["time"] = xr.DataArray(
+            name="time",
+            data=np.array(
+                [
+                    cftime.DatetimeNoLeap(1850, 1, 1),
+                    cftime.DatetimeNoLeap(1850, 2, 1),
+                    cftime.DatetimeNoLeap(1850, 3, 1),
+                ],
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+            },
+        )
+
+        result = ds.bounds.add_bounds("T")
+        expected_time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        cftime.DatetimeNoLeap(1849, 12, 16, 12),
+                        cftime.DatetimeNoLeap(1850, 1, 16, 12),
+                    ],
+                    [
+                        cftime.DatetimeNoLeap(1850, 1, 16, 12),
+                        cftime.DatetimeNoLeap(1850, 2, 15, 0),
+                    ],
+                    [
+                        cftime.DatetimeNoLeap(1850, 2, 15, 0),
+                        cftime.DatetimeNoLeap(1850, 3, 15, 0),
+                    ],
+                ],
+            ),
+            coords={"time": ds.time.assign_attrs({"bounds": "time_bnds"})},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        assert result.time_bnds.identical(expected_time_bnds)
+
+    def test_add_bounds_for_time_coords_using_inferred_freq(self):
+        # get reference datasets
+        ds_subhrly_with_bnds = self.ds_subhourly_with_bnds.copy()
+        ds_hrly_with_bnds = self.ds_hourly_with_bnds.copy()
+        ds_daily_with_bnds = self.ds_daily_with_bnds.copy()
+        ds_monthly_with_bnds = self.ds_with_bnds.copy()
+        ds_yearly_with_bnds = self.ds_yearly_with_bnds.copy()
+
+        # drop bounds for testing
+        ds_subhrly_wo_bnds = ds_subhrly_with_bnds.drop_vars("time_bnds")
+        ds_hrly_wo_bnds = ds_hrly_with_bnds.drop_vars("time_bnds")
+        ds_daily_wo_bnds = ds_daily_with_bnds.drop_vars("time_bnds")
+        ds_monthly_wo_bnds = ds_monthly_with_bnds.drop_vars("time_bnds")
+        ds_yearly_wo_bnds = ds_yearly_with_bnds.drop_vars("time_bnds")
+
+        # test adding bounds
+        hourly_bounds = ds_hrly_wo_bnds.bounds.add_time_bounds(method="freq", freq=None)
+        daily_bounds = ds_daily_wo_bnds.bounds.add_time_bounds(method="freq", freq=None)
+        monthly_bounds = ds_monthly_wo_bnds.bounds.add_time_bounds(
+            method="freq", freq=None
+        )
+        yearly_bounds = ds_yearly_wo_bnds.bounds.add_time_bounds(
+            method="freq", freq=None
+        )
+
+        # sub hourly data is not supported
+        with pytest.raises(ValueError):
+            ds_subhrly_wo_bnds.bounds.add_time_bounds(method="freq", freq=None)
+
+        # ensure identical
+        assert hourly_bounds.identical(ds_hrly_with_bnds)
+        assert daily_bounds.identical(ds_daily_with_bnds)
+        assert monthly_bounds.identical(ds_monthly_with_bnds)
+        assert yearly_bounds.identical(ds_yearly_with_bnds)
+
     def test_add_bounds_for_time_coords_with_different_frequencies(self):
         # get reference datasets
         ds_subhrly_with_bnds = self.ds_subhourly_with_bnds.copy()
@@ -466,14 +644,22 @@ class TestAddBounds:
         ds_yearly_wo_bnds = ds_yearly_with_bnds.drop_vars("time_bnds")
 
         # test adding bounds
-        hourly_bounds = ds_hrly_wo_bnds.bounds.add_bounds(axis="T")
-        daily_bounds = ds_daily_wo_bnds.bounds.add_bounds(axis="T")
-        monthly_bounds = ds_monthly_wo_bnds.bounds.add_bounds(axis="T")
-        yearly_bounds = ds_yearly_wo_bnds.bounds.add_bounds(axis="T")
+        hourly_bounds = ds_hrly_wo_bnds.bounds.add_time_bounds(
+            method="freq", freq="hour"
+        )
+        daily_bounds = ds_daily_wo_bnds.bounds.add_time_bounds(
+            method="freq", freq="day"
+        )
+        monthly_bounds = ds_monthly_wo_bnds.bounds.add_time_bounds(
+            method="freq", freq="month"
+        )
+        yearly_bounds = ds_yearly_wo_bnds.bounds.add_time_bounds(
+            method="freq", freq="year"
+        )
 
         # sub hourly data is not supported
         with pytest.raises(ValueError):
-            ds_subhrly_wo_bnds.bounds.add_bounds(axis="T")
+            ds_subhrly_wo_bnds.bounds.add_time_bounds(method="freq", freq="hour")
 
         # ensure identical
         assert hourly_bounds.identical(ds_hrly_with_bnds)
@@ -481,38 +667,166 @@ class TestAddBounds:
         assert monthly_bounds.identical(ds_monthly_with_bnds)
         assert yearly_bounds.identical(ds_yearly_with_bnds)
 
-    # def test_create_monthly_bounds_for_eom_set_true(self):
-    #     # reference dataset
-    #     ds_with_bnds = self.ds_with_bnds.copy()
-    #     # get time axis
-    #     time = ds_with_bnds.time
-    #     # create new axis with time set to first day of month
-    #     # this is required for this test
-    #     new_time = []
-    #     for i, t in enumerate(time.values):
-    #         y = t.year
-    #         m = t.month
-    #         nt = cftime.DatetimeGregorian(y, m, 1, 0)
-    #         new_time.append(nt)
-    #     attrs = time.attrs
-    #     time = xr.DataArray(
-    #         name="time",
-    #         data=new_time,
-    #         coords=dict(time=time),
-    #         dims=[*time.dims],
-    #         attrs=attrs,
-    #     )
-    #     time.encoding = {"calendar": "standard"}
-    #     ds_with_bnds["time"] = time
-    #     # test dataset
-    #     ds = ds_with_bnds.drop_vars("time_bnds")
-    #     # expect time bounds minus one month
-    #     expected_time_bnds = ds_with_bnds.time_bnds
-    #     lower = _month_add(expected_time_bnds[:, 0], -1, "standard")
-    #     upper = _month_add(expected_time_bnds[:, 1], -1, "standard")
-    #     expected_time_bnds[:, 0] = lower
-    #     expected_time_bnds[:, 1] = upper
-    #     # test bounds generation
-    #     result = create_monthly_time_bounds(ds.time, end_of_month=True)
+    def test_add_monthly_bounds_for_end_of_month_set_to_true(self):
+        ds_with_bnds = self.ds_with_bnds.copy()
 
-    #     assert result.identical(expected_time_bnds)
+        # Get time axis and create new axis with time set to first day of month.
+        time = ds_with_bnds.time
+        new_time = []
+        for i, t in enumerate(time.values):
+            y = t.year
+            m = t.month
+            nt = cftime.DatetimeGregorian(y, m, 1, 0)
+            new_time.append(nt)
+        attrs = time.attrs
+        time = xr.DataArray(
+            name="time",
+            data=new_time,
+            coords=dict(time=time),
+            dims=[*time.dims],
+            attrs=attrs,
+        )
+        time.encoding = {"calendar": "standard"}
+        ds_with_bnds["time"] = time
+
+        # test dataset
+        ds = ds_with_bnds.drop_vars("time_bnds")
+        result = ds.bounds.add_time_bounds(
+            method="freq", freq="month", end_of_month=True
+        )
+
+        expected = ds_with_bnds.copy()
+        # Expect time bounds minus one month
+        expected["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        cftime.DatetimeGregorian(
+                            1999, 12, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 2, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 2, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 5, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 5, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 6, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 6, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 7, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 7, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 8, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 8, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 9, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 9, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 10, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 10, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 11, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 11, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 12, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 12, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2001, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2001, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2001, 2, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2001, 11, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2001, 12, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                ],
+                dtype=object,
+            ),
+            dims=["time", "bnds"],
+            coords={"time": expected.time},
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        assert result.identical(expected)

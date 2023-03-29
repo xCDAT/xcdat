@@ -116,7 +116,7 @@ class TemporalAccessor:
     Datasets through the ``.temporal`` attribute.
 
     This accessor class requires the dataset's time coordinates to be decoded as
-    ``datetime.datetime`` or ``cftime.datetime`` objects. The dataset must also
+    ``np.datetime`` or ``cftime.datetime`` objects. The dataset must also
     have time bounds to generate weights for weighted calculations and to infer
     the grouping time frequency in ``average()`` (single-snap shot average).
 
