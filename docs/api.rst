@@ -14,7 +14,7 @@ Currently, coordinate variable bounds can only be stored on ``Dataset`` objects 
 Top-level API Functions
 -----------------------
 
-Below is a list of top-level API functions available in ``xcdat``.
+Below is a list of top-level API functions that are available in ``xcdat``.
 
 .. autosummary::
     :toctree: generated/
@@ -32,6 +32,8 @@ Below is a list of top-level API functions available in ``xcdat``.
     create_grid
     create_uniform_grid
     create_zonal_grid
+    contains_datetime_like_objects
+    get_datetime_like_type
 
 Accessors
 ---------

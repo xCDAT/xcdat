@@ -15,8 +15,11 @@ from xarray.core.common import contains_cftime_datetimes
 from xcdat.axis import CF_ATTR_MAP, CFAxisKey, get_dim_coords
 from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
-from xcdat.temporal import _infer_freq
-from xcdat.utils import _contains_datetime_like_objects, _get_datetime_type
+from xcdat.temporal import (
+    _infer_freq,
+    contains_datetime_like_objects,
+    get_datetime_like_type,
+)
 
 logger = setup_custom_logger(__name__)
 
@@ -482,7 +485,7 @@ class BoundsAccessor:
         diffs = np.append(diffs, diffs[-1])
 
         if axis == "T":
-            if not _contains_datetime_like_objects(coord_var):
+            if not contains_datetime_like_objects(coord_var):
                 raise TypeError(
                     f"Bounds cannot be created for '{coord_var.name}' coordinates "
                     "because it is not decoded as `cftime.datetime` or `np.datetime`. "
@@ -604,26 +607,26 @@ class BoundsAccessor:
                 " which has a length <= 1 (singleton)."
             )
 
-        freq = _infer_freq(time) if freq is None else freq  # type: ignore
-        timesteps = time.values
-
-        # Determine the object type for creating time bounds based on the
-        # object type/dtype of the time coordinates.
-        if not _contains_datetime_like_objects(time):
+        if not contains_datetime_like_objects(time):
             raise TypeError(
                 f"Bounds cannot be created for '{time.name}' coordinates because it is "
                 "not decoded as `cftime.datetime` or `np.datetime`. Try decoding "
                 f"'{time.name}' first then adding bounds."
             )
 
-        if _get_datetime_type(time) == "np.datetime":
+        freq = _infer_freq(time) if freq is None else freq  # type: ignore
+        timesteps = time.values
+
+        # Determine the object type for creating time bounds based on the
+        # object type/dtype of the time coordinates.
+        if get_datetime_like_type(time) == np.datetime64:
             # Cast time values from `np.datetime64` to `pd.Timestamp` (a
             # sub-class of `np.datetime64`) in order to get access to the
             # pandas time/date components which simplifies creating bounds.
             # https://pandas.pydata.org/docs/user_guide/timeseries.html#time-date-components
             timesteps = pd.to_datetime(timesteps)
             obj_type = pd.Timestamp
-        elif _get_datetime_type(time) == "cftime":
+        elif get_datetime_like_type(time) == cftime.datetime:
             calendar = time.encoding["calendar"]
             obj_type = get_date_type(calendar)
 

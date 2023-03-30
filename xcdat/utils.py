@@ -4,7 +4,6 @@ from typing import Dict, List, Optional, Union
 
 import xarray as xr
 from dask.array.core import Array
-from xarray.core.common import contains_cftime_datetimes, is_np_datetime_like
 
 
 def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> Dict[str, List[str]]:
@@ -133,53 +132,3 @@ def _if_multidim_dask_array_then_load(
         return obj.load()
 
     return None
-
-
-def _contains_datetime_like_objects(var: xr.DataArray) -> bool:
-    """Check if a variable DataArray contains datetime-like objects.
-
-    Either ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
-
-    Parameters
-    ----------
-    var : xr.DataArray
-        The DataArray.
-
-    Returns
-    -------
-    bool
-        True if datetime-like, else False.
-    """
-    var_obj = xr.as_variable(var)
-
-    return is_np_datetime_like(var_obj.dtype) or contains_cftime_datetimes(var_obj)
-
-
-def _get_datetime_type(var: xr.DataArray) -> str:
-    """Get the type of the datetime-like object.
-
-    Parameters
-    ----------
-    var : xr.DataArray
-        The DataArray.
-
-    Raises
-    ------
-    TypeError
-        If the variable does not contain datetime-like objects.
-
-    Returns
-    -------
-    Literal["np.datetime", "cftime"]
-        If the objects are `np.datetime` or `cftime` like.
-    """
-    var_obj = xr.as_variable(var)
-
-    if is_np_datetime_like(var_obj.dtype):
-        return "np.datetime"
-    elif contains_cftime_datetimes(var_obj):
-        return "cftime"
-    else:
-        raise TypeError(
-            f"The variable {var.name} does not contain datetime-like objects"
-        )

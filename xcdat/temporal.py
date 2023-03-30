@@ -1,7 +1,7 @@
 """Module containing temporal functions."""
 from datetime import datetime
 from itertools import chain
-from typing import Dict, List, Literal, Optional, Tuple, TypedDict, get_args
+from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
 
 import cf_xarray  # noqa: F401
 import cftime
@@ -10,6 +10,7 @@ import pandas as pd
 import xarray as xr
 from dask.array.core import Array
 from xarray.coding.cftime_offsets import get_date_type
+from xarray.core.common import contains_cftime_datetimes, is_np_datetime_like
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
@@ -107,6 +108,69 @@ MONTH_INT_TO_STR: Dict[int, str] = {
 # dictionary is used during the creation of datetime objects, which don't
 # support season values.
 SEASON_TO_MONTH: Dict[str, int] = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
+
+
+def contains_datetime_like_objects(var: xr.DataArray) -> bool:
+    """Check if a DataArray contains datetime-like objects.
+
+     A variable contains datetime-like objects if they are either
+    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
+
+     Parameters
+     ----------
+     var : xr.DataArray
+         The DataArray.
+
+     Returns
+     -------
+     bool
+         True if datetime-like, else False.
+
+     Notes
+     -----
+     Based on ``xarray.core.common._contains_datetime_like_objects``, which
+     accepts the ``var`` parameter an an xarray.Variable object instead.
+    """
+    var_obj = xr.as_variable(var)
+
+    return is_np_datetime_like(var_obj.dtype) or contains_cftime_datetimes(var_obj)
+
+
+def get_datetime_like_type(
+    var: xr.DataArray,
+) -> Union[np.datetime64, np.timedelta64, cftime.datetime]:
+    """Get the DataArray's object type if they are datetime-like.
+
+     A variable contains datetime-like objects if they are either
+    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
+
+     Parameters
+     ----------
+     var : xr.DataArray
+         The DataArray.
+
+     Raises
+     ------
+     TypeError
+         If the variable does not contain datetime-like objects.
+
+     Returns
+     -------
+     Union[np.datetime64, np.timedelta64, cftime.datetime]:
+    """
+    var_obj = xr.as_variable(var)
+    dtype = var.dtype
+
+    if np.issubdtype(dtype, np.datetime64):
+        return np.datetime64
+    elif np.issubdtype(dtype, np.timedelta64):
+        return np.timedelta64
+    elif contains_cftime_datetimes(var_obj):
+        return cftime.datetime
+    else:
+        raise TypeError(
+            f"The variable {var.name} does not contain datetime-like objects."
+        )
 
 
 @xr.register_dataset_accessor("temporal")
@@ -792,6 +856,9 @@ class TemporalAccessor:
 
         Raises
         ------
+        TypeError
+            If the data variable's time coordinates are not encoded as
+            datetime-like objects.
         KeyError
             If the data variable does not have a "calendar" encoding attribute.
         """
@@ -800,15 +867,13 @@ class TemporalAccessor:
         self.data_var = data_var
         self.dim = get_dim_coords(dv, "T").name
 
-        first_time_coord = dv[self.dim].values[0]
-        is_decoded = isinstance(first_time_coord, cftime.datetime) or isinstance(
-            first_time_coord, np.datetime64
-        )
-        if not is_decoded:
-            raise ValueError(
-                f"The time coordinates type is {type(first_time_coord)}, not "
-                "'cftime.datetime' or 'np.datetime64'. Time coordinates must be "
-                "decoded as datetime before using TemporalAccessor methods. "
+        if not contains_datetime_like_objects(dv[self.dim]):
+            first_time_coord = dv[self.dim].values[0]
+            raise TypeError(
+                f"The {self.dim} coordinates contains {type(first_time_coord)} "
+                f"objects. {self.dim} coordinates must be decoded to datetime-like "
+                "objects (`np.datetime64` or `cftime.datetime`) before using "
+                "TemporalAccessor methods. Refer to `xcdat.decode_time`."
             )
 
         # Get the `cftime` date type based on the CF calendar attribute.
