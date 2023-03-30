@@ -114,6 +114,7 @@ Methods
    :template: autosummary/accessor_method.rst
 
     Dataset.bounds.add_bounds
+    Dataset.bounds.add_time_bounds
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
     Dataset.spatial.average
