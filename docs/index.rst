@@ -96,8 +96,8 @@ Planned Features
 
   * Support rectilinear and curvilinear grids
 
-Things We Are Striving For:
----------------------------
+Things We Are Striving For
+--------------------------
 
 * xCDAT supports CF compliant datasets, but will also strive to support datasets with
   common non-CF compliant metadata (e.g., time units in "months since ..." or "years
