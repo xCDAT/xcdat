@@ -56,7 +56,8 @@ Take a look at the `GitHub Discussions`_ page to get involved, share ideas, or a
 Version Control
 ---------------
 
-The repository uses a fork-based Git workflow with tag releases.
+The repository uses branch-based (core team) and fork-based (external collaborators)
+Git workflows with tagged software releases.
 
 .. figure:: _static/git-flow.svg
    :alt: Git Flow Diagram
@@ -245,7 +246,7 @@ Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should include tests.
+1. The pull request should include tests for new or modified code.
 2. Link issues to pull requests.
 3. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
