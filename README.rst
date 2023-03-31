@@ -72,50 +72,46 @@ Getting Started
 ---------------
 
 The best resource for getting started with xCDAT is via our `documentation page`_.
-There, we provide general guidance for setting up your Anaconda environment on your
-local `computer`_ or on an `HPC/Jupyter`_ environment. We also include an
+This page provides general guidance for setting up xCDAT in an Anaconda environment on
+your local `computer`_ or on an `HPC/Jupyter`_ environment. We also include an
 `API Overview`_ and `Gallery`_ to highlight xCDAT functionality.
 
-xCDAT invites discussion on version releases, architecture, new feature suggestions, and
-other topics on the `GitHub Discussions`_ page. Users and contributors can also view and
-open issues on our `GitHub Issue Tracker`_.
-
-We welcome and appreciate contributions to xCDAT. If you'd like to help improve xCDAT,
-please checkout our `Contributing Guide`_.
-
+.. _Gallery: https://xcdat.readthedocs.io/en/latest/gallery.html
 .. _documentation page: https://xcdat.readthedocs.io/en/latest/
 .. _computer: https://xcdat.readthedocs.io/en/latest/getting-started.html
 .. _HPC/Jupyter: https://xcdat.readthedocs.io/en/latest/getting-started-hpc-jupyter.html
 .. _API Overview: https://xcdat.readthedocs.io/en/latest/api.html
-.. _Gallery: https://xcdat.readthedocs.io/en/latest/gallery.html
+
+Community
+---------
+
+xCDAT is a community-driven open source project. We encourage discussion on topics such
+as version releases, feature suggestions, and architecture design on the
+`GitHub Discussions`_ page.
+
+Please note that xCDAT has a `Code of Conduct_`. By participating the xCDAT community,
+you agree to abide by its rules.
+
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
+.. _Code of Conduct: https://github.com/xCDAT/xcdat/blob/main/CODE_OF_CONDUCT.rst
+
+
+
+Contributing
+------------
+
+We welcome and appreciate contributions to xCDAT, including code, documentation, or even
+simply participating in GitHub issues. Users and contributors can view and open issues
+on our `GitHub Issue Tracker`_.
+
+For more instructions on how to contribute, please checkout our `Contributing Guide`_.
+
 .. _GitHub Issue Tracker: https://github.com/xCDAT/xcdat/issues
 .. _Contributing Guide: https://xcdat.readthedocs.io/en/latest/contributing.html
 
-Stay up to Date with Releases
------------------------------
-xCDAT (released as ``xcdat``) follows a rapid release cycle with continuous
-integration/continuous deployment. As a result, releases are performed relatively
-frequently based on the priority of commits. The xCDAT core team reviews commits every
-two weeks to determine if they warrant a release.
 
-After releases are performed on `GitHub Releases`_, the corresponding ``xcdat`` package
-version will be available to download through `conda-forge`_ within 30 minutes to 1
-hour.
 
-To be notified of releases through GitHub:
 
-1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
-2. Click the "Watch" button on the upper right-hand corner of the page.
-
-   .. image:: docs/_static/github-watch-releases-1.png
-
-3. Click "Custom" and checkmark "Releases", then click "Apply".
-
-   .. image:: docs/_static/github-watch-releases-2.png
-
-.. _conda-forge: https://anaconda.org/conda-forge/xcdat
-.. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
 
 Available Features
 ------------------
@@ -184,10 +180,39 @@ Things we are striving for:
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 .. _CF convention: http://cfconventions.org/
 
+Releases
+--------
+xCDAT (released as ``xcdat``) follows a feedback-driven release cycle using continuous
+integration/continuous deployment. Software releases are performed based on the bandwidth
+of the development team, the needs of the community, and the priority of bug fixes or
+feature updates.
+
+After releases are performed on `GitHub Releases`_, the corresponding ``xcdat`` package
+version will be available to download through Anaconda `conda-forge`_ soon thereafter
+(usually within a day).
+
+To stay notified on releases:
+
+1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
+2. Click the "Watch" button on the upper right-hand corner of the page.
+
+   .. image:: docs/_static/github-watch-releases-1.png
+
+3. Click "Custom" and checkmark "Releases", then click "Apply".
+
+   .. image:: docs/_static/github-watch-releases-2.png
+
+.. _conda-forge: https://anaconda.org/conda-forge/xcdat
+.. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
+
 Acknowledgement
 ---------------
 
-This software is jointly developed by scientists and developers from the Energy Exascale
+Huge thank you to the xCDAT `contributors_`!
+
+.. _contributors: https://github.com/spack/spack/graphs/contributors
+
+xCDAT is jointly developed by scientists and developers from the Energy Exascale
 Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and
 Intercomparison (`PCMDI`_). The work is performed for the E3SM project, which is
 sponsored by Earth System Model Development (`ESMD`_) program, and the Simplifying ESM
@@ -209,8 +234,11 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 License
 -------
 
-SPDX-License-Identifier: (Apache-2.0)
+xCDAT is licensed under the terms of the Apache License (Version 2.0 with LLVM exception).
+All new contributions must be made under the Apache-2.0 with LLVM exception license.
 
-See `LICENSE <LICENSE>`_ for details
+See `LICENSE <LICENSE>`_ and `NOTICE <LICENSE>`_ for details.
 
-`LLNL-CODE-819717`
+SPDX-License-Identifier: (Apache-2.0 with LLVM exception)
+
+`LLNL-CODE-846944`
