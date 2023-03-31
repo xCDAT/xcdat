@@ -30,7 +30,7 @@ dependencies:
     # ==================
     - sphinx=5.3.0
     - sphinx-autosummary-accessors=2022.4.0
-    - sphinx-book-theme=1.0.0
+    - sphinx-book-theme=1.0.1
     - sphinx-copybutton=0.5.1
     - nbsphinx=0.9.1
     - pandoc=3.1.1

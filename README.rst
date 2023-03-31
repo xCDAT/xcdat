@@ -93,7 +93,7 @@ Please note that xCDAT has a `Code of Conduct`_. By participating in the xCDAT
 community, you agree to abide by its rules.
 
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
-.. _Code of Conduct: docs/code-of-conduct.rst
+.. _Code of Conduct: CODE-OF-CONDUCT.rst
 
 Contributing
 ------------
@@ -146,8 +146,8 @@ Planned Features
 
   * Support rectilinear and curvilinear grids
 
-Things we are striving for:
----------------------------
+Things We Are Striving For
+--------------------------
 
 * xCDAT supports CF compliant datasets, but will also strive to support datasets with
   common non-CF compliant metadata (e.g., time units in "months since ..." or "years
@@ -236,3 +236,5 @@ See `LICENSE`_ and `NOTICE`_ for details.
 .. _NOTICE: https://github.com/xCDAT/xcdat/blob/main/NOTICE
 
 SPDX-License-Identifier: Apache-2.0
+
+``LLNL-CODE-846944``

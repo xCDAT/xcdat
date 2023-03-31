@@ -96,8 +96,8 @@ Planned Features
 
   * Support rectilinear and curvilinear grids
 
-Things we are striving for:
----------------------------
+Things We Are Striving For
+--------------------------
 
 * xCDAT supports CF compliant datasets, but will also strive to support datasets with
   common non-CF compliant metadata (e.g., time units in "months since ..." or "years
@@ -187,7 +187,7 @@ See `LICENSE`_ and `NOTICE`_ for details.
 
 SPDX-License-Identifier: Apache-2.0
 
-`LLNL-CODE-846944`
+``LLNL-CODE-846944``
 
 .. toctree::
    :maxdepth: 2
