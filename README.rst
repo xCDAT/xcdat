@@ -71,12 +71,12 @@ to be working on this project and hope to have you onboard!
 Getting Started
 ---------------
 
-The best resource for getting started with xCDAT is via our `documentation page`_.
+The best resource for getting started is the `xCDAT documentation website`_.
 This page provides general guidance for setting up xCDAT in an Anaconda environment on
 your local `computer`_ or on an `HPC/Jupyter`_ environment. We also include an
 `API Overview`_ and `Gallery`_ to highlight xCDAT functionality.
 
-.. _documentation page: docs/index.rst
+.. _xCDAT documentation website: docs/index.rst
 .. _computer: docs/getting-started.rst
 .. _HPC/Jupyter: docs/getting-started-hpc-jupyter.rst
 .. _API Overview: docs/api.rst
