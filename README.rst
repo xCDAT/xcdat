@@ -239,6 +239,6 @@ All new contributions must be made under the Apache-2.0 with LLVM exception lice
 
 See `LICENSE <LICENSE>`_ and `NOTICE <LICENSE>`_ for details.
 
-SPDX-License-Identifier: (Apache-2.0 with LLVM exception)
+SPDX-License-Identifier: Apache-2.0
 
 `LLNL-CODE-846944`
