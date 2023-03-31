@@ -89,8 +89,8 @@ xCDAT is a community-driven open source project. We encourage discussion on topi
 as version releases, feature suggestions, and architecture design on the
 `GitHub Discussions`_ page.
 
-Please note that xCDAT has a `Code of Conduct`_. By participating the xCDAT community,
-you agree to abide by its rules.
+Please note that xCDAT has a `Code of Conduct`_. By participating in the xCDAT
+community, you agree to abide by its rules.
 
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
 .. _Code of Conduct: docs/code-of-conduct.rst
@@ -200,7 +200,7 @@ To stay notified of releases:
 Acknowledgement
 ---------------
 
-Huge thank you to the all xCDAT `contributors`_!
+Huge thank you to all of the xCDAT `contributors`_!
 
 .. _contributors: https://github.com/xCDAT/xcdat/graphs/contributors
 
