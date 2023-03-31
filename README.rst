@@ -237,4 +237,4 @@ See `LICENSE`_ and `NOTICE`_ for details.
 
 SPDX-License-Identifier: Apache-2.0
 
-`LLNL-CODE-846944`
+``LLNL-CODE-846944``
