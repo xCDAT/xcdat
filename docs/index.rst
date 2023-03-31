@@ -96,7 +96,7 @@ Planned Features
 
   * Support rectilinear and curvilinear grids
 
-Things we are striving for:
+Things We Are Striving For:
 ---------------------------
 
 * xCDAT supports CF compliant datasets, but will also strive to support datasets with
