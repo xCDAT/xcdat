@@ -7,11 +7,17 @@ Metadata Interpretation
 
 What types of datasets does ``xcdat`` primarily focus on?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``xcdat`` supports datasets that follow the `CF convention`_, but will also strive
-to support datasets with common non-CF compliant metadata (e.g., time units in
-"months since ..." or "years since ...").
+``xcdat`` supports datasets with structured grids that follow the `CF convention`_, but
+will also strive to support datasets with common non-CF compliant metadata (e.g., time
+units in "months since ..." or "years since ...").
 
 .. _CF convention: http://cfconventions.org/
+
+What structured grids does ``xcdat`` support?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+xCDAT aims to be a generalizable package that is compatible with structured grids that
+are **CF-compliant** (e.g., CMIP6). xCDAT’s horizontal regridder supports grids that are
+supported by Regrid2 and xESMF  (curvilinear and rectilinear).
 
 How does ``xcdat`` interpret dataset metadata?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -48,6 +54,30 @@ What CF attributes are interpreted using ``cf_xarray`` mapping tables?
 .. _Axis Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axis-names
 .. _Coordinate Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names
 .. _Bounds Variables: https://cf-xarray.readthedocs.io/en/latest/bounds.html
+
+Handling Bounds
+---------------
+
+How are bounds generated in xCDAT?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+xCDAT generates bounds by using coordinate points as the midpoint between their lower
+and upper bounds.
+
+Does xCDAT support generating bounds for multiple axis coordinate systems in the same dataset?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*For example, there are two sets of coordinates called “lat” and “latitude” in the dataset.*
+
+Yes, xCDAT can generate bounds for axis coordinates if they are  “dimension coordinates”
+(`coordinate variables`_ in CF terminology) and have the required CF metadata.
+“Non-dimension coordinates” (`auxiliary coordinate variables`_ in CF terminology) are
+ignored.
+
+Visit Xarray’s documentation page on `Coordinates`_ for more info on “dimension
+coordinates” vs. “non-dimension coordinates”.
+
+.. _coordinate variables: https://docs.xarray.dev/en/stable/user-guide/data-structures.html#coordinates
+.. _auxiliary coordinate variables: https://docs.xarray.dev/en/stable/user-guide/data-structures.html#coordinates
+.. _Coordinates: https://docs.xarray.dev/en/stable/user-guide/data-structures.html#coordinates
 
 Temporal Metadata
 -----------------
