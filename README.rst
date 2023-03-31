@@ -104,7 +104,7 @@ open issues on our `GitHub Issue Tracker`_.
 For more instructions on how to contribute, please checkout our `Contributing Guide`_.
 
 .. _GitHub Issue Tracker: https://github.com/xCDAT/xcdat/issues
-.. _Contributing Guide: docs/contributing.rst
+.. _Contributing Guide: CONTRIBUTING.rst
 
 Available Features
 ------------------
