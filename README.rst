@@ -76,11 +76,11 @@ This page provides general guidance for setting up xCDAT in an Anaconda environm
 your local `computer`_ or on an `HPC/Jupyter`_ environment. We also include an
 `API Overview`_ and `Gallery`_ to highlight xCDAT functionality.
 
-.. _Gallery: https://xcdat.readthedocs.io/en/latest/gallery.html
-.. _documentation page: https://xcdat.readthedocs.io/en/latest/
-.. _computer: https://xcdat.readthedocs.io/en/latest/getting-started.html
-.. _HPC/Jupyter: https://xcdat.readthedocs.io/en/latest/getting-started-hpc-jupyter.html
-.. _API Overview: https://xcdat.readthedocs.io/en/latest/api.html
+.. _documentation page: docs/index.rst
+.. _computer: docs/getting-started.rst
+.. _HPC/Jupyter: docs/getting-started-hpc-jupyter.rst
+.. _API Overview: docs/api.rst
+.. _Gallery: docs/gallery.rst
 
 Community
 ---------
@@ -89,29 +89,22 @@ xCDAT is a community-driven open source project. We encourage discussion on topi
 as version releases, feature suggestions, and architecture design on the
 `GitHub Discussions`_ page.
 
-Please note that xCDAT has a `Code of Conduct_`. By participating the xCDAT community,
+Please note that xCDAT has a `Code of Conduct`_. By participating the xCDAT community,
 you agree to abide by its rules.
 
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
-.. _Code of Conduct: https://github.com/xCDAT/xcdat/blob/main/CODE_OF_CONDUCT.rst
-
-
+.. _Code of Conduct: docs/code-of-conduct.rst
 
 Contributing
 ------------
 
-We welcome and appreciate contributions to xCDAT, including code, documentation, or even
-simply participating in GitHub issues. Users and contributors can view and open issues
-on our `GitHub Issue Tracker`_.
+We welcome and appreciate contributions to xCDAT. Users and contributors can view and
+open issues on our `GitHub Issue Tracker`_.
 
 For more instructions on how to contribute, please checkout our `Contributing Guide`_.
 
 .. _GitHub Issue Tracker: https://github.com/xCDAT/xcdat/issues
-.. _Contributing Guide: https://xcdat.readthedocs.io/en/latest/contributing.html
-
-
-
-
+.. _Contributing Guide: docs/contributing.rst
 
 Available Features
 ------------------
@@ -188,10 +181,9 @@ of the development team, the needs of the community, and the priority of bug fix
 feature updates.
 
 After releases are performed on `GitHub Releases`_, the corresponding ``xcdat`` package
-version will be available to download through Anaconda `conda-forge`_ soon thereafter
-(usually within a day).
+version will be available to download through Anaconda `conda-forge`_ usually within a day.
 
-To stay notified on releases:
+To stay notified of releases:
 
 1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
 2. Click the "Watch" button on the upper right-hand corner of the page.
@@ -208,9 +200,9 @@ To stay notified on releases:
 Acknowledgement
 ---------------
 
-Huge thank you to the xCDAT `contributors_`!
+Huge thank you to the all xCDAT `contributors`_!
 
-.. _contributors: https://github.com/spack/spack/graphs/contributors
+.. _contributors: https://github.com/xCDAT/xcdat/graphs/contributors
 
 xCDAT is jointly developed by scientists and developers from the Energy Exascale
 Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and
@@ -235,10 +227,12 @@ License
 -------
 
 xCDAT is licensed under the terms of the Apache License (Version 2.0 with LLVM exception).
+
 All new contributions must be made under the Apache-2.0 with LLVM exception license.
 
-See `LICENSE <LICENSE>`_ and `NOTICE <LICENSE>`_ for details.
+See `LICENSE`_ and `NOTICE`_ for details.
+
+.. _LICENSE: https://github.com/xCDAT/xcdat/blob/main/LICENSE
+.. _NOTICE: https://github.com/xCDAT/xcdat/blob/main/NOTICE
 
 SPDX-License-Identifier: Apache-2.0
-
-`LLNL-CODE-846944`
