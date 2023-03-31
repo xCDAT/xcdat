@@ -93,7 +93,7 @@ Please note that xCDAT has a `Code of Conduct`_. By participating in the xCDAT
 community, you agree to abide by its rules.
 
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
-.. _Code of Conduct: docs/code-of-conduct.rst
+.. _Code of Conduct: CODE-OF-CONDUCT.rst
 
 Contributing
 ------------
