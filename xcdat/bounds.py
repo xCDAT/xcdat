@@ -257,7 +257,7 @@ class BoundsAccessor:
         To add bounds for an axis, its coordinates must be the following
         criteria:
 
-          1. The axis for the coordinates are "X", "Y", or "Z"
+          1. The axis for the coordinates are "X", "Y", "T", or "Z"
           2. Coordinates are single dimensional, not multidimensional
           3. Coordinates are a length > 1 (not singleton)
           4. Bounds must not already exist
@@ -267,7 +267,7 @@ class BoundsAccessor:
         Parameters
         ----------
         axis : CFAxisKey
-            The CF axis key ("X", "Y", "Z").
+            The CF axis key ("X", "Y", "T", "Z").
 
         Returns
         -------
