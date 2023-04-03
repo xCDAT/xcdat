@@ -275,9 +275,6 @@ class BoundsAccessor:
             The dataset with bounds added.
 
         Raises
-        ------
-        ValueError
-            If bounds already exist. They must be dropped first.
         """
         ds = self._dataset.copy()
         self._validate_axis_arg(axis)
@@ -327,14 +324,14 @@ class BoundsAccessor:
         ----------
         method : Literal["freq", "midpoint"]
             The method for creating time bounds for time coordinates, either
-            ``freq`` or ``midpoint``.
+            "freq" or "midpoint".
 
-            * ``freq``: Create time bounds as the start and end of each
+            * "freq": Create time bounds as the start and end of each
                 timestep's period using either the inferred or specified time
                 frequency (``freq`` parameter). For example, the time bounds
                 will be the start and end of each month for each monthly
                 coordinate point.
-            * ``midpoint``: Create time bounds using time coordinates as the
+            * "midpoint": Create time bounds using time coordinates as the
                 midpoint between their upper and lower bounds.
 
         freq : Optional[Literal["year", "month", "day", "hour"]]
@@ -368,10 +365,6 @@ class BoundsAccessor:
         xr.Dataset
             The dataset with bounds added.
 
-        Raises
-        ------
-        ValueError
-            If bounds already exist. They must be dropped first.
         """
         ds = self._dataset.copy()
         coord_vars: Union[xr.DataArray, xr.Dataset] = get_dim_coords(self._dataset, "T")
