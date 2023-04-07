@@ -189,6 +189,12 @@ class XGCMRegridder(BaseRegridder):
             **self._extra_options,
         )
 
+        input_z_name = ds.cf["Z"].name
+
+        # xgcm always outputs vertical coordinate as 'lev'
+        if input_z_name != "lev":
+            output_da = output_da.rename({"lev": input_z_name})
+
         output_da = output_da.transpose(*ds[data_var].dims)
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)

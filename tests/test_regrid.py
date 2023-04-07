@@ -41,6 +41,15 @@ class TestXGCMRegridder:
 
         self.output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
 
+    def test_vertical_regrid_level_name_mismatch(self):
+        self.ds = self.ds.rename({"lev": "plev"})
+
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
+
+        output_data = regridder.vertical("so", self.ds)
+
+        assert output_data["so"].dims == ("time", "plev", "lat", "lon")
+
     def test_vertical_regrid(self):
         regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
 
