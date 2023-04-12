@@ -7,32 +7,35 @@ dependencies:
     # Base
     # ==================
     # NOTE: If versions are updated, also `additional_dependencies` list for mypy in `.pre-commit-config.yaml`
-    - python=3.10.8
-    - pip=22.3.1
-    - cf_xarray=0.7.7
+    - python=3.10.10
+    - pip=23.0.1
+    - cf_xarray=0.8.0
     - cftime=1.6.2
-    - dask=2023.1.0
-    - netcdf4=1.6.2
+    - dask=2023.3.2
+    - lxml=4.9.2
+    - netcdf4=1.6.3
     - numpy=1.23.5
     - pandas=1.5.3
     - python-dateutil=2.8.2
-    - xarray=2023.1.0
+    - xarray=2023.3.0
     - xgcm=0.8.0
     # ==================
     # Optional
     # ==================
     - xesmf=0.7.0
+    - matplotlib-base=3.7.1
+    - nc-time-axis=1.4.1
     # ==================
+    # Documentation
+    # ==================
+    - sphinx=5.3.0
+    - sphinx-autosummary-accessors=2022.4.0
+    - sphinx-book-theme=1.0.1
+    - sphinx-copybutton=0.5.1
+    - nbsphinx=0.9.1
+    - pandoc=3.1.1
+    - ipython=8.11.0 # Required for nbsphinx syntax highlighting
     # Quality Assurance
     # ==================
     - types-python-dateutil=2.8.19
-    # Documentation
-    # ==================
-    - sphinx=4.5.0
-    - sphinx-autosummary-accessors=2022.4.0
-    - sphinx-book-theme=0.3.3
-    - sphinx-copybutton=0.5.0
-    - nbsphinx=0.8.12
-    - pandoc=2.19.2
-    - ipython=8.8.0 # Required for nbsphinx syntax highlighting.
 prefix: /opt/miniconda3/envs/xcdat_rtd

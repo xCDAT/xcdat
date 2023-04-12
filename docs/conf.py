@@ -46,6 +46,14 @@ extensions = [
 
 # autosummary and autodoc configurations
 autosummary_generate = True
+
+# We need to mock "ESMF" imports because xesmf depends on ESMpy which depends on
+# ESMF (has C modules). The Read The Docs build system does not have the
+# dependencies for building these C modules which causes a Python ImportError
+# with xesmf.
+# Related issue: https://github.com/readthedocs/readthedocs.org/issues/5512
+# Solution: https://docs.readthedocs.io/en/stable/faq.html#why-do-i-get-import-errors-from-libraries-depending-on-c-modules
+autodoc_mock_imports = ["ESMF"]
 autodoc_member_order = "bysource"
 autodoc_default_options = {
     "members": True,
@@ -96,12 +104,17 @@ release = xcdat.__version__
 #
 # This is also used if you do content translation via gettext catalogs.
 # Usually you set "language" from the command line for these cases.
-language = None
+language = "en"
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = [
+    "_build",
+    "Thumbs.db",
+    ".DS_Store",
+    "demos/1-25-23-cwss-seminar/xsearch-xcdat-example.ipynb",
+]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
@@ -133,7 +146,6 @@ html_theme_options = {
     "use_issues_button": True,
     "use_download_button": True,
     "use_fullscreen_button": True,
-    "logo_only": True,
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

@@ -10,6 +10,7 @@ Types of Contributions
 ----------------------
 
 xCDAT includes issue templates based on the contribution type: https://github.com/xCDAT/xcdat/issues/new/choose.
+Note, new contributions must be made under the Apache-2.0 with LLVM exception license.
 
 Bug Report
 ~~~~~~~~~~
@@ -56,7 +57,8 @@ Take a look at the `GitHub Discussions`_ page to get involved, share ideas, or a
 Version Control
 ---------------
 
-The repository uses a fork-based Git workflow with tag releases.
+The repository uses branch-based (core team) and fork-based (external collaborators)
+Git workflows with tagged software releases.
 
 .. figure:: _static/git-flow.svg
    :alt: Git Flow Diagram
@@ -149,7 +151,7 @@ Local Development
 
 2. Fork the ``xcdat`` repo on GitHub.
 
-    - If you are a maintainer, you can clone and branch directly from the root repository here: https://github.com/xCDAT/xcdat
+     - If you are a maintainer, you can clone and branch directly from the root repository here: https://github.com/xCDAT/xcdat
 
 3. Clone your fork locally::
 
@@ -190,28 +192,28 @@ Local Development
 
 10. Generate code coverage report and check unit tests pass::
 
-    $ make test # Automatically opens HTML report in your browser
-    $ pytest # Does not automatically open HTML report in your browser
+     $ make test # Automatically opens HTML report in your browser
+     $ pytest # Does not automatically open HTML report in your browser
 
-    ================================= test session starts =================================
-    platform darwin -- Python 3.8.8, pytest-6.2.2, py-1.10.0, pluggy-0.13.1
-    rootdir: <your-local-dir/xcdat>, configfile: setup.cfg
-    plugins: anyio-2.2.0, cov-2.11.1
-    collected 3 items
+     ================================= test session starts =================================
+     platform darwin -- Python 3.8.8, pytest-6.2.2, py-1.10.0, pluggy-0.13.1
+     rootdir: <your-local-dir/xcdat>, configfile: setup.cfg
+     plugins: anyio-2.2.0, cov-2.11.1
+     collected 3 items
 
-    tests/test_dataset.py ..
-    tests/test_xcdat.py .
+     tests/test_dataset.py ..
+     tests/test_xcdat.py .
 
-    ---------- coverage: platform darwin, python 3.8.8-final-0 -----------
-    Name                Stmts   Miss  Cover
-    ---------------------------------------
-    xcdat/__init__.py       3      0   100%
-    xcdat/dataset.py       18      0   100%
-    xcdat/xcdat.py          0      0   100%
-    ---------------------------------------
-    TOTAL                  21      0   100%
-    Coverage HTML written to dir tests_coverage_reports/htmlcov
-    Coverage XML written to file tests_coverage_reports/coverage.xml
+     ---------- coverage: platform darwin, python 3.8.8-final-0 -----------
+     Name                Stmts   Miss  Cover
+     ---------------------------------------
+     xcdat/__init__.py       3      0   100%
+     xcdat/dataset.py       18      0   100%
+     xcdat/xcdat.py          0      0   100%
+     ---------------------------------------
+     TOTAL                  21      0   100%
+     Coverage HTML written to dir tests_coverage_reports/htmlcov
+     Coverage XML written to file tests_coverage_reports/coverage.xml
 
     - The Coverage HTML report is much more detailed (e.g., exact lines of tested/untested code)
 
@@ -245,7 +247,7 @@ Pull Request Guidelines
 
 Before you submit a pull request, check that it meets these guidelines:
 
-1. The pull request should include tests.
+1. The pull request should include tests for new or modified code.
 2. Link issues to pull requests.
 3. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the

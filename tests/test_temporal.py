@@ -1053,6 +1053,69 @@ class TestClimatology:
             "ds['time'].encoding['calendar'] = 'noleap') and try again."
         ) in caplog.text
 
+    def test_raises_error_if_reference_period_arg_is_incorrect(self):
+        ds = self.ds.copy()
+
+        with pytest.raises(ValueError):
+            ds.temporal.climatology(
+                "ts",
+                "season",
+                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+                reference_period=("01-01-2000", "01-01-2000"),
+            )
+
+        with pytest.raises(ValueError):
+            ds.temporal.climatology(
+                "ts",
+                "season",
+                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+                reference_period=("01-01-2000"),
+            )
+
+    def test_subsets_climatology_based_on_reference_period(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.climatology(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            reference_period=("2000-01-01", "2000-06-01"),
+        )
+
+        # The first month Jan/Feb are dropped (incomplete DJF). This means
+        # only the MAM season will be present, with April being the middle month
+        # (represented by month number 4).
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array([cftime.DatetimeGregorian(1, 4, 1)]),
+            coords={
+                "time": np.array([cftime.DatetimeGregorian(1, 4, 1)]),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((1, 4, 4)),
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
     def test_weighted_seasonal_climatology_with_DJF(self):
         ds = self.ds.copy()
 
@@ -1618,15 +1681,54 @@ class TestClimatology:
 
 
 class TestDepartures:
-    # TODO: Update TestDepartures tests to use other numbers rather than 1's for
-    # better test reliability and accuracy. This may require subsetting.
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.ds: xr.Dataset = generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",
+                    "2000-03-16T12:00:00.000000000",
+                    "2000-06-16T00:00:00.000000000",
+                    "2000-09-16T00:00:00.000000000",
+                    "2001-02-15T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={"axis": "T", "long_name": "time", "standard_name": "time"},
+        )
+        time.encoding = {"calendar": "standard"}
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-09-01T00:00:00.000000000", "2000-10-01T00:00:00.000000000"],
+                    ["2001-02-01T00:00:00.000000000", "2001-03-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
         )
 
-        self.seasons = ["JJA", "MAM", "SON", "DJF"]
+        self.ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+        self.ds.time.attrs["bounds"] = "time_bnds"
+
+        self.ds["ts"] = xr.DataArray(
+            data=np.array(
+                [[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]], dtype="float64"
+            ),
+            coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
+            dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
+        )
 
     def test_raises_error_if_time_coords_are_not_decoded(self):
         ds: xr.Dataset = generate_dataset(
@@ -1654,28 +1756,200 @@ class TestDepartures:
             "ds['time'].encoding['calendar'] = 'noleap') and try again."
         ) in caplog.text
 
-    def test_weighted_seasonal_departures_with_DJF(self):
+    def test_raises_error_if_reference_period_arg_is_incorrect(self):
         ds = self.ds.copy()
 
-        # Drop incomplete DJF seasons
-        ds = ds.isel(time=slice(2, -1))
+        with pytest.raises(ValueError):
+            ds.temporal.departures(
+                "ts",
+                "season",
+                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+                reference_period=("01-01-2000", "01-01-2000"),
+            )
 
-        # Compare result of the method against the expected.
+        with pytest.raises(ValueError):
+            ds.temporal.departures(
+                "ts",
+                "season",
+                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+                reference_period=("01-01-2000"),
+            )
+
+    def test_seasonal_departures_relative_to_climatology_reference_period(self):
+        ds = self.ds.copy()
+
         result = ds.temporal.departures(
             "ts",
             "season",
+            weighted=True,
             season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            reference_period=("2000-01-01", "2000-06-01"),
         )
+
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
-            data=np.zeros((12, 4, 4)),
+            name="ts",
+            data=np.array([[[0.0]], [[np.nan]], [[np.nan]], [[np.nan]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
-                "time": ds.time,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "season",
+                "weighted": "True",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_monthly_departures_relative_to_climatology_reference_period_with_same_output_freq(
+        self,
+    ):
+        ds = self.ds.copy()
+
+        result = ds.temporal.departures(
+            "ts",
+            "month",
+            weighted=True,
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            reference_period=("2000-01-01", "2000-06-01"),
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[0.0]], [[0.0]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-01-16T12:00:00.000000000",
+                            "2000-03-16T12:00:00.000000000",
+                            "2000-06-16T00:00:00.000000000",
+                            "2000-09-16T00:00:00.000000000",
+                            "2001-02-15T12:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "month",
+                "weighted": "True",
+            },
+        )
+        expected["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        "2000-01-01T00:00:00.000000000",
+                        "2000-02-01T00:00:00.000000000",
+                    ],
+                    [
+                        "2000-03-01T00:00:00.000000000",
+                        "2000-04-01T00:00:00.000000000",
+                    ],
+                    [
+                        "2000-06-01T00:00:00.000000000",
+                        "2000-07-01T00:00:00.000000000",
+                    ],
+                    [
+                        "2000-09-01T00:00:00.000000000",
+                        "2000-10-01T00:00:00.000000000",
+                    ],
+                    [
+                        "2001-02-01T00:00:00.000000000",
+                        "2001-03-01T00:00:00.000000000",
+                    ],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time", "bnds"],
+            attrs={
+                "xcdat_bounds": "True",
+            },
+        )
+
+        assert result.identical(expected)
+
+    def test_weighted_seasonal_departures_with_DJF(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.departures(
+            "ts",
+            "season",
+            weighted=True,
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+        )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "departures",
                 "freq": "season",
@@ -1690,10 +1964,6 @@ class TestDepartures:
     def test_weighted_seasonal_departures_with_DJF_and_keep_weights(self):
         ds = self.ds.copy()
 
-        # Drop incomplete DJF seasons
-        ds = ds.isel(time=slice(2, -1))
-
-        # Compare result of the method against the expected.
         result = ds.temporal.departures(
             "ts",
             "season",
@@ -1701,16 +1971,36 @@ class TestDepartures:
             keep_weights=True,
             season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
         )
+
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
-            data=np.zeros((12, 4, 4)),
+            name="ts",
+            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
-                "time": ds.time,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "departures",
                 "freq": "season",
@@ -1720,51 +2010,72 @@ class TestDepartures:
             },
         )
         expected["time_wts"] = xr.DataArray(
-            data=np.array(
-                [
-                    0.33695652,
-                    0.32608696,
-                    0.33695652,
-                    0.32608696,
-                    0.33695652,
-                    0.33695652,
-                    0.32967033,
-                    0.34065934,
-                    0.32967033,
-                    0.34444444,
-                    0.34444444,
-                    0.31111111,
-                ]
-            ),
-            coords={"time": ds.time},
-            dims=["time"],
+            name="ts",
+            data=np.array([1.0, 1.0, 1.0, 1.0]),
+            coords={
+                "time_original": xr.DataArray(
+                    data=np.array(
+                        [
+                            "2000-03-16T12:00:00.000000000",
+                            "2000-06-16T00:00:00.000000000",
+                            "2000-09-16T00:00:00.000000000",
+                            "2001-02-15T12:00:00.000000000",
+                        ],
+                        dtype="datetime64[ns]",
+                    ),
+                    dims=["time_original"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                )
+            },
+            dims=["time_original"],
         )
 
-        xr.testing.assert_allclose(result, expected)
-        assert result.ts.attrs == expected.ts.attrs
+        assert result.identical(expected)
 
     def test_unweighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
-        # Drop incomplete DJF seasons
-        ds = ds.isel(time=slice(2, -1))
 
-        # Compare result of the method against the expected.
         result = ds.temporal.departures(
             "ts",
             "season",
             weighted=False,
             season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
         )
+
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
-            data=np.zeros((12, 4, 4)),
+            name="ts",
+            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
-                "time": ds.time,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "departures",
                 "freq": "season",
@@ -1779,23 +2090,43 @@ class TestDepartures:
     def test_unweighted_seasonal_departures_with_JFD(self):
         ds = self.ds.copy()
 
-        # Compare result of the method against the expected.
         result = ds.temporal.departures(
             "ts",
             "season",
             weighted=False,
             season_config={"dec_mode": "JFD"},
         )
+
         expected = ds.copy()
+        expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
-            data=np.zeros((15, 4, 4)),
+            name="ts",
+            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
-                "time": ds.time,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
             },
             dims=["time", "lat", "lon"],
             attrs={
+                "test_attr": "test",
                 "operation": "temporal_avg",
                 "mode": "departures",
                 "freq": "season",
@@ -1866,12 +2197,11 @@ class TestDepartures:
                     "time": xr.DataArray(
                         data=np.array(
                             [
-                                "2000-01-16T12:00:00.000000000",
-                                "2000-06-16T00:00:00.000000000",
-                                "2000-09-16T00:00:00.000000000",
-                                "2001-03-15T12:00:00.000000000",
+                                cftime.DatetimeGregorian(2000, 1, 16),
+                                cftime.DatetimeGregorian(2000, 6, 16),
+                                cftime.DatetimeGregorian(2000, 9, 16),
+                                cftime.DatetimeGregorian(2001, 3, 15),
                             ],
-                            dtype="datetime64[ns]",
                         ),
                         dims=["time"],
                         attrs={
@@ -1894,32 +2224,6 @@ class TestDepartures:
                             "freq": "day",
                             "weighted": "True",
                         },
-                    ),
-                    "time_bnds": xr.DataArray(
-                        name="time_bnds",
-                        data=np.array(
-                            [
-                                [
-                                    "2000-01-01T00:00:00.000000000",
-                                    "2000-02-01T00:00:00.000000000",
-                                ],
-                                [
-                                    "2000-06-01T00:00:00.000000000",
-                                    "2000-07-01T00:00:00.000000000",
-                                ],
-                                [
-                                    "2000-09-01T00:00:00.000000000",
-                                    "2000-10-01T00:00:00.000000000",
-                                ],
-                                [
-                                    "2001-03-01T00:00:00.000000000",
-                                    "2001-04-01T00:00:00.000000000",
-                                ],
-                            ],
-                            dtype="datetime64[ns]",
-                        ),
-                        dims=["time", "bnds"],
-                        attrs={"xcdat_bounds": "True"},
                     ),
                 },
             )

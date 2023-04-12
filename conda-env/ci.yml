@@ -13,13 +13,16 @@ dependencies:
     - cftime
     - dask
     - esmpy
+    - lxml
     - netcdf4
     - numpy
     - pandas
+    - python-dateutil
     - xarray
     - xesmf
     - xgcm
-    - python-dateutil
+    # Quality Assurance
+    # ==================
     - types-python-dateutil
     # Testing
     # ==================

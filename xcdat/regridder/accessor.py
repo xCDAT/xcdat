@@ -114,10 +114,13 @@ class RegridderAccessor:
         **options: Any,
     ) -> xr.Dataset:
         """
-        Wraps the xESMF library providing access to regridding between
-        structured rectilinear and curvilinear grids.
+        Extends the xESMF library for horizontal regridding between structured
+        rectilinear and curvilinear grids.
 
-        Regrids ``data_var`` in dataset to ``output_grid``.
+        This method extends ``xESMF`` by automatically constructing the
+        ``xe.XESMFRegridder`` object, preserving source bounds, and generating
+        missing bounds. It regrids ``data_var`` in the dataset to
+        ``output_grid``.
 
         Option documentation :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
 
@@ -223,13 +226,36 @@ class RegridderAccessor:
         Apply horizontal regridding to ``data_var`` of the current
         ``xr.Dataset`` to ``output_grid``.
 
-        Supported tools:
+        When might ``Regrid2`` be preferred over ``xESMF``?
+
+        If performing conservative regridding from a high/medium resolution lat/lon grid to a
+        coarse lat/lon target, ``Regrid2`` may provide better results as it assumes grid cells
+        with constant latitudes and longitudes while ``xESMF`` assumes the cells are connected
+        by Great Circles [1]_.
+
+        Supported tools, methods and grids:
 
         - xESMF (https://pangeo-xesmf.readthedocs.io/en/latest/)
-           - Rectilinear and curvilinear grids
+           - Methods:
+
+             - Bilinear
+             - Conservative
+             - Conservative Normed
+             - Patch
+             - Nearest s2d
+             - Nearest d2s
+           - Grids:
+
+             - Rectilinear
+             - Curvilinear
            - Find options at :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
         - Regrid2
-           - Rectilinear grids
+           - Methods:
+
+             - Conservative
+           - Grids:
+
+             - Rectilinear
            - Find options at :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`
 
         Parameters
@@ -253,6 +279,10 @@ class RegridderAccessor:
         ------
         ValueError
             If tool is not supported.
+
+        References
+        ----------
+        .. [1] https://earthsystemmodeling.org/docs/release/ESMF_8_1_0/ESMF_refdoc/node5.html#SECTION05012900000000000000
 
         Examples
         --------
