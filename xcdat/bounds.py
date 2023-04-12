@@ -376,17 +376,12 @@ class BoundsAccessor:
                 continue
             except KeyError:
                 if method == "freq":
-                    try:
-                        bounds = self._create_time_bounds(
-                            coord, freq, daily_subfreq, end_of_month
-                        )
-                    except (ValueError, TypeError):
-                        continue
+                    bounds = self._create_time_bounds(
+                        coord, freq, daily_subfreq, end_of_month
+                    )
                 elif method == "midpoint":
-                    try:
-                        bounds = self._create_bounds("T", coord)
-                    except (ValueError, TypeError):
-                        continue
+                    bounds = self._create_bounds("T", coord)
+
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
 
