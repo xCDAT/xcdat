@@ -321,23 +321,22 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        method : Literal["freq", "midpoint"]
+        method : {"freq", "midpoint"}
             The method for creating time bounds for time coordinates, either
             "freq" or "midpoint".
 
-            * "freq": Create time bounds as the start and end of each
-                timestep's period using either the inferred or specified time
-                frequency (``freq`` parameter). For example, the time bounds
-                will be the start and end of each month for each monthly
-                coordinate point.
+            * "freq": Create time bounds as the start and end of each timestep's
+               period using either the inferred or specified time frequency
+               (``freq`` parameter). For example, the time bounds will be the
+               start and end of each month for each monthly coordinate point.
             * "midpoint": Create time bounds using time coordinates as the
-                midpoint between their upper and lower bounds.
+              midpoint between their upper and lower bounds.
 
-        freq : Optional[Literal["year", "month", "day", "hour"]]
+        freq : {"year", "month", "day", "hour"}, optional
             If ``method="freq"``, this parameter specifies the time frequency
             for creating time bounds. By default None, which infers the
             frequency using the time coordinates.
-        daily_subfreq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
+        daily_subfreq : {1, 2, 3, 4, 6, 8, 12, 24}, optional
             If ``freq=="hour"``, this parameter sets the number of timepoints
             per day for time bounds, by default None.
 
@@ -351,7 +350,7 @@ class BoundsAccessor:
             * ``daily_subfreq=24`` is hourly
 
         end_of_month : bool, optional
-            If `freq=="month"``, this flag notes that the timepoint is saved
+            If ``freq=="month"``, this flag notes that the timepoint is saved
             at the end of the monthly interval (see Note), by default False.
             Some timepoints are saved at the end of the interval, e.g., Feb. 1
             00:00 for the time interval Jan. 1 00:00 - Feb. 1 00:00. Since this
@@ -362,7 +361,7 @@ class BoundsAccessor:
         Returns
         -------
         xr.Dataset
-            The dataset with bounds added.
+            The dataset with time bounds added.
         """
         ds = self._dataset.copy()
         coord_vars: Union[xr.DataArray, xr.Dataset] = get_dim_coords(self._dataset, "T")
@@ -549,10 +548,10 @@ class BoundsAccessor:
         ----------
         time : xr.DataArray
             The temporal coordinate variable for the axis.
-        freq : Optional[Literal["year", "month", "day", "hour"]]
+        freq : {"year", "month", "day", "hour"}, optional
             The time frequency for creating time bounds, by default None (infer
             the frequency).
-        daily_subfreq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
+        daily_subfreq : {1, 2, 3, 4, 6, 8, 12, 24}, optional
             If ``freq=="hour"``, this parameter sets the number of timepoints
             per day for bounds, by default None. If greater than 1, sub-daily
             bounds are created.
@@ -808,7 +807,7 @@ class BoundsAccessor:
         obj_type : Union[cftime.datetime, pd.Timestamp]
             The object type for time bounds based on the dtype of
             ``time_values``.
-        freq : Literal[1, 2, 3, 4, 6, 8, 12, 24], optional
+        freq : {1, 2, 3, 4, 6, 8, 12, 24}, optional
             Number of timepoints per day, by default 1. If greater than 1, sub-daily
             bounds are created.
 

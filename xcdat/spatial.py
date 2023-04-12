@@ -102,7 +102,7 @@ class SpatialAccessor:
         axis : List[SpatialAxis]
             List of axis dimensions to average over, by default ["X", "Y"].
             Valid axis keys include "X" and "Y".
-        weights : Union[Literal["generate"], xr.DataArray], optional
+        weights : {"generate", xr.DataArray}, optional
             If "generate", then weights are generated. Otherwise, pass a
             DataArray containing the regional weights used for weighted
             averaging. ``weights`` must include the same spatial axis dimensions
