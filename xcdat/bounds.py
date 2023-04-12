@@ -137,7 +137,7 @@ class BoundsAccessor:
              * Determined by attempting to map the coordinate variable's
              "bounds" attr (if set) to the bounds data variable of the same key.
           5. Time axes must be composed of datetime-like objects (`np.datetime64`
-            or `cftime`).
+             or `cftime`).
 
         If coordinates do not meet that criteria, bounds are not added for them.
 
@@ -316,8 +316,8 @@ class BoundsAccessor:
           3. Bounds must not already exist
              * Determined by attempting to map the coordinate variable's
              "bounds" attr (if set) to the bounds data variable of the same key
-          4. Coordinates are composed of datetime-like objects (`np.datetime64`
-             or `cftime`)
+          4. If ``method=freq``, coordinates must be composed of datetime-like
+             objects (`np.datetime64` or `cftime`)
 
         Parameters
         ----------
@@ -363,7 +363,6 @@ class BoundsAccessor:
         -------
         xr.Dataset
             The dataset with bounds added.
-
         """
         ds = self._dataset.copy()
         coord_vars: Union[xr.DataArray, xr.Dataset] = get_dim_coords(self._dataset, "T")
