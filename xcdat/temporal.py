@@ -1,7 +1,7 @@
 """Module containing temporal functions."""
 from datetime import datetime
 from itertools import chain
-from typing import Dict, List, Literal, Optional, Tuple, TypedDict, get_args
+from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
 
 import cf_xarray  # noqa: F401
 import cftime
@@ -10,6 +10,7 @@ import pandas as pd
 import xarray as xr
 from dask.array.core import Array
 from xarray.coding.cftime_offsets import get_date_type
+from xarray.core.common import contains_cftime_datetimes, is_np_datetime_like
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
@@ -116,7 +117,7 @@ class TemporalAccessor:
     Datasets through the ``.temporal`` attribute.
 
     This accessor class requires the dataset's time coordinates to be decoded as
-    ``datetime.datetime`` or ``cftime.datetime`` objects. The dataset must also
+    ``np.datetime64`` or ``cftime.datetime`` objects. The dataset must also
     have time bounds to generate weights for weighted calculations and to infer
     the grouping time frequency in ``average()`` (single-snap shot average).
 
@@ -792,6 +793,9 @@ class TemporalAccessor:
 
         Raises
         ------
+        TypeError
+            If the data variable's time coordinates are not encoded as
+            datetime-like objects.
         KeyError
             If the data variable does not have a "calendar" encoding attribute.
         """
@@ -800,15 +804,13 @@ class TemporalAccessor:
         self.data_var = data_var
         self.dim = get_dim_coords(dv, "T").name
 
-        first_time_coord = dv[self.dim].values[0]
-        is_decoded = isinstance(first_time_coord, cftime.datetime) or isinstance(
-            first_time_coord, np.datetime64
-        )
-        if not is_decoded:
-            raise ValueError(
-                f"The time coordinates type is {type(first_time_coord)}, not "
-                "'cftime.datetime' or 'np.datetime64'. Time coordinates must be "
-                "decoded as datetime before using TemporalAccessor methods. "
+        if not _contains_datetime_like_objects(dv[self.dim]):
+            first_time_coord = dv[self.dim].values[0]
+            raise TypeError(
+                f"The {self.dim} coordinates contains {type(first_time_coord)} "
+                f"objects. {self.dim} coordinates must be decoded to datetime-like "
+                "objects (`np.datetime64` or `cftime.datetime`) before using "
+                "TemporalAccessor methods. Refer to `xcdat.decode_time`."
             )
 
         # Get the `cftime` date type based on the CF calendar attribute.
@@ -1660,79 +1662,6 @@ class TemporalAccessor:
         return data_var
 
 
-def _month_add(times, delta: int, calendar):
-    """Adds delta months from a cftime object or iterable of cftime objects.
-    The delta value can be positive or negative (for subtraction). Refer to
-    [1]_ for logic.
-
-    Parameters
-    ----------
-    times : cftime object or sequence of cftime objects
-        List or single time value
-
-    delta : int
-        Integer months to be added to times (can be positive or negative)
-
-    calendar : str
-        Calendar used for times. Supported calendars include "noleap",
-        "360_day", "365_day", "366_day", "gregorian", "proleptic_gregorian",
-        "julian", "all_leap", and "standard".
-
-    Returns
-    -------
-    cftime object or xr.DataArray of cftime objects
-        The times with delta months added.
-
-    References
-    ----------
-    [1] https://stackoverflow.com/a/4131114
-
-    """
-    # ensure iterable
-    try:
-        iter(times)
-        single_value = False
-    except TypeError:
-        times = [times]
-        single_value = True
-
-    if type(times) == xr.DataArray:
-        times = times.values
-
-    # create new array to store modified values
-    times_new = times.copy()
-
-    # get cftime class to create new cftime objects
-    cf_obj = get_date_type(calendar)
-
-    # loop over each time step to compute time + delta months
-    for i, step in enumerate(times):
-        # compute new month and year
-        month = step.month - 1 + delta
-        year = step.year + month // 12
-        month = month % 12 + 1
-        # re-use existing hour/minute/second/microsecond
-        hour = step.hour
-        minute = step.minute
-        second = step.second
-        microsecond = step.microsecond
-        # days in month
-        day = step.day
-        dim = cf_obj(year, month, 1).daysinmonth
-        # if day is greater than days in month
-        # use days in month as day
-        day = min(day, dim)
-        # create new cftime object
-        new_step = cf_obj(year, month, day, hour, minute, second, microsecond)
-        times_new[i] = new_step
-
-    # if single value, get rid of list
-    if single_value:
-        times_new = times_new[0]
-
-    return times_new
-
-
 def _infer_freq(time_coords: xr.DataArray) -> Frequency:
     """Infers the time frequency from the coordinates.
 
@@ -1765,3 +1694,66 @@ def _infer_freq(time_coords: xr.DataArray) -> Frequency:
         return "month"
     else:
         return "year"
+
+
+def _contains_datetime_like_objects(var: xr.DataArray) -> bool:
+    """Check if a DataArray contains datetime-like objects.
+
+     A variable contains datetime-like objects if they are either
+    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
+
+     Parameters
+     ----------
+     var : xr.DataArray
+         The DataArray.
+
+     Returns
+     -------
+     bool
+         True if datetime-like, else False.
+
+     Notes
+     -----
+     Based on ``xarray.core.common._contains_datetime_like_objects``, which
+     accepts the ``var`` parameter an an xarray.Variable object instead.
+    """
+    var_obj = xr.as_variable(var)
+
+    return is_np_datetime_like(var_obj.dtype) or contains_cftime_datetimes(var_obj)
+
+
+def _get_datetime_like_type(
+    var: xr.DataArray,
+) -> Union[np.datetime64, np.timedelta64, cftime.datetime]:
+    """Get the DataArray's object type if they are datetime-like.
+
+     A variable contains datetime-like objects if they are either
+    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
+
+     Parameters
+     ----------
+     var : xr.DataArray
+         The DataArray.
+
+     Raises
+     ------
+     TypeError
+         If the variable does not contain datetime-like objects.
+
+     Returns
+     -------
+     Union[np.datetime64, np.timedelta64, cftime.datetime]:
+    """
+    var_obj = xr.as_variable(var)
+    dtype = var.dtype
+
+    if np.issubdtype(dtype, np.datetime64):
+        return np.datetime64
+    elif np.issubdtype(dtype, np.timedelta64):
+        return np.timedelta64
+    elif contains_cftime_datetimes(var_obj):
+        return cftime.datetime
+    else:
+        raise TypeError(
+            f"The variable {var.name} does not contain datetime-like objects."
+        )

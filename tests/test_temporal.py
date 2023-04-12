@@ -7,7 +7,11 @@ from xarray.tests import requires_dask
 
 from tests.fixtures import generate_dataset
 from xcdat.logger import setup_custom_logger
-from xcdat.temporal import TemporalAccessor, _month_add
+from xcdat.temporal import (
+    TemporalAccessor,
+    _contains_datetime_like_objects,
+    _get_datetime_like_type,
+)
 
 logger = setup_custom_logger("xcdat.temporal", propagate=True)
 
@@ -34,7 +38,7 @@ class TestAverage:
             decode_times=False, cf_compliant=False, has_bounds=True
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ds.temporal.average("ts")
 
     def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
@@ -453,7 +457,7 @@ class TestGroupAverage:
             decode_times=False, cf_compliant=False, has_bounds=True
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ds.temporal.group_average("ts", freq="year")
 
     def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
@@ -1032,7 +1036,7 @@ class TestClimatology:
             decode_times=False, cf_compliant=False, has_bounds=True
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ds.temporal.climatology("ts", freq="year")
 
     def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
@@ -1735,7 +1739,7 @@ class TestDepartures:
             decode_times=False, cf_compliant=False, has_bounds=True
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ds.temporal.departures("ts", freq="season")
 
     def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
@@ -3332,89 +3336,101 @@ class Test_Averager:
             )
 
 
-class TestTemporalFunctions:
-    def test_month_add_plus_minus(self):
-
-        # add a single month
-        time_slice = cftime.DatetimeGregorian(2000, 1, 15, 0, 0, 0)
-        expected = cftime.DatetimeGregorian(2000, 2, 15, 0, 0, 0)
-        result = _month_add(time_slice, 1, "standard")
-
-        assert result == expected
-
-        # add 99 years and 5 months
-        time_slice = cftime.DatetimeGregorian(2000, 1, 15, 0, 0, 0)
-        expected = cftime.DatetimeGregorian(2099, 6, 15, 0, 0, 0)
-        result = _month_add(time_slice, 1193, "standard")
-
-        assert result == expected
-
-        # subtract 18 months
-        time_slice = cftime.DatetimeGregorian(2000, 1, 15, 0, 0, 0)
-        expected = cftime.DatetimeGregorian(1998, 7, 15, 0, 0, 0)
-        result = _month_add(time_slice, -18, "standard")
-
-        assert result == expected
-
-        # subtract a vector
-        ds = generate_dataset(decode_times=True, cf_compliant=False, has_bounds=True)
-
-        time_vector = ds.time
-        expected = np.array(
-            [
-                cftime.DatetimeGregorian(
-                    1998, 12, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-                cftime.DatetimeGregorian(1999, 1, 15, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 2, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 3, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 4, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 5, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 6, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 7, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 8, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 9, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(1999, 10, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(
-                    1999, 11, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-                cftime.DatetimeGregorian(
-                    1999, 12, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-                cftime.DatetimeGregorian(2000, 1, 15, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(
-                    2000, 11, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-            ],
-            dtype=object,
+class TestContainsDatetimeLikeObjects:
+    def test_returns_false_dataarray_contains_no_datetime_like_objects(self):
+        time = xr.DataArray(
+            data=np.array([1.0], dtype="float64"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
         )
-        result = _month_add(time_vector, -13, "standard")
 
-        assert np.alltrue(result == expected)
+        assert not _contains_datetime_like_objects(time)
 
-        # add a vector
-        expected = np.array(
-            [
-                cftime.DatetimeGregorian(2005, 7, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2005, 8, 15, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2005, 9, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2005, 10, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(
-                    2005, 11, 16, 12, 0, 0, 0, has_year_zero=False
-                ),
-                cftime.DatetimeGregorian(2005, 12, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 1, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 2, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 3, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 4, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 5, 16, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 6, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 7, 16, 12, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2006, 8, 15, 0, 0, 0, 0, has_year_zero=False),
-                cftime.DatetimeGregorian(2007, 6, 16, 12, 0, 0, 0, has_year_zero=False),
-            ],
-            dtype=object,
+    def test_returns_true_if_dataarray_contains_np_datetime64(self):
+        time = xr.DataArray(
+            data=np.array(["2000-01-01T12:00:00.000000000"], dtype="datetime64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
         )
-        result = _month_add(time_vector, 66, "standard")
 
-        assert np.alltrue(result == expected)
+        assert _contains_datetime_like_objects(time)
+
+    def test_returns_true_if_dataarray_contains_np_timedelta64(self):
+        time = xr.DataArray(
+            data=np.array([86400000000000], dtype="timedelta64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _contains_datetime_like_objects(time)
+
+    def test_returns_true_if_dataarray_contains_cftime_datetime(self):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(2000, 1, 1),
+                ],
+                dtype="object",
+            ),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _contains_datetime_like_objects(time)
+
+
+class TestGetDatetimeLikeType:
+    def test_raises_error_if_dataarray_contains_no_datatime_like_objects(self):
+        time = xr.DataArray(
+            data=np.array([1.0], dtype="float64"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        with pytest.raises(TypeError):
+            assert _get_datetime_like_type(time)
+
+    def test_returns_np_datetime64(self):
+        time = xr.DataArray(
+            data=np.array(["2000-01-01T12:00:00.000000000"], dtype="datetime64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _get_datetime_like_type(time) == np.datetime64
+
+    def test_returns_np_timedelta64(self):
+        time = xr.DataArray(
+            data=np.array([86400000000000], dtype="timedelta64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _get_datetime_like_type(time) == np.timedelta64
+
+    def test_returns_cftime_datetime(self):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(2000, 1, 1),
+                ],
+                dtype="object",
+            ),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _get_datetime_like_type(time) == cftime.datetime
+
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(2000, 1, 1),
+                ],
+                dtype="object",
+            ),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _get_datetime_like_type(time) == cftime.datetime

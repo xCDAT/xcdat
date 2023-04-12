@@ -14,7 +14,7 @@ Currently, coordinate variable bounds can only be stored on ``Dataset`` objects 
 Top-level API Functions
 -----------------------
 
-Below is a list of top-level API functions available in ``xcdat``.
+Below is a list of top-level API functions that are available in ``xcdat``.
 
 .. autosummary::
     :toctree: generated/
@@ -27,10 +27,6 @@ Below is a list of top-level API functions available in ``xcdat``.
     compare_datasets
     get_dim_coords
     get_dim_keys
-    create_time_bounds
-    create_yearly_time_bounds
-    create_monthly_time_bounds
-    create_daily_time_bounds
     create_gaussian_grid
     create_global_mean_grid
     create_grid
@@ -116,6 +112,7 @@ Methods
    :template: autosummary/accessor_method.rst
 
     Dataset.bounds.add_bounds
+    Dataset.bounds.add_time_bounds
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
     Dataset.spatial.average
