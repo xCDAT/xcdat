@@ -508,7 +508,7 @@ def create_grid(
 
     grid = xr.Dataset(data_vars=data_vars, coords={"lat": lat, "lon": lon})
 
-    grid = grid.bounds.add_missing_bounds(axes=["X", "Y", "T"])
+    grid = grid.bounds.add_missing_bounds(axes=["X", "Y"])
 
     return grid
 

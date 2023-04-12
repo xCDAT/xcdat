@@ -129,7 +129,7 @@ def contains_datetime_like_objects(var: xr.DataArray) -> bool:
      Notes
      -----
      Based on ``xarray.core.common._contains_datetime_like_objects``, which
-     accepts the ``var`` parameter an an xarray.Variable object instead.
+     accepts the ``var`` parameter as an xarray.Variable object instead.
     """
     var_obj = xr.as_variable(var)
 
@@ -180,7 +180,7 @@ class TemporalAccessor:
     Datasets through the ``.temporal`` attribute.
 
     This accessor class requires the dataset's time coordinates to be decoded as
-    ``np.datetime`` or ``cftime.datetime`` objects. The dataset must also
+    ``np.datetime64`` or ``cftime.datetime`` objects. The dataset must also
     have time bounds to generate weights for weighted calculations and to infer
     the grouping time frequency in ``average()`` (single-snap shot average).
 

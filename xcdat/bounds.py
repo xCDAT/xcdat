@@ -136,7 +136,7 @@ class BoundsAccessor:
           4. Bounds must not already exist.
              * Determined by attempting to map the coordinate variable's
              "bounds" attr (if set) to the bounds data variable of the same key.
-          5. Time axes must be composed of datetime-like objects (`np.datetime`
+          5. Time axes must be composed of datetime-like objects (`np.datetime64`
             or `cftime`).
 
         If coordinates do not meet that criteria, bounds are not added for them.
@@ -317,7 +317,7 @@ class BoundsAccessor:
           3. Bounds must not already exist
              * Determined by attempting to map the coordinate variable's
              "bounds" attr (if set) to the bounds data variable of the same key
-          4. Coordinates are composed of datetime-like objects (`np.datetime`
+          4. Coordinates are composed of datetime-like objects (`np.datetime64`
              or `cftime`)
 
         Parameters
@@ -342,7 +342,7 @@ class BoundsAccessor:
             If ``freq=="hour"``, this parameter sets the number of timepoints
             per day for time bounds, by default None.
 
-            * ``daily_time_freq=None`` infers the daily time frequency from the
+            * ``daily_subfreq=None`` infers the daily time frequency from the
               time coordinates.
             * ``daily_subfreq=1`` is daily
             * ``daily_subfreq=2`` is twice daily
@@ -379,12 +379,17 @@ class BoundsAccessor:
                 continue
             except KeyError:
                 if method == "freq":
-                    bounds = self._create_time_bounds(
-                        coord, freq, daily_subfreq, end_of_month
-                    )
+                    try:
+                        bounds = self._create_time_bounds(
+                            coord, freq, daily_subfreq, end_of_month
+                        )
+                    except (ValueError, TypeError):
+                        continue
                 elif method == "midpoint":
-                    bounds = self._create_bounds("T", coord)
-
+                    try:
+                        bounds = self._create_bounds("T", coord)
+                    except (ValueError, TypeError):
+                        continue
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
 
@@ -755,7 +760,7 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        timesep : Union[cftime.datime, pd.Timestamp]
+        timestep : Union[cftime.datime, pd.Timestamp]
             A timestep represented as ``cftime.datetime`` or ``pd.Timestamp``.
         obj_type : Union[cftime.datetime, pd.Timestamp]
                 The object type for time bounds based on the dtype of
