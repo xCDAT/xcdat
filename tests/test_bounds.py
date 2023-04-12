@@ -397,7 +397,7 @@ class TestAddTimeBounds:
         self.ds_hourly_with_bnds = generate_dataset_by_frequency(freq="hour")
         self.ds_subhourly_with_bnds = generate_dataset_by_frequency(freq="subhour")
 
-    def test_raises_error_for_non_decoded_time_coords(self):
+    def test_raises_error_for_non_decoded_time_coords_with_freq_method(self):
         ds = self.ds.copy()
         ds = ds.drop_dims("time")
         ds["time"] = xr.DataArray(
@@ -410,9 +410,6 @@ class TestAddTimeBounds:
                 "standard_name": "time",
             },
         )
-
-        with pytest.raises(TypeError):
-            ds.bounds.add_time_bounds(method="midpoint")
 
         with pytest.raises(TypeError):
             ds.bounds.add_time_bounds(method="freq")

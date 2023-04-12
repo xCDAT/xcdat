@@ -110,69 +110,6 @@ MONTH_INT_TO_STR: Dict[int, str] = {
 SEASON_TO_MONTH: Dict[str, int] = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
 
 
-def contains_datetime_like_objects(var: xr.DataArray) -> bool:
-    """Check if a DataArray contains datetime-like objects.
-
-     A variable contains datetime-like objects if they are either
-    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
-
-     Parameters
-     ----------
-     var : xr.DataArray
-         The DataArray.
-
-     Returns
-     -------
-     bool
-         True if datetime-like, else False.
-
-     Notes
-     -----
-     Based on ``xarray.core.common._contains_datetime_like_objects``, which
-     accepts the ``var`` parameter as an xarray.Variable object instead.
-    """
-    var_obj = xr.as_variable(var)
-
-    return is_np_datetime_like(var_obj.dtype) or contains_cftime_datetimes(var_obj)
-
-
-def get_datetime_like_type(
-    var: xr.DataArray,
-) -> Union[np.datetime64, np.timedelta64, cftime.datetime]:
-    """Get the DataArray's object type if they are datetime-like.
-
-     A variable contains datetime-like objects if they are either
-    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
-
-     Parameters
-     ----------
-     var : xr.DataArray
-         The DataArray.
-
-     Raises
-     ------
-     TypeError
-         If the variable does not contain datetime-like objects.
-
-     Returns
-     -------
-     Union[np.datetime64, np.timedelta64, cftime.datetime]:
-    """
-    var_obj = xr.as_variable(var)
-    dtype = var.dtype
-
-    if np.issubdtype(dtype, np.datetime64):
-        return np.datetime64
-    elif np.issubdtype(dtype, np.timedelta64):
-        return np.timedelta64
-    elif contains_cftime_datetimes(var_obj):
-        return cftime.datetime
-    else:
-        raise TypeError(
-            f"The variable {var.name} does not contain datetime-like objects."
-        )
-
-
 @xr.register_dataset_accessor("temporal")
 class TemporalAccessor:
     """
@@ -867,7 +804,7 @@ class TemporalAccessor:
         self.data_var = data_var
         self.dim = get_dim_coords(dv, "T").name
 
-        if not contains_datetime_like_objects(dv[self.dim]):
+        if not _contains_datetime_like_objects(dv[self.dim]):
             first_time_coord = dv[self.dim].values[0]
             raise TypeError(
                 f"The {self.dim} coordinates contains {type(first_time_coord)} "
@@ -1757,3 +1694,66 @@ def _infer_freq(time_coords: xr.DataArray) -> Frequency:
         return "month"
     else:
         return "year"
+
+
+def _contains_datetime_like_objects(var: xr.DataArray) -> bool:
+    """Check if a DataArray contains datetime-like objects.
+
+     A variable contains datetime-like objects if they are either
+    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
+
+     Parameters
+     ----------
+     var : xr.DataArray
+         The DataArray.
+
+     Returns
+     -------
+     bool
+         True if datetime-like, else False.
+
+     Notes
+     -----
+     Based on ``xarray.core.common._contains_datetime_like_objects``, which
+     accepts the ``var`` parameter an an xarray.Variable object instead.
+    """
+    var_obj = xr.as_variable(var)
+
+    return is_np_datetime_like(var_obj.dtype) or contains_cftime_datetimes(var_obj)
+
+
+def _get_datetime_like_type(
+    var: xr.DataArray,
+) -> Union[np.datetime64, np.timedelta64, cftime.datetime]:
+    """Get the DataArray's object type if they are datetime-like.
+
+     A variable contains datetime-like objects if they are either
+    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
+
+     Parameters
+     ----------
+     var : xr.DataArray
+         The DataArray.
+
+     Raises
+     ------
+     TypeError
+         If the variable does not contain datetime-like objects.
+
+     Returns
+     -------
+     Union[np.datetime64, np.timedelta64, cftime.datetime]:
+    """
+    var_obj = xr.as_variable(var)
+    dtype = var.dtype
+
+    if np.issubdtype(dtype, np.datetime64):
+        return np.datetime64
+    elif np.issubdtype(dtype, np.timedelta64):
+        return np.timedelta64
+    elif contains_cftime_datetimes(var_obj):
+        return cftime.datetime
+    else:
+        raise TypeError(
+            f"The variable {var.name} does not contain datetime-like objects."
+        )

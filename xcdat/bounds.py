@@ -16,9 +16,9 @@ from xcdat.axis import CF_ATTR_MAP, CFAxisKey, get_dim_coords
 from xcdat.dataset import _get_data_var
 from xcdat.logger import setup_custom_logger
 from xcdat.temporal import (
+    _contains_datetime_like_objects,
+    _get_datetime_like_type,
     _infer_freq,
-    contains_datetime_like_objects,
-    get_datetime_like_type,
 )
 
 logger = setup_custom_logger(__name__)
@@ -162,20 +162,19 @@ class BoundsAccessor:
             for coord in coords.coords.values():
                 try:
                     self.get_bounds(axis, str(coord.name))
+
                     continue
                 except KeyError:
                     pass
 
-                if axis in ["X", "Y", "Z"]:
-                    try:
+                try:
+                    if axis in ["X", "Y", "Z"]:
                         bounds = self._create_bounds(axis, coord)
-                    except ValueError:
-                        continue
-                elif axis == "T":
-                    try:
+                    elif axis == "T":
                         bounds = self._create_time_bounds(coord)
-                    except (ValueError, TypeError):
-                        continue
+                except (ValueError, TypeError) as e:
+                    logger.warning(e)
+                    continue
 
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
@@ -482,18 +481,11 @@ class BoundsAccessor:
         diffs = np.insert(diffs, 0, diffs[0])
         diffs = np.append(diffs, diffs[-1])
 
-        if axis == "T":
-            if not contains_datetime_like_objects(coord_var):
-                raise TypeError(
-                    f"Bounds cannot be created for '{coord_var.name}' coordinates "
-                    "because it is not decoded as `cftime.datetime` or `np.datetime`. "
-                    f"Try decoding '{coord_var.name}' first then adding bounds."
-                )
-            # `cftime` objects only support arithmetic using `timedelta` objects, so
-            # the values of  `diffs` must be casted from `dtype="timedelta64[ns]"`
-            # to `timedelta` objects.
-            if contains_cftime_datetimes(xr.as_variable(coord_var)):
-                diffs = pd.to_timedelta(diffs)
+        # `cftime` objects only support arithmetic using `timedelta` objects, so
+        # the values of  `diffs` must be casted from `dtype="timedelta64[ns]"`
+        # to `timedelta` objects.
+        if axis == "T" and contains_cftime_datetimes(xr.as_variable(coord_var)):
+            diffs = pd.to_timedelta(diffs)
 
         # FIXME: These lines produces the warning: `PerformanceWarning:
         # Adding/subtracting object-dtype array to TimedeltaArray not
@@ -502,7 +494,7 @@ class BoundsAccessor:
         # implementation.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
-            # Get lower and upper bounds using the width relative to midpoints.
+
             width = 0.5
             lower_bounds = coord_var - diffs[:-1] * width
             upper_bounds = coord_var + diffs[1:] * (1 - width)
@@ -586,7 +578,7 @@ class BoundsAccessor:
         Raises
         ------
         ValueError
-            If coordiantes are a singleton.
+            If coordinates are a singleton.
         TypeError
             If time coordinates are not composed of datetime-like objects.
 
@@ -605,7 +597,7 @@ class BoundsAccessor:
                 " which has a length <= 1 (singleton)."
             )
 
-        if not contains_datetime_like_objects(time):
+        if not _contains_datetime_like_objects(time):
             raise TypeError(
                 f"Bounds cannot be created for '{time.name}' coordinates because it is "
                 "not decoded as `cftime.datetime` or `np.datetime`. Try decoding "
@@ -617,14 +609,14 @@ class BoundsAccessor:
 
         # Determine the object type for creating time bounds based on the
         # object type/dtype of the time coordinates.
-        if get_datetime_like_type(time) == np.datetime64:
+        if _get_datetime_like_type(time) == np.datetime64:
             # Cast time values from `np.datetime64` to `pd.Timestamp` (a
             # sub-class of `np.datetime64`) in order to get access to the
             # pandas time/date components which simplifies creating bounds.
             # https://pandas.pydata.org/docs/user_guide/timeseries.html#time-date-components
             timesteps = pd.to_datetime(timesteps)
             obj_type = pd.Timestamp
-        elif get_datetime_like_type(time) == cftime.datetime:
+        elif _get_datetime_like_type(time) == cftime.datetime:
             calendar = time.encoding["calendar"]
             obj_type = get_date_type(calendar)
 
