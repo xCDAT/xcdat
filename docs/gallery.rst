@@ -14,4 +14,5 @@ Please checkout the :doc:`contributing` guide.
     examples/spatial-average.ipynb
     examples/temporal-average.ipynb
     examples/climatology-and-departures.ipynb
-    examples/horizontal-regridding.ipynb
+    examples/regridding-horizontal.ipynb
+    examples/regridding-vertical.ipynb
