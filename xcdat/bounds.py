@@ -159,6 +159,11 @@ class BoundsAccessor:
             except KeyError:
                 continue
 
+            # In xarray, ancillary singleton coordinates that aren't related to
+            # axis can still be attached to dimension coordinates (e.g.,
+            # "height" is attached to "time"). We ignore these singleton
+            # coordinates to avoid adding bounds for them.
+            coords = self._drop_ancillary_singleton_coords(coords)
             for coord in coords.coords.values():
                 try:
                     self.get_bounds(axis, str(coord.name))
@@ -281,6 +286,11 @@ class BoundsAccessor:
         coord_vars: Union[xr.DataArray, xr.Dataset] = get_dim_coords(
             self._dataset, axis
         )
+        # In xarray, ancillary singleton coordinates that aren't related to axis
+        # can still be attached to dimension coordinates (e.g., "height" is
+        # attached to "time"). We ignore these singleton coordinates to avoid
+        # adding bounds for them.
+        coord_vars = self._drop_ancillary_singleton_coords(coord_vars)
 
         for coord in coord_vars.coords.values():
             # Check if the coord var has a "bounds" attr and the bounds actually
@@ -365,6 +375,11 @@ class BoundsAccessor:
         """
         ds = self._dataset.copy()
         coord_vars: Union[xr.DataArray, xr.Dataset] = get_dim_coords(self._dataset, "T")
+        # In xarray, ancillary singleton coordinates that aren't related to axis
+        # can still be attached to dimension coordinates (e.g., "height" is
+        # attached to "time"). We ignore these singleton coordinates to avoid
+        # adding bounds for them.
+        coord_vars = self._drop_ancillary_singleton_coords(coord_vars)
 
         for coord in coord_vars.coords.values():
             # Check if the coord var has a "bounds" attr and the bounds actually
@@ -386,6 +401,51 @@ class BoundsAccessor:
                 ds[coord.name].attrs["bounds"] = bounds.name
 
         return ds
+
+    def _drop_ancillary_singleton_coords(
+        self, coord_vars: Union[xr.Dataset, xr.DataArray]
+    ) -> Union[xr.Dataset, xr.DataArray]:
+        """Drop ancillary singleton coordinates from dimension coordinates.
+
+        Xarray coordinate variables retain all coordinates from the parent
+        object. This means if singleton coordinates exist, they are attached to
+        dimension coordinates as ancillary coordinates. For example, the
+        "height" singleton coordinate will be attached to "time" coordinates
+        even though "height" is related to the "Z" axis, not the "T" axis.
+
+        This is an undesirable behavior in xCDAT because the add bounds methods
+        loop over coordinates related to an axis and attempts to add bounds if
+        they don't exist. If ancillary coordinates are present, "ValueError:
+        Cannot generate bounds for coordinate variable 'height' which has a
+        length <= 1 (singleton)" is raised. To work around this Xarray behavior,
+        we drop the ancilliary singleton coordinates before adding bounds. Refer
+        to [1]_ for more info on this behavior.
+
+        Parameters
+        ----------
+        coord_vars : Union[xr.Dataset, xr.DataArray]
+            The dimension coordinate variables with ancillary coordinates (if
+            they exist).
+
+        Returns
+        -------
+        Union[xr.Dataset, xr.DataArray]
+            The dimension coordinate variables with ancillary coordinates
+            dropped (if they exist).
+
+        References
+        ----------
+        .. [1] https://github.com/pydata/xarray/issues/6196
+        """
+        dims = coord_vars.dims
+        coords = coord_vars.coords.keys()
+
+        singleton_coords = set(dims) ^ set(coords)
+
+        if len(singleton_coords) > 0:
+            return coord_vars.drop_vars(singleton_coords)
+
+        return coord_vars
 
     def _get_bounds_keys(self, axis: CFAxisKey) -> List[str]:
         """Get bounds keys for an axis's coordinate variables in the dataset.
@@ -445,7 +505,7 @@ class BoundsAccessor:
 
         Notes
         -----
-        Based on [1]_ ``iris.coords._guess_bounds`` and [2]_
+        Based on [2]_ ``iris.coords._guess_bounds`` and [3]_
         ``cf_xarray.accessor.add_bounds``.
 
         For temporal coordinates ``_create_bounds`` will attempt to set the
@@ -454,9 +514,9 @@ class BoundsAccessor:
 
         References
         ----------
-        .. [1] https://scitools-iris.readthedocs.io/en/stable/generated/api/iris/coords.html#iris.coords.AuxCoord.guess_bounds
+        .. [2] https://scitools-iris.readthedocs.io/en/stable/generated/api/iris/coords.html#iris.coords.AuxCoord.guess_bounds
 
-        .. [2] https://cf-xarray.readthedocs.io/en/latest/generated/xarray.Dataset.cf.add_bounds.html#
+        .. [3] https://cf-xarray.readthedocs.io/en/latest/generated/xarray.Dataset.cf.add_bounds.html#
         """
         is_singleton = coord_var.size <= 1
         if is_singleton:
@@ -740,8 +800,8 @@ class BoundsAccessor:
     ) -> Union[cftime.datetime, pd.Timestamp]:
         """Adds delta month(s) to a timestep.
 
-        The delta value can be positive or negative (for subtraction). Refer to [1]_
-        for logic.
+        The delta value can be positive or negative (for subtraction). Refer to
+        [4]_ for logic.
 
         Parameters
         ----------
@@ -759,7 +819,7 @@ class BoundsAccessor:
 
         References
         ----------
-        [1] https://stackoverflow.com/a/4131114
+        .. [4] https://stackoverflow.com/a/4131114
         """
         # Compute the new month and year with the delta month(s).
         month = timestep.month - 1 + delta
@@ -827,11 +887,11 @@ class BoundsAccessor:
         Notes
         -----
         This function is intended to reproduce CDAT's ``setAxisTimeBoundsDaily``
-        method [3]_.
+        method [5]_.
 
         References
         ----------
-        .. [3] https://github.com/CDAT/cdutil/blob/master/cdutil/times.py#L1093
+        .. [5] https://github.com/CDAT/cdutil/blob/master/cdutil/times.py#L1093
         """
         if (freq > 24) | (np.mod(24, freq)):
             raise ValueError(

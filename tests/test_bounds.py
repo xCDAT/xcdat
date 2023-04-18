@@ -381,6 +381,81 @@ class TestAddBounds:
         assert result.lon_bnds.xcdat_bounds == "True"
         assert result.lon.attrs["bounds"] == "lon_bnds"
 
+        result = result.bounds.add_bounds("T")
+        expected_time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["1999-12-17T00:00:00.000000000", "2000-01-17T00:00:00.000000000"],
+                    ["2000-01-17T00:00:00.000000000", "2000-02-16T00:00:00.000000000"],
+                    ["2000-02-16T00:00:00.000000000", "2000-03-16T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": ds.time.assign_attrs({"bounds": "time_bnds"})},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+        assert result.time_bnds.identical(expected_time_bnds)
+
+    def test_ignores_adding_bounds_for_singleton_coordinates_unrelated_unrelated_to_an_axis(
+        self,
+    ):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+
+        # Add time coordinates with the singleton coordinate, "height"
+        height = xr.DataArray(
+            name="height",
+            data=np.array(2),
+            attrs={
+                "units": "m",
+                "axis": "Z",
+                "positive": "up",
+                "long_name": "height",
+                "standard_name": "height",
+            },
+        )
+        ds["time"] = xr.DataArray(
+            name="time",
+            data=np.array(
+                [
+                    "2000-01-01T12:00:00.000000000",
+                    "2000-02-01T12:00:00.000000000",
+                    "2000-03-01T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            coords={"height": height},
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+            },
+        )
+
+        result = ds.bounds.add_bounds("T")
+        expected_time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["1999-12-17T00:00:00.000000000", "2000-01-17T00:00:00.000000000"],
+                    ["2000-01-17T00:00:00.000000000", "2000-02-16T00:00:00.000000000"],
+                    ["2000-02-16T00:00:00.000000000", "2000-03-16T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": ds.time.assign_attrs({"bounds": "time_bnds"}),
+                "height": ds.time.height,
+            },
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        assert result.time_bnds.identical(expected_time_bnds)
+
 
 class TestAddTimeBounds:
     @pytest.fixture(autouse=True)
@@ -419,6 +494,66 @@ class TestAddTimeBounds:
         result = ds.bounds.add_time_bounds(method="freq")
 
         assert ds.identical(result)
+
+    def test_ignores_adding_bounds_for_singleton_coordinates_unrelated_to_the_time_axis(
+        self,
+    ):
+        ds = self.ds.copy()
+        ds = ds.drop_dims("time")
+
+        # Add time coordinates with the singleton coordinate, "height"
+        height = xr.DataArray(
+            name="height",
+            data=np.array(2),
+            attrs={
+                "units": "m",
+                "axis": "Z",
+                "positive": "up",
+                "long_name": "height",
+                "standard_name": "height",
+            },
+        )
+        ds["time"] = xr.DataArray(
+            name="time",
+            data=np.array(
+                [
+                    "2000-01-01T12:00:00.000000000",
+                    "2000-02-01T12:00:00.000000000",
+                    "2000-03-01T12:00:00.000000000",
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            coords={"height": height},
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+            },
+        )
+
+        result = ds.bounds.add_time_bounds(method="freq")
+        # NOTE: The algorithm for generating time bounds doesn't extend the
+        # upper bound into the next month.
+        expected_time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={
+                "time": ds.time.assign_attrs({"bounds": "time_bnds"}),
+                "height": ds.time.height,
+            },
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        assert result.time_bnds.identical(expected_time_bnds)
 
     def test_add_bounds_for_np_datetime_time_coords_using_freq(self):
         ds = self.ds.copy()
