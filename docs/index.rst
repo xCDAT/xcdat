@@ -144,21 +144,9 @@ feature updates.
 After releases are performed on `GitHub Releases`_, the corresponding ``xcdat`` package
 version will be available to download through Anaconda `conda-forge`_ usually within a day.
 
-To stay notified of releases, **subscribe to our Google Groups mailing list
-(xcdat@googlegroups.com)**. You can also get notifications from GitHub by following
-these steps:
-
-1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
-2. Click the "Watch" button on the upper right-hand corner of the page.
-
-   .. image:: _static/github-watch-releases-1.png
-
-3. Click "Custom" and checkmark "Releases", then click "Apply".
-
-   .. image:: _static/github-watch-releases-2.png
+To stay notified of releases, **subscribe to our Google Groups mailing list**.
 
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
-.. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
 
 Acknowledgement
 ---------------
