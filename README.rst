@@ -68,6 +68,13 @@ to be working on this project and hope to have you onboard!
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
+**Useful links**:
+`Code Repository <https://github.com/xCDAT/xcdat>`__ |
+`Issues <https://github.com/xCDAT/xcdat/issues>`__ |
+`Discussions <https://github.com/xCDAT/xcdat/discussions>`__ |
+`Releases <https://github.com/xCDAT/xcdat/releases>`__ |
+`Mailing List <https://groups.google.com/g/xcdat>`__ |
+
 Getting Started
 ---------------
 
@@ -88,6 +95,10 @@ Community
 xCDAT is a community-driven open source project. We encourage discussion on topics such
 as version releases, feature suggestions, and architecture design on the
 `GitHub Discussions`_ page.
+
+**Subscribe to our Google Groups Mailing List (xcdat@googlegroups.com)** for news and
+announcements related to xCDAT, such as software version releases or future roadmap
+plans.
 
 Please note that xCDAT has a `Code of Conduct`_. By participating in the xCDAT
 community, you agree to abide by its rules.
@@ -183,7 +194,9 @@ feature updates.
 After releases are performed on `GitHub Releases`_, the corresponding ``xcdat`` package
 version will be available to download through Anaconda `conda-forge`_ usually within a day.
 
-To stay notified of releases:
+To stay notified of releases, **subscribe to our Google Groups mailing list
+(xcdat@googlegroups.com)**. You can also get notifications from GitHub by following
+these steps:
 
 1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
 2. Click the "Watch" button on the upper right-hand corner of the page.
