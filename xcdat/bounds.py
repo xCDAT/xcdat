@@ -319,13 +319,13 @@ class BoundsAccessor:
 
         This method loops over the time axis coordinate variables and attempts
         to add bounds for each of them if they don't exist. To add time bounds
-        for an axis, its coordinates must be the following criteria:
+        for the time axis, its coordinates must be the following criteria:
 
           1. Coordinates are single dimensional, not multidimensional
           2. Coordinates are a length > 1 (not singleton)
           3. Bounds must not already exist
              * Determined by attempting to map the coordinate variable's
-             "bounds" attr (if set) to the bounds data variable of the same key
+               "bounds" attr (if set) to the bounds data variable of the same key
           4. If ``method=freq``, coordinates must be composed of datetime-like
              objects (`np.datetime64` or `cftime`)
 
@@ -412,14 +412,17 @@ class BoundsAccessor:
         dimension coordinates as ancillary coordinates. For example, the
         "height" singleton coordinate will be attached to "time" coordinates
         even though "height" is related to the "Z" axis, not the "T" axis.
+        Refer to [1]_ for more info on this Xarray behavior.
 
         This is an undesirable behavior in xCDAT because the add bounds methods
         loop over coordinates related to an axis and attempts to add bounds if
         they don't exist. If ancillary coordinates are present, "ValueError:
         Cannot generate bounds for coordinate variable 'height' which has a
-        length <= 1 (singleton)" is raised. To work around this Xarray behavior,
-        we drop the ancilliary singleton coordinates before adding bounds. Refer
-        to [1]_ for more info on this behavior.
+        length <= 1 (singleton)" is raised. For the purpose of adding bounds,
+        we temporarily drop any ancillary singletons from dimension 
+        coordinates before looping over those coordinates. Ancillary 
+        singletons will still be present in the final xr.Dataset object to 
+        maintain its integrity.
 
         Parameters
         ----------

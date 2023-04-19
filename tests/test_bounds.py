@@ -398,7 +398,7 @@ class TestAddBounds:
         )
         assert result.time_bnds.identical(expected_time_bnds)
 
-    def test_ignores_adding_bounds_for_singleton_coordinates_unrelated_unrelated_to_an_axis(
+    def test_ignores_adding_bounds_for_singleton_coordinate_unrelated_to_an_axis(
         self,
     ):
         ds = self.ds.copy()
@@ -495,7 +495,7 @@ class TestAddTimeBounds:
 
         assert ds.identical(result)
 
-    def test_ignores_adding_bounds_for_singleton_coordinates_unrelated_to_the_time_axis(
+    def test_ignores_adding_bounds_for_singleton_coordinate_unrelated_to_the_time_axis(
         self,
     ):
         ds = self.ds.copy()
