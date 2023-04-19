@@ -34,7 +34,7 @@ to be working on this project and hope to have you onboard!
 Getting Started
 ---------------
 
-The best resource for getting started is the `xCDAT documentation page`_.
+The best resource for getting started is the `xCDAT documentation website`_.
 Our documentation provides general guidance for setting up xCDAT in an Anaconda
 environment on your local `computer`_ or on an `HPC/Jupyter`_ environment. We also
 include an `API Overview`_ and `Gallery`_ to highlight xCDAT functionality.
