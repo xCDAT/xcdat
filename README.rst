@@ -72,6 +72,7 @@ Getting Started
 ---------------
 
 **Useful links**:
+`Documentation <https://xcdat.readthedocs.io>`__ |
 `Code Repository <https://github.com/xCDAT/xcdat>`__ |
 `Issues <https://github.com/xCDAT/xcdat/issues>`__ |
 `Discussions <https://github.com/xCDAT/xcdat/discussions>`__ |
