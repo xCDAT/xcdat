@@ -27,7 +27,7 @@ The xCDAT core team's mission is to provide a maintainable and extensible packag
 that serves the needs of the climate community in the long-term. We are excited
 to be working on this project and hope to have you onboard!
 
-.. _CF compliant: https://cfconventions.org/
+.. _CF-compliant: https://cfconventions.org/
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
