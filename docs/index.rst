@@ -150,7 +150,7 @@ feature updates.
 After releases are performed on `GitHub Releases`_, the corresponding ``xcdat`` package
 version will be available to download through Anaconda `conda-forge`_ usually within a day.
 
-Subscribe to our `mailing list`_ to stay notified with new releases.
+Subscribe to our `mailing list`_ to stay notified of new releases.
 
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
 .. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
