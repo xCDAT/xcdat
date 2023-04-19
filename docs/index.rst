@@ -17,8 +17,9 @@ Project Motivation
 
 The goal of xCDAT is to provide generalizable features and utilities for simple and
 robust analysis of climate data. xCDAT's design philosophy is focused on reducing the
-overhead required to accomplish certain tasks in xarray. Some key xCDAT features are
-inspired by or ported from the core CDAT library, while others leverage powerful
+overhead required to accomplish certain tasks in xarray. xCDAT aims to be compatible
+with structured grids that are `CF-compliant`_ (e.g., CMIP6). Some key xCDAT features
+are inspired by or ported from the core CDAT library, while others leverage powerful
 libraries in the xarray ecosystem (e.g., `xESMF`_ and `cf_xarray`_) to deliver
 robust APIs.
 
@@ -26,6 +27,7 @@ The xCDAT core team's mission is to provide a maintainable and extensible packag
 that serves the needs of the climate community in the long-term. We are excited
 to be working on this project and hope to have you onboard!
 
+.. _CF compliant: https://cfconventions.org/
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
