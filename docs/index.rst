@@ -18,15 +18,15 @@ to be working on this project and hope to have you onboard!
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
+Getting Started
+---------------
+
 **Useful links**:
 `Code Repository <https://github.com/xCDAT/xcdat>`__ |
 `Issues <https://github.com/xCDAT/xcdat/issues>`__ |
 `Discussions <https://github.com/xCDAT/xcdat/discussions>`__ |
 `Releases <https://github.com/xCDAT/xcdat/releases>`__ |
-`Mailing List <https://groups.google.com/g/xcdat>`__ |
-
-Getting Started
----------------
+`Mailing List <https://groups.google.com/g/xcdat>`__
 
 The best resource for getting started is the `xCDAT documentation page`_.
 Our documentation provides general guidance for setting up xCDAT in an Anaconda
