@@ -4,10 +4,22 @@ xCDAT: Xarray Climate Data Analysis Tools
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
 serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) library.
 
+**Useful links**:
+`Documentation <https://xcdat.readthedocs.io>`__ |
+`Code Repository <https://github.com/xCDAT/xcdat>`__ |
+`Issues <https://github.com/xCDAT/xcdat/issues>`__ |
+`Discussions <https://github.com/xCDAT/xcdat/discussions>`__ |
+`Releases <https://github.com/xCDAT/xcdat/releases>`__ |
+`Mailing List <https://groups.google.com/g/xcdat>`__
+
+Project Motivation
+------------------
+
 The goal of xCDAT is to provide generalizable features and utilities for simple and
 robust analysis of climate data. xCDAT's design philosophy is focused on reducing the
-overhead required to accomplish certain tasks in xarray. Some key xCDAT features are
-inspired by or ported from the core CDAT library, while others leverage powerful
+overhead required to accomplish certain tasks in xarray. xCDAT aims to be compatible
+with structured grids that are `CF-compliant`_ (e.g., CMIP6). Some key xCDAT features
+are inspired by or ported from the core CDAT library, while others leverage powerful
 libraries in the xarray ecosystem (e.g., `xESMF`_ and `cf_xarray`_) to deliver
 robust APIs.
 
@@ -15,22 +27,23 @@ The xCDAT core team's mission is to provide a maintainable and extensible packag
 that serves the needs of the climate community in the long-term. We are excited
 to be working on this project and hope to have you onboard!
 
+.. _CF-compliant: https://cfconventions.org/
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
 Getting Started
 ---------------
 
-The best resource for getting started is the `xCDAT documentation page`_.
+The best resource for getting started is the `xCDAT documentation website`_.
 Our documentation provides general guidance for setting up xCDAT in an Anaconda
 environment on your local `computer`_ or on an `HPC/Jupyter`_ environment. We also
 include an `API Overview`_ and `Gallery`_ to highlight xCDAT functionality.
 
-.. _xCDAT documentation page: index.rst
-.. _computer: getting-started.rst
-.. _HPC/Jupyter: getting-started-hpc-jupyter.rst
-.. _API Overview: api.rst
-.. _Gallery: gallery.rst
+.. _xCDAT documentation website: https://xcdat.readthedocs.io/en/stable/
+.. _computer: https://xcdat.readthedocs.io/en/stable/getting-started.html
+.. _HPC/Jupyter: https://xcdat.readthedocs.io/en/stable/getting-started-hpc-jupyter.html
+.. _API Overview: https://xcdat.readthedocs.io/en/stable/api.html
+.. _Gallery: https://xcdat.readthedocs.io/en/stable/gallery.html
 
 Community
 ---------
@@ -39,11 +52,15 @@ xCDAT is a community-driven open source project. We encourage discussion on topi
 as version releases, feature suggestions, and architecture design on the
 `GitHub Discussions`_ page.
 
+Subscribe to our `mailing list`_ for news and announcements related to xCDAT,
+such as software version releases or future roadmap plans.
+
 Please note that xCDAT has a `Code of Conduct`_. By participating in the xCDAT
 community, you agree to abide by its rules.
 
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
 .. _Code of Conduct: code-of-conduct.rst
+.. _mailing list: https://groups.google.com/g/xcdat
 
 Contributing
 ------------
@@ -54,7 +71,7 @@ open issues on our `GitHub Issue Tracker`_.
 For more instructions on how to contribute, please checkout our `Contributing Guide`_.
 
 .. _GitHub Issue Tracker: https://github.com/xCDAT/xcdat/issues
-.. _Contributing Guide: contributing.rst
+.. _Contributing Guide: https://xcdat.readthedocs.io/en/stable/contributing.html
 
 Available Features
 ------------------
@@ -116,7 +133,7 @@ Things We Are Striving For
 
 * Support for parallelism using `dask`_ where it is both possible and makes sense
 
-.. _Metadata Interpretation: faqs.rst#metadata-interpretation
+.. _Metadata Interpretation: https://xcdat.readthedocs.io/en/stable/faqs.html#metadata-interpretation
 .. _regrid2: https://cdms.readthedocs.io/en/latest/regrid2.html
 .. _xESMF: https://pangeo-xesmf.readthedocs.io/en/latest/
 .. _dask: https://dask.org/
@@ -133,16 +150,7 @@ feature updates.
 After releases are performed on `GitHub Releases`_, the corresponding ``xcdat`` package
 version will be available to download through Anaconda `conda-forge`_ usually within a day.
 
-To stay notified of releases:
-
-1. Go to the ``xcdat`` repository homepage on GitHub (https://github.com/xCDAT/xcdat)
-2. Click the "Watch" button on the upper right-hand corner of the page.
-
-   .. image:: _static/github-watch-releases-1.png
-
-3. Click "Custom" and checkmark "Releases", then click "Apply".
-
-   .. image:: _static/github-watch-releases-2.png
+Subscribe to our `mailing list`_ to stay notified of new releases.
 
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
 .. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
