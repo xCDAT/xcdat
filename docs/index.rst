@@ -34,7 +34,7 @@ Our documentation provides general guidance for setting up xCDAT in an Anaconda
 environment on your local `computer`_ or on an `HPC/Jupyter`_ environment. We also
 include an `API Overview`_ and `Gallery`_ to highlight xCDAT functionality.
 
-.. _xCDAT documentation page: https://xcdat.readthedocs.io/en/stable/
+.. _xCDAT documentation website: https://xcdat.readthedocs.io/en/stable/
 .. _computer: https://xcdat.readthedocs.io/en/stable/getting-started.html
 .. _HPC/Jupyter: https://xcdat.readthedocs.io/en/stable/getting-started-hpc-jupyter.html
 .. _API Overview: https://xcdat.readthedocs.io/en/stable/api.html
