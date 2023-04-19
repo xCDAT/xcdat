@@ -83,11 +83,11 @@ Our documentation provides general guidance for setting up xCDAT in an Anaconda
 environment on your local `computer`_ or on an `HPC/Jupyter`_ environment. We also
 include an `API Overview`_ and `Gallery`_ to highlight xCDAT functionality.
 
-.. _xCDAT documentation website: docs/index.rst
-.. _computer: docs/getting-started.rst
-.. _HPC/Jupyter: docs/getting-started-hpc-jupyter.rst
-.. _API Overview: docs/api.rst
-.. _Gallery: docs/gallery.rst
+.. _xCDAT documentation page: https://xcdat.readthedocs.io/en/stable/
+.. _computer: https://xcdat.readthedocs.io/en/stable/getting-started.html
+.. _HPC/Jupyter: https://xcdat.readthedocs.io/en/stable/getting-started-hpc-jupyter.html
+.. _API Overview: https://xcdat.readthedocs.io/en/stable/api.html
+.. _Gallery: https://xcdat.readthedocs.io/en/stable/gallery.html
 
 Community
 ---------
@@ -115,7 +115,7 @@ open issues on our `GitHub Issue Tracker`_.
 For more instructions on how to contribute, please checkout our `Contributing Guide`_.
 
 .. _GitHub Issue Tracker: https://github.com/xCDAT/xcdat/issues
-.. _Contributing Guide: CONTRIBUTING.rst
+.. _Contributing Guide: https://xcdat.readthedocs.io/en/stable/contributing.html
 
 Available Features
 ------------------
@@ -177,7 +177,7 @@ Things We Are Striving For
 
 * Support for parallelism using `dask`_ where it is both possible and makes sense
 
-.. _Metadata Interpretation: docs/faqs.rst#metadata-interpretation
+.. _Metadata Interpretation: https://xcdat.readthedocs.io/en/stable/faqs.html#metadata-interpretation
 .. _regrid2: https://cdms.readthedocs.io/en/latest/regrid2.html
 .. _xESMF: https://pangeo-xesmf.readthedocs.io/en/latest/
 .. _dask: https://dask.org/
