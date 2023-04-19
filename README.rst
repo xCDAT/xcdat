@@ -108,6 +108,7 @@ community, you agree to abide by its rules.
 
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
 .. _Code of Conduct: CODE-OF-CONDUCT.rst
+.. _mailing list: https://groups.google.com/g/xcdat
 
 Contributing
 ------------
@@ -201,7 +202,6 @@ Subscribe to our `mailing list`_ to stay notified with new releases.
 
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
 .. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
-.. _mailing list: https://groups.google.com/g/xcdat
 
 Acknowledgement
 ---------------
