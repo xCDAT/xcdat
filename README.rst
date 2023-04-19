@@ -54,6 +54,17 @@
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
 serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) library.
 
+**Useful links**:
+`Documentation <https://xcdat.readthedocs.io>`__ |
+`Code Repository <https://github.com/xCDAT/xcdat>`__ |
+`Issues <https://github.com/xCDAT/xcdat/issues>`__ |
+`Discussions <https://github.com/xCDAT/xcdat/discussions>`__ |
+`Releases <https://github.com/xCDAT/xcdat/releases>`__ |
+`Mailing List <https://groups.google.com/g/xcdat>`__
+
+Project Motivation
+------------------
+
 The goal of xCDAT is to provide generalizable features and utilities for simple and
 robust analysis of climate data. xCDAT's design philosophy is focused on reducing the
 overhead required to accomplish certain tasks in xarray. Some key xCDAT features are
@@ -70,14 +81,6 @@ to be working on this project and hope to have you onboard!
 
 Getting Started
 ---------------
-
-**Useful links**:
-`Documentation <https://xcdat.readthedocs.io>`__ |
-`Code Repository <https://github.com/xCDAT/xcdat>`__ |
-`Issues <https://github.com/xCDAT/xcdat/issues>`__ |
-`Discussions <https://github.com/xCDAT/xcdat/discussions>`__ |
-`Releases <https://github.com/xCDAT/xcdat/releases>`__ |
-`Mailing List <https://groups.google.com/g/xcdat>`__
 
 The best resource for getting started is the `xCDAT documentation website`_.
 Our documentation provides general guidance for setting up xCDAT in an Anaconda
