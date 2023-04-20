@@ -78,6 +78,16 @@ class TestOpenDataset:
 
         assert result.identical(expected)
 
+    def test_skips_adding_bounds(self):
+        ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path)
+
+        result = open_dataset(self.file_path, add_bounds=False)
+        assert result.identical(ds)
+
+        result = open_dataset(self.file_path, add_bounds=None)
+        assert result.identical(ds)
+
     def test_decode_time_in_days(self):
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds.to_netcdf(self.file_path)
@@ -625,6 +635,16 @@ class TestOpenMfDataset:
 
         expected = ds1.merge(ds2)
         assert result.identical(expected)
+
+    def test_skips_adding_bounds(self):
+        ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=False)
+        ds.to_netcdf(self.file_path1)
+
+        result = open_mfdataset(self.file_path1, add_bounds=False)
+        assert result.identical(ds)
+
+        result = open_mfdataset(self.file_path1, add_bounds=None)
+        assert result.identical(ds)
 
     def test_raises_error_if_xml_does_not_have_root_directory_attr(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -2284,7 +2304,7 @@ class Test_PostProcessDataset:
         with pytest.raises(KeyError):
             _postprocess_dataset(ds, center_times=True)
 
-    def test_adds_missing_lat_and_lon_bounds_does_not_add_time_bounds(self):
+    def test_adds_missing_lat_and_lon_bounds_by_default(self):
         # Create expected dataset without bounds.
         ds = generate_dataset(decode_times=True, cf_compliant=False, has_bounds=False)
 
@@ -2293,7 +2313,7 @@ class Test_PostProcessDataset:
         assert "lon_bnds" not in data_vars
         assert "time_bnds" not in data_vars
 
-        result = _postprocess_dataset(ds, add_bounds=True)
+        result = _postprocess_dataset(ds, add_bounds=["X", "Y"])
         result_data_vars = list(result.data_vars.keys())
         assert "lat_bnds" in result_data_vars
         assert "lon_bnds" in result_data_vars
@@ -2308,7 +2328,7 @@ class Test_PostProcessDataset:
         assert "lon_bnds" not in data_vars
         assert "time_bnds" not in data_vars
 
-        result = _postprocess_dataset(ds, add_bounds=True, bounds_axes=["X", "Y", "T"])
+        result = _postprocess_dataset(ds, add_bounds=["X", "Y", "T"])
         result_data_vars = list(result.data_vars.keys())
         assert "lat_bnds" in result_data_vars
         assert "lon_bnds" in result_data_vars
