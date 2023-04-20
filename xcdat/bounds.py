@@ -130,14 +130,17 @@ class BoundsAccessor:
         bounds to its coordinates if they don't exist. The coordinates must meet
         the following criteria in order to add bounds:
 
-          1. The axis for the coordinates are "X", "Y", "T", or "Z"
-          2. Coordinates are a single dimension, not multidimensional
-          3. Coordinates are a length > 1 (not singleton)
-          4. Bounds must not already exist.
-             * Determined by attempting to map the coordinate variable's
-             "bounds" attr (if set) to the bounds data variable of the same key.
-          5. Time axes must be composed of datetime-like objects (`np.datetime64`
-             or `cftime`).
+        1. The axis for the coordinates are "X", "Y", "T", or "Z"
+        2. Coordinates are a single dimension, not multidimensional
+        3. Coordinates are a length > 1 (not singleton)
+        4. Bounds must not already exist
+
+           * Coordinates are mapped to bounds using the "bounds" attr. For
+             example, bounds exist if ``ds.time.attrs["bounds"]`` is set to
+             ``"time_bnds"`` and ``ds.time_bnds`` is present in the dataset.
+
+        5. Time axes must be composed of datetime-like objects
+           (`np.datetime64` or `cftime`).
 
         If coordinates do not meet that criteria, bounds are not added for them.
 
@@ -261,12 +264,14 @@ class BoundsAccessor:
         To add bounds for an axis, its coordinates must be the following
         criteria:
 
-          1. The axis for the coordinates are "X", "Y", "T", or "Z"
-          2. Coordinates are single dimensional, not multidimensional
-          3. Coordinates are a length > 1 (not singleton)
-          4. Bounds must not already exist
-             * Determined by attempting to map the coordinate variable's
-             "bounds" attr (if set) to the bounds data variable of the same key
+        1. The axis for the coordinates are "X", "Y", "T", or "Z"
+        2. Coordinates are single dimensional, not multidimensional
+        3. Coordinates are a length > 1 (not singleton)
+        4. Bounds must not already exist
+
+           * Coordinates are mapped to bounds using the "bounds" attr. For
+             example, bounds exist if ``ds.time.attrs["bounds"]`` is set to
+             ``"time_bnds"`` and ``ds.time_bnds`` is present in the dataset.
 
         Parameters
         ----------
@@ -321,13 +326,16 @@ class BoundsAccessor:
         to add bounds for each of them if they don't exist. To add time bounds
         for the time axis, its coordinates must be the following criteria:
 
-          1. Coordinates are single dimensional, not multidimensional
-          2. Coordinates are a length > 1 (not singleton)
-          3. Bounds must not already exist
-             * Determined by attempting to map the coordinate variable's
-               "bounds" attr (if set) to the bounds data variable of the same key
-          4. If ``method=freq``, coordinates must be composed of datetime-like
-             objects (`np.datetime64` or `cftime`)
+        1. Coordinates are single dimensional, not multidimensional
+        2. Coordinates are a length > 1 (not singleton)
+        3. Bounds must not already exist
+
+           * Coordinates are mapped to bounds using the "bounds" attr. For
+             example, bounds exist if ``ds.time.attrs["bounds"]`` is set to
+             ``"time_bnds"`` and ``ds.time_bnds`` is present in the dataset.
+
+        4. If ``method=freq``, coordinates must be composed of datetime-like
+           objects (``np.datetime64`` or ``cftime``)
 
         Parameters
         ----------
@@ -336,9 +344,9 @@ class BoundsAccessor:
             "freq" or "midpoint".
 
             * "freq": Create time bounds as the start and end of each timestep's
-               period using either the inferred or specified time frequency
-               (``freq`` parameter). For example, the time bounds will be the
-               start and end of each month for each monthly coordinate point.
+              period using either the inferred or specified time frequency
+              (``freq`` parameter). For example, the time bounds will be the
+              start and end of each month for each monthly coordinate point.
             * "midpoint": Create time bounds using time coordinates as the
               midpoint between their upper and lower bounds.
 
@@ -362,11 +370,12 @@ class BoundsAccessor:
         end_of_month : bool, optional
             If ``freq=="month"``, this flag notes that the timepoint is saved
             at the end of the monthly interval (see Note), by default False.
-            Some timepoints are saved at the end of the interval, e.g., Feb. 1
-            00:00 for the time interval Jan. 1 00:00 - Feb. 1 00:00. Since this
-            method determines the month and year from the time vector, the
-            bounds will be set incorrectly if the timepoint is set to the end of
-            the time interval. For these cases, set ``end_of_month=True``.
+
+            * Some timepoints are saved at the end of the interval, e.g., Feb. 1
+              00:00 for the time interval Jan. 1 00:00 - Feb. 1 00:00. Since this
+              method determines the month and year from the time vector, the
+              bounds will be set incorrectly if the timepoint is set to the end of
+              the time interval. For these cases, set ``end_of_month=True``.
 
         Returns
         -------
@@ -418,11 +427,11 @@ class BoundsAccessor:
         loop over coordinates related to an axis and attempts to add bounds if
         they don't exist. If ancillary coordinates are present, "ValueError:
         Cannot generate bounds for coordinate variable 'height' which has a
-        length <= 1 (singleton)" is raised. For the purpose of adding bounds,
-        we temporarily drop any ancillary singletons from dimension 
-        coordinates before looping over those coordinates. Ancillary 
-        singletons will still be present in the final xr.Dataset object to 
-        maintain its integrity.
+        length <= 1 (singleton)" is raised. For the purpose of adding bounds, we
+        temporarily drop any ancillary singletons from dimension coordinates
+        before looping over those coordinates. Ancillary singletons will still
+        be present in the final Dataset object to maintain the Dataset's
+        integrity.
 
         Parameters
         ----------
