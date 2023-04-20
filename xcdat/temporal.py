@@ -1,7 +1,7 @@
 """Module containing temporal functions."""
 from datetime import datetime
 from itertools import chain
-from typing import Dict, List, Literal, Optional, Tuple, TypedDict, get_args
+from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
 
 import cf_xarray  # noqa: F401
 import cftime
@@ -10,6 +10,7 @@ import pandas as pd
 import xarray as xr
 from dask.array.core import Array
 from xarray.coding.cftime_offsets import get_date_type
+from xarray.core.common import contains_cftime_datetimes, is_np_datetime_like
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
@@ -115,6 +116,11 @@ class TemporalAccessor:
     An accessor class that provides temporal attributes and methods on xarray
     Datasets through the ``.temporal`` attribute.
 
+    This accessor class requires the dataset's time coordinates to be decoded as
+    ``np.datetime64`` or ``cftime.datetime`` objects. The dataset must also
+    have time bounds to generate weights for weighted calculations and to infer
+    the grouping time frequency in ``average()`` (single-snap shot average).
+
     Examples
     --------
 
@@ -161,6 +167,10 @@ class TemporalAccessor:
         frequencies, the distribution of weights will be equal so
         ``weighted=True`` is the same as ``weighted=False``.
 
+        Time bounds are used for inferring the time series frequency and for
+        generating weights (refer to the ``weighted`` parameter documentation
+        below).
+
         Parameters
         ----------
         data_var: str
@@ -198,7 +208,7 @@ class TemporalAccessor:
         # Set the data variable related attributes (e.g., dim name, calendar)
         self._set_data_var_attrs(data_var)
 
-        freq = self._infer_freq()
+        freq = _infer_freq(self._dataset[self.dim])
 
         return self._averager(
             data_var, "average", freq, weighted=weighted, keep_weights=keep_weights
@@ -213,6 +223,9 @@ class TemporalAccessor:
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with average of a data variable by time group.
+
+        Time bounds are used for generating weights to calculate weighted group
+        averages (refer to the ``weighted`` parameter documentation below).
 
         Parameters
         ----------
@@ -356,6 +369,9 @@ class TemporalAccessor:
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Returns a Dataset with the climatology of a data variable.
+
+        Time bounds are used for generating weights to calculate weighted
+        climatology (refer to the ``weighted`` parameter documentation below).
 
         Parameters
         ----------
@@ -521,6 +537,8 @@ class TemporalAccessor:
         temperature) and the long-term average value for that time interval
         (e.g., the average surface temperature over the last 30 Januaries).
 
+        Time bounds are used for generating weights to calculate weighted
+        climatology (refer to the ``weighted`` parameter documentation below).
 
         Parameters
         ----------
@@ -664,7 +682,7 @@ class TemporalAccessor:
         # Group averaging is only required if the dataset's frequency (input)
         # differs from the `freq` arg (output).
         ds_obs = ds.copy()
-        inferred_freq = self._infer_freq()
+        inferred_freq = _infer_freq(ds[self.dim])
         if inferred_freq != freq:
             ds_obs = ds_obs.temporal.group_average(
                 data_var,
@@ -722,34 +740,6 @@ class TemporalAccessor:
 
         return ds_obs
 
-    def _infer_freq(self) -> Frequency:
-        """Infers the time frequency from the coordinates.
-
-        This method infers the time frequency from the coordinates by
-        calculating the minimum delta and comparing it against a set of
-        conditionals.
-
-        The native ``xr.infer_freq()`` method does not work for all cases
-        because the frequency can be irregular (e.g., different hour
-        measurements), which ends up returning None.
-
-        Returns
-        -------
-        Frequency
-            The time frequency.
-        """
-        time_coords = self._dataset[self.dim]
-        min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
-
-        if min_delta < pd.Timedelta(days=1):
-            return "hour"
-        elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=28):
-            return "day"
-        elif min_delta >= pd.Timedelta(days=28) and min_delta < pd.Timedelta(days=365):
-            return "month"
-        else:
-            return "year"
-
     def _averager(
         self,
         data_var: str,
@@ -803,6 +793,9 @@ class TemporalAccessor:
 
         Raises
         ------
+        TypeError
+            If the data variable's time coordinates are not encoded as
+            datetime-like objects.
         KeyError
             If the data variable does not have a "calendar" encoding attribute.
         """
@@ -811,15 +804,13 @@ class TemporalAccessor:
         self.data_var = data_var
         self.dim = get_dim_coords(dv, "T").name
 
-        first_time_coord = dv[self.dim].values[0]
-        is_decoded = isinstance(first_time_coord, cftime.datetime) or isinstance(
-            first_time_coord, np.datetime64
-        )
-        if not is_decoded:
-            raise ValueError(
-                f"The time coordinates type is {type(first_time_coord)}, not "
-                "'cftime.datetime' or 'np.datetime64'. Time coordinates must be "
-                "decoded as datetime before using TemporalAccessor methods. "
+        if not _contains_datetime_like_objects(dv[self.dim]):
+            first_time_coord = dv[self.dim].values[0]
+            raise TypeError(
+                f"The {self.dim} coordinates contains {type(first_time_coord)} "
+                f"objects. {self.dim} coordinates must be decoded to datetime-like "
+                "objects (`np.datetime64` or `cftime.datetime`) before using "
+                "TemporalAccessor methods. Refer to `xcdat.decode_time`."
             )
 
         # Get the `cftime` date type based on the CF calendar attribute.
@@ -1669,3 +1660,100 @@ class TemporalAccessor:
                 data_var.attrs["custom_seasons"] = list(custom_seasons.keys())
 
         return data_var
+
+
+def _infer_freq(time_coords: xr.DataArray) -> Frequency:
+    """Infers the time frequency from the coordinates.
+
+    This method infers the time frequency from the coordinates by
+    calculating the minimum delta and comparing it against a set of
+    conditionals.
+
+    The native ``xr.infer_freq()`` method does not work for all cases
+    because the frequency can be irregular (e.g., different hour
+    measurements), which ends up returning None.
+
+    Parameters
+    ----------
+    time_coords : xr.DataArray
+        A DataArray for the time dimension coordinate variable.
+
+    Returns
+    -------
+    Frequency
+        The time frequency.
+    """
+    # TODO: Raise exception if the frequency cannot be inferred.
+    min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
+
+    if min_delta < pd.Timedelta(days=1):
+        return "hour"
+    elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=28):
+        return "day"
+    elif min_delta >= pd.Timedelta(days=28) and min_delta < pd.Timedelta(days=365):
+        return "month"
+    else:
+        return "year"
+
+
+def _contains_datetime_like_objects(var: xr.DataArray) -> bool:
+    """Check if a DataArray contains datetime-like objects.
+
+     A variable contains datetime-like objects if they are either
+    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
+
+     Parameters
+     ----------
+     var : xr.DataArray
+         The DataArray.
+
+     Returns
+     -------
+     bool
+         True if datetime-like, else False.
+
+     Notes
+     -----
+     Based on ``xarray.core.common._contains_datetime_like_objects``, which
+     accepts the ``var`` parameter an an xarray.Variable object instead.
+    """
+    var_obj = xr.as_variable(var)
+
+    return is_np_datetime_like(var_obj.dtype) or contains_cftime_datetimes(var_obj)
+
+
+def _get_datetime_like_type(
+    var: xr.DataArray,
+) -> Union[np.datetime64, np.timedelta64, cftime.datetime]:
+    """Get the DataArray's object type if they are datetime-like.
+
+     A variable contains datetime-like objects if they are either
+    ``np.datetime64``, ``np.timedelta64``, or ``cftime.datetime``.
+
+     Parameters
+     ----------
+     var : xr.DataArray
+         The DataArray.
+
+     Raises
+     ------
+     TypeError
+         If the variable does not contain datetime-like objects.
+
+     Returns
+     -------
+     Union[np.datetime64, np.timedelta64, cftime.datetime]:
+    """
+    var_obj = xr.as_variable(var)
+    dtype = var.dtype
+
+    if np.issubdtype(dtype, np.datetime64):
+        return np.datetime64
+    elif np.issubdtype(dtype, np.timedelta64):
+        return np.timedelta64
+    elif contains_cftime_datetimes(var_obj):
+        return cftime.datetime
+    else:
+        raise TypeError(
+            f"The variable {var.name} does not contain datetime-like objects."
+        )

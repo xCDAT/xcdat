@@ -1,4 +1,6 @@
 """This module stores reusable test fixtures."""
+from typing import Literal
+
 import cftime
 import numpy as np
 import xarray as xr
@@ -42,6 +44,70 @@ time_decoded = xr.DataArray(
         "standard_name": "time",
     },
 )
+time_yearly = xr.DataArray(
+    data=np.array(
+        [
+            cftime.DatetimeGregorian(2000, 7, 1, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2001, 7, 1, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2002, 7, 1, 12, 0, 0, 0, has_year_zero=False),
+        ],
+        dtype=object,
+    ),
+    dims=["time"],
+    attrs={
+        "axis": "T",
+        "long_name": "time",
+        "standard_name": "time",
+    },
+)
+time_daily = xr.DataArray(
+    data=np.array(
+        [
+            cftime.DatetimeGregorian(2000, 1, 1, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 1, 2, 12, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 1, 3, 12, 0, 0, 0, has_year_zero=False),
+        ],
+        dtype=object,
+    ),
+    dims=["time"],
+    attrs={
+        "axis": "T",
+        "long_name": "time",
+        "standard_name": "time",
+    },
+)
+time_hourly = xr.DataArray(
+    data=np.array(
+        [
+            cftime.DatetimeGregorian(2000, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 1, 1, 1, 0, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 1, 1, 2, 0, 0, 0, has_year_zero=False),
+        ],
+        dtype=object,
+    ),
+    dims=["time"],
+    attrs={
+        "axis": "T",
+        "long_name": "time",
+        "standard_name": "time",
+    },
+)
+time_subhourly = xr.DataArray(
+    data=np.array(
+        [
+            cftime.DatetimeGregorian(2000, 1, 1, 0, 15, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 1, 1, 0, 45, 0, 0, has_year_zero=False),
+            cftime.DatetimeGregorian(2000, 1, 2, 1, 15, 0, 0, has_year_zero=False),
+        ],
+        dtype=object,
+    ),
+    dims=["time"],
+    attrs={
+        "axis": "T",
+        "long_name": "time",
+        "standard_name": "time",
+    },
+)
 time_encoded = xr.DataArray(
     data=[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14],
     dims=["time"],
@@ -51,7 +117,102 @@ time_encoded = xr.DataArray(
         "standard_name": "time",
     },
 )
-
+time_bnds_yearly = xr.DataArray(
+    name="time_bnds",
+    data=np.array(
+        [
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2001, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2001, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2002, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2003, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+            ],
+        ],
+        dtype=object,
+    ),
+    dims=["time", "bnds"],
+    attrs={
+        "xcdat_bounds": "True",
+    },
+)
+time_bnds_daily = xr.DataArray(
+    name="time_bnds",
+    data=np.array(
+        [
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 2, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 1, 2, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 3, 0, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 1, 3, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 4, 0, 0, 0, 0, has_year_zero=False),
+            ],
+        ],
+        dtype=object,
+    ),
+    dims=["time", "bnds"],
+    attrs={
+        "xcdat_bounds": "True",
+    },
+)
+time_bnds_hourly = xr.DataArray(
+    name="time_bnds",
+    data=np.array(
+        [
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 1, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 1, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 2, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 2, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 3, 0, 0, 0, has_year_zero=False),
+            ],
+        ],
+        dtype=object,
+    ),
+    dims=["time", "bnds"],
+    attrs={
+        "xcdat_bounds": "True",
+    },
+)
+time_bnds_subhourly = xr.DataArray(
+    name="time_bnds",
+    data=np.array(
+        [
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 30, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 0, 30, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 1, 0, 0, 0, has_year_zero=False),
+            ],
+            [
+                cftime.DatetimeGregorian(2000, 1, 1, 1, 0, 0, 0, has_year_zero=False),
+                cftime.DatetimeGregorian(2000, 1, 1, 1, 30, 0, 0, has_year_zero=False),
+            ],
+        ],
+        dtype=object,
+    ),
+    dims=["time", "bnds"],
+    attrs={
+        "xcdat_bounds": "True",
+    },
+)
 time_bnds_decoded = xr.DataArray(
     name="time_bnds",
     data=np.array(
@@ -202,9 +363,7 @@ ts_encoded = xr.DataArray(
 
 
 def generate_dataset(
-    decode_times: bool,
-    cf_compliant: bool,
-    has_bounds: bool,
+    decode_times: bool, cf_compliant: bool, has_bounds: bool
 ) -> xr.Dataset:
     """Generates a dataset using coordinate and data variable fixtures.
 
@@ -225,31 +384,30 @@ def generate_dataset(
     xr.Dataset
         Test dataset.
     """
-    # First, create a dataset with either encoded or decoded coordinates.
+    # Get the data_var, time axis, and time_bnds based on if time is decoded.
     if decode_times:
-        ds = xr.Dataset(
-            data_vars={
-                "ts": ts_decoded.copy(),
-            },
-            coords={"lat": lat.copy(), "lon": lon.copy(), "time": time_decoded.copy()},
-        )
+        ts = ts_decoded.copy()
+        time = time_decoded.copy()
+        time_bnds = time_bnds_decoded.copy()
+    else:
+        ts = ts_encoded.copy()
+        time = time_encoded.copy()
+        time_bnds = time_bnds_encoded.copy()
 
-        # Add the calendar and units attr to the encoding dict.
+    # Create the base dataset.
+    ds = xr.Dataset(
+        data_vars={"ts": ts},
+        coords={"lat": lat.copy(), "lon": lon.copy(), "time": time},
+    )
+
+    # Add the calendar and units attr to the encoding dict.
+    if decode_times:
         ds["time"].encoding["calendar"] = "standard"
         if cf_compliant:
             ds["time"].encoding["units"] = "days since 2000-01-01"
         else:
             ds["time"].encoding["units"] = "months since 2000-01-01"
-
     else:
-        ds = xr.Dataset(
-            data_vars={
-                "ts": ts_encoded.copy(),
-            },
-            coords={"lat": lat.copy(), "lon": lon.copy(), "time": time_encoded.copy()},
-        )
-
-        # Add the calendar and units attr to the attrs dict.
         ds["time"].attrs["calendar"] = "standard"
         if cf_compliant:
             ds["time"].attrs["units"] = "days since 2000-01-01"
@@ -259,11 +417,7 @@ def generate_dataset(
     if has_bounds:
         ds["lat_bnds"] = lat_bnds.copy()
         ds["lon_bnds"] = lon_bnds.copy()
-
-        if decode_times:
-            ds["time_bnds"] = time_bnds_decoded.copy()
-        else:
-            ds["time_bnds"] = time_bnds_encoded.copy()
+        ds["time_bnds"] = time_bnds
 
         # If the "bounds" attribute is included in an existing DataArray and
         # added to a new Dataset, it will get dropped. Therefore, it needs to be
@@ -271,5 +425,64 @@ def generate_dataset(
         ds["lat"].attrs["bounds"] = "lat_bnds"
         ds["lon"].attrs["bounds"] = "lon_bnds"
         ds["time"].attrs["bounds"] = "time_bnds"
+
+    return ds
+
+
+def generate_dataset_by_frequency(
+    freq: Literal["subhour", "hour", "day", "month", "year"] = "month"
+) -> xr.Dataset:
+    """Generates a dataset for a given temporal frequency.
+
+    This function uses the coordinate and data variable fixtures to generate a
+    dataset that is decoded, cf-compliant, and includes bounds.
+
+    Parameters
+    ----------
+    freq : Literal["subhour", "hour", "day", "month", "year"], optional
+        Frequency of time step (and bounds), by default 'month'.
+
+    Returns
+    -------
+    xr.Dataset
+        Test dataset.
+    """
+    # get correct time axis and time_bnds
+    if freq == "month":
+        time = time_decoded.copy()
+        time_bnds = time_bnds_decoded.copy()
+    elif freq == "year":
+        time = time_yearly.copy()
+        time_bnds = time_bnds_yearly.copy()
+    elif freq == "day":
+        time = time_daily.copy()
+        time_bnds = time_bnds_daily.copy()
+    elif freq == "hour":
+        time = time_hourly.copy()
+        time_bnds = time_bnds_hourly.copy()
+    elif freq == "subhour":
+        time = time_subhourly.copy()
+        time_bnds = time_bnds_subhourly.copy()
+
+    # Create the base dataset.
+    ds = xr.Dataset(
+        data_vars={"ts": ts_decoded},
+        coords={"lat": lat.copy(), "lon": lon.copy(), "time": time},
+    )
+
+    # Add the calendar and units attr to the encoding dict.
+    ds["time"].encoding["calendar"] = "standard"
+    ds["time"].encoding["units"] = "days since 2000-01-01"
+
+    ds["lat_bnds"] = lat_bnds.copy()
+    ds["lon_bnds"] = lon_bnds.copy()
+    ds["time_bnds"] = time_bnds
+
+    # If the "bounds" attribute is included in an existing DataArray and
+    # added to a new Dataset, it will get dropped. Therefore, it needs to be
+    # assigned to the DataArrays after they are added to Dataset.
+    ds["lat"].attrs["bounds"] = "lat_bnds"
+    ds["lon"].attrs["bounds"] = "lon_bnds"
+    ds["time"].attrs["bounds"] = "time_bnds"
 
     return ds
