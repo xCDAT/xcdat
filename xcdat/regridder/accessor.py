@@ -339,6 +339,12 @@ class RegridderAccessor:
         Supported tools:
 
         - xgcm (https://xgcm.readthedocs.io/en/latest/index.html)
+           - Methods:
+
+             - Linear
+             - Conservative
+             - Log
+           - Find options at :py:func:`xcdat.regridder.xgcm.XGCMRegridder`
 
         Parameters
         ----------
