@@ -725,7 +725,9 @@ class TestXESMFRegridder:
 
 class TestGrid:
     def test_empty_grid(self):
-        with pytest.raises(ValueError, match="Must pass atleast 1 coordinate."):
+        with pytest.raises(
+            ValueError, match="Must pass at least 1 coordinate to create a grid."
+        ):
             grid.create_grid()
 
     def test_unexpected_coordinate(self):
@@ -739,7 +741,7 @@ class TestGrid:
         lev = np.linspace(1000, 1, 2)
         lev_bnds = np.array([[1499.5, 500.5], [500.5, -498.5]])
 
-        new_grid = grid.create_grid(lev=lev)
+        new_grid = grid.create_grid(lev=(lev, lev_bnds))
 
         assert np.array_equal(new_grid.lev, lev)
         assert np.array_equal(new_grid.lev_bnds, lev_bnds)

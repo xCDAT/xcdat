@@ -388,7 +388,9 @@ def generate_lev_dataset(position="center") -> xr.Dataset:
         },
     )
 
-    ds = ds.bounds.add_missing_bounds()
+    ds["time"].encoding["calendar"] = "standard"
+
+    ds = ds.bounds.add_missing_bounds(axes=["X", "Y", "Z", "T"])
 
     if position == "left":
         ds["lev"] = ds["lev_bnds"][:, 0]
