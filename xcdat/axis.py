@@ -28,6 +28,15 @@ CF_ATTR_MAP: Dict[CFAxisKey, Dict[str, Union[CFAxisKey, CFStandardNameKey]]] = {
     "Z": {"axis": "Z", "coordinate": "vertical"},
 }
 
+COORD_DEFAULT_ATTRS: Dict[
+    CFAxisKey, Dict[str, Union[str, CFAxisKey, CFStandardNameKey]]
+] = {
+    "X": dict(units="degrees_east", **CF_ATTR_MAP["X"]),
+    "Y": dict(units="degrees_north", **CF_ATTR_MAP["Y"]),
+    "T": dict(calendar="standard", **CF_ATTR_MAP["T"]),
+    "Z": dict(**CF_ATTR_MAP["Z"]),
+}
+
 # A dictionary that maps common variable names to coordinate variables. This
 # map is used as fall-back when coordinate variables don't have CF attributes
 # set for ``cf_xarray`` to interpret using `CF_ATTR_MAP`.

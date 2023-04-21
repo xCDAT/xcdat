@@ -1,9 +1,9 @@
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Tuple, Union
 
 import numpy as np
 import xarray as xr
 
-from xcdat.axis import CF_ATTR_MAP, VAR_NAME_MAP, CFAxisKey, get_dim_coords
+from xcdat.axis import COORD_DEFAULT_ATTRS, VAR_NAME_MAP, CFAxisKey, get_dim_coords
 from xcdat.regridder.base import CoordOptionalBnds
 
 # First 50 zeros for the bessel function
@@ -427,13 +427,6 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     # "Union[Dataset, DataArray]"; expected "Union[ndarray[Any, Any], DataArray]"
     # mypy(error)` because this arg is validated to be a DataArray beforehand.
     return create_grid(lat=(lat, lat_bnds), lon=(out_lon_data, lon_bnds))  # type: ignore
-
-
-COORD_DEFAULT_ATTRS: Dict[str, Dict[str, Any]] = {
-    "X": dict(units="degrees_east", **CF_ATTR_MAP["X"]),
-    "Y": dict(units="degrees_north", **CF_ATTR_MAP["Y"]),
-    "Z": CF_ATTR_MAP["Z"],
-}
 
 
 def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
