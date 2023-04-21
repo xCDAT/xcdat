@@ -25,36 +25,39 @@ class XGCMRegridder(BaseRegridder):
     ):
         """Extension of ``xgcm`` regridder.
 
-        The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the ``Grid`` object,
-        transposing the output data to match the input data's dimensional order and ensuring missing
-        bounds are generated on the output data.
+        The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the
+        ``Grid`` object, transposing the output data to match the input data's
+        dimensional order, and ensuring missing bounds are generated on the
+        output data.
 
-        Linear and log methods require a single dimension position, which can usually be automatically
-        dervied.
+        Linear and log methods require a single dimension position, which can
+        usually be automatically derived.
 
-        Conservative regridding requires multiple dimension positions, e.g. {"center": "xc", "left": "xg"}.
-
+        Conservative regridding requires multiple dimension positions, e.g.,
+        {"center": "xc", "left": "xg"}.
 
         Parameters
         ----------
         input_grid : xr.Dataset
             Contains source grid coordinates.
         output_grid : xr.Dataset
-            Contains desintation grid coordinates.
-        method : str
-            Regridding method. Options are
-               - linear
+            Contains destination grid coordinates.
+        method : XGCMVerticalMethods
+            Regridding method, by default "linear". Options are
+               - linear (default)
                - log
                - conservative
-        target_data : Union[str, xr.DataArray]
-            Data to transform target data onto.
-        grid_positions : Dict[str, str]
-            Mapping of dimension positions, if ``None`` then an attempt is made to derive this argument.
+        target_data : Optional[Union[str, xr.DataArray]]
+            Data to transform target data onto, by default None.
+        grid_positions : Optional[Dict[str, str]]
+            Mapping of dimension positions, by default None. If ``None`` then an
+            attempt is made to derive this argument.
         periodic : bool
-            Whether the grid is periodic.
-        extra_init_options : Dict[str, Any]
-            Extra options passed to the ``xgcm.Grid`` constructor.
-        options : Dict[str, Any]
+            Whether the grid is periodic, by default False.
+        extra_init_options : Optional[Dict[str, Any]]
+            Extra options passed to the ``xgcm.Grid`` constructor, by default
+            None.
+        options : Optional[Dict[str, Any]]
             Extra options passed to the ``xgcm.Grid.trasnform`` method.
 
         Raises
