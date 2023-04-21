@@ -478,7 +478,10 @@ def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
         elif name in VAR_NAME_MAP["Z"]:
             coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["Z"])
         else:
-            continue
+            raise ValueError(
+                f"Coordinate {name} is not valid, reference "
+                "`xcdat.axis.VAR_NAME_MAP` for valid options."
+            )
 
         coords[name] = coord
 

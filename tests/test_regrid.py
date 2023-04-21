@@ -732,10 +732,12 @@ class TestGrid:
 
     def test_unexpected_coordinate(self):
         lev = np.linspace(1000, 1, 2)
-        new_grid = grid.create_grid(lev=lev, mass=np.linspace(10, 20, 2))
 
-        assert np.array_equal(new_grid.lev, lev)
-        assert "mass" not in new_grid.coords
+        with pytest.raises(
+            ValueError,
+            match="Coordinate mass is not valid, reference `xcdat.axis.VAR_NAME_MAP` for valid options.",
+        ):
+            grid.create_grid(lev=lev, mass=np.linspace(10, 20, 2))
 
     def test_create_grid_lev(self):
         lev = np.linspace(1000, 1, 2)
