@@ -435,7 +435,8 @@ def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
     Parameters
     ----------
     **kwargs : CoordOptionalBnds
-        Mapping of coordinate name and data with optional bounds.
+        Mapping of coordinate name and data with optional bounds. See
+        :py:data:`xcdat.axis.VAR_NAME_MAP` for valid coordinate names.
 
     Returns
     -------
