@@ -6,9 +6,6 @@ import xarray as xr
 from xcdat.axis import CF_ATTR_MAP, VAR_NAME_MAP, CFAxisKey, get_dim_coords
 from xcdat.regridder.base import CoordOptionalBnds
 
-_VAR_NAME_MAP = VAR_NAME_MAP.copy()
-_VAR_NAME_MAP["Z"] = ["vertical", "height", "pressure", "lev"]
-
 # First 50 zeros for the bessel function
 # Taken from https://github.com/CDAT/cdms/blob/dd41a8dd3b5bac10a4bfdf6e56f6465e11efc51d/regrid2/Src/_regridmodule.c#L3390-L3402
 BESSEL_LOOKUP = [
@@ -480,11 +477,11 @@ def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
     data_vars = {}
 
     for name, data in kwargs.items():
-        if name in _VAR_NAME_MAP["X"]:
+        if name in VAR_NAME_MAP["X"]:
             coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["X"])
-        elif name in _VAR_NAME_MAP["Y"]:
+        elif name in VAR_NAME_MAP["Y"]:
             coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["Y"])
-        elif name in _VAR_NAME_MAP["Z"]:
+        elif name in VAR_NAME_MAP["Z"]:
             coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["Z"])
         else:
             continue

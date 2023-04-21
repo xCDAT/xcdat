@@ -6,7 +6,6 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
-from cf_xarray.criteria import coordinate_criteria
 
 from xcdat.utils import _if_multidim_dask_array_then_load
 
@@ -36,7 +35,7 @@ VAR_NAME_MAP: Dict[CFAxisKey, List[str]] = {
     "X": ["longitude", "lon"],
     "Y": ["latitude", "lat"],
     "T": ["time"],
-    "Z": coordinate_criteria["Z"]["standard_name"],
+    "Z": ["vertical", "height", "pressure", "lev", "plev"],
 }
 
 
