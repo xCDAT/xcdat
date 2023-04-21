@@ -507,7 +507,7 @@ def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
 
     grid = xr.Dataset(data_vars, coords=coords)
 
-    grid = grid.bounds.add_missing_bounds()
+    grid = grid.bounds.add_missing_bounds(axes=["X", "Y"])
 
     return grid
 

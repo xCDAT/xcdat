@@ -14,7 +14,7 @@ Currently, coordinate variable bounds can only be stored on ``Dataset`` objects 
 Top-level API Functions
 -----------------------
 
-Below is a list of top-level API functions available in ``xcdat``.
+Below is a list of top-level API functions that are available in ``xcdat``.
 
 .. autosummary::
     :toctree: generated/
@@ -113,6 +113,7 @@ Methods
    :template: autosummary/accessor_method.rst
 
     Dataset.bounds.add_bounds
+    Dataset.bounds.add_time_bounds
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
     Dataset.spatial.average
