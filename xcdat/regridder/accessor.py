@@ -333,8 +333,8 @@ class RegridderAccessor:
         **options: Any,
     ) -> xr.Dataset:
         """
-        Apply vertical regridding to ``data_var`` of the current
-        ``xr.Dataset`` to ``output_grid``.
+        Apply vertical regridding to ``data_var`` of the current ``xr.Dataset``
+        to ``output_grid``.
 
         Supported tools:
 
@@ -376,7 +376,8 @@ class RegridderAccessor:
             regrid_tool = VERTICAL_REGRID_TOOLS[tool]
         except KeyError as e:
             raise ValueError(
-                f"Tool {e!s} does not exist, valid choices {list(VERTICAL_REGRID_TOOLS)}"
+                f"Tool {e!s} does not exist, valid choices "
+                f"{list(VERTICAL_REGRID_TOOLS)}"
             )
         regridder = regrid_tool(self._ds, output_grid, **options)
         output_ds = regridder.vertical(data_var, self._ds)

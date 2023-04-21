@@ -17,9 +17,9 @@ class XGCMRegridder(BaseRegridder):
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
         method: XGCMVerticalMethods = "linear",
-        target_data: Optional[Union[str, xr.DataArray, None]] = None,
+        target_data: Optional[Union[str, xr.DataArray]] = None,
         grid_positions: Optional[Dict[str, str]] = None,
-        periodic: Optional[bool] = False,
+        periodic: bool = False,
         extra_init_options: Optional[Dict[str, Any]] = None,
         **options,
     ):
@@ -98,7 +98,8 @@ class XGCMRegridder(BaseRegridder):
 
         if method not in get_args(XGCMVerticalMethods):
             raise ValueError(
-                f"{method!r} is invalid, possible choices: {', '.join(get_args(XGCMVerticalMethods))}"
+                f"{method!r} is invalid, possible choices: "
+                f"{', '.join(get_args(XGCMVerticalMethods))}"
             )
 
         self._method = method
@@ -211,7 +212,8 @@ class XGCMRegridder(BaseRegridder):
     def _get_grid_coords(self) -> Dict[str, Dict[str, str]]:
         if self._method == "conservative":
             raise RuntimeError(
-                "Conservative regridding requires a second point position, pass these manually"
+                "Conservative regridding requires a second point position, pass these "
+                "manually"
             )
 
         try:
@@ -235,7 +237,8 @@ class XGCMRegridder(BaseRegridder):
             grid_positions = {"right": coord_z.name}
         else:
             raise RuntimeError(
-                "Could not determine the grid point positions, pass these manually using the `grid_positions` argument"
+                "Could not determine the grid point positions, pass these manually "
+                "using the `grid_positions` argument"
             )
 
         return {"Z": grid_positions}

@@ -440,7 +440,7 @@ COORD_DEFAULT_ATTRS: Dict[str, Dict[str, Any]] = {
 
 
 def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
-    """Creates a grid for a give latitude and longitude array.
+    """Creates a grid from coordinate mapping.
 
     Parameters
     ----------
@@ -474,7 +474,7 @@ def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
     >>> xcdat.create_grid(lev=np.linspace(1000, 1, 20))
     """
     if len(kwargs) == 0:
-        raise ValueError("Must pass atleast 1 coordinate.")
+        raise ValueError("Must pass at least 1 coordinate to create a grid.")
 
     coords = {}
     data_vars = {}
