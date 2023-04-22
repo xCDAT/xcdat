@@ -48,7 +48,7 @@ class TestXGCMRegridder:
 
         output_data = regridder.vertical("so", self.ds)
 
-        assert output_data["so"].dims == ("time", "plev", "lat", "lon")
+        assert output_data["so"].dims == ("time", "lev", "lat", "lon")
 
     def test_vertical_regrid(self):
         regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")

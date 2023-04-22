@@ -193,17 +193,15 @@ class XGCMRegridder(BaseRegridder):
             **self._extra_options,
         )
 
-        input_z_name = ds.cf["Z"].name
-
-        # xgcm always outputs vertical coordinate as 'lev', rename to match
-        # input name otherwise transpose will fail
-        if input_z_name != "lev":
-            output_da = output_da.rename({"lev": input_z_name})
-
-        # xgcm dimension ordering may not match input, transpose output to
-        # match input ordering
+        # when the order of dimensions are mismatched, the output data will be
+        # transposed to match the input dimension order
         if output_da.dims != ds[data_var].dims:
-            output_da = output_da.transpose(*ds[data_var].dims)
+            output_order = [
+                x.replace(ds.cf["Z"].name, output_coord_z.name)  # type: ignore[attr-defined]
+                for x in ds[data_var].dims
+            ]
+
+            output_da = output_da.transpose(*output_order)
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
         output_ds = preserve_bounds(ds, self._output_grid, output_ds)
