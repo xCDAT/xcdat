@@ -444,21 +444,15 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str:
 
     filemap_attr = root.attrib.get("cdms_filemap")
     if filemap_attr is not None:
-        file_name_list = sorted(
-            list(
-                set(
-                    [
-                        x
-                        for x in filemap_attr.replace("[", " ")
-                        .replace("]", " ")
-                        .replace(",", " ")
-                        .split(" ")
-                        if ".nc" in x
-                    ]
-                )
-            )
-        )
+        # remove brackets and commas from filemap_attr
+        fma = filemap_attr.replace("[", " ").replace("]", " ").replace(",", " ")
+        # split string filemap_attr up (by spaces)
+        fm_values = fma.split(" ")
+        # keep values that are nc files (and remove white space)
+        file_name_list = [fn.replace(" ", "") for fn in fm_values if ".nc" in fn]
+        # create empty list
         glob_path = list()
+        # combine directory and file names
         for file_name in file_name_list:
             glob_path.append(os.path.join(dir_attr, file_name))
     else:
