@@ -458,7 +458,6 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str:
     else:
         glob_path = dir_attr + "/*.nc"
 
-    print("glob_path:", glob_path)
     return glob_path
 
 
