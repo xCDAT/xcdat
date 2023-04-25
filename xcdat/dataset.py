@@ -434,14 +434,24 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str:
     root = tree.getroot()
 
     dir_attr = root.attrib.get("directory")
-    if dir_attr is None:
+    if dir_attr == "":
+        dir_attr = "."
+    elif dir_attr is None:
         raise KeyError(
             f"The XML file ({xml_path}) does not have a 'directory' attribute "
             "that points to a directory of `.nc` dataset files."
         )
 
-    glob_path = dir_attr + "/*.nc"
+    filemap_attr = root.attrib.get("cdms_filemap")
+    if filemap_attr is not None:
+        file_name_list = sorted(list(set([x for x in filemap_attr.replace('[', ' ').replace(']', ' ').replace(',', ' ').split(' ') if '.nc' in x])))
+        glob_path = list()
+        for file_name in file_name_list:
+            glob_path.append(os.path.join(dir_attr, file_name))
+    else:
+        glob_path = dir_attr + "/*.nc"
 
+    print('glob_path:', glob_path)
     return glob_path
 
 
