@@ -134,7 +134,7 @@ def open_mfdataset(
 
     Parameters
     ----------
-    paths : Union[str, pathlib.Path, List[str], List[pathlib.Path], \
+    paths : Union[str, pathlib.Path, List[str], List[pathlib.Path],
          List[List[str]], List[List[pathlib.Path]]]
         Either a string glob in the form ``"path/to/my/files/*.nc"`` or an
         explicit list of files to open. Paths can be given as strings or as
@@ -399,7 +399,7 @@ def _is_paths_to_xml(paths: Union[str, pathlib.Path]) -> bool:
         return paths.parts[-1].endswith("xml")
 
 
-def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str | list:
+def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> Union[str, list]:
     """Parses a CDAT XML file for a glob of `*.nc` paths.
 
     The CDAT "Climate Data Markup Language" (CDML) is a dialect of XML with a
