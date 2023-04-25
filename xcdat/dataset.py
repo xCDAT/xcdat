@@ -399,7 +399,7 @@ def _is_paths_to_xml(paths: Union[str, pathlib.Path]) -> bool:
         return paths.parts[-1].endswith("xml")
 
 
-def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str:
+def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str | list:
     """Parses a CDAT XML file for a glob of `*.nc` paths.
 
     The CDAT "Climate Data Markup Language" (CDML) is a dialect of XML with a
@@ -415,7 +415,7 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> str:
     Returns
     -------
     str
-        A glob of `*.nc` paths in the directory.
+        A glob of `*.nc` paths in the directory or list of nc files included in the CDML XML file.
 
     Notes
     -----
