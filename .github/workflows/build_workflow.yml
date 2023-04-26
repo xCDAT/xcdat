@@ -66,9 +66,9 @@ jobs:
               name: Set up Conda Environment
               uses: conda-incubator/setup-miniconda@v2
               with:
-                  activate-environment: "xcdat_ci"
                   miniforge-variant: Mambaforge
                   miniforge-version: latest
+                  activate-environment: "xcdat_ci"
                   use-mamba: true
                   mamba-version: "*"
                   channel-priority: strict
@@ -78,12 +78,13 @@ jobs:
             # Refresh the cache every 24 hours to avoid inconsistencies of package versions
             # between the CI pipeline and local installations.
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
-              name: Get Date
               id: get-date
+              name: Get Date
               run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
               shell: bash
 
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+              id: cache
               name: Cache Conda env
               uses: actions/cache@v3
               with:
@@ -94,7 +95,6 @@ jobs:
               env:
                   # Increase this value to reset cache if conda-env/ci.yml has not changed in the workflow
                   CACHE_NUMBER: 0
-              id: cache
 
             - if: $${{ steps.skip_check.outputs.should_skip != 'true' && steps.cache.outputs.cache-hit != 'true' }}
               name: Update environment

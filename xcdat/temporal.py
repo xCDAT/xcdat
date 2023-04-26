@@ -1138,7 +1138,7 @@ class TemporalAccessor:
             # dimension) shape of the `weights` DataArray to the
             # multi-dimensional shape of its corresponding data variable.
             weights, _ = xr.broadcast(self._weights, dv)
-            weights = xr.where(np.isnan(dv), 0.0, weights)
+            weights = xr.where(dv.copy().isnull(), 0.0, weights)
 
             # Perform weighted average using the formula
             # WA = sum(data*weights) / sum(weights). The denominator must be
