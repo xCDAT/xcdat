@@ -450,13 +450,15 @@ A list of files (if specified with a cdms_filemap attribute) or a string glob of
         fm_values = fma.split(" ")
         # keep values that are nc files (and remove white space)
         file_name_list = [fn.replace(" ", "") for fn in fm_values if ".nc" in fn]
+        # remove duplicates and sort by alphabetical order
+        file_name_list = sorted(list(set(file_name_list)))
         # create empty list
         glob_path = list()
         # combine directory and file names
         for file_name in file_name_list:
             glob_path.append(os.path.join(dir_attr, file_name))
     else:
-        glob_path = dir_attr + "/*.nc"
+        glob_path = os.path.join(dir_attr, "*.nc")
 
     return glob_path
 
