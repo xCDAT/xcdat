@@ -134,13 +134,12 @@ def open_mfdataset(
 
     Parameters
     ----------
-    paths : Union[str, pathlib.Path, List[str], List[pathlib.Path],
-         List[List[str]], List[List[pathlib.Path]]]
-        Either a string glob in the form ``"path/to/my/files/*.nc"`` or an
-        explicit list of files to open. Paths can be given as strings or as
-        pathlib Paths. If concatenation along more than one dimension is desired,
-        then ``paths`` must be a nested list-of-lists (see ``combine_nested``
-        for details). (A string glob will be expanded to a 1-dimensional list.)
+    paths : Union[str, pathlib.Path, List[str], List[pathlib.Path], List[List[str]], List[List[pathlib.Path]]]
+        Either a string glob in the form ``"path/to/my/files/*.nc"``, a (string) path
+        to a cdml/xml file that includes a directory attribute, or an explicit list of
+        files to open. Paths can be given as strings or as pathlib Paths. If concatenation along
+        more than one dimension is desired, then ``paths`` must be a nested list-of-lists (see
+        ``combine_nested`` for details). (A string glob will be expanded to a 1-dimensional list.)
     add_bounds: Union[List[CFAxisKey], None, Literal[False]]
         List of CF axes to try to add bounds for (if missing), default
         ["X", "Y"]. Set to ``None`` or ``False`` to not try to add any missing
