@@ -415,7 +415,7 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> Union[str, lis
     Returns
     -------
     str
-        A glob of `*.nc` paths in the directory or list of nc files included in the CDML XML file.
+A list of files (if specified with a cdms_filemap attribute) or a string glob of `*.nc` paths. 
 
     Notes
     -----
