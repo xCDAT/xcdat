@@ -414,8 +414,8 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> Union[str, lis
 
     Returns
     -------
-    str
-A list of files (if specified with a cdms_filemap attribute) or a string glob of `*.nc` paths. 
+    list | str
+        A list of files (if specified with a cdms_filemap attribute) or a string glob of `*.nc` paths.
 
     Notes
     -----
