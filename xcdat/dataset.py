@@ -1,8 +1,11 @@
 """Dataset module for functions related to an xarray.Dataset."""
+from __future__ import annotations
+
 import os
 import pathlib
 from datetime import datetime
 from functools import partial
+from io import BufferedIOBase
 from typing import Any, Callable, Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
@@ -10,9 +13,11 @@ import xarray as xr
 from dateutil import parser
 from dateutil import relativedelta as rd
 from lxml import etree
+from xarray.backends.common import AbstractDataStore
 from xarray.coding.cftime_offsets import get_date_type
 from xarray.coding.times import convert_times, decode_cf_datetime
 from xarray.coding.variables import lazy_elemwise_func, pop_to, unpack_for_decoding
+from xarray.core.types import NestedSequence
 from xarray.core.variable import as_variable
 
 from xcdat import bounds as bounds_accessor  # noqa: F401
@@ -38,9 +43,9 @@ Paths = Union[
 
 
 def open_dataset(
-    path: str,
+    filename_or_obj: str | os.PathLike[Any] | BufferedIOBase | AbstractDataStore,
     data_var: Optional[str] = None,
-    add_bounds: Union[List[CFAxisKey], None, Literal[False]] = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | None | Literal[False] = ["X", "Y"],
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -50,12 +55,16 @@ def open_dataset(
 
     Parameters
     ----------
-    path : str
-        Path to Dataset.
+    filename_or_obj : str, Path, file-like or DataStore
+        Strings and Path objects are interpreted as a path to a netCDF file
+        or an OpenDAP URL and opened with python-netCDF4, unless the filename
+        ends with .gz, in which case the file is gunzipped and opened with
+        scipy.io.netcdf (only netCDF3 supported). Byte-strings or file-like
+        objects are opened by scipy.io.netcdf (netCDF3) or h5py (netCDF4/HDF).
     data_var: Optional[str], optional
         The key of the non-bounds data variable to keep in the Dataset,
         alongside any existing bounds data variables, by default None.
-    add_bounds: Union[List[CFAxisKey], None, Literal[False]]
+    add_bounds: List[CFAxisKey] | None | Literal[False]
         List of CF axes to try to add bounds for (if missing), default
         ["X", "Y"]. Set to ``None`` or ``False`` to not try to add any missing
         bounds.
@@ -78,9 +87,8 @@ def open_dataset(
         coordinates, by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists).
-        Either `(-180, 180)` or `(0, 360)`, by default None.
-
-        Supported options:
+        Either `(-180, 180)` or `(0, 360)`, by default None. Supported options
+        include:
 
           * None:  use the current orientation (if the longitude axis exists)
           * (-180, 180): represents [-180, 180) in math notation
@@ -106,7 +114,7 @@ def open_dataset(
     ----------
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
-    ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
+    ds = xr.open_dataset(filename_or_obj, decode_times=False, **kwargs)  # type: ignore
 
     if decode_times:
         try:
@@ -120,13 +128,13 @@ def open_dataset(
 
 
 def open_mfdataset(
-    paths: Paths,
+    paths: str | NestedSequence[str | os.PathLike],
     data_var: Optional[str] = None,
-    add_bounds: Union[List[CFAxisKey], None, Literal[False]] = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | None | Literal[False] = ["X", "Y"],
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
-    data_vars: Union[Literal["minimal", "different", "all"], List[str]] = "minimal",
+    data_vars: Literal["minimal", "different", "all"] | List[str] = "minimal",
     preprocess: Optional[Callable] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
@@ -134,13 +142,30 @@ def open_mfdataset(
 
     Parameters
     ----------
-    paths : Union[str, pathlib.Path, List[str], List[pathlib.Path], List[List[str]], List[List[pathlib.Path]]]
-        Either a string glob in the form ``"path/to/my/files/*.nc"``, a (string) path
-        to a cdml/xml file that includes a directory attribute, or an explicit list of
-        files to open. Paths can be given as strings or as pathlib Paths. If concatenation along
-        more than one dimension is desired, then ``paths`` must be a nested list-of-lists (see
-        ``combine_nested`` for details). (A string glob will be expanded to a 1-dimensional list.)
-    add_bounds: Union[List[CFAxisKey], None, Literal[False]]
+    paths : str | NestedSequence[str | os.PathLike]
+        Paths to dataset files. Paths can be given as strings or as pathlib.Path
+        objects. Supported options include:
+
+          * Directory path (e.g., ``"path/to/files"``), which is converted
+            to a string glob of `*.nc` files
+          * String glob (e.g., ``"path/to/files/*.nc"``), which is expanded
+            to a 1-dimensional list of file paths
+          * File path to dataset (e.g., ``"path/to/files/file1.nc"``)
+          * List of file paths (e.g., ``["path/to/files/file1.nc", ...]``).
+            If concatenation along more than one dimension is desired, then
+            ``paths`` must be a nested list-of-lists (see [2]_
+            ``xarray.combine_nested`` for details).
+          * File path to an XML file with a ``directory`` attribute (e.g.,
+            ``"path/to/files"``). If ``directory`` is set to a blank string
+            (""), then the current directory is substituted ("."). If the
+            ``cdms_filemap`` attribute is also set, then it is parsed for a
+            list of file paths relative to the ``directory`` attribute.
+
+            This option is intended to support the CDAT CDML dialect of XML
+            files, but it can work with any XML file that has the ``directory``
+            attribute. Refer to [4]_ for more information on CDML.
+
+    add_bounds: List[CFAxisKey] | None | Literal[False]
         List of CF axes to try to add bounds for (if missing), default
         ["X", "Y"]. Set to ``None`` or ``False`` to not try to add any missing
         bounds.
@@ -165,15 +190,13 @@ def open_mfdataset(
         coordinates, by default False.
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
-        by default None.
-
-        Supported options:
+        by default None. Supported options include:
 
           * None:  use the current orientation (if the longitude axis exists)
           * (-180, 180): represents [-180, 180) in math notation
           * (0, 360): represents [0, 360) in math notation
 
-    data_vars: Union[Literal["minimal", "different", "all"], List[str]], optional
+    data_vars: {"minimal", "different", "all" or list of str}, optional
         These data variables will be concatenated together:
           * "minimal": Only data variables in which the dimension already
             appears are included, the default value.
@@ -200,7 +223,7 @@ def open_mfdataset(
         ``ds.encoding["source"]``.
     kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
-        the [2]_ xarray docs for accepted keyword arguments.
+        the [3]_ xarray docs for accepted keyword arguments.
 
     Returns
     -------
@@ -214,15 +237,24 @@ def open_mfdataset(
     in-memory copy you are manipulating in xarray is modified: the original file
     on disk is never touched.
 
+    The CDAT "Climate Data Markup Language" (CDML) is a deprecated dialect of
+    XML with a defined set of attributes. CDML is still used by current and
+    former users of CDAT. To enable CDML users to adopt xCDAT more easily in
+    their workflows, xCDAT can parse XML/CDML files for the ``directory``
+    and ``cdms_filemap`` attributes to generate a glob or list of file paths.
+    Refer to [4]_ for more information on CDML.
+
     References
     ----------
-    .. [2] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
+    .. [2] https://docs.xarray.dev/en/stable/generated/xarray.combine_nested.html
+    .. [3] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
+    .. [4] https://cdms.readthedocs.io/en/latest/manual/cdms_6.html
     """
-    if not isinstance(paths, list):
-        if _is_paths_to_xml(paths):
+    if isinstance(paths, str) or isinstance(paths, pathlib.Path):
+        if os.path.isdir(paths):
+            paths = _parse_dir_for_nc_glob(paths)
+        elif _is_xml_filepath(paths):
             paths = _parse_xml_for_nc_glob(paths)
-        elif os.path.isdir(paths):
-            paths = _parse_dir_for_nc_glob(paths)  # type: ignore
 
     preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
 
@@ -243,7 +275,7 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     """Decodes CF and non-CF time coordinates and time bounds using ``cftime``.
 
     By default, ``xarray`` only supports decoding time with CF compliant units
-    [3]_. This function enables also decoding time with non-CF compliant units.
+    [5]_. This function enables also decoding time with non-CF compliant units.
     It skips decoding time coordinates that have already been decoded as
     ``"datetime64[ns]"`` or ``cftime.datetime``.
 
@@ -278,13 +310,13 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     -----
     Time coordinates are represented by ``cftime.datetime`` objects because
     it is not restricted by the ``pandas.Timestamp`` range (years 1678 through
-    2262). Refer to [4]_ and [5]_ for more information on this limitation.
+    2262). Refer to [6]_ and [7]_ for more information on this limitation.
 
     References
     -----
-    .. [3] https://cfconventions.org/cf-conventions/cf-conventions.html#time-coordinate
-    .. [4] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
-    .. [5] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
+    .. [5] https://cfconventions.org/cf-conventions/cf-conventions.html#time-coordinate
+    .. [6] https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#non-standard-calendars-and-dates-outside-the-timestamp-valid-range
+    .. [7] https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
 
     Examples
     --------
@@ -380,12 +412,12 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def _is_paths_to_xml(paths: Union[str, pathlib.Path]) -> bool:
+def _is_xml_filepath(paths: str | pathlib.Path) -> bool:
     """Checks if the ``paths`` argument is a path to an XML file.
 
     Parameters
     ----------
-    paths : Union[str, pathlib.Path]
+    paths : str | pathlib.Path
         A string or pathlib.Path represnting a file path.
 
     Returns
@@ -398,33 +430,22 @@ def _is_paths_to_xml(paths: Union[str, pathlib.Path]) -> bool:
         return paths.parts[-1].endswith("xml")
 
 
-def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> Union[str, list]:
-    """Parses a CDAT XML file for a glob of `*.nc` paths.
-
-    The CDAT "Climate Data Markup Language" (CDML) is a dialect of XML with a
-    defined set of attributes. The "directory" attribute pointing to a directory
-    of `.nc` files is extracted from the specified XML file. Refer to [6]_ for
-    more information on CDML.
+def _parse_xml_for_nc_glob(xml_path: str | pathlib.Path) -> str | List[str]:
+    """
+    Parses an XML file for the ``directory`` attr to return a string glob or
+    list of string file paths.
 
     Parameters
     ----------
-    xml_path : Union[str, pathlib.Path]
-        The CDML XML file path.
+    xml_path : str | pathlib.Path
+        The XML file path.
 
     Returns
     -------
-    list | str
-        A list of files (if specified with a cdms_filemap attribute) or a string glob of `*.nc` paths.
+    str | List[str]
+        A string glob of `*.nc` paths or a list of file paths (if specified
+        with a ``cdms_filemap`` attribute).
 
-    Notes
-    -----
-    CDML is a deprecated XML dialect that is still used by current and former
-    users in the CDAT community. xCDAT supports CDML to enable these users to
-    more easily integrate xCDAT into their existing CDML/CDAT-based workflows.
-
-    References
-    ----------
-    .. [6] https://cdms.readthedocs.io/en/latest/manual/cdms_6.html
     """
     # `resolve_entities=False` and `no_network=True` guards against XXE attacks.
     # Source: https://rules.sonarsource.com/python/RSPEC-2755
@@ -433,6 +454,8 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> Union[str, lis
     root = tree.getroot()
 
     dir_attr = root.attrib.get("directory")
+    filemap_attr = root.attrib.get("cdms_filemap")
+
     if dir_attr == "":
         dir_attr = "."
     elif dir_attr is None:
@@ -441,38 +464,74 @@ def _parse_xml_for_nc_glob(xml_path: Union[str, pathlib.Path]) -> Union[str, lis
             "that points to a directory of `.nc` dataset files."
         )
 
-    filemap_attr = root.attrib.get("cdms_filemap")
     if filemap_attr is not None:
-        # remove brackets and commas from filemap_attr
-        fma = filemap_attr.replace("[", " ").replace("]", " ").replace(",", " ")
-        # split string filemap_attr up (by spaces)
-        fm_values = fma.split(" ")
-        # keep values that are nc files (and remove white space)
-        file_name_list = [fn.replace(" ", "") for fn in fm_values if ".nc" in fn]
-        # remove duplicates and sort by alphabetical order
-        file_name_list = sorted(list(set(file_name_list)))
-        # create empty list
-        glob_path = list()
-        # combine directory and file names
-        for file_name in file_name_list:
-            glob_path.append(os.path.join(dir_attr, file_name))
+        file_paths = _parse_cdms_filemap_for_paths(dir_attr, filemap_attr)
+        return file_paths
     else:
         glob_path = os.path.join(dir_attr, "*.nc")
+        return glob_path
 
-    return glob_path
+
+def _parse_cdms_filemap_for_paths(dir_attr: str, filemap_attr: str) -> List[str]:
+    """
+    Parses the ``cdms_filemap`` attribute in CDML files for a list of file
+    paths.
+
+    Parameters
+    ----------
+    dir_attr : str
+        The ``directory`` attribute.
+    filemap_attr : str
+        The ``cdms_filemap`` attribute containing paths relative to the
+        ``directory`` attribute.
+
+    Returns
+    -------
+    List[str]
+        A list of file paths.
+    """
+    # E.g., "[[u],[[0, 1,-,-,u_2000.nc],[1,2,-,-,u_2001.nc],[2,3,,-,u_2002.nc]]"
+    # 1. Remove brackets and commas from `filemap_attr`.
+    # Result -
+    #   '  u    0  1 - - u_2000.nc   1 2 - - u_2001.nc   2 3  - u_2002.nc  '
+    fm_attr = filemap_attr.replace("[", " ").replace("]", " ").replace(",", " ")
+
+    # 2. Split string `filemap_attr` by spaces.
+    # Result -
+    # ['', '', 'u', '', '', '', '0', '', '1', '-', '-', 'u_2000.nc', '', '','1',
+    # '2', '-', '-', 'u_2001.nc', '', '', '2', '3', '', '-', 'u_2002.nc', '', '']
+    fm_list = fm_attr.split(" ")
+
+    # 3. Get the filenames by keeping elements that contain the `.nc` extension
+    # and remove white spaces if needed.
+    # Result - ['u_2000.nc', 'u_2001.nc', 'u_2002.nc']
+    filenames = [fn.replace(" ", "") for fn in fm_list if ".nc" in fn]
+
+    # 4. Remove duplicates and sort by alphabetical order (if not already)
+    filenames = sorted(list(set(filenames)))
+
+    # 5. Create a list of file paths relative to the directory attribute.
+    # Result -
+    # ['/path/to/files/u_2000.nc', 'path/to/files/u_2001.nc',
+    # 'path/to/files/u_2002.nc']
+    file_paths = []
+    for file_name in filenames:
+        file_paths.append(os.path.join(dir_attr, file_name))
+
+    return file_paths
 
 
-def _parse_dir_for_nc_glob(dir_path: str) -> str:
+def _parse_dir_for_nc_glob(dir_path: str | pathlib.Path) -> str:
     """Parses a directory for a glob of `*.nc` paths.
 
     Parameters
     ----------
-    dir_path : str
+    dir_path : str | pathlib.Path
         The directory.
 
     Returns
     -------
-    str
+    str | pathlib.Path
         A glob of `*.nc` paths in the directory.
     """
     file_list = os.listdir(dir_path)
@@ -482,9 +541,10 @@ def _parse_dir_for_nc_glob(dir_path: str) -> str:
             f"The directory {dir_path} has no netcdf (`.nc`) files to open."
         )
 
-    glob_path = dir_path + "/*.nc"
+    if isinstance(dir_path, pathlib.Path):
+        dir_path = str(dir_path)
 
-    return glob_path
+    return os.path.join(dir_path, "*.nc")
 
 
 def _preprocess(
@@ -494,7 +554,6 @@ def _preprocess(
 
     This function accepts a user specified preprocess function, which is
     executed before additional internal preprocessing functions.
-
 
     An internal call to ``decode_time()`` is performed, which decodes
     both CF and non-CF time coordinates and bounds (if they exist). By default,
@@ -540,7 +599,7 @@ def _postprocess_dataset(
     dataset: xr.Dataset,
     data_var: Optional[str] = None,
     center_times: bool = False,
-    add_bounds: Union[List[CFAxisKey], None, Literal[False]] = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | None | Literal[False] = ["X", "Y"],
     lon_orient: Optional[Tuple[float, float]] = None,
 ) -> xr.Dataset:
     """Post-processes a Dataset object.
@@ -555,7 +614,7 @@ def _postprocess_dataset(
         If True, center time coordinates using the midpoint between its upper
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
-    add_bounds: Union[List[CFAxisKey], None, Literal[False]]
+    add_bounds: List[CFAxisKey] | None | Literal[False]
         List of CF axes to try to add bounds for (if missing), default
         ["X", "Y"]. Set to ``None`` or ``False`` to not try to add any missing
         bounds.
