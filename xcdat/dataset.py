@@ -435,6 +435,9 @@ def _parse_xml_for_nc_glob_or_paths(xml_path: str | pathlib.Path) -> str | List[
     Parses an XML file for the ``directory`` attr to return a string glob or
     list of string file paths.
 
+    If a ``cdms_filemap`` attribute also exists, then additional parsing
+    is performed.
+
     Parameters
     ----------
     xml_path : str | pathlib.Path
@@ -457,7 +460,7 @@ def _parse_xml_for_nc_glob_or_paths(xml_path: str | pathlib.Path) -> str | List[
     filemap_attr = root.attrib.get("cdms_filemap")
 
     if dir_attr == "":
-        dir_attr = "."
+        dir_attr = os.getcwd()
     elif dir_attr is None:
         raise KeyError(
             f"The XML file ({xml_path}) does not have a 'directory' attribute "

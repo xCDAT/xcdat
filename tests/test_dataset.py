@@ -662,7 +662,7 @@ class TestOpenMfDataset:
         with pytest.raises(KeyError):
             open_mfdataset(xml_path, decode_times=True)
 
-    def test_opens_datasets_from_xml_using_str_path(self):
+    def test_opens_datasets_from_xml_with_path_as_string(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
         ds1.to_netcdf(self.file_path1)
         ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -680,7 +680,25 @@ class TestOpenMfDataset:
 
         result.identical(expected)
 
-    def test_opens_datasets_from_xml_using_str_path_and_blank_directory_attr_substituted_with_current_dir(
+    def test_opens_datasets_from_xml_with_path_as_pathlib_path(self):
+        ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds1.to_netcdf(self.file_path1)
+        ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds2 = ds2.rename_vars({"ts": "tas"})
+        ds2.to_netcdf(self.file_path2)
+
+        # Create the XML file
+        xml_path = self.dir / "datasets.xml"
+        page = etree.Element("dataset", directory=str(self.dir))
+        doc = etree.ElementTree(page)
+        doc.write(xml_path, xml_declaration=True, encoding="utf-16")
+
+        result = open_mfdataset(xml_path, decode_times=True)
+        expected = ds1.merge(ds2)
+
+        result.identical(expected)
+
+    def test_opens_datasets_from_xml_with_blank_directory_attr_defaulting_to_current_dir(
         self,
     ):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -700,7 +718,7 @@ class TestOpenMfDataset:
 
         result.identical(expected)
 
-    def test_opens_datasets_from_xml_using_str_path_cdms_filemap_attribute(self):
+    def test_opens_datasets_from_xml_using_directory_and_cdms_filemap_attributes(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
         ds1.to_netcdf(self.file_path1)
         ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -714,24 +732,6 @@ class TestOpenMfDataset:
             directory=str(self.dir),
             cdms_filemap="[[u],[[0, 1,-,-,file1.nc],[1,2,-,-,file2.nc]",
         )
-        doc = etree.ElementTree(page)
-        doc.write(xml_path, xml_declaration=True, encoding="utf-16")
-
-        result = open_mfdataset(xml_path, decode_times=True)
-        expected = ds1.merge(ds2)
-
-        result.identical(expected)
-
-    def test_opens_datasets_from_xml_using_pathlib_path(self):
-        ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
-        ds1.to_netcdf(self.file_path1)
-        ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
-        ds2 = ds2.rename_vars({"ts": "tas"})
-        ds2.to_netcdf(self.file_path2)
-
-        # Create the XML file
-        xml_path = self.dir / "datasets.xml"
-        page = etree.Element("dataset", directory=str(self.dir))
         doc = etree.ElementTree(page)
         doc.write(xml_path, xml_declaration=True, encoding="utf-16")
 
