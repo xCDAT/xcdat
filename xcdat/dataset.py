@@ -254,7 +254,7 @@ def open_mfdataset(
         if os.path.isdir(paths):
             paths = _parse_dir_for_nc_glob(paths)
         elif _is_xml_filepath(paths):
-            paths = _parse_xml_for_nc_glob(paths)
+            paths = _parse_xml_for_nc_glob_or_paths(paths)
 
     preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
 
@@ -430,7 +430,7 @@ def _is_xml_filepath(paths: str | pathlib.Path) -> bool:
         return paths.parts[-1].endswith("xml")
 
 
-def _parse_xml_for_nc_glob(xml_path: str | pathlib.Path) -> str | List[str]:
+def _parse_xml_for_nc_glob_or_paths(xml_path: str | pathlib.Path) -> str | List[str]:
     """
     Parses an XML file for the ``directory`` attr to return a string glob or
     list of string file paths.
