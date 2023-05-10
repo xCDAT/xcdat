@@ -4,6 +4,7 @@ import xarray as xr
 from xgcm import Grid
 
 from xcdat.logger import setup_custom_logger
+from xcdat.axis import get_dim_coords
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
 
 XGCMVerticalMethods = Literal["linear", "conservative", "log"]
@@ -168,7 +169,7 @@ class XGCMRegridder(BaseRegridder):
         >>> data_new_grid = regridder.vertical("T", ds)
         """
         try:
-            output_coord_z = self._output_grid.cf["Z"]
+            output_coord_z = get_dim_coords(self._output_grid, "Z")
         except KeyError:
             raise RuntimeError("Could not determine 'Z' coordinate in output dataset")
 
@@ -209,8 +210,10 @@ class XGCMRegridder(BaseRegridder):
         # when the order of dimensions are mismatched, the output data will be
         # transposed to match the input dimension order
         if output_da.dims != ds[data_var].dims:
+            input_coord_z = get_dim_coords(ds, "Z")
+
             output_order = [
-                x.replace(ds.cf["Z"].name, output_coord_z.name)  # type: ignore[attr-defined]
+                x.replace(input_coord_z.name, output_coord_z.name)  # type: ignore[attr-defined]
                 for x in ds[data_var].dims
             ]
 
@@ -230,7 +233,7 @@ class XGCMRegridder(BaseRegridder):
             )
 
         try:
-            coord_z = self._input_grid.cf["Z"]
+            coord_z = get_dim_coords(self._input_grid, "Z")
         except KeyError:
             raise RuntimeError("Could not determine 'Z' coordinate in input dataset")
 
