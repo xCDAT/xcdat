@@ -4,9 +4,9 @@ from typing import Any
 import xarray as xr
 
 import xcdat.bounds  # noqa: F401
-from xcdat.logger import setup_custom_logger
+from xcdat._logger import _setup_custom_logger
 
-logger = setup_custom_logger(__name__)
+logger = _setup_custom_logger(__name__)
 
 
 def preserve_bounds(

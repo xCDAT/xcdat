@@ -14,11 +14,11 @@ from xarray.core.common import contains_cftime_datetimes, is_np_datetime_like
 from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
+from xcdat._logger import _setup_custom_logger
 from xcdat.axis import get_dim_coords
 from xcdat.dataset import _get_data_var
-from xcdat.logger import setup_custom_logger
 
-logger = setup_custom_logger(__name__)
+logger = _setup_custom_logger(__name__)
 
 # Type alias for supported time averaging modes.
 Mode = Literal["average", "group_average", "climatology", "departures"]
@@ -816,10 +816,10 @@ class TemporalAccessor:
         # Get the `cftime` date type based on the CF calendar attribute.
         # The date type is used to get the correct cftime.datetime sub-class
         # type for creating new grouped time coordinates for averaging.
-        try:
-            self.calendar = dv[self.dim].encoding["calendar"]
-        except KeyError:
+        self.calendar = dv[self.dim].encoding.get("calendar", None)
+        if self.calendar is None:
             self.calendar = "standard"
+
             logger.warning(
                 f"'{self.dim}' does not have a calendar encoding attribute set, "
                 "which is used to determine the `cftime.datetime` object type for the "

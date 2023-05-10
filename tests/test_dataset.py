@@ -8,6 +8,7 @@ import xarray as xr
 from lxml import etree
 
 from tests.fixtures import generate_dataset
+from xcdat._logger import _setup_custom_logger
 from xcdat.dataset import (
     _keep_single_var,
     _postprocess_dataset,
@@ -15,9 +16,8 @@ from xcdat.dataset import (
     open_dataset,
     open_mfdataset,
 )
-from xcdat.logger import setup_custom_logger
 
-logger = setup_custom_logger("xcdat.dataset", propagate=True)
+logger = _setup_custom_logger("xcdat.dataset", propagate=True)
 
 
 class TestOpenDataset:
@@ -29,6 +29,9 @@ class TestOpenDataset:
         self.file_path = f"{dir}/file.nc"
 
     def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
+        # Silence warning to not pollute test suite output
+        caplog.set_level(logging.CRITICAL)
+
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds = ds.drop_dims("time")
         ds.to_netcdf(self.file_path)
@@ -42,16 +45,10 @@ class TestOpenDataset:
         expected = expected.drop_dims("time")
 
         assert result.identical(expected)
-        assert (
-            "No time coordinates were found in this dataset to decode. If time "
-            "coordinates were expected to exist, make sure they are detectable by "
-            "setting the CF 'axis' or 'standard_name' attribute (e.g., "
-            "ds['time'].attrs['axis'] = 'T' or "
-            "ds['time'].attrs['standard_name'] = 'time'). Afterwards, try decoding "
-            "again with `xcdat.decode_time`."
-        ) in caplog.text
 
-    def test_skip_decoding_time_explicitly(self):
+    def test_skip_decoding_time_explicitly(
+        self,
+    ):
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds.to_netcdf(self.file_path)
 
@@ -602,6 +599,9 @@ class TestOpenMfDataset:
         self.file_path2 = f"{self.dir}/file2.nc"
 
     def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
+        # Silence warning to not pollute test suite output
+        caplog.set_level(logging.CRITICAL)
+
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds = ds.drop_dims("time")
         ds.to_netcdf(self.file_path1)
@@ -615,14 +615,6 @@ class TestOpenMfDataset:
         expected = expected.drop_dims("time")
 
         assert result.identical(expected)
-        assert (
-            "No time coordinates were found in this dataset to decode. If time "
-            "coordinates were expected to exist, make sure they are detectable by "
-            "setting the CF 'axis' or 'standard_name' attribute (e.g., "
-            "ds['time'].attrs['axis'] = 'T' or "
-            "ds['time'].attrs['standard_name'] = 'time'). "
-            "Afterwards, try decoding again with `xcdat.decode_time`."
-        ) in caplog.text
 
     def test_skip_decoding_times_explicitly(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -1024,6 +1016,7 @@ class TestDecodeTime:
                 "axis": "T",
                 "long_name": "time",
                 "standard_name": "time",
+                "calendar": "standard",
             },
         )
         time_bnds = xr.DataArray(

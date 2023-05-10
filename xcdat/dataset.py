@@ -16,12 +16,12 @@ from xarray.coding.variables import lazy_elemwise_func, pop_to, unpack_for_decod
 from xarray.core.variable import as_variable
 
 from xcdat import bounds as bounds_accessor  # noqa: F401
+from xcdat._logger import _setup_custom_logger
 from xcdat.axis import CFAxisKey, _get_all_coord_keys
 from xcdat.axis import center_times as center_times_func
 from xcdat.axis import swap_lon_axis
-from xcdat.logger import setup_custom_logger
 
-logger = setup_custom_logger(__name__)
+logger = _setup_custom_logger(__name__)
 
 #: List of non-CF compliant time units.
 NON_CF_TIME_UNITS: List[str] = ["month", "months", "year", "years"]

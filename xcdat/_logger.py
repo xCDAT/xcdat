@@ -2,9 +2,24 @@
 import logging
 import logging.handlers
 
+# Logging module setup
+log_format = (
+    "%(asctime)s [%(levelname)s]: %(filename)s(%(funcName)s:%(lineno)s) >> %(message)s"
+)
+logging.basicConfig(format=log_format, filemode="w", level=logging.INFO)
 
-def setup_custom_logger(name: str, propagate: bool = False) -> logging.Logger:
+# Console handler setup
+console_handler = logging.StreamHandler()
+console_handler.setLevel(logging.INFO)
+logFormatter = logging.Formatter(log_format)
+console_handler.setFormatter(logFormatter)
+logging.getLogger().addHandler(console_handler)
+
+
+def _setup_custom_logger(name, propagate=True) -> logging.Logger:
     """Sets up a custom logger.
+
+    Documentation on logging: https://docs.python.org/3/library/logging.html
 
     Parameters
     ----------
@@ -43,18 +58,7 @@ def setup_custom_logger(name: str, propagate: bool = False) -> logging.Logger:
 
     >>> logger.critical("")
     """
-    log_format = "%(asctime)s [%(levelname)s]: %(filename)s(%(funcName)s:%(lineno)s) >> %(message)s"
-    log_filemode = "w"  # w: overwrite; a: append
-
-    # Setup
-    logging.basicConfig(format=log_format, filemode=log_filemode, level=logging.INFO)
     logger = logging.getLogger(name)
     logger.propagate = propagate
-
-    # Console output
-    consoleHandler = logging.StreamHandler()
-    logFormatter = logging.Formatter(log_format)
-    consoleHandler.setFormatter(logFormatter)
-    logger.addHandler(consoleHandler)
 
     return logger
