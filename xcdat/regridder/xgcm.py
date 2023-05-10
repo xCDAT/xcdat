@@ -58,7 +58,7 @@ class XGCMRegridder(BaseRegridder):
             Extra options passed to the ``xgcm.Grid`` constructor, by default
             None.
         options : Optional[Dict[str, Any]]
-            Extra options passed to the ``xgcm.Grid.trasnform`` method.
+            Extra options passed to the ``xgcm.Grid.transform`` method.
 
         Raises
         ------
@@ -152,7 +152,7 @@ class XGCMRegridder(BaseRegridder):
 
         Regrid data:
 
-        >>> data_new_grid = regridder.verical("T", ds)
+        >>> data_new_grid = regridder.vertical("T", ds)
         """
         try:
             output_coord_z = self._output_grid.cf["Z"]
