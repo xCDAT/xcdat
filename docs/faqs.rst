@@ -167,11 +167,11 @@ If you still intend on working with these datasets and recognize the source of t
 (e.g., minor floating point diffs), follow the workarounds below. **Please proceed with
 caution. You should understand the potential implications of these workarounds.**
 
-1. Pick the first bounds variable and keep dimensions the same as the input dataset
+1. Pick the first bounds variable and keep dimensions the same as the input files
 
    - This option is recommended if you know bounds values should be the same across all
      files, but one or more files has inconsistent bounds values which breaks the
-     concatenation of files.
+     concatenation of files into a single `xr.Dataset` object.
 
     .. code-block:: python
 
