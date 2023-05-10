@@ -36,6 +36,12 @@ class XGCMRegridder(BaseRegridder):
         Conservative regridding requires multiple dimension positions, e.g.,
         {"center": "xc", "left": "xg"}.
 
+        ``xgcm.Grid`` can be passed additional arguments using ``extra_init_options``.
+        These arguments can be found on `XGCM's Grid documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.__init__>`_.
+
+        ``xgcm.Grid.transform`` can be passed additional arguments using ``options``.
+        These arguments can be found on `XGCM's Grid.transform documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.transform>`_.
+
         Parameters
         ----------
         input_grid : xr.Dataset
@@ -76,7 +82,7 @@ class XGCMRegridder(BaseRegridder):
 
         Open a dataset:
 
-        >>> ds = xcdat.open_dataset("t.nc")
+        >>> ds = xcdat.open_dataset("so.nc")
 
         Create output grid:
 
@@ -92,7 +98,11 @@ class XGCMRegridder(BaseRegridder):
 
         Regrid data:
 
-        >>> data_new_grid = regridder.vertical("T", ds)
+        >>> data_new_grid = regridder.vertical("so", ds)
+
+        Passing additional arguments to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
+
+        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", extra_init_options={"boundary": "fill", "fill_value": 1e27}, mask_edges=True)
         """
         super().__init__(input_grid, output_grid)
 
@@ -120,6 +130,9 @@ class XGCMRegridder(BaseRegridder):
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Regrid ``data_var`` in ``ds`` to output grid.
+
+        To pass additional arguments to ``xgcm.Grid`` or ``xgcm.Grid.transform``
+        see the documentation in the constructor :py:func:`xcdat.regridder.xgcm.XGCMRegridder.__init__`.
 
         Parameters
         ----------
