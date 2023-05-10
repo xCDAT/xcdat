@@ -376,7 +376,7 @@ class RegridderAccessor:
 
         Regrid variable using "xgcm":
 
-        >>> ds.regridder.vertical("T", output_grid, method="linear", theta="pressure")
+        >>> ds.regridder.vertical("so", output_grid, method="linear")
         """
         try:
             regrid_tool = VERTICAL_REGRID_TOOLS[tool]
