@@ -12,16 +12,16 @@ import xarray as xr
 from xarray.coding.cftime_offsets import get_date_type
 from xarray.core.common import contains_cftime_datetimes
 
+from xcdat._logger import _setup_custom_logger
 from xcdat.axis import CF_ATTR_MAP, CFAxisKey, get_dim_coords
 from xcdat.dataset import _get_data_var
-from xcdat.logger import setup_custom_logger
 from xcdat.temporal import (
     _contains_datetime_like_objects,
     _get_datetime_like_type,
     _infer_freq,
 )
 
-logger = setup_custom_logger(__name__)
+logger = _setup_custom_logger(__name__)
 
 
 @xr.register_dataset_accessor("bounds")
