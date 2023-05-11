@@ -72,62 +72,89 @@ class TestAddMissingBounds:
 
     def test_adds_bounds_to_the_dataset(self):
         ds = self.ds_with_bnds.copy()
-
         ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
 
+        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["X", "Y"])
         assert result.identical(self.ds_with_bnds)
 
-    def test_skips_adding_bounds_for_coords_that_are_1_dim_singleton(self):
-        # Length <=1
-        lon = xr.DataArray(
-            data=np.array([0]),
-            dims=["lon"],
-            attrs={"units": "degrees_east", "axis": "X"},
+    def test_skips_adding_bounds_for_coords_that_are_1_dim_singleton(self, caplog):
+        # NOTE: Suppress logger warning to avoid polluting test suite.
+        caplog.set_level(logging.CRITICAL)
+
+        # Create the input dataset.
+        ds = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    data=np.array([0]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X"},
+                )
+            }
         )
-        ds = xr.Dataset(coords={"lon": lon})
 
+        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["X"])
-
         assert result.identical(ds)
 
-    def test_skips_adding_bounds_for_coords_that_are_0_dim_singleton(self):
-        # 0-dimensional array
-        lon = xr.DataArray(
-            data=float(0),
-            attrs={"units": "degrees_east", "axis": "X"},
+    def test_skips_adding_bounds_for_coords_that_are_0_dim_singleton(self, caplog):
+        # NOTE: Suppress logger warning to avoid polluting test suite.
+        caplog.set_level(logging.CRITICAL)
+
+        # Create the input dataset.
+        ds = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    data=float(0),
+                    attrs={"units": "degrees_east", "axis": "X"},
+                )
+            }
         )
-        ds = xr.Dataset(coords={"lon": lon})
 
+        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["X"])
-
         assert result.identical(ds)
 
-    def test_skips_adding_time_bounds_for_coords_that_are_1_dim_singleton(self):
-        # Length <=1
-        time = xr.DataArray(
-            data=np.array(["2000-01-01T12:00:00.000000000"], dtype="datetime64[ns]"),
-            dims=["time"],
-            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
-        )
-        ds = xr.Dataset(coords={"time": time})
+    def test_skips_adding_time_bounds_for_coords_that_are_1_dim_singleton(self, caplog):
+        # NOTE: Suppress logger warning to avoid polluting test suite.
+        caplog.set_level(logging.CRITICAL)
 
+        # Create the input dataset.
+        ds = xr.Dataset(
+            coords={
+                "time": xr.DataArray(
+                    data=np.array(
+                        ["2000-01-01T12:00:00.000000000"], dtype="datetime64[ns]"
+                    ),
+                    dims=["time"],
+                    attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+                )
+            }
+        )
+
+        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["T"])
-
         assert result.identical(ds)
 
     def test_skips_adding_time_bounds_for_coords_that_are_not_datetime_like_objects(
-        self,
+        self, caplog
     ):
-        time = xr.DataArray(
-            data=np.array([0, 1, 2]),
-            dims=["time"],
-            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        # NOTE: Suppress logger warning to avoid polluting test suite.
+        caplog.set_level(logging.CRITICAL)
+
+        # Create the input dataset.
+        ds = xr.Dataset(
+            coords={
+                "time": xr.DataArray(
+                    data=np.array([0, 1, 2]),
+                    dims=["time"],
+                    attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+                )
+            }
         )
-        ds = xr.Dataset(coords={"time": time})
 
+        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["T"])
-
         assert result.identical(ds)
 
 
@@ -332,7 +359,7 @@ class TestAddBounds:
     def test_adds_bounds_and_sets_units_to_degrees_north_if_lat_coord_var_is_missing_units_attr(
         self, caplog
     ):
-        # Suppress the warning
+        # NOTE: Suppress logger warning to avoid polluting test suite.
         caplog.set_level(logging.CRITICAL)
 
         ds = self.ds.copy()
