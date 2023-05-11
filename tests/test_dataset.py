@@ -46,9 +46,7 @@ class TestOpenDataset:
 
         assert result.identical(expected)
 
-    def test_skip_decoding_time_explicitly(
-        self,
-    ):
+    def test_skip_decoding_time_explicitly(self):
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds.to_netcdf(self.file_path)
 
