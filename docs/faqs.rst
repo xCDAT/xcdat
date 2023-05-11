@@ -211,8 +211,8 @@ caution. You should understand the potential implications of these workarounds.*
 2. Drop the conflicting bounds variable(s)
 
    - This option is recommended if you know don't mind dropping the bounds variable(s).
-     You can add new bounds using the ``add_bounds`` keyword argument (defaults to
-     ``["X", "Y"]``).
+     xcdat will generate and replace the dropped bounds if add_bounds includes the axis
+     for the dropped variable (by default, ``add_bounds=["X", "Y"]``).
 
     .. code-block:: python
 
