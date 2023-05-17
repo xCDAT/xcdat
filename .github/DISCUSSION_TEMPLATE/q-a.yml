@@ -15,7 +15,7 @@ body:
       attributes:
           label: Are there are any possible answers you came up with?
           description: |
-              This will help others determine if you're on the right track.
+              This will help others determine if you're on the right track. Include links to pages you've researched (e.g., software docs, Stack Overflow posts).
 
     - type: textarea
       id: sample-code

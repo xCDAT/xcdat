@@ -17,9 +17,9 @@ body:
     - type: textarea
       id: what-did-you-expect-to-happen
       attributes:
-          label: What did you expect to happen?
+          label: What did you expect to happen? Are the are possible answers you came across?
           description: |
-              Describe what you expected to happen.
+              Describe what you expected to happen. Include links to pages you've researched (e.g., software docs, Stack Overflow posts).
       validations:
           required: false
 
