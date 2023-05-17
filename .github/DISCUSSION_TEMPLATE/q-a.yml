@@ -1,0 +1,53 @@
+name: Q&A
+description: Ask the community for help
+body:
+    - type: textarea
+      id: your-question
+      attributes:
+          label: Describe your question
+          description: |
+              Please help the community help you. The more specific you can be, the easier it will be to help.
+      validations:
+          required: true
+
+    - type: textarea
+      id: possible-answers
+      attributes:
+          label: Are there are any possible answers you came across?
+          description: |
+              This will help others determine if you're on the right track. Include links to pages you've researched (e.g., software docs, Stack Overflow posts).
+
+    - type: textarea
+      id: sample-code
+      attributes:
+          label: Minimal Complete Verifiable Example (MVCE)
+          description: |
+              Minimal, self-contained copy-pastable example that generates the question/issue if possible. Please be concise with code posted (e.g., module imports, publicly accessible files).
+              Examples that follow these guidelines are easier to parse. This section will be automatically formatted into code, so no need for markdown backticks.
+
+              See guidelines below on how to provide a good MCVE:
+
+                - [Minimal Complete Verifiable Examples](https://stackoverflow.com/help/mcve)
+                - [Craft Minimal Bug Reports](http://matthewrocklin.com/blog/work/2018/02/28/minimal-bug-reports)
+          render: python
+
+    - type: textarea
+      id: log-output
+      attributes:
+          label: Relevant log output
+          description: Please copy and paste any relevant output. This will be automatically formatted into code, so no need for markdown backticks.
+          render: python
+
+    - type: textarea
+      id: show-versions
+      attributes:
+          label: Environment
+          description: |
+              If an MVCE and log output was provided, paste your xCDAT version and the output `xr.show_versions()`. here
+
+    - type: textarea
+      id: extra
+      attributes:
+          label: Anything else we need to know?
+          description: |
+              Please describe any other information you want to share.
