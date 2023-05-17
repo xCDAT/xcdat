@@ -13,7 +13,7 @@ body:
     - type: textarea
       id: possible-answers
       attributes:
-          label: Are there are any possible answers you came up with?
+          label: Are there are any possible answers you came across?
           description: |
               This will help others determine if you're on the right track. Include links to pages you've researched (e.g., software docs, Stack Overflow posts).
 
