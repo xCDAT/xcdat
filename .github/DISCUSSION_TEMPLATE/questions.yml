@@ -1,6 +1,23 @@
-name: Q&A
-description: Ask the community for help
+labels: [question]
 body:
+    - type: markdown
+      attributes:
+          value: |
+              Thanks for your interest in xCDAT! Please follow the template below to ensure the development team and community can help you effectively.
+
+    - type: checkboxes
+      id: checks
+      attributes:
+          label: Question criteria
+          description: Please confirm and check all the following options.
+          options:
+              - label: I added a descriptive title here.
+                required: true
+              - label: I searched the [xCDAT GitHub Discussions](https://github.com/xCDAT/xcdat/discussions) to find a similar question and didn't find it.
+                required: true
+              - label: I searched the [xCDAT documentation](https://xcdat.readthedocs.io/en/stable/) and/or [Xarray documentation](https://docs.xarray.dev/en/stable/).
+                required: true
+
     - type: textarea
       id: your-question
       attributes:
