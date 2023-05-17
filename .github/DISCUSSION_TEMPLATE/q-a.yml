@@ -43,7 +43,7 @@ body:
       attributes:
           label: Environment
           description: |
-              If an MVCE and log output was provided, paste your xCDAT version and the output `xr.show_versions()` here
+              If an MVCE and log output was provided, paste your xCDAT version and the output `xr.show_versions()`. here
 
     - type: textarea
       id: extra
