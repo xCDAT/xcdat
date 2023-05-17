@@ -22,7 +22,7 @@ body:
       attributes:
           label: Minimal Complete Verifiable Example (MVCE)
           description: |
-              Minimal, self-contained copy-pastable example that generates the question/issue if possible. Please be concise with code posted (e.g., module imports, publically accessible files).
+              Minimal, self-contained copy-pastable example that generates the question/issue if possible. Please be concise with code posted (e.g., module imports, publicly accessible files).
               Examples that follow these guidelines are easier to parse. This section will be automatically formatted into code, so no need for markdown backticks.
 
               See guidelines below on how to provide a good MCVE:
