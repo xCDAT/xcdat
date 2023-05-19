@@ -1,3 +1,5 @@
+import logging
+
 import cftime
 import numpy as np
 import pytest
@@ -6,10 +8,14 @@ from xarray.coding.cftime_offsets import get_date_type
 from xarray.tests import requires_dask
 
 from tests.fixtures import generate_dataset
-from xcdat.logger import setup_custom_logger
-from xcdat.temporal import TemporalAccessor
+from xcdat._logger import _setup_custom_logger
+from xcdat.temporal import (
+    TemporalAccessor,
+    _contains_datetime_like_objects,
+    _get_datetime_like_type,
+)
 
-logger = setup_custom_logger("xcdat.temporal", propagate=True)
+logger = _setup_custom_logger("xcdat.temporal", propagate=True)
 
 
 class TestTemporalAccessor:
@@ -34,12 +40,13 @@ class TestAverage:
             decode_times=False, cf_compliant=False, has_bounds=True
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ds.temporal.average("ts")
 
-    def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
-        self, caplog
-    ):
+    def test_defaults_calendar_attribute_to_standard_if_missing(self, caplog):
+        # Silence warning to not pollute test suite output
+        caplog.set_level(logging.CRITICAL)
+
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
@@ -47,13 +54,7 @@ class TestAverage:
 
         ds.temporal.average("ts")
 
-        assert (
-            "'time' does not have a calendar encoding attribute set, "
-            "which is used to determine the `cftime.datetime` object type for the "
-            "output time coordinates. Defaulting to CF 'standard' calendar. "
-            "Otherwise, set the calendar type (e.g., "
-            "ds['time'].encoding['calendar'] = 'noleap') and try again."
-        ) in caplog.text
+        assert ds.temporal.calendar == "standard"
 
     def test_averages_for_yearly_time_series(self):
         ds = xr.Dataset(
@@ -453,12 +454,13 @@ class TestGroupAverage:
             decode_times=False, cf_compliant=False, has_bounds=True
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ds.temporal.group_average("ts", freq="year")
 
-    def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
-        self, caplog
-    ):
+    def test_defaults_calendar_attribute_to_standard_if_missing(self, caplog):
+        # Silence warning to not pollute test suite output
+        caplog.set_level(logging.CRITICAL)
+
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
@@ -466,13 +468,7 @@ class TestGroupAverage:
 
         ds.temporal.group_average("ts", freq="year")
 
-        assert (
-            "'time' does not have a calendar encoding attribute set, "
-            "which is used to determine the `cftime.datetime` object type for the "
-            "output time coordinates. Defaulting to CF 'standard' calendar. "
-            "Otherwise, set the calendar type (e.g., "
-            "ds['time'].encoding['calendar'] = 'noleap') and try again."
-        ) in caplog.text
+        assert ds.temporal.calendar == "standard"
 
     def test_weighted_annual_averages(self):
         ds = self.ds.copy()
@@ -1032,12 +1028,13 @@ class TestClimatology:
             decode_times=False, cf_compliant=False, has_bounds=True
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ds.temporal.climatology("ts", freq="year")
 
-    def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
-        self, caplog
-    ):
+    def test_defaults_calendar_attribute_to_standard_if_missing(self, caplog):
+        # Silence warning to not pollute test suite output
+        caplog.set_level(logging.CRITICAL)
+
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
@@ -1045,13 +1042,7 @@ class TestClimatology:
 
         ds.temporal.climatology("ts", freq="season")
 
-        assert (
-            "'time' does not have a calendar encoding attribute set, "
-            "which is used to determine the `cftime.datetime` object type for the "
-            "output time coordinates. Defaulting to CF 'standard' calendar. "
-            "Otherwise, set the calendar type (e.g., "
-            "ds['time'].encoding['calendar'] = 'noleap') and try again."
-        ) in caplog.text
+        assert ds.temporal.calendar == "standard"
 
     def test_raises_error_if_reference_period_arg_is_incorrect(self):
         ds = self.ds.copy()
@@ -1735,12 +1726,13 @@ class TestDepartures:
             decode_times=False, cf_compliant=False, has_bounds=True
         )
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ds.temporal.departures("ts", freq="season")
 
-    def test_raises_warning_if_calendar_encoding_attr_not_found_on_data_var_time_coords(
-        self, caplog
-    ):
+    def test_defaults_calendar_attribute_to_standard_if_missing(self, caplog):
+        # Silence warning to not pollute test suite output
+        caplog.set_level(logging.CRITICAL)
+
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
@@ -1748,13 +1740,7 @@ class TestDepartures:
 
         ds.temporal.departures("ts", freq="season")
 
-        assert (
-            "'time' does not have a calendar encoding attribute set, "
-            "which is used to determine the `cftime.datetime` object type for the "
-            "output time coordinates. Defaulting to CF 'standard' calendar. "
-            "Otherwise, set the calendar type (e.g., "
-            "ds['time'].encoding['calendar'] = 'noleap') and try again."
-        ) in caplog.text
+        assert ds.temporal.calendar == "standard"
 
     def test_raises_error_if_reference_period_arg_is_incorrect(self):
         ds = self.ds.copy()
@@ -3330,3 +3316,103 @@ class Test_Averager:
                     "custom_seasons": None,
                 },
             )
+
+
+class TestContainsDatetimeLikeObjects:
+    def test_returns_false_dataarray_contains_no_datetime_like_objects(self):
+        time = xr.DataArray(
+            data=np.array([1.0], dtype="float64"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert not _contains_datetime_like_objects(time)
+
+    def test_returns_true_if_dataarray_contains_np_datetime64(self):
+        time = xr.DataArray(
+            data=np.array(["2000-01-01T12:00:00.000000000"], dtype="datetime64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _contains_datetime_like_objects(time)
+
+    def test_returns_true_if_dataarray_contains_np_timedelta64(self):
+        time = xr.DataArray(
+            data=np.array([86400000000000], dtype="timedelta64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _contains_datetime_like_objects(time)
+
+    def test_returns_true_if_dataarray_contains_cftime_datetime(self):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(2000, 1, 1),
+                ],
+                dtype="object",
+            ),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _contains_datetime_like_objects(time)
+
+
+class TestGetDatetimeLikeType:
+    def test_raises_error_if_dataarray_contains_no_datatime_like_objects(self):
+        time = xr.DataArray(
+            data=np.array([1.0], dtype="float64"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        with pytest.raises(TypeError):
+            assert _get_datetime_like_type(time)
+
+    def test_returns_np_datetime64(self):
+        time = xr.DataArray(
+            data=np.array(["2000-01-01T12:00:00.000000000"], dtype="datetime64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _get_datetime_like_type(time) == np.datetime64
+
+    def test_returns_np_timedelta64(self):
+        time = xr.DataArray(
+            data=np.array([86400000000000], dtype="timedelta64[ns]"),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _get_datetime_like_type(time) == np.timedelta64
+
+    def test_returns_cftime_datetime(self):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.datetime(2000, 1, 1),
+                ],
+                dtype="object",
+            ),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _get_datetime_like_type(time) == cftime.datetime
+
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(2000, 1, 1),
+                ],
+                dtype="object",
+            ),
+            dims=["time"],
+            attrs={"calendar": "standard", "units": "days since 1850-01-01"},
+        )
+
+        assert _get_datetime_like_type(time) == cftime.datetime

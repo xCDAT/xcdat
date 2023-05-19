@@ -1,6 +1,6 @@
 blank_issues_enabled: true
 contact_links:
-    - name: Usage question (xCDAT)
+    - name: Questions (xCDAT)
       url: https://github.com/xCDAT/xcdat/discussions
       about: |
           Ask questions and discuss with other xCDAT community members here. Please
@@ -9,7 +9,7 @@ contact_links:
           answer, please include a self-contained reproducible example with your
           question if possible. Thanks!
 
-    - name: Usage question (xarray)
+    - name: Questions (xarray)
       url: https://github.com/pydata/xarray/discussions
       about: |
           If your questions or discussions are related to xarray, please visit this page

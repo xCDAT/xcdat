@@ -23,8 +23,8 @@ How does ``xcdat`` interpret dataset metadata?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ``xcdat`` leverages `cf_xarray`_ to interpret CF attributes on ``xarray`` objects.
 ``xcdat`` methods and functions usually accept an ``axis`` argument (e.g.,
-``ds.temporal.average(data_var="ts", axis="T")``). This argument is internally mapped to
-``cf_xarray`` mapping tables that interpret the CF attributes.
+``ds.temporal.average("ts")``). This argument is internally mapped to ``cf_xarray``
+mapping tables that interpret the CF attributes.
 
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 
@@ -156,24 +156,72 @@ A few workarounds include:
    function preprocesses each dataset file individually before joining them into a single
    Dataset object.
 
-How do I open a multi-file dataset with values that conflict?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+How do I open a multi-file dataset with bounds values that conflict?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 In ``xarray``, the default setting for checking compatibility across a multi-file dataset
-is ``compat='no_conflicts'``. If conflicting values exists between files, xarray raises
-``MergeError: conflicting values for variable <VARIABLE NAME> on objects to be combined.
-You can skip this check by specifying compat="override".``
+is ``compat='no_conflicts'``. In cases where variable values conflict between files,
+xarray raises ``MergeError: conflicting values for variable <VARIABLE NAME> on objects
+to be combined. You can skip this check by specifying compat="override".``
 
 If you still intend on working with these datasets and recognize the source of the issue
-(e.g., minor floating point diffs), follow the instructions below.
-**Please understand the potential implications before proceeding!**
+(e.g., minor floating point diffs), follow the workarounds below. **Please proceed with
+caution. You should understand the potential implications of these workarounds.**
 
-.. code-block:: python
+1. Pick the first bounds variable and keep dimensions the same as the input files
 
-    >>> xcdat.open_mfdataset("path/to/files/*.nc", compat="override", join="override")
+   - This option is recommended if you know bounds values should be the same across all
+     files, but one or more files has inconsistent bounds values which breaks the
+     concatenation of files into a single `xr.Dataset` object.
 
-1. ``compat="override"``: skip comparing and pick variable from first dataset
-2. ``join="override"``:  if indexes are of same size, rewrite indexes to be those of the
-   first object with that dimension. Indexes for the same dimension must have the same
-   size in all objects.
+    .. code-block:: python
 
-For more information, visit this page: https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html#xarray-open-mfdataset
+      >>> ds = xcdat.open_mfdataset(
+              "path/to/files/*.nc",
+              compat="override",
+              data_vars="minimal",
+              coords="minimal",
+              join="override",
+          )
+
+    - ``compat="override"``: skip comparing and pick variable from first dataset
+
+      - xarray defaults to ``compat="no_conflicts"``
+
+    - ``data_vars="minimal"``: Only data variables in which the dimension already
+      appears are included.
+
+      - xcdat defaults to ``data_vars="minimal"``
+      - xarray defaults to ``data_vars="all"``
+
+    - ``coords="minimal"``: Only coordinates in which the dimension already appears
+      are included.
+
+      - xarray defaults to ``coord="different"``
+
+    - ``join="override"``: if indexes are of same size, rewrite indexes to be those of
+      the first object with that dimension. Indexes for the same dimension must have
+      the same size in all objects.
+
+      - Alternatively, ``join="left"``: use indexes from the first object with each
+        dimension
+      - xarray defaults to ``join="outer"``. This can cause issues where data
+        variable values conflict because additional coordinates points are
+        concatenated at the point of conflict which can produce ``nan`` values.
+
+2. Drop the conflicting bounds variable(s)
+
+   - This option is recommended if you know don't mind dropping the bounds variable(s).
+     xcdat will generate and replace the dropped bounds if add_bounds includes the axis
+     for the dropped variable (by default, ``add_bounds=["X", "Y"]``).
+
+    .. code-block:: python
+
+      >>> # Drop single variable
+      >>> xcdat.open_mfdataset("path/to/files/*.nc", drop_variables="lon_bnds")
+      >>> # Drop multiple variables
+      >>> xcdat.open_mfdataset("path/to/files/*.nc", drop_variables=["lon_bnds", "lat_bnds"])
+
+
+For more information on these options, visit the `xarray.open_mfdataset`_ documentation.
+
+.. _`xarray.open_mfdataset`: https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html#xarray-open-mfdataset
