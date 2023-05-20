@@ -150,7 +150,10 @@ class TestRegrid2Regridder:
 
         regridder = regrid2.Regrid2Regridder(ds, output_grid)
 
-        with pytest.raises(RuntimeError, match="Could not find axis 'lat', ensure 'lat' exists and the attributes are correct."):
+        with pytest.raises(
+            RuntimeError,
+            match="Could not find axis 'lat', ensure 'lat' exists and the attributes are correct.",
+        ):
             regridder.horizontal("ts", ds)
 
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
