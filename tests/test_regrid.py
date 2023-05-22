@@ -53,6 +53,18 @@ class TestRegrid2Regridder:
         )
         time = time[:-1].to_pydatetime() + datetime.timedelta(hours=12)
 
+        self.ds_attrs = {
+            "Conventions": "CF-1.7 CMIP-6.2",
+            "activity_id": "CMIP",
+            "experiment": "historical",
+        }
+
+        self.da_attrs = {
+            "standard_name": "surface_temperature",
+            "long_name": "Surface Temperature",
+            "units": "K",
+        }
+
         self.coarse_2d_ds = xr.Dataset(
             {
                 "ts": xr.DataArray(
@@ -67,10 +79,12 @@ class TestRegrid2Regridder:
                         "lat": self.coarse_lat_bnds["lat"],
                         "lon": self.coarse_lon_bnds["lon"],
                     },
+                    attrs=self.da_attrs,
                 ),
                 "lat_bnds": self.coarse_lat_bnds,
                 "lon_bnds": self.coarse_lon_bnds,
-            }
+            },
+            attrs=self.ds_attrs,
         )
 
         self.coarse_3d_ds = xr.Dataset(
@@ -89,11 +103,13 @@ class TestRegrid2Regridder:
                         "lat": self.coarse_lat_bnds["lat"],
                         "lon": self.coarse_lon_bnds["lon"],
                     },
+                    attrs=self.da_attrs,
                 ),
                 "time_bnds": (["time", "bnds"], self.time_bnds),
                 "lat_bnds": self.coarse_lat_bnds,
                 "lon_bnds": self.coarse_lon_bnds,
-            }
+            },
+            attrs=self.ds_attrs,
         )
 
         self.height_bnds = gen_uniform_axis(0.0, 40000.1, 20000.0, "height", "Z")
@@ -116,12 +132,14 @@ class TestRegrid2Regridder:
                         "lat": self.coarse_lat_bnds["lat"],
                         "lon": self.coarse_lon_bnds["lon"],
                     },
+                    attrs=self.da_attrs,
                 ),
                 "time_bnds": (["time", "bnds"], self.time_bnds),
                 "height_bnds": self.height_bnds,
                 "lat_bnds": self.coarse_lat_bnds,
                 "lon_bnds": self.coarse_lon_bnds,
-            }
+            },
+            attrs=self.ds_attrs,
         )
 
         self.fine_2d_ds = xr.Dataset(
@@ -295,6 +313,17 @@ class TestRegrid2Regridder:
         output_data["ts"] = output_data.ts.fillna(1e20)
 
         assert np.all(output_data.ts.values == expected_output)
+
+    def test_preserve_attrs(self):
+        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
+
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
+
+        assert output_data.attrs == self.ds_attrs
+        assert output_data["ts"].attrs == self.da_attrs
+
+        for x in output_data.coords:
+            assert output_data[x].attrs == self.coarse_2d_ds[x].attrs
 
     def test_regrid_2d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
