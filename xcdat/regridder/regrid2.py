@@ -317,6 +317,7 @@ class Regrid2Regridder(BaseRegridder):
             output_data,
             dims=[axis_variable_name_map[x] for x in ordered_axis_names],
             coords=coords,
+            attrs=input_ds[data_var].attrs.copy(),
         )
 
         data_vars = {data_var: output_da}
