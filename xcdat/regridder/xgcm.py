@@ -3,8 +3,8 @@ from typing import Any, Dict, Hashable, Literal, Optional, Union, get_args
 import xarray as xr
 from xgcm import Grid
 
-from xcdat.axis import get_dim_coords
 from xcdat._logger import _setup_custom_logger
+from xcdat.axis import get_dim_coords
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
 
 XGCMVerticalMethods = Literal["linear", "conservative", "log"]
