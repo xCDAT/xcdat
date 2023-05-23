@@ -8,6 +8,7 @@ import xarray as xr
 from lxml import etree
 
 from tests.fixtures import generate_dataset
+from xcdat._logger import _setup_custom_logger
 from xcdat.dataset import (
     _keep_single_var,
     _postprocess_dataset,
@@ -15,9 +16,8 @@ from xcdat.dataset import (
     open_dataset,
     open_mfdataset,
 )
-from xcdat.logger import setup_custom_logger
 
-logger = setup_custom_logger("xcdat.dataset", propagate=True)
+logger = _setup_custom_logger("xcdat.dataset", propagate=True)
 
 
 class TestOpenDataset:
@@ -29,6 +29,9 @@ class TestOpenDataset:
         self.file_path = f"{dir}/file.nc"
 
     def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
+        # Silence warning to not pollute test suite output
+        caplog.set_level(logging.CRITICAL)
+
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds = ds.drop_dims("time")
         ds.to_netcdf(self.file_path)
@@ -42,14 +45,6 @@ class TestOpenDataset:
         expected = expected.drop_dims("time")
 
         assert result.identical(expected)
-        assert (
-            "No time coordinates were found in this dataset to decode. If time "
-            "coordinates were expected to exist, make sure they are detectable by "
-            "setting the CF 'axis' or 'standard_name' attribute (e.g., "
-            "ds['time'].attrs['axis'] = 'T' or "
-            "ds['time'].attrs['standard_name'] = 'time'). Afterwards, try decoding "
-            "again with `xcdat.decode_time`."
-        ) in caplog.text
 
     def test_skip_decoding_time_explicitly(self):
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
@@ -89,12 +84,12 @@ class TestOpenDataset:
         assert result.identical(ds)
 
     def test_decode_time_in_days(self):
-        ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
+        ds = generate_dataset(
+            decode_times=False, cf_compliant=True, has_bounds=True
+        ).isel(time=slice(0, 3))
         ds.to_netcdf(self.file_path)
 
-        result = open_dataset(self.file_path, data_var="ts", decode_times=True)
-
-        # Generate an expected dataset with decoded CF compliant time units.
+        # Create the expected dataset.
         expected = ds.copy()
         expected["time"] = xr.DataArray(
             name="time",
@@ -108,42 +103,6 @@ class TestOpenDataset:
                     ),
                     cftime.DatetimeGregorian(
                         2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 15, 0, 0, 0, 0, has_year_zero=False
                     ),
                 ],
                 dtype="object",
@@ -178,102 +137,6 @@ class TestOpenDataset:
                             2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
                         ),
                     ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 15, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
                 ],
                 dtype="object",
             ),
@@ -287,9 +150,11 @@ class TestOpenDataset:
             "bounds": "time_bnds",
         }
 
+        # Compare the result against the expected.
+        result = open_dataset(self.file_path, data_var="ts", decode_times=True)
         assert result.identical(expected)
 
-        # Check encoding is preserved.
+        # Compare time encoding.
         expected.time.encoding = {
             "zlib": False,
             "szip": False,
@@ -303,7 +168,7 @@ class TestOpenDataset:
             "chunksizes": None,
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
-            "original_shape": (15,),
+            "original_shape": expected.time.shape,
             "dtype": np.dtype("int64"),
             "units": "days since 2000-01-01",
             "calendar": "standard",
@@ -320,22 +185,21 @@ class TestOpenDataset:
             "contiguous": True,
             "chunksizes": None,
             "source": result.time.encoding["source"],
-            "original_shape": (15, 2),
+            "original_shape": expected.time_bnds.shape,
             "dtype": np.dtype("int64"),
             "units": "days since 2000-01-01",
             "calendar": "standard",
         }
-
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
     def test_decode_time_in_months(self):
-        ds = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds = generate_dataset(
+            decode_times=False, cf_compliant=False, has_bounds=True
+        ).isel(time=slice(0, 3))
         ds.to_netcdf(self.file_path)
 
-        result = open_dataset(self.file_path, data_var="ts")
-
-        # Generate an expected dataset with decoded non-CF compliant time units.
+        # Create the expected dataset.
         expected = ds.copy()
         expected["time"] = xr.DataArray(
             name="time",
@@ -349,42 +213,6 @@ class TestOpenDataset:
                     ),
                     cftime.DatetimeGregorian(
                         2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 5, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 6, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 7, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 8, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 9, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 10, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 11, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 12, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 1, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 2, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 3, 1, 0, 0, 0, 0, has_year_zero=False
                     ),
                 ],
                 dtype="object",
@@ -420,102 +248,6 @@ class TestOpenDataset:
                             2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
                         ),
                     ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 5, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 5, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 6, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 6, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 7, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 7, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 8, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 8, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 9, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 9, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 10, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 10, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 11, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 11, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 12, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 12, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2001, 1, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2001, 1, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2001, 2, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2001, 2, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2001, 3, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
                 ],
                 dtype="object",
             ),
@@ -530,9 +262,11 @@ class TestOpenDataset:
             "bounds": "time_bnds",
         }
 
+        # Compare the result against the expected.
+        result = open_dataset(self.file_path, data_var="ts")
         assert result.identical(expected)
 
-        # Check encoding is preserved.
+        # Compare time encoding.
         expected.time.encoding = {
             "zlib": False,
             "szip": False,
@@ -546,7 +280,7 @@ class TestOpenDataset:
             "chunksizes": None,
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
-            "original_shape": (15,),
+            "original_shape": expected.time.shape,
             "dtype": np.dtype("int64"),
             "units": "months since 2000-01-01",
             "calendar": "standard",
@@ -564,24 +298,23 @@ class TestOpenDataset:
             "chunksizes": None,
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
-            "original_shape": (15, 2),
+            "original_shape": expected.time_bnds.shape,
             "dtype": np.dtype("int64"),
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
-
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
     def test_keeps_specified_var_and_preserves_bounds(self):
         ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=True)
 
-        # Create a modified version of the Dataset with a new var
+        # Create a modified version of the Dataset with a new var.
         ds_mod = ds.copy()
         ds_mod["tas"] = ds_mod.ts.copy()
 
-        # Suppress UserWarning regarding missing time.encoding "units" because
-        # it is not relevant to this test.
+        # NOTE: Suppress UserWarning regarding missing time.encoding "units"
+        # because it is not relevant to this test.
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             ds_mod.to_netcdf(self.file_path)
@@ -602,6 +335,9 @@ class TestOpenMfDataset:
         self.file_path2 = f"{self.dir}/file2.nc"
 
     def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
+        # Silence warning to not pollute test suite output
+        caplog.set_level(logging.CRITICAL)
+
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds = ds.drop_dims("time")
         ds.to_netcdf(self.file_path1)
@@ -615,14 +351,6 @@ class TestOpenMfDataset:
         expected = expected.drop_dims("time")
 
         assert result.identical(expected)
-        assert (
-            "No time coordinates were found in this dataset to decode. If time "
-            "coordinates were expected to exist, make sure they are detectable by "
-            "setting the CF 'axis' or 'standard_name' attribute (e.g., "
-            "ds['time'].attrs['axis'] = 'T' or "
-            "ds['time'].attrs['standard_name'] = 'time'). "
-            "Afterwards, try decoding again with `xcdat.decode_time`."
-        ) in caplog.text
 
     def test_skip_decoding_times_explicitly(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -748,20 +476,21 @@ class TestOpenMfDataset:
 
     def test_decode_time_in_months(self):
         # Generate two dataset files with different variables.
-        ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds1 = generate_dataset(
+            decode_times=False, cf_compliant=False, has_bounds=True
+        ).isel(time=slice(0, 3))
         ds1.to_netcdf(self.file_path1)
 
-        ds2 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
+        ds2 = generate_dataset(
+            decode_times=False, cf_compliant=False, has_bounds=True
+        ).isel(time=slice(0, 3))
         ds2 = ds2.rename_vars({"ts": "tas"})
         ds2.to_netcdf(self.file_path2)
 
-        # Open both dataset files as a single Dataset object.
-        result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
-
-        # Create an expected Dataset object.
+        # Create the expected dataset.
         expected = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
-        )
+        ).isel(time=slice(0, 3))
         expected["time"] = xr.DataArray(
             name="time",
             data=np.array(
@@ -775,42 +504,6 @@ class TestOpenMfDataset:
                     cftime.DatetimeGregorian(
                         2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
                     ),
-                    cftime.DatetimeGregorian(
-                        2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 5, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 6, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 7, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 8, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 9, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 10, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 11, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 12, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 1, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 2, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 3, 1, 0, 0, 0, 0, has_year_zero=False
-                    ),
                 ],
                 dtype="object",
             ),
@@ -822,7 +515,6 @@ class TestOpenMfDataset:
                 "bounds": "time_bnds",
             },
         )
-
         expected["time_bnds"] = xr.DataArray(
             name="time_bnds",
             data=np.array(
@@ -851,114 +543,21 @@ class TestOpenMfDataset:
                             2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
                         ),
                     ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 5, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 5, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 6, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 6, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 7, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 7, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 8, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 8, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 9, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 9, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 10, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 10, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 11, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 11, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 12, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 12, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2001, 1, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2001, 1, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2001, 2, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2001, 2, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2001, 3, 1, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
                 ],
                 dtype="object",
             ),
             dims=["time", "bnds"],
             attrs={"xcdat_bounds": "True"},
         )
-
         # Make sure the expected is chunked.
-        expected = expected.chunk(chunks={"time": 15, "bnds": 2})
+        expected = expected.chunk(chunks={"time": 3, "bnds": 2})
 
-        # Check encoding is preserved. The extra metadata like "zlib" are from
-        # the netCDF4 files.
+        # Compare the result against the expected.
+        result = open_mfdataset([self.file_path1, self.file_path2], data_var="ts")
+        assert result.identical(expected)
+
+        # Compare the time encoding.
+        # The extra metadata like "zlib" are from the netCDF4 files.
         expected.time.encoding = {
             "zlib": False,
             "szip": False,
@@ -972,7 +571,7 @@ class TestOpenMfDataset:
             "chunksizes": None,
             # Set source as result source because it changes every test run.
             "source": result.time.encoding["source"],
-            "original_shape": (15,),
+            "original_shape": expected.time.shape,
             "dtype": np.dtype("int64"),
             "units": "months since 2000-01-01",
             "calendar": "standard",
@@ -981,8 +580,6 @@ class TestOpenMfDataset:
             "units": "months since 2000-01-01",
             "calendar": "standard",
         }
-
-        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
 
         # FIXME: For some reason the encoding attributes get dropped only in
@@ -1024,6 +621,7 @@ class TestDecodeTime:
                 "axis": "T",
                 "long_name": "time",
                 "standard_name": "time",
+                "calendar": "standard",
             },
         )
         time_bnds = xr.DataArray(
@@ -1059,14 +657,15 @@ class TestDecodeTime:
         # Update logger level to silence the logger warning during test runs.
         caplog.set_level(logging.ERROR)
 
+        # Create the input dataset and update the units.
         ds = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
-
         ds.time.attrs["units"] = "year AD"
 
         result = decode_time(ds)
         assert ds.identical(result)
 
     def test_skips_decoding_time_bounds_if_bounds_dont_exist(self):
+        # Create the input dataset.
         ds = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -1098,7 +697,7 @@ class TestDecodeTime:
             },
         )
 
-        result = decode_time(ds)
+        # Create the expected dataset.
         expected = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -1151,10 +750,6 @@ class TestDecodeTime:
                 ),
             },
         )
-
-        assert result.identical(expected)
-
-        # Check encoding is preserved.
         expected.time.encoding = {
             "units": "months since 2000-01-01",
             "calendar": "standard",
@@ -1164,10 +759,14 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result agaisnt the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time2.encoding == expected.time.encoding
 
     def test_decodes_all_time_coordinates_and_time_bounds(self):
+        # Create the input dataset.
         ds = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -1206,7 +805,7 @@ class TestDecodeTime:
             },
         )
 
-        result = decode_time(ds)
+        # Create the expected dataset
         expected = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -1295,10 +894,6 @@ class TestDecodeTime:
                 ),
             },
         )
-
-        assert result.identical(expected)
-
-        # Check the encoding is preserved.
         expected.time.encoding = {
             "units": "months since 2000-01-01",
             "calendar": "standard",
@@ -1312,6 +907,9 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time2.encoding == expected.time2.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
@@ -1344,7 +942,7 @@ class TestDecodeTime:
             },
         )
 
-        result = decode_time(ds)
+        # Create the expected dataset
         expected = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -1408,10 +1006,6 @@ class TestDecodeTime:
                 ),
             },
         )
-
-        assert result.identical(expected)
-
-        # Check the encoding is preserved.
         expected.time.encoding = {
             "units": "months since 2000-01-01",
             "calendar": "standard",
@@ -1421,15 +1015,18 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
     def test_decode_time_in_days(self):
-        ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
+        ds = generate_dataset(
+            decode_times=False, cf_compliant=True, has_bounds=True
+        ).isel(time=slice(0, 3))
 
-        result = decode_time(ds)
-
-        # Generate an expected dataset with decoded CF compliant time units.
+        # Create the expected dataset
         expected = ds.copy()
         expected["time"] = xr.DataArray(
             name="time",
@@ -1443,42 +1040,6 @@ class TestDecodeTime:
                     ),
                     cftime.DatetimeGregorian(
                         2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 1, 15, 0, 0, 0, 0, has_year_zero=False
                     ),
                 ],
                 dtype="object",
@@ -1513,102 +1074,6 @@ class TestDecodeTime:
                             2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
                         ),
                     ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 3, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 4, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 5, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 6, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 7, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 8, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 9, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 10, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 11, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 12, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 13, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
-                    [
-                        cftime.DatetimeGregorian(
-                            2000, 1, 14, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                        cftime.DatetimeGregorian(
-                            2000, 1, 15, 0, 0, 0, 0, has_year_zero=False
-                        ),
-                    ],
                 ],
                 dtype="object",
             ),
@@ -1621,10 +1086,6 @@ class TestDecodeTime:
             "standard_name": "time",
             "bounds": "time_bnds",
         }
-
-        assert result.identical(expected)
-
-        # Check encoding is preserved.
         expected.time.encoding = {
             "units": "days since 2000-01-01",
             "calendar": "standard",
@@ -1634,6 +1095,9 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1645,7 +1109,7 @@ class TestDecodeTime:
         ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "months since 2000-01-01"
 
-        result = decode_time(ds)
+        # Create the expected dataset
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
@@ -1707,9 +1171,6 @@ class TestDecodeTime:
                 ),
             }
         )
-        assert result.identical(expected)
-
-        # Check the encoding is preserved.
         expected.time.encoding = {
             "units": "months since 2000-01-01",
             "calendar": "standard",
@@ -1719,6 +1180,9 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1730,7 +1194,7 @@ class TestDecodeTime:
         ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "months since 2000-01-15"
 
-        result = decode_time(ds)
+        # Create the expected dataset
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
@@ -1773,9 +1237,6 @@ class TestDecodeTime:
                 ),
             }
         )
-        assert result.identical(expected)
-
-        # Check the encoding is preserved.
         expected.time.encoding = {
             "units": "months since 2000-01-15",
             "calendar": "standard",
@@ -1785,6 +1246,9 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1796,7 +1260,7 @@ class TestDecodeTime:
         ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "months since 1999-12-31"
 
-        result = decode_time(ds)
+        # Create the expected dataset
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
@@ -1839,9 +1303,6 @@ class TestDecodeTime:
                 ),
             }
         )
-        assert result.identical(expected)
-
-        # Check the encoding is preserved.
         expected.time.encoding = {
             "units": "months since 1999-12-31",
             "calendar": "standard",
@@ -1851,6 +1312,9 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1862,8 +1326,7 @@ class TestDecodeTime:
         ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "months since 2000-02-29"
 
-        result = decode_time(ds)
-
+        # Create the expected dataset
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
@@ -1906,9 +1369,6 @@ class TestDecodeTime:
                 ),
             }
         )
-        assert result.identical(expected)
-
-        # Check the encoding is preserved.
         expected.time.encoding = {
             "units": "months since 2000-02-29",
             "calendar": "standard",
@@ -1918,6 +1378,9 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1930,8 +1393,7 @@ class TestDecodeTime:
         ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "years since 2000-06-01"
 
-        result = decode_time(ds)
-
+        # Create the expected dataset
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
@@ -1974,9 +1436,6 @@ class TestDecodeTime:
                 ),
             }
         )
-        assert result.identical(expected)
-
-        # Check the encoding is preserved.
         expected.time.encoding = {
             "units": "years since 2000-06-01",
             "calendar": "standard",
@@ -1986,6 +1445,9 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -1998,8 +1460,7 @@ class TestDecodeTime:
         ds.time.attrs["calendar"] = calendar
         ds.time.attrs["units"] = "years since 2000-02-29"
 
-        result = decode_time(ds)
-
+        # Create the expected dataset
         expected = xr.Dataset(
             {
                 "time": xr.DataArray(
@@ -2042,9 +1503,6 @@ class TestDecodeTime:
                 ),
             }
         )
-        assert result.identical(expected)
-
-        # Check the encoding is preserved.
         expected.time.encoding = {
             "units": "years since 2000-02-29",
             "calendar": "standard",
@@ -2054,6 +1512,9 @@ class TestDecodeTime:
             "calendar": "standard",
         }
 
+        # Compare the result against the expected.
+        result = decode_time(ds)
+        assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
         assert result.time_bnds.encoding == expected.time_bnds.encoding
 
@@ -2065,159 +1526,30 @@ class Test_PostProcessDataset:
             decode_times=True, cf_compliant=False, has_bounds=True
         )
 
-    def test_centers_time_coords_and_converts_datetime_dtype_to_cftime_object_type(
-        self,
-    ):
-        ds = generate_dataset(decode_times=True, cf_compliant=False, has_bounds=True)
-
-        # Create a dataset with uncentered time coordinates that are decoded as
-        # dtype="datetime[ns]"
-        ds_uncentered = ds.copy()
-        ds_uncentered["time"] = xr.DataArray(
-            data=np.array(
-                [
-                    "2000-01-31T12:00:00.000000000",
-                    "2000-02-29T12:00:00.000000000",
-                    "2000-03-31T12:00:00.000000000",
-                    "2000-04-30T00:00:00.000000000",
-                    "2000-05-31T12:00:00.000000000",
-                    "2000-06-30T00:00:00.000000000",
-                    "2000-07-31T12:00:00.000000000",
-                    "2000-08-31T12:00:00.000000000",
-                    "2000-09-30T00:00:00.000000000",
-                    "2000-10-16T12:00:00.000000000",
-                    "2000-11-30T00:00:00.000000000",
-                    "2000-12-31T12:00:00.000000000",
-                    "2001-01-31T12:00:00.000000000",
-                    "2001-02-28T00:00:00.000000000",
-                    "2001-12-31T12:00:00.000000000",
-                ],
-                dtype="datetime64[ns]",
-            ),
-            dims=ds.time.dims,
-            attrs=ds.time.attrs,
-        )
-        ds_uncentered.time.encoding = {
-            "source": None,
-            "original_shape": ds.time.data.shape,
-            "dtype": np.dtype("float64"),
-            "units": "days since 2000-01-01",
-            "calendar": "standard",
-            "_FillValue": False,
-        }
-
-        # Compare result of the method against the expected.
-        result = _postprocess_dataset(ds_uncentered, center_times=True)
-        expected = ds.copy()
-        expected["time"] = xr.DataArray(
-            name="time",
-            data=np.array(
-                [
-                    cftime.DatetimeGregorian(
-                        2000, 1, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 2, 15, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 3, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 4, 16, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 5, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 6, 16, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 7, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 8, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 9, 16, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 10, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 11, 16, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 12, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 1, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 2, 15, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 12, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                ],
-                dtype="object",
-            ),
-            dims="time",
-            attrs={
-                "long_name": "time",
-                "standard_name": "time",
-                "axis": "T",
-                "bounds": "time_bnds",
-            },
-        )
-
-        expected.time.encoding = {
-            "source": None,
-            "original_shape": (15,),
-            "dtype": np.dtype("float64"),
-            "units": "days since 2000-01-01",
-            "calendar": "standard",
-            "_FillValue": False,
-        }
-
-        # Compare result of the function against the expected.
-        assert result.identical(expected)
-        assert result.time.encoding == expected.time.encoding
-
     def test_centers_time_coordinates_and_maintains_cftime_object_type(self):
-        # Create a dataset with uncentered time coordinates
-        ds = generate_dataset(decode_times=True, cf_compliant=False, has_bounds=True)
+        # Create the input dataset with uncentered time coordinates
+        ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        ).isel(time=slice(0, 3))
         uncentered_time = np.array(
             [
                 cftime.DatetimeGregorian(2000, 1, 31, 12, 0, 0, 0),
                 cftime.DatetimeGregorian(2000, 2, 29, 12, 0, 0, 0),
                 cftime.DatetimeGregorian(2000, 3, 31, 12, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 4, 30, 0, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 5, 31, 12, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 6, 30, 0, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 7, 31, 12, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 8, 31, 12, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 9, 30, 0, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 10, 16, 12, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 11, 30, 0, 0, 0, 0),
-                cftime.DatetimeGregorian(2000, 12, 31, 12, 0, 0, 0),
-                cftime.DatetimeGregorian(2001, 1, 31, 12, 0, 0, 0),
-                cftime.DatetimeGregorian(2001, 2, 28, 0, 0, 0, 0),
-                cftime.DatetimeGregorian(2001, 12, 31, 12, 0, 0, 0),
             ],
             dtype="object",
         )
         ds.time.data[:] = uncentered_time
         ds.time.encoding = {
             "source": None,
-            "original_shape": ds.time.data.shape,
+            "original_shape": ds.time.shape,
             "dtype": np.dtype("float64"),
             "units": "days since 2000-01-01",
             "calendar": "standard",
             "_FillValue": False,
         }
 
-        # Compare result of the method against the expected.
-        result = _postprocess_dataset(ds, center_times=True)
+        # Create the expected dataset.
         expected = ds.copy()
         expected["time"] = xr.DataArray(
             name="time",
@@ -2231,42 +1563,6 @@ class Test_PostProcessDataset:
                     ),
                     cftime.DatetimeGregorian(
                         2000, 3, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 4, 16, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 5, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 6, 16, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 7, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 8, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 9, 16, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 10, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 11, 16, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2000, 12, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 1, 16, 12, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 2, 15, 0, 0, 0, 0, has_year_zero=False
-                    ),
-                    cftime.DatetimeGregorian(
-                        2001, 12, 16, 12, 0, 0, 0, has_year_zero=False
                     ),
                 ],
                 dtype="object",
@@ -2282,18 +1578,49 @@ class Test_PostProcessDataset:
 
         expected.time.encoding = {
             "source": None,
-            "original_shape": (15,),
+            "original_shape": expected.time.shape,
             "dtype": np.dtype("float64"),
             "units": "days since 2000-01-01",
             "calendar": "standard",
             "_FillValue": False,
         }
+        expected["time_bnds"] = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 1, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 2, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 2, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                    [
+                        cftime.DatetimeGregorian(
+                            2000, 3, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                        cftime.DatetimeGregorian(
+                            2000, 4, 1, 0, 0, 0, 0, has_year_zero=False
+                        ),
+                    ],
+                ],
+                dtype="object",
+            ),
+            dims=["time", "bnds"],
+            attrs=ds.time_bnds.attrs,
+        )
 
-        # Update time bounds with centered time coordinates.
-        expected["time_bnds"] = ds.time_bnds.copy()
-        expected["time_bnds"]["time"] = expected.time
-
-        # Compare result of the function against the expected.
+        # Compare result of the method against the expected.
+        result = _postprocess_dataset(ds, center_times=True)
         assert result.identical(expected)
         assert result.time.encoding == expected.time.encoding
 
@@ -2337,7 +1664,7 @@ class Test_PostProcessDataset:
     def test_orients_longitude_bounds_from_180_to_360_and_sorts_with_prime_meridian_cell(
         self,
     ):
-        # Chunk the dataset to test method also works with Dask.
+        # Chunk the input dataset to test method also works with Dask.
         ds = xr.Dataset(
             coords={
                 "lon": xr.DataArray(

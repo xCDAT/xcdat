@@ -355,7 +355,7 @@ class TestRegrid2Regridder:
         with pytest.raises(NotImplementedError, match=""):
             regridder.vertical("so", ds)
 
-    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_output_bounds(self):
         ds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
@@ -1049,7 +1049,7 @@ class TestAccessor:
             self.ac.vertical("ts", mock_data, tool="dummy", target_data=None)  # type: ignore
 
     @requires_xesmf
-    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_convenience_methods(self):
         ds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
