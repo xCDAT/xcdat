@@ -11,6 +11,7 @@ This gallery demonstrates how to use some of the features in ``xcdat``. Contribu
 
     examples/introduction-to-xcdat.ipynb
     examples/general-utilities.ipynb
+    examples/parallel-computing-with-dask.ipynb
     examples/spatial-average.ipynb
     examples/temporal-average.ipynb
     examples/climatology-and-departures.ipynb
