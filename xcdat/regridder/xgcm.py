@@ -1,10 +1,10 @@
-from typing import Any, Dict, Literal, Optional, Union, get_args
+from typing import Any, Dict, Hashable, Literal, Optional, Union, get_args
 
 import xarray as xr
 from xgcm import Grid
 
-from xcdat.logger import setup_custom_logger
 from xcdat.axis import get_dim_coords
+from xcdat.logger import setup_custom_logger
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
 
 XGCMVerticalMethods = Literal["linear", "conservative", "log"]
@@ -225,7 +225,7 @@ class XGCMRegridder(BaseRegridder):
 
         return output_ds
 
-    def _get_grid_coords(self) -> Dict[str, Dict[str, str]]:
+    def _get_grid_coords(self) -> Dict[str, Union[Any, Hashable]]:
         if self._method == "conservative":
             raise RuntimeError(
                 "Conservative regridding requires a second point position, pass these "
