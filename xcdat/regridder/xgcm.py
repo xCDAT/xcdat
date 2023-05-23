@@ -4,12 +4,12 @@ import xarray as xr
 from xgcm import Grid
 
 from xcdat.axis import get_dim_coords
-from xcdat.logger import setup_custom_logger
+from xcdat._logger import _setup_custom_logger
 from xcdat.regridder.base import BaseRegridder, preserve_bounds
 
 XGCMVerticalMethods = Literal["linear", "conservative", "log"]
 
-logger = setup_custom_logger(__name__)
+logger = _setup_custom_logger(__name__)
 
 
 class XGCMRegridder(BaseRegridder):
