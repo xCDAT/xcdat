@@ -406,7 +406,7 @@ class TemporalAccessor:
         reference_period : Optional[Tuple[str, str]], optional
             The climatological reference period, which is a subset of the entire
             time series. This parameter accepts a tuple of strings in the format
-            'yyyy-mm-dd'. For example, ``('1850-01-01', 1899-12-31')``. If no
+            'yyyy-mm-dd'. For example, ``('1850-01-01', '1899-12-31')``. If no
             value is provided, the climatological reference period will be the
             full period covered by the dataset.
         season_config: SeasonConfigInput, optional
@@ -575,7 +575,7 @@ class TemporalAccessor:
             The climatological reference period, which is a subset of the entire
             time series and used for calculating departures. This parameter
             accepts a tuple of strings in the format 'yyyy-mm-dd'. For example,
-            ``('1850-01-01', 1899-12-31')``. If no value is provided, the
+            ``('1850-01-01', '1899-12-31')``. If no value is provided, the
             climatological reference period will be the full period covered by
             the dataset.
         season_config: SeasonConfigInput, optional
