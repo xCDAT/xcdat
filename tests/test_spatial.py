@@ -269,26 +269,17 @@ class TestGetWeights:
             decode_times=True, cf_compliant=False, has_bounds=True
         )
 
-    def test_bounds_reordered_when_upper_indexed_first(self):
+    def test_value_error_thrown_for_multiple_out_of_order_lon_bounds(self):
         domain_bounds = xr.DataArray(
             name="lon_bnds",
-            data=np.array(
-                [[-89.375, -90], [0.0, -89.375], [0.0, 89.375], [89.375, 90]]
-            ),
+            data=np.array([[3, 1], [5, 3], [5, 7], [7, 9]]),
             coords={"lat": self.ds.lat},
             dims=["lat", "bnds"],
         )
-        result = self.ds.spatial._force_domain_order_low_to_high(domain_bounds)
-
-        expected_domain_bounds = xr.DataArray(
-            name="lon_bnds",
-            data=np.array(
-                [[-90, -89.375], [-89.375, 0.0], [0.0, 89.375], [89.375, 90]]
-            ),
-            coords={"lat": self.ds.lat},
-            dims=["lat", "bnds"],
-        )
-        assert result.identical(expected_domain_bounds)
+        # Check _get_longitude_weights raises error when there are
+        # > 1 out-of-order bounds for the dataset.
+        with pytest.raises(ValueError):
+            self.ds.spatial._get_longitude_weights(domain_bounds, region_bounds=None)
 
     def test_raises_error_if_dataset_has_multiple_bounds_variables_for_an_axis(self):
         ds = self.ds.copy()
