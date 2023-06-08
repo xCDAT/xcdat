@@ -180,6 +180,24 @@ class TestAverage:
 
         assert result.identical(expected)
 
+    def test_spatial_average_for_domain_wrapping_p_meridian_non_cf_conventions(
+        self,
+    ):
+        ds = self.ds.copy()
+
+        # get spatial average for original dataset
+        ref = ds.spatial.average("ts").ts
+
+        # change first bound from -0.9375 to 359.0625
+        lon_bnds = ds.lon_bnds.copy()
+        lon_bnds[0, 0] = 359.0625
+        ds["lon_bnds"] = lon_bnds
+
+        # check spatial average with new (bad) bound
+        result = ds.spatial.average("ts").ts
+
+        assert result.identical(ref)
+
     @requires_dask
     def test_spatial_average_for_lat_region_and_keep_weights_with_dask(self):
         ds = self.ds.copy().chunk(2)
