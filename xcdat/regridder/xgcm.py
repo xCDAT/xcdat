@@ -221,7 +221,6 @@ class XGCMRegridder(BaseRegridder):
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
         output_ds = preserve_bounds(ds, self._output_grid, output_ds)
-        output_ds = output_ds.bounds.add_missing_bounds(axes=["X", "Y", "Z", "T"])
 
         return output_ds
 

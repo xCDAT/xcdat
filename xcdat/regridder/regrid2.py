@@ -154,8 +154,6 @@ class Regrid2Regridder(BaseRegridder):
         # preserve non-spatial bounds
         output_ds = preserve_bounds(ds, self._output_grid, output_ds)
 
-        output_ds = output_ds.bounds.add_missing_bounds(axes=["X", "Y"])
-
         return output_ds
 
     def _output_axis_sizes(self, da: xr.DataArray) -> Dict[str, int]:
