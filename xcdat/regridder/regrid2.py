@@ -176,7 +176,8 @@ class Regrid2Regridder(BaseRegridder):
                 axis_name = axis_name_map[standard_name]
             except KeyError:
                 raise RuntimeError(
-                    f"Could not find axis {standard_name!r}, ensure {standard_name!r} exists and the attributes are correct."
+                    f"Could not find axis {standard_name!r}, ensure {standard_name!r} "
+                    "exists and the attributes are correct."
                 )
 
             if standard_name in self._output_grid:
