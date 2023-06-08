@@ -151,8 +151,7 @@ class Regrid2Regridder(BaseRegridder):
         if dst_mask is not None:
             output_ds[data_var] = output_ds[data_var].where(dst_mask == 0.0)
 
-        # preserve non-spatial bounds
-        output_ds = preserve_bounds(ds, self._output_grid, output_ds)
+        output_ds = preserve_bounds(output_ds, self._output_grid, ds, ["X", "Y"])
 
         return output_ds
 

@@ -1109,27 +1109,24 @@ class TestAccessor:
 
 class TestBase:
     def test_preserve_bounds(self):
-        ds_with_bounds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
+        output_grid = fixtures.generate_lev_dataset()
 
-        ds_without_bounds = ds_with_bounds.drop_vars(["lat_bnds", "lon_bnds"])
+        input_ds = output_grid.copy(deep=True)
 
-        target = xr.Dataset()
-
-        output_ds = base.preserve_bounds(ds_with_bounds, ds_without_bounds, target)
-
-        assert "lat_bnds" not in output_ds
-        assert "lon_bnds" not in output_ds
-        assert "time_bnds" in output_ds
+        output_grid = output_grid.drop_vars(["time_bnds", "lev_bnds"])
+        output_grid.lat_bnds.attrs["source"] = "output_grid"
+        output_grid.lon_bnds.attrs["source"] = "output_grid"
 
         target = xr.Dataset()
 
-        output_ds = base.preserve_bounds(ds_without_bounds, ds_without_bounds, target)
+        output_ds = base.preserve_bounds(target, output_grid, input_ds, ["X", "Y"])
 
-        assert "lat_bnds" not in output_ds
-        assert "lon_bnds" not in output_ds
+        assert "lat_bnds" in output_ds
+        assert output_ds.lat_bnds.attrs["source"] == "output_grid"
+        assert "lon_bnds" in output_ds
+        assert output_ds.lon_bnds.attrs["source"] == "output_grid"
         assert "time_bnds" in output_ds
+        assert "lev_bnds" in output_ds
 
     def test_regridder_implementation(self):
         class NewRegridder(base.BaseRegridder):

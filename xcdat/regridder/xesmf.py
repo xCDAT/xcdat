@@ -200,8 +200,6 @@ class XESMFRegridder(BaseRegridder):
         output_da = self._regridder(input_da, keep_attrs=True)
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
-
-        # preserve non-spatial bounds
-        output_ds = preserve_bounds(ds, self._output_grid, output_ds)
+        output_ds = preserve_bounds(output_ds, self._output_grid, ds, ["X", "Y"])
 
         return output_ds
