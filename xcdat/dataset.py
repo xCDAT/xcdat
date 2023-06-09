@@ -44,7 +44,7 @@ Paths = Union[
 
 
 def open_dataset(
-    filename_or_obj: str | os.PathLike[Any] | BufferedIOBase | AbstractDataStore,
+    path: str | os.PathLike[Any] | BufferedIOBase | AbstractDataStore,
     data_var: Optional[str] = None,
     add_bounds: List[CFAxisKey] | None | Literal[False] = ["X", "Y"],
     decode_times: bool = True,
@@ -56,7 +56,7 @@ def open_dataset(
 
     Parameters
     ----------
-    filename_or_obj : str, Path, file-like or DataStore
+    path : str, Path, file-like or DataStore
         Strings and Path objects are interpreted as a path to a netCDF file
         or an OpenDAP URL and opened with python-netCDF4, unless the filename
         ends with .gz, in which case the file is gunzipped and opened with
@@ -115,7 +115,7 @@ def open_dataset(
     ----------
     .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
-    ds = xr.open_dataset(filename_or_obj, decode_times=False, **kwargs)  # type: ignore
+    ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
 
     if decode_times:
         try:
