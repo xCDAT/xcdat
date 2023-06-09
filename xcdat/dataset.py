@@ -215,7 +215,7 @@ def open_mfdataset(
         dimension already appears are included. For example, the time dimension
         will not be concatenated to the dimensions of non-time data variables
         such as "lat_bnds" or "lon_bnds". `data_vars="minimal"` is required for
-        some XCDAT functions, including spatial averaging where a reduction is
+        some xCDAT functions, including spatial averaging where a reduction is
         performed using the lat/lon bounds.
 
     preprocess : Optional[Callable], optional
@@ -242,11 +242,10 @@ def open_mfdataset(
     XML with a defined set of attributes. CDML is still used by current and
     former users of CDAT. To enable CDML users to adopt xCDAT more easily in
     their workflows, xCDAT can parse XML/CDML files for the ``directory``
-    and ``cdms_filemap`` attributes to generate a glob or list of file paths.
-    Refer to [4]_ for more information on CDML. NOTE: This feature is
-    deprecated in v0.6.0 and will be removed in the subsequent release.
-    CDAT (including cdms2/CDML) is in maintenance only mode and marked
-    for end-of-life by the end of 2023.
+    to generate a glob or list of file paths. Refer to [4]_ for more information
+    on CDML. NOTE: This feature is deprecated in v0.6.0 and will be removed in
+    the subsequent release. CDAT (including cdms2/CDML) is in maintenance only
+    mode and marked for end-of-life by the end of 2023.
 
     References
     ----------
@@ -292,7 +291,7 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     set to a CF calendar type supported by ``cftime``. CF calendar types
     include "noleap", "360_day", "365_day", "366_day", "gregorian",
     "proleptic_gregorian", "julian", "all_leap", or "standard". They must also
-    have a "units" attribute set to a format supported by xcdat ("months since
+    have a "units" attribute set to a format supported by xCDAT ("months since
     ..." or "years since ...").
 
     Parameters
@@ -444,9 +443,6 @@ def _parse_xml_for_nc_glob(xml_path: str | pathlib.Path) -> str | List[str]:
     Parses an XML file for the ``directory`` attr to return a string glob or
     list of string file paths.
 
-    If a ``cdms_filemap`` attribute also exists, then additional parsing
-    is performed.
-
     Parameters
     ----------
     xml_path : str | pathlib.Path
@@ -455,8 +451,7 @@ def _parse_xml_for_nc_glob(xml_path: str | pathlib.Path) -> str | List[str]:
     Returns
     -------
     str | List[str]
-        A string glob of `*.nc` paths or a list of file paths (if specified
-        with a ``cdms_filemap`` attribute).
+        A string glob of `*.nc` paths.
 
     """
     # `resolve_entities=False` and `no_network=True` guards against XXE attacks.
