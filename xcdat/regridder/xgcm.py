@@ -27,15 +27,17 @@ class XGCMRegridder(BaseRegridder):
         """Extension of ``xgcm`` regridder.
 
         The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the
-        ``Grid`` object, transposing the output data to match the input data's
-        dimensional order, and ensuring missing bounds are generated on the
-        output data.
+        ``Grid`` object, transposing the output data to match the dimensional
+        order of the input data, and ensuring bounds and metadata are preserved
+        in the output dataset.
 
         Linear and log methods require a single dimension position, which can
-        usually be automatically derived.
+        usually be automatically derived. A custom position can be specified using
+        the `grid_positions` argument.
 
         Conservative regridding requires multiple dimension positions, e.g.,
-        {"center": "xc", "left": "xg"}.
+        {"center": "xc", "left": "xg"} which can be passed using the `grid_positions`
+        argument.
 
         ``xgcm.Grid`` can be passed additional arguments using ``extra_init_options``.
         These arguments can be found on `XGCM's Grid documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.__init__>`_.
