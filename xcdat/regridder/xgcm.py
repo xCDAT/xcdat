@@ -221,7 +221,12 @@ class XGCMRegridder(BaseRegridder):
 
             output_da = output_da.transpose(*output_order)
 
-        output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
+        if target_data is None:
+            output_da.attrs = ds[data_var].attrs.copy()
+        else:
+            output_da.attrs = target_data.attrs.copy()  # type: ignore[union-attr]
+
+        output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs.copy())
         output_ds = preserve_bounds(output_ds, self._output_grid, ds, ["Z"])
 
         return output_ds
