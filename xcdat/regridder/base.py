@@ -33,6 +33,8 @@ def preserve_bounds(
         Output grid Dataset used for regridding.
     input_ds : xr.Dataset
         Input Dataset used for regridding.
+    ignore_dims : List[CFAxisKey]
+        Dimensions to drop from `input_ds`.
 
     Returns
     -------
