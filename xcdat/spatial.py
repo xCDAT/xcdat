@@ -418,20 +418,15 @@ class SpatialAccessor:
         p_meridian_index: Optional[np.ndarray] = None
         d_bounds = domain_bounds.copy()
 
-        # check if there is more than one potential prime meridian cell
-        # there should only be one for rectilinear data
-        pmcells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
-        if len(pmcells) > 1:
+        pm_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
+        if len(pm_cells) > 1:
             raise ValueError(
-                "More than one longitude bound is out of order. Only one bound \n\
-                              spanning the prime meridian is permitted"
+                "More than one longitude bound is out of order. Only one bound "
+                "value spanning the prime meridian is permitted in data on "
+                "a rectilinear grid."
             )
-        # convert longitude bounds to 360 degree domain
         d_bounds: xr.DataArray = self._swap_lon_axis(d_bounds, to=360)  # type: ignore
-        # check for bounds spanning prime meridian
         p_meridian_index = _get_prime_meridian_index(d_bounds)
-        # if bounds span a prime meridian, ensure bounds are organized to span 0-360
-        # (without losing weight)
         if p_meridian_index is not None:
             d_bounds = _align_lon_bounds_to_360(d_bounds, p_meridian_index)
 
