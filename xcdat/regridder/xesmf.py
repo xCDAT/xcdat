@@ -2,7 +2,7 @@ from typing import Optional
 
 import xarray as xr
 
-from xcdat.regridder.base import BaseRegridder, preserve_bounds
+from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 from xcdat.utils import _has_module
 
 # TODO: Test this conditional.
@@ -115,7 +115,7 @@ class XESMFRegridder(BaseRegridder):
 
         Regrid data:
 
-        >>> data_new_grid = regridder.horizontal("ts", ds, periodic=True)
+        >>> data_new_grid = regridder.horizontal("ts", ds)
         """
         super().__init__(input_grid, output_grid)
 
@@ -137,6 +137,10 @@ class XESMFRegridder(BaseRegridder):
         self._ignore_degenerate = ignore_degenerate
         self._regridder: xe.XESMFRegridder = None
         self._extra_options = options
+
+    def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+        """Placeholder for base class."""
+        raise NotImplementedError()
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Regrid ``data_var`` in ``ds`` to output grid.
@@ -196,10 +200,6 @@ class XESMFRegridder(BaseRegridder):
         output_da = self._regridder(input_da, keep_attrs=True)
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
-
-        # preserve non-spatial bounds
-        output_ds = preserve_bounds(ds, self._output_grid, output_ds)
-
-        output_ds = output_ds.bounds.add_missing_bounds(axes=["X", "Y"])
+        output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["X", "Y"])
 
         return output_ds

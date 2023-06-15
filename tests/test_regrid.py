@@ -8,7 +8,7 @@ import pytest
 import xarray as xr
 
 from tests import fixtures, has_xesmf, requires_xesmf
-from xcdat.regridder import accessor, base, grid, regrid2
+from xcdat.regridder import accessor, base, grid, regrid2, xgcm
 
 if has_xesmf:
     from xcdat.regridder import xesmf
@@ -32,6 +32,210 @@ def gen_uniform_axis(start, stop, step, name, axis):
     )
 
     return xr.DataArray(bounds, dims=[name, "bnds"], coords={name: data})
+
+
+class TestXGCMRegridder:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = fixtures.generate_lev_dataset()
+
+        self.output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+
+    def test_vertical_regrid_level_name_mismatch(self):
+        self.ds = self.ds.rename({"lev": "plev"})
+
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
+
+        output_data = regridder.vertical("so", self.ds)
+
+        assert output_data["so"].dims == ("time", "lev", "lat", "lon")
+
+    def test_vertical_regrid(self):
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
+
+        output_data = regridder.vertical("so", self.ds)
+
+        assert output_data.so.shape == (15, 2, 4, 4)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_target_data(self, grid):
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
+
+        regridder.vertical("so", self.ds)
+
+        assert grid.return_value.transform.call_args[0][1] == "Z"
+
+        call_kwargs = grid.return_value.transform.call_args[1]
+
+        assert "method" in call_kwargs and call_kwargs["method"] == "linear"
+        assert "target_data" in call_kwargs and call_kwargs["target_data"] is None
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_target_data_da(self, grid):
+        target_data = np.random.normal(size=self.ds["so"].shape)
+
+        target_da = xr.DataArray(
+            target_data, dims=self.ds.so.dims, coords=self.ds.so.coords
+        )
+
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", target_data=target_da
+        )
+
+        regridder.vertical("so", self.ds)
+
+        assert grid.return_value.transform.call_args[0][1] == "Z"
+
+        call_kwargs = grid.return_value.transform.call_args[1]
+
+        assert "method" in call_kwargs and call_kwargs["method"] == "linear"
+        assert "target_data" in call_kwargs
+
+        xr.testing.assert_allclose(call_kwargs["target_data"], target_da)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_target_data_ds(self, grid):
+        target_data = np.random.normal(size=self.ds["so"].shape)
+
+        self.ds["pressure"] = xr.DataArray(
+            target_data, dims=self.ds.so.dims, coords=self.ds.so.coords
+        )
+
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", target_data="pressure"
+        )
+
+        regridder.vertical("so", self.ds)
+
+        assert grid.return_value.transform.call_args[0][1] == "Z"
+
+        call_kwargs = grid.return_value.transform.call_args[1]
+
+        assert "method" in call_kwargs and call_kwargs["method"] == "linear"
+        assert "target_data" in call_kwargs
+
+        xr.testing.assert_allclose(call_kwargs["target_data"], self.ds["pressure"])
+
+    def test_target_data_error(self):
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", target_data="pressure"
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Could not find target variable 'pressure' in dataset"
+        ):
+            regridder.vertical("so", self.ds)
+
+    def test_conservative(self):
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="conservative", target_data=None
+        )
+
+        with pytest.raises(
+            RuntimeError,
+            match="Conservative regridding requires a second point position, pass these manually",
+        ):
+            regridder.vertical("so", self.ds)
+
+    @pytest.mark.parametrize("position", ("left", "center", "right"))
+    def test_grid_positions(self, position):
+        ds = fixtures.generate_lev_dataset(position=position)
+
+        regridder = xgcm.XGCMRegridder(
+            ds,
+            self.output_grid,
+            method="linear",
+            target_data=None,
+        )
+
+        output_data = regridder.vertical("so", ds)
+
+        assert output_data.so.shape == (15, 2, 4, 4)
+
+    def test_grid_positions_malformed(self):
+        ds = fixtures.generate_lev_dataset(position="malformed")
+
+        regridder = xgcm.XGCMRegridder(
+            ds,
+            self.output_grid,
+            method="linear",
+            target_data=None,
+        )
+
+        with pytest.raises(
+            RuntimeError,
+            match="Could not determine the grid point positions, pass these manually",
+        ):
+            regridder.vertical("so", ds)
+
+    def test_manual_grid_positions(self):
+        regridder = xgcm.XGCMRegridder(
+            self.ds,
+            self.output_grid,
+            method="linear",
+            target_data=None,
+            grid_positions={"left": "lev"},
+        )
+
+        output_data = regridder.vertical("so", self.ds)
+
+        assert output_data.so.shape == (15, 2, 4, 4)
+
+    def test_horizontal_placeholder(self):
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", target_data=None
+        )
+
+        with pytest.raises(NotImplementedError):
+            regridder.horizontal("so", self.ds)
+
+    def test_methods(self):
+        xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", target_data=None)
+
+        with pytest.raises(ValueError, match="'dummy' is invalid, possible choices"):
+            xgcm.XGCMRegridder(self.ds, self.output_grid, method="dummy", target_data=None)  # type: ignore
+
+    def test_missing_input_z_coord(self):
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data=None
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Could not determine 'Z' coordinate in input dataset"
+        ):
+            regridder.vertical("ts", ds)
+
+    def test_missing_output_z_coord(self):
+        ds = fixtures.generate_lev_dataset()
+
+        self.output_grid = self.output_grid.drop_vars(["lev"])
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data=None
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Could not determine 'Z' coordinate in output dataset"
+        ):
+            regridder.vertical("so", ds)
+
+    def test_missing_input_z_bounds(self):
+        ds = fixtures.generate_lev_dataset()
+
+        ds = ds.drop_vars(["lev_bnds"])
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data=None
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Could not determine 'Z' bounds in input dataset"
+        ):
+            regridder.vertical("so", ds)
 
 
 class TestRegrid2Regridder:
@@ -156,6 +360,18 @@ class TestRegrid2Regridder:
                 "lon_bnds": self.fine_lon_bnds,
             }
         )
+
+    def test_vertical_placeholder(self):
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+        output_grid = grid.create_gaussian_grid(32)
+
+        regridder = regrid2.Regrid2Regridder(ds, output_grid)
+
+        with pytest.raises(NotImplementedError, match=""):
+            regridder.vertical("so", ds)
 
     def test_missing_dimension(self):
         ds = fixtures.generate_dataset(
@@ -477,6 +693,14 @@ class TestXESMFRegridder:
         with pytest.raises(ModuleNotFoundError):
             xesmf.XESMFRegridder(self.ds, self.new_grid, "bilinear")
 
+    def test_vertical_placeholder(self):
+        ds = self.ds.copy()
+
+        regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear")
+
+        with pytest.raises(NotImplementedError, match=""):
+            regridder.vertical("ts", ds)
+
     def test_regrid(self):
         ds = self.ds.copy()
 
@@ -546,13 +770,37 @@ class TestXESMFRegridder:
 
 
 class TestGrid:
+    def test_empty_grid(self):
+        with pytest.raises(
+            ValueError, match="Must pass at least 1 coordinate to create a grid."
+        ):
+            grid.create_grid()
+
+    def test_unexpected_coordinate(self):
+        lev = np.linspace(1000, 1, 2)
+
+        with pytest.raises(
+            ValueError,
+            match="Coordinate mass is not valid, reference `xcdat.axis.VAR_NAME_MAP` for valid options.",
+        ):
+            grid.create_grid(lev=lev, mass=np.linspace(10, 20, 2))
+
+    def test_create_grid_lev(self):
+        lev = np.linspace(1000, 1, 2)
+        lev_bnds = np.array([[1499.5, 500.5], [500.5, -498.5]])
+
+        new_grid = grid.create_grid(lev=(lev, lev_bnds))
+
+        assert np.array_equal(new_grid.lev, lev)
+        assert np.array_equal(new_grid.lev_bnds, lev_bnds)
+
     def test_create_grid(self):
         lat = np.array([-45, 0, 45])
         lon = np.array([30, 60, 90, 120, 150])
         lat_bnds = np.array([[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
         lon_bnds = np.array([[15, 45], [45, 75], [75, 105], [105, 135], [135, 165]])
 
-        new_grid = grid.create_grid(lat, lon)
+        new_grid = grid.create_grid(lat=lat, lon=lon)
 
         assert np.array_equal(new_grid.lat, lat)
         assert np.array_equal(new_grid.lat_bnds, lat_bnds)
@@ -577,7 +825,7 @@ class TestGrid:
         da_lon_bnds = xr.DataArray(name="lon_bnds", data=lon_bnds, dims=["lon", "bnds"])
 
         new_grid = grid.create_grid(
-            da_lat, da_lon, lat_bnds=da_lat_bnds, lon_bnds=da_lon_bnds
+            lat=(da_lat, da_lat_bnds), lon=(da_lon, da_lon_bnds)
         )
 
         assert np.array_equal(new_grid.lat, lat)
@@ -616,7 +864,8 @@ class TestGrid:
 
     def test_global_mean_grid(self):
         source_grid = grid.create_grid(
-            np.array([-80, -40, 0, 40, 80]), np.array([0, 45, 90, 180, 270, 360])
+            lat=np.array([-80, -40, 0, 40, 80]),
+            lon=np.array([0, 45, 90, 180, 270, 360]),
         )
 
         mean_grid = grid.create_global_mean_grid(source_grid)
@@ -697,7 +946,7 @@ class TestGrid:
 
     def test_zonal_grid(self):
         source_grid = grid.create_grid(
-            np.array([-80, -40, 0, 40, 80]), np.array([-160, -80, 80, 160])
+            lat=np.array([-80, -40, 0, 40, 80]), lon=np.array([-160, -80, 80, 160])
         )
 
         zonal_grid = grid.create_zonal_grid(source_grid)
@@ -773,21 +1022,6 @@ class TestAccessor:
         self.data = mock.MagicMock()
         self.ac = accessor.RegridderAccessor(self.data)
 
-    def test_grid_missing_axis(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=True, has_bounds=True
-        )
-
-        ds_no_lat = ds.drop_dims(["lat"])
-
-        with pytest.raises(KeyError):
-            ds_no_lat.regridder.grid
-
-        ds_no_lon = ds.drop_dims(["lon"])
-
-        with pytest.raises(KeyError):
-            ds_no_lon.regridder.grid
-
     def test_grid(self):
         ds_bounds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=True, has_bounds=True
@@ -822,24 +1056,43 @@ class TestAccessor:
         with pytest.raises(ValueError):
             ds_bounds.regridder.grid
 
-    def test_valid_tool(self):
+    def test_horizontal_tool_check(self):
         mock_regridder = mock.MagicMock()
         mock_regridder.return_value.horizontal.return_value = "output data"
 
         mock_data = mock.MagicMock()
 
-        with mock.patch.dict(accessor.REGRID_TOOLS, {"regrid2": mock_regridder}):
-            output = self.ac.horizontal("ts", mock_data, "regrid2")
+        with mock.patch.dict(
+            accessor.HORIZONTAL_REGRID_TOOLS, {"regrid2": mock_regridder}
+        ):
+            output = self.ac.horizontal("ts", mock_data, tool="regrid2")
 
         assert output == "output data"
 
         mock_regridder.return_value.horizontal.assert_called_with("ts", self.data)
 
-    def test_invalid_tool(self):
         with pytest.raises(
-            ValueError, match=r"Tool 'test' does not exist, valid choices"
+            ValueError, match=r"Tool 'dummy' does not exist, valid choices"
         ):
-            self.ac.horizontal("ts", mock.MagicMock(), "test")  # type: ignore
+            self.ac.horizontal("ts", mock_data, tool="dummy")  # type: ignore
+
+    def test_vertical_tool_check(self):
+        mock_regridder = mock.MagicMock()
+        mock_regridder.return_value.vertical.return_value = "output data"
+
+        mock_data = mock.MagicMock()
+
+        with mock.patch.dict(accessor.VERTICAL_REGRID_TOOLS, {"xgcm": mock_regridder}):
+            output = self.ac.vertical("ts", mock_data, tool="xgcm", target_data=None)
+
+        assert output == "output data"
+
+        mock_regridder.return_value.vertical.assert_called_with("ts", self.data)
+
+        with pytest.raises(
+            ValueError, match=r"Tool 'dummy' does not exist, valid choices"
+        ):
+            self.ac.vertical("ts", mock_data, tool="dummy", target_data=None)  # type: ignore
 
     @requires_xesmf
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
@@ -873,32 +1126,38 @@ class TestAccessor:
 
 class TestBase:
     def test_preserve_bounds(self):
-        ds_with_bounds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
+        output_grid = fixtures.generate_lev_dataset()
 
-        ds_without_bounds = ds_with_bounds.drop_vars(["lat_bnds", "lon_bnds"])
+        input_ds = output_grid.copy(deep=True)
+        input_ds.lat_bnds.attrs["source"] = "input_ds"
+        input_ds.lon_bnds.attrs["source"] = "input_ds"
+        input_ds.time_bnds.attrs["source"] = "input_ds"
+        input_ds.lev_bnds.attrs["source"] = "input_ds"
 
-        target = xr.Dataset()
-
-        output_ds = base.preserve_bounds(ds_with_bounds, ds_without_bounds, target)
-
-        assert "lat_bnds" not in output_ds
-        assert "lon_bnds" not in output_ds
-        assert "time_bnds" in output_ds
+        output_grid = output_grid.drop_vars(["time_bnds", "lev_bnds"])
+        output_grid.lat_bnds.attrs["source"] = "output_grid"
+        output_grid.lon_bnds.attrs["source"] = "output_grid"
 
         target = xr.Dataset()
 
-        output_ds = base.preserve_bounds(ds_without_bounds, ds_without_bounds, target)
+        output_ds = base._preserve_bounds(input_ds, output_grid, target, ["X", "Y"])
 
-        assert "lat_bnds" not in output_ds
-        assert "lon_bnds" not in output_ds
+        assert "lat_bnds" in output_ds
+        assert output_ds.lat_bnds.attrs["source"] == "output_grid"
+        assert "lon_bnds" in output_ds
+        assert output_ds.lon_bnds.attrs["source"] == "output_grid"
         assert "time_bnds" in output_ds
+        assert output_ds.time_bnds.attrs["source"] == "input_ds"
+        assert "lev_bnds" in output_ds
+        assert output_ds.lev_bnds.attrs["source"] == "input_ds"
 
     def test_regridder_implementation(self):
         class NewRegridder(base.BaseRegridder):
             def __init__(self, src_grid, dst_grid, **options):
                 super().__init__(src_grid, dst_grid, **options)
+
+            def vertical(self, data_var, ds):
+                return ds
 
             def horizontal(self, data_var, ds):
                 return ds

@@ -88,6 +88,7 @@ Classes
     xcdat.regridder.accessor.RegridderAccessor
     xcdat.regridder.regrid2.Regrid2Regridder
     xcdat.regridder.xesmf.XESMFRegridder
+    xcdat.regridder.xgcm.XGCMRegridder
 
 .. currentmodule:: xarray
 
@@ -123,6 +124,7 @@ Methods
     Dataset.regridder.horizontal
     Dataset.regridder.horizontal_xesmf
     Dataset.regridder.horizontal_regrid2
+    Dataset.regridder.vertical
 
 .. _dsmeth_1:
 

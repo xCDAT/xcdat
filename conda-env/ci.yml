@@ -22,6 +22,7 @@ dependencies:
     # Constrained because 0.6.3 breaks with import ESMF
     # Source: https://github.com/pangeo-data/xESMF/issues/212
     - xesmf >0.6.3
+    - xgcm
     # Quality Assurance
     # ==================
     - types-python-dateutil

@@ -1,9 +1,10 @@
-from typing import Optional, Tuple, Union
+from typing import Any, Tuple, Union
 
 import numpy as np
 import xarray as xr
 
-from xcdat.axis import CFAxisKey, get_dim_coords
+from xcdat.axis import COORD_DEFAULT_ATTRS, VAR_NAME_MAP, CFAxisKey, get_dim_coords
+from xcdat.regridder.base import CoordOptionalBnds
 
 # First 50 zeros for the bessel function
 # Taken from https://github.com/CDAT/cdms/blob/dd41a8dd3b5bac10a4bfdf6e56f6465e11efc51d/regrid2/Src/_regridmodule.c#L3390-L3402
@@ -92,7 +93,7 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
 
     lon = _create_uniform_axis(0.0, 360.0, (360.0 / (2.0 * nlats)))
 
-    return create_grid(lat, lon, lat_bnds=lat_bnds)
+    return create_grid(lat=(lat, lat_bnds), lon=lon)
 
 
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
@@ -338,7 +339,7 @@ def create_uniform_grid(
 
     lon = _create_uniform_axis(lon_start, lon_stop + 0.0001, lon_delta)
 
-    return create_grid(lat, lon)
+    return create_grid(lat=lat, lon=lon)
 
 
 def _create_uniform_axis(start: float, stop: float, delta: float) -> np.ndarray:
@@ -392,7 +393,7 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
     lon_bnds = grid.bounds.get_bounds("X", var_key=lon.name)
     lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
-    return create_grid(lat_data, lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds)
+    return create_grid(lat=(lat_data, lat_bnds), lon=(lon_data, lon_bnds))
 
 
 def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
@@ -425,32 +426,22 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     # Ignore `Argument 1 to "create_grid" has incompatible type
     # "Union[Dataset, DataArray]"; expected "Union[ndarray[Any, Any], DataArray]"
     # mypy(error)` because this arg is validated to be a DataArray beforehand.
-    return create_grid(lat, out_lon_data, lat_bnds=lat_bnds, lon_bnds=lon_bnds)  # type: ignore
+    return create_grid(lat=(lat, lat_bnds), lon=(out_lon_data, lon_bnds))  # type: ignore
 
 
-def create_grid(
-    lat: Union[np.ndarray, xr.DataArray],
-    lon: Union[np.ndarray, xr.DataArray],
-    lat_bnds: Optional[Union[np.ndarray, xr.DataArray]] = None,
-    lon_bnds: Optional[Union[np.ndarray, xr.DataArray]] = None,
-) -> xr.Dataset:
-    """Creates a grid for a give latitude and longitude array.
+def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
+    """Creates a grid from coordinate mapping.
 
     Parameters
     ----------
-    lat : Union[np.ndarray, xr.DataArray]
-        Array of latitude values.
-    lon : Union[np.ndarray, xr.DataArray]
-        Array of longitude values.
-    lat_bnds : Optional[Union[np.ndarray, xr.DataArray]]
-        Array of bounds for latitude values.
-    lon_bnds : Optional[Union[np.ndarray, xr.DataArray]]
-        Array of bounds for longitude values.
+    **kwargs : CoordOptionalBnds
+        Mapping of coordinate name and data with optional bounds. See
+        :py:data:`xcdat.axis.VAR_NAME_MAP` for valid coordinate names.
 
     Returns
     -------
     xr.Dataset
-        Dataset with lat/lon grid.
+        Dataset with grid.
 
     Examples
     --------
@@ -458,59 +449,81 @@ def create_grid(
 
     >>> import xcdat
     >>> import numpy as np
+    >>>
     >>> lat = np.arange(-90, 90, 2.5)
     >>> lon = np.arange(1.25, 360, 2.5)
-    >>> xcdat.create_grid(lat, lon)
+    >>>
+    >>> xcdat.create_grid(lat=lat, lon=lon)
+
+    Create grid with bounds:
+
+    >>> lat_bnds = np.vstack((lat - (2.5 / 2), lat + (2.5 / 2))).T
+    >>> xcdat.create_grid(lat=(lat, lat_bnds), lon=lon)
+
+    Create vertical grid:
+
+    >>> xcdat.create_grid(lev=np.linspace(1000, 1, 20))
     """
+    if len(kwargs) == 0:
+        raise ValueError("Must pass at least 1 coordinate to create a grid.")
+
+    coords = {}
     data_vars = {}
 
-    if isinstance(lat, np.ndarray):
-        lat = xr.DataArray(
-            name="lat",
-            data=lat.copy(),
-            dims=["lat"],
-            attrs={"units": "degrees_north", "axis": "Y"},
-        )
-    else:
-        lat = lat.copy()
-
-    if isinstance(lon, np.ndarray):
-        lon = xr.DataArray(
-            name="lon",
-            data=lon.copy(),
-            dims=["lon"],
-            attrs={"units": "degrees_east", "axis": "X"},
-        )
-    else:
-        lon = lon.copy()
-
-    if lat_bnds is not None:
-        if isinstance(lat_bnds, np.ndarray):
-            lat_bnds = xr.DataArray(
-                name="lat_bnds", data=lat_bnds.copy(), dims=["lat", "bnds"]
-            )
+    for name, data in kwargs.items():
+        if name in VAR_NAME_MAP["X"]:
+            coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["X"])
+        elif name in VAR_NAME_MAP["Y"]:
+            coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["Y"])
+        elif name in VAR_NAME_MAP["Z"]:
+            coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["Z"])
         else:
-            lat_bnds = lat_bnds.copy()
-
-        data_vars["lat_bnds"] = lat_bnds
-        lat.attrs["bounds"] = lat_bnds.name
-
-    if lon_bnds is not None:
-        if isinstance(lon_bnds, np.ndarray):
-            lon_bnds = xr.DataArray(
-                name="lon_bnds", data=lon_bnds.copy(), dims=["lon", "bnds"]
+            raise ValueError(
+                f"Coordinate {name} is not valid, reference "
+                "`xcdat.axis.VAR_NAME_MAP` for valid options."
             )
-        else:
-            lon_bnds = lon_bnds.copy()
 
-        data_vars["lon_bnds"] = lon_bnds
-        lon.attrs["bounds"] = lon_bnds.name
+        coords[name] = coord
 
-    grid = xr.Dataset(data_vars=data_vars, coords={"lat": lat, "lon": lon})
+        if bnds is not None:
+            bnds = bnds.copy()
+
+            if isinstance(bnds, np.ndarray):
+                bnds = xr.DataArray(
+                    name=f"{name}_bnds",
+                    data=bnds.copy(),
+                    dims=[name, "bnds"],
+                )
+
+            data_vars[bnds.name] = bnds
+
+            coord.attrs["bounds"] = bnds.name
+
+    grid = xr.Dataset(data_vars, coords=coords)
 
     grid = grid.bounds.add_missing_bounds(axes=["X", "Y"])
 
     return grid
+
+
+def _prepare_coordinate(name: str, data: CoordOptionalBnds, **attrs: Any):
+    if isinstance(data, tuple):
+        coord, bnds = data[0], data[1]
+    else:
+        coord, bnds = data, None
+
+    # ensure we make a copy
+    coord = coord.copy()
+
+    if isinstance(coord, np.ndarray):
+        coord = xr.DataArray(
+            name=name,
+            data=coord,
+            dims=[name],
+            attrs=attrs,
+        )
+
+    return coord, bnds
 
 
 def _validate_grid_has_single_axis_dim(

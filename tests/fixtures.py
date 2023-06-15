@@ -345,6 +345,14 @@ lon_bnds = xr.DataArray(
     attrs={"xcdat_bounds": "True"},
 )
 
+# LEVEL
+# =====
+lev = xr.DataArray(
+    data=np.flip(np.arange(2000, 10000, 2000)),
+    dims=["lev"],
+    attrs={"units": "m", "positive": "down", "axis": "Z"},
+)
+
 # VARIABLES
 # =========
 ts_decoded = xr.DataArray(
@@ -360,6 +368,41 @@ ts_encoded = xr.DataArray(
     coords={"time": time_encoded, "lat": lat, "lon": lon},
     dims=["time", "lat", "lon"],
 )
+
+
+# TODO merge with generate_dataset to allow 4th dimension
+def generate_lev_dataset(position="center") -> xr.Dataset:
+    ds = xr.Dataset(
+        data_vars={
+            "so": xr.DataArray(
+                name="so",
+                data=np.ones((15, 4, 4, 4)),
+                coords={"time": time_decoded, "lev": lev, "lat": lat, "lon": lon},
+            ),
+        },
+        coords={
+            "lat": lat.copy(),
+            "lon": lon.copy(),
+            "time": time_decoded.copy(),
+            "lev": lev.copy(),
+        },
+    )
+
+    ds["time"].encoding["calendar"] = "standard"
+
+    ds = ds.bounds.add_missing_bounds(axes=["X", "Y", "Z", "T"])
+
+    if position == "left":
+        ds["lev"] = ds["lev_bnds"][:, 0]
+    elif position == "right":
+        ds["lev"] = ds["lev_bnds"][:, 1]
+    elif position == "malformed":
+        ds["lev"] = np.random.random(ds["lev"].shape)
+
+    ds["lev"].attrs["axis"] = "Z"
+    ds["lev"].attrs["bounds"] = "lev_bnds"
+
+    return ds
 
 
 def generate_dataset(

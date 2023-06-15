@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import xarray as xr
 
-from xcdat.regridder.base import BaseRegridder, preserve_bounds
+from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 
 class Regrid2Regridder(BaseRegridder):
@@ -63,6 +63,10 @@ class Regrid2Regridder(BaseRegridder):
 
         self._lat_weights: Any = None
         self._lon_weights: Any = None
+
+    def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
+        """Placeholder for base class."""
+        raise NotImplementedError()
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Regrid ``data_var`` in ``ds`` to output grid.
@@ -147,10 +151,7 @@ class Regrid2Regridder(BaseRegridder):
         if dst_mask is not None:
             output_ds[data_var] = output_ds[data_var].where(dst_mask == 0.0)
 
-        # preserve non-spatial bounds
-        output_ds = preserve_bounds(ds, self._output_grid, output_ds)
-
-        output_ds = output_ds.bounds.add_missing_bounds(axes=["X", "Y"])
+        output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["X", "Y"])
 
         return output_ds
 

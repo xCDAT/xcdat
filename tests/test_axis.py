@@ -189,9 +189,7 @@ class TestGetDimCoords:
                 "lat": xr.DataArray(data=np.ones(3), dims="lat"),
                 "lon": xr.DataArray(data=np.ones(3), dims="lon"),
                 "time": xr.DataArray(data=np.ones(3), dims="time"),
-                "atmosphere_sigma_coordinate": xr.DataArray(
-                    data=np.ones(3), dims="atmosphere_sigma_coordinate"
-                ),
+                "lev": xr.DataArray(data=np.ones(3), dims="lev"),
             }
         )
 
@@ -205,7 +203,7 @@ class TestGetDimCoords:
         assert result.identical(ds["time"])  # type: ignore
 
         result = get_dim_coords(ds, "Z")
-        assert result.identical(ds["atmosphere_sigma_coordinate"])  # type: ignore
+        assert result.identical(ds["lev"])  # type: ignore
 
     def test_returns_dataset_dimension_coordinate_vars_using_axis_attr(self):
         # For example, E3SM datasets might have "ilev" and "lev" dimensions

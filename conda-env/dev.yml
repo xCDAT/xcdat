@@ -19,6 +19,7 @@ dependencies:
     - pandas=1.5.3
     - python-dateutil=2.8.2
     - xarray=2023.4.2
+    - xgcm=0.8.0
     # ==================
     # Optional
     # ==================
@@ -35,6 +36,7 @@ dependencies:
     - nbsphinx=0.9.1
     - pandoc=3.1.1
     - ipython=8.11.0 # Required for nbsphinx syntax highlighting
+    - gsw-xarray=0.3.0 # Required for vertical regridding example
     # ==================
     # Quality Assurance
     # ==================

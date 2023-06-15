@@ -6,7 +6,6 @@ from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
-from cf_xarray.criteria import coordinate_criteria
 
 from xcdat.utils import _if_multidim_dask_array_then_load
 
@@ -29,6 +28,15 @@ CF_ATTR_MAP: Dict[CFAxisKey, Dict[str, Union[CFAxisKey, CFStandardNameKey]]] = {
     "Z": {"axis": "Z", "coordinate": "vertical"},
 }
 
+COORD_DEFAULT_ATTRS: Dict[
+    CFAxisKey, Dict[str, Union[str, CFAxisKey, CFStandardNameKey]]
+] = {
+    "X": dict(units="degrees_east", **CF_ATTR_MAP["X"]),
+    "Y": dict(units="degrees_north", **CF_ATTR_MAP["Y"]),
+    "T": dict(calendar="standard", **CF_ATTR_MAP["T"]),
+    "Z": dict(**CF_ATTR_MAP["Z"]),
+}
+
 # A dictionary that maps common variable names to coordinate variables. This
 # map is used as fall-back when coordinate variables don't have CF attributes
 # set for ``cf_xarray`` to interpret using `CF_ATTR_MAP`.
@@ -36,7 +44,7 @@ VAR_NAME_MAP: Dict[CFAxisKey, List[str]] = {
     "X": ["longitude", "lon"],
     "Y": ["latitude", "lat"],
     "T": ["time"],
-    "Z": coordinate_criteria["Z"]["standard_name"],
+    "Z": ["vertical", "height", "pressure", "lev", "plev"],
 }
 
 
