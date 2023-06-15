@@ -755,7 +755,7 @@ class TestXESMFRegridder:
                 ds, self.new_grid, "bilinear", extrap_method="bad value"
             )
 
-    def test__preserve_bounds(self):
+    def test_preserve_bounds(self):
         ds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
         )
@@ -1136,7 +1136,7 @@ class TestBase:
 
         target = xr.Dataset()
 
-        output_ds = base._preserve_bounds(target, output_grid, input_ds, ["X", "Y"])
+        output_ds = base._preserve_bounds(input_ds, output_grid, target, ["X", "Y"])
 
         assert "lat_bnds" in output_ds
         assert output_ds.lat_bnds.attrs["source"] == "output_grid"

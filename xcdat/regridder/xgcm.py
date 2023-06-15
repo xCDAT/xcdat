@@ -228,7 +228,7 @@ class XGCMRegridder(BaseRegridder):
             output_da.attrs = target_data.attrs.copy()  # type: ignore[union-attr]
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs.copy())
-        output_ds = _preserve_bounds(output_ds, self._output_grid, ds, ["Z"])
+        output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["Z"])
 
         return output_ds
 

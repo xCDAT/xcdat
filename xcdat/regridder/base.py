@@ -16,9 +16,9 @@ CoordOptionalBnds = Union[Coord, Tuple[Coord, Coord]]
 
 
 def _preserve_bounds(
-    output_ds: xr.Dataset,
-    output_grid: xr.Dataset,
     input_ds: xr.Dataset,
+    output_grid: xr.Dataset,
+    output_ds: xr.Dataset,
     ignore_dims: List[CFAxisKey],
 ) -> xr.Dataset:
     """Preserves existing bounds from datasets.
@@ -27,12 +27,12 @@ def _preserve_bounds(
 
     Parameters
     ----------
-    output_ds : xr.Dataset
-        Dataset bounds will be copied to.
-    output_grid : xr.Dataset
-        Output grid Dataset used for regridding.
     input_ds : xr.Dataset
         Input Dataset used for regridding.
+    output_grid : xr.Dataset
+        Output grid Dataset used for regridding.
+    output_ds : xr.Dataset
+        Dataset bounds will be copied to.
     ignore_dims : List[CFAxisKey]
         Dimensions to drop from `input_ds`.
 
