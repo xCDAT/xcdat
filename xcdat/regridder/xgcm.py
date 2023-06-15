@@ -57,7 +57,8 @@ class XGCMRegridder(BaseRegridder):
                - log
                - conservative
         target_data : Optional[Union[str, xr.DataArray]]
-            Data to transform target data onto, by default None.
+			Data to transform target data onto, either the key of a variable
+            in the input dataset or an ``xr.DataArray``, by default None.
         grid_positions : Optional[Dict[str, str]]
             Mapping of dimension positions, by default None. If ``None`` then an
             attempt is made to derive this argument.
@@ -117,7 +118,7 @@ class XGCMRegridder(BaseRegridder):
 
         self._method = method
         self._target_data = target_data
-        self._grid_coords = grid_positions
+        self._grid_positions = grid_positions
 
         if extra_init_options is None:
             extra_init_options = {}
@@ -231,7 +232,7 @@ class XGCMRegridder(BaseRegridder):
 
         return output_ds
 
-    def _get_grid_coords(self) -> Dict[str, Union[Any, Hashable]]:
+    def _get_grid_positions(self) -> Dict[str, Union[Any, Hashable]]:
         if self._method == "conservative":
             raise RuntimeError(
                 "Conservative regridding requires a second point position, pass these "
