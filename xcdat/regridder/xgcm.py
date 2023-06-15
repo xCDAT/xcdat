@@ -176,11 +176,11 @@ class XGCMRegridder(BaseRegridder):
         except KeyError:
             raise RuntimeError("Could not determine 'Z' coordinate in output dataset")
 
-        if self._grid_coords is None:
-            grid_coords = self._get_grid_coords()
+        if self._grid_positions is None:
+            grid_coords = self._get_grid_positions()
         else:
             # correctly format argument
-            grid_coords = {"Z": self._grid_coords}
+            grid_coords = {"Z": self._grid_positions}
 
         grid = Grid(ds, coords=grid_coords, **self._extra_init_options)
 
