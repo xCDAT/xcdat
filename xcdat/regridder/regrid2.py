@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Tuple
 import numpy as np
 import xarray as xr
 
-from xcdat.regridder.base import BaseRegridder, preserve_bounds
+from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 
 class Regrid2Regridder(BaseRegridder):
@@ -151,7 +151,7 @@ class Regrid2Regridder(BaseRegridder):
         if dst_mask is not None:
             output_ds[data_var] = output_ds[data_var].where(dst_mask == 0.0)
 
-        output_ds = preserve_bounds(output_ds, self._output_grid, ds, ["X", "Y"])
+        output_ds = _preserve_bounds(output_ds, self._output_grid, ds, ["X", "Y"])
 
         return output_ds
 

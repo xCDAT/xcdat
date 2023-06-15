@@ -2,7 +2,7 @@ from typing import Optional
 
 import xarray as xr
 
-from xcdat.regridder.base import BaseRegridder, preserve_bounds
+from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 from xcdat.utils import _has_module
 
 # TODO: Test this conditional.
@@ -200,6 +200,6 @@ class XESMFRegridder(BaseRegridder):
         output_da = self._regridder(input_da, keep_attrs=True)
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
-        output_ds = preserve_bounds(output_ds, self._output_grid, ds, ["X", "Y"])
+        output_ds = _preserve_bounds(output_ds, self._output_grid, ds, ["X", "Y"])
 
         return output_ds

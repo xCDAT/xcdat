@@ -15,7 +15,7 @@ Coord = Union[np.ndarray, xr.DataArray]
 CoordOptionalBnds = Union[Coord, Tuple[Coord, Coord]]
 
 
-def preserve_bounds(
+def _preserve_bounds(
     output_ds: xr.Dataset,
     output_grid: xr.Dataset,
     input_ds: xr.Dataset,

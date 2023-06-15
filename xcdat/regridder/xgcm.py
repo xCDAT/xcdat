@@ -5,7 +5,7 @@ from xgcm import Grid
 
 from xcdat._logger import _setup_custom_logger
 from xcdat.axis import get_dim_coords
-from xcdat.regridder.base import BaseRegridder, preserve_bounds
+from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 XGCMVerticalMethods = Literal["linear", "conservative", "log"]
 
@@ -228,7 +228,7 @@ class XGCMRegridder(BaseRegridder):
             output_da.attrs = target_data.attrs.copy()  # type: ignore[union-attr]
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs.copy())
-        output_ds = preserve_bounds(output_ds, self._output_grid, ds, ["Z"])
+        output_ds = _preserve_bounds(output_ds, self._output_grid, ds, ["Z"])
 
         return output_ds
 
