@@ -1129,6 +1129,10 @@ class TestBase:
         output_grid = fixtures.generate_lev_dataset()
 
         input_ds = output_grid.copy(deep=True)
+        input_ds.lat_bnds.attrs["source"] = "input_ds"
+        input_ds.lon_bnds.attrs["source"] = "input_ds"
+        input_ds.time_bnds.attrs["source"] = "input_ds"
+        input_ds.lev_bnds.attrs["source"] = "input_ds"
 
         output_grid = output_grid.drop_vars(["time_bnds", "lev_bnds"])
         output_grid.lat_bnds.attrs["source"] = "output_grid"
@@ -1143,7 +1147,9 @@ class TestBase:
         assert "lon_bnds" in output_ds
         assert output_ds.lon_bnds.attrs["source"] == "output_grid"
         assert "time_bnds" in output_ds
+        assert output_ds.time_bnds.attrs["source"] == "input_ds"
         assert "lev_bnds" in output_ds
+        assert output_ds.lev_bnds.attrs["source"] == "input_ds"
 
     def test_regridder_implementation(self):
         class NewRegridder(base.BaseRegridder):
