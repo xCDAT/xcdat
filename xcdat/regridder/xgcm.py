@@ -57,7 +57,7 @@ class XGCMRegridder(BaseRegridder):
                - log
                - conservative
         target_data : Optional[Union[str, xr.DataArray]]
-			Data to transform target data onto, either the key of a variable
+                        Data to transform target data onto, either the key of a variable
             in the input dataset or an ``xr.DataArray``, by default None.
         grid_positions : Optional[Dict[str, str]]
             Mapping of dimension positions, by default None. If ``None`` then an
