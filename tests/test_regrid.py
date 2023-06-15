@@ -373,6 +373,23 @@ class TestRegrid2Regridder:
         with pytest.raises(NotImplementedError, match=""):
             regridder.vertical("so", ds)
 
+    def test_missing_dimension(self):
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+        del ds.lat.attrs["axis"]
+
+        output_grid = grid.create_gaussian_grid(32)
+
+        regridder = regrid2.Regrid2Regridder(ds, output_grid)
+
+        with pytest.raises(
+            RuntimeError,
+            match="Could not find axis 'lat', ensure 'lat' exists and the attributes are correct.",
+        ):
+            regridder.horizontal("ts", ds)
+
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_output_bounds(self):
         ds = fixtures.generate_dataset(

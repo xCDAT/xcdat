@@ -281,12 +281,6 @@ class SpatialAccessor:
                     "to reference a specific data variable's axis bounds."
                 )
 
-            # The logic for generating longitude weights depends on the
-            # bounds being ordered such that d_bounds[:, 0] < d_bounds[:, 1].
-            # They are re-ordered (if need be) for the purpose of creating
-            # weights.
-            d_bounds = self._force_domain_order_low_to_high(d_bounds)
-
             r_bounds = axis_bounds[key]["region"]
 
             weights = axis_bounds[key]["weights_method"](d_bounds, r_bounds)
@@ -323,33 +317,6 @@ class SpatialAccessor:
 
             # Check the axis coordinate variable exists in the Dataset.
             get_dim_coords(self._dataset, key)
-
-    def _force_domain_order_low_to_high(self, domain_bounds: xr.DataArray):
-        """Reorders the ``domain_bounds`` low-to-high.
-
-        This method ensures all lower bound values are less than the upper bound
-        values (``domain_bounds[:, 1] < domain_bounds[:, 1]``).
-
-        Parameters
-        ----------
-        domain_bounds: xr.DataArray
-            The bounds of an axis.
-
-        Returns
-        ------
-        xr.DataArray
-            The bounds of an axis (re-ordered if applicable).
-        """
-        index_bad_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
-
-        if len(index_bad_cells) > 0:
-            new_domain_bounds = domain_bounds.copy()
-            new_domain_bounds[index_bad_cells, 0] = domain_bounds[index_bad_cells, 1]
-            new_domain_bounds[index_bad_cells, 1] = domain_bounds[index_bad_cells, 0]
-
-            return new_domain_bounds
-
-        return domain_bounds
 
     def _validate_region_bounds(self, axis: SpatialAxis, bounds: RegionAxisBounds):
         """Validates the ``bounds`` arg based on a set of criteria.
@@ -441,12 +408,29 @@ class SpatialAccessor:
         -------
         xr.DataArray
             The longitude axis weights.
+
+        Raises
+        ------
+        ValueError
+            If the there are multiple instances in which the
+            domain_bounds[:, 0] > domain_bounds[:, 1]
         """
         p_meridian_index: Optional[np.ndarray] = None
         d_bounds = domain_bounds.copy()
 
+        pm_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
+        if len(pm_cells) > 1:
+            raise ValueError(
+                "More than one longitude bound is out of order. Only one bound "
+                "value spanning the prime meridian is permitted in data on "
+                "a rectilinear grid."
+            )
+        d_bounds: xr.DataArray = self._swap_lon_axis(d_bounds, to=360)  # type: ignore
+        p_meridian_index = _get_prime_meridian_index(d_bounds)
+        if p_meridian_index is not None:
+            d_bounds = _align_lon_bounds_to_360(d_bounds, p_meridian_index)
+
         if region_bounds is not None:
-            d_bounds: xr.DataArray = self._swap_lon_axis(d_bounds, to=360)  # type: ignore
             r_bounds: np.ndarray = self._swap_lon_axis(
                 region_bounds, to=360
             )  # type:ignore
@@ -454,10 +438,6 @@ class SpatialAccessor:
             is_region_circular = r_bounds[1] - r_bounds[0] == 0
             if is_region_circular:
                 r_bounds = np.array([0.0, 360.0])
-
-            p_meridian_index = _get_prime_meridian_index(d_bounds)
-            if p_meridian_index is not None:
-                d_bounds = _align_lon_bounds_to_360(d_bounds, p_meridian_index)
 
             d_bounds = self._scale_domain_to_region(d_bounds, r_bounds)
 
