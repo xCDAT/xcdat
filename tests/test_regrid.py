@@ -1,5 +1,7 @@
 import datetime
+import re
 import sys
+import warnings
 from unittest import mock
 
 import numpy as np
@@ -770,32 +772,27 @@ class TestXESMFRegridder:
 
 
 class TestGrid:
-    def test_empty_grid(self):
-        with pytest.raises(
-            ValueError, match="Must pass at least 1 coordinate to create a grid."
-        ):
-            grid.create_grid()
+    @pytest.fixture(autouse=True)
+    def setUp(self):
+        self.lat_data = np.array([-45, 0, 45])
+        self.lat = xr.DataArray(self.lat_data.copy(), dims=["lat"], name="lat")
 
-    def test_unexpected_coordinate(self):
-        lev = np.linspace(1000, 1, 2)
+        self.lat_bnds_data = np.array([[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
+        self.lat_bnds = xr.DataArray(
+            self.lat_bnds_data.copy(), dims=["lat", "bnds"], name="lat_bnds"
+        )
 
-        with pytest.raises(
-            ValueError,
-            match="Coordinate mass is not valid, reference `xcdat.axis.VAR_NAME_MAP` for valid options.",
-        ):
-            grid.create_grid(lev=lev, mass=np.linspace(10, 20, 2))
+        self.lon_data = np.array([30, 60, 90, 120, 150])
+        self.lon = xr.DataArray(self.lon_data.copy(), dims=["lon"], name="lon")
 
-    def test_create_grid_lev(self):
-        lev = np.linspace(1000, 1, 2)
-        lev_bnds = np.array([[1499.5, 500.5], [500.5, -498.5]])
-
-        new_grid = grid.create_grid(lev=(lev, lev_bnds))
-
-        assert np.array_equal(new_grid.lev, lev)
-        assert np.array_equal(new_grid.lev_bnds, lev_bnds)
+        self.lon_bnds_data = np.array(
+            [[15, 45], [45, 75], [75, 105], [105, 135], [135, 165]]
+        )
+        self.lon_bnds = xr.DataArray(
+            self.lon_bnds_data.copy(), dims=["lon", "bnds"], name="lon_bnds"
+        )
 
     def test_create_axis(self):
-        lat = np.array([-45, 0, 45])
         expected_axis_attrs = {
             "axis": "Y",
             "units": "degrees_north",
@@ -803,15 +800,14 @@ class TestGrid:
             "bnds": "lat_bnds",
         }
 
-        axis, bnds = grid.create_axis("lat", lat)
+        axis, bnds = grid.create_axis("lat", self.lat_data)
 
-        assert np.array_equal(axis, lat)
+        assert np.array_equal(axis, self.lat_data)
         assert bnds is not None
         assert bnds.attrs["xcdat_bounds"] == "True"
         assert axis.attrs == expected_axis_attrs
 
     def test_create_axis_user_attrs(self):
-        lat = np.array([-45, 0, 45])
         expected_axis_attrs = {
             "axis": "Y",
             "units": "degrees_south",
@@ -821,41 +817,35 @@ class TestGrid:
         }
 
         axis, bnds = grid.create_axis(
-            "lat", lat, attrs={"custom": "value", "units": "degrees_south"}
+            "lat", self.lat_data, attrs={"custom": "value", "units": "degrees_south"}
         )
 
-        assert np.array_equal(axis, lat)
+        assert np.array_equal(axis, self.lat_data)
         assert bnds is not None
         assert bnds.attrs["xcdat_bounds"] == "True"
         assert axis.attrs == expected_axis_attrs
 
     def test_create_axis_from_list(self):
-        lat = [-45.0, 0.0, 45.0]
-        lat_bnds = [[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]]
+        axis, bnds = grid.create_axis("lat", self.lat_data, bounds=self.lat_bnds_data)
 
-        axis, bnds = grid.create_axis("lat", lat, bounds=lat_bnds)
-
-        assert np.array_equal(axis, lat)
+        assert np.array_equal(axis, self.lat_data)
         assert bnds is not None
-        assert np.array_equal(bnds, lat_bnds)
+        assert np.array_equal(bnds, self.lat_bnds_data)
 
     def test_create_axis_no_bnds(self):
-        lat = np.array([-45, 0, 45])
         expected_axis_attrs = {
             "axis": "Y",
             "units": "degrees_north",
             "coordinate": "latitude",
         }
 
-        axis, bnds = grid.create_axis("lat", lat, generate_bounds=False)
+        axis, bnds = grid.create_axis("lat", self.lat_data, generate_bounds=False)
 
-        assert np.array_equal(axis, lat)
+        assert np.array_equal(axis, self.lat_data)
         assert bnds is None
         assert axis.attrs == expected_axis_attrs
 
     def test_create_axis_user_bnds(self):
-        lat = np.array([-45, 0, 45])
-        lat_bnds = np.array([[-90, -22.5], [-22.5, 22.5], [22.5, 90]])
         expected_axis_attrs = {
             "axis": "Y",
             "units": "degrees_north",
@@ -863,23 +853,89 @@ class TestGrid:
             "bnds": "lat_bnds",
         }
 
-        axis, bnds = grid.create_axis("lat", lat, bounds=lat_bnds)
+        axis, bnds = grid.create_axis("lat", self.lat_data, bounds=self.lat_bnds_data)
 
-        assert np.array_equal(axis, lat)
+        assert np.array_equal(axis, self.lat_data)
         assert bnds is not None
-        assert np.array_equal(bnds, lat_bnds)
+        assert np.array_equal(bnds, self.lat_bnds_data)
         assert "xcdat_bounds" not in bnds.attrs
         assert axis.attrs == expected_axis_attrs
 
     def test_create_axis_invalid_name(self):
-        lat = np.array([-45, 0, 45])
-
         with pytest.raises(
             ValueError, match="The name 'mass' is not valid for an axis name."
         ):
-            grid.create_axis("mass", lat)
+            grid.create_axis("mass", self.lat_data)
+
+    def test_empty_grid(self):
+        with pytest.raises(
+            ValueError, match="Must pass at least 1 axis to create a grid."
+        ):
+            grid.create_grid()
 
     def test_create_grid(self):
+        new_grid = grid.create_grid(x=self.lon, y=self.lat)
+
+        assert np.array_equal(new_grid.lat, self.lat)
+        assert np.array_equal(new_grid.lon, self.lon)
+
+    def test_create_grid_with_bounds(self):
+        new_grid = grid.create_grid(
+            x=(self.lon, self.lon_bnds), y=(self.lat, self.lat_bnds)
+        )
+
+        assert np.array_equal(new_grid.lat, self.lat)
+        assert new_grid.lat.attrs["bnds"] == self.lat_bnds.name
+        assert np.array_equal(new_grid.lat_bnds, self.lat_bnds)
+
+        assert np.array_equal(new_grid.lon, self.lon)
+        assert new_grid.lon.attrs["bnds"] == self.lon_bnds.name
+        assert np.array_equal(new_grid.lon_bnds, self.lon_bnds)
+
+    def test_create_grid_user_attrs(self):
+        lev = xr.DataArray(np.linspace(1000, 1, 2), dims=["lev"], name="lev")
+
+        new_grid = grid.create_grid(z=lev, attrs={"custom": "value"})
+
+        assert "custom" in new_grid.attrs
+        assert new_grid.attrs["custom"] == "value"
+
+    def test_create_grid_wrong_axis_value(self):
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Argument 'x' should either be a xr.DataArray or (xr.DataArray, xr.DataArray)"
+            ),
+        ):
+            grid.create_grid(x=(self.lon, self.lon_bnds, self.lat))  # type: ignore[arg-type]
+
+    def test_deprecated_unexpected_coordinate(self):
+        lev = np.linspace(1000, 1, 2)
+
+        with pytest.raises(
+            ValueError,
+            match="Coordinate mass is not valid, reference `xcdat.axis.VAR_NAME_MAP` for valid options.",
+        ):
+            grid.create_grid(lev=lev, mass=np.linspace(10, 20, 2))
+
+    def test_deprecated_create_grid_lev(self):
+        lev = np.linspace(1000, 1, 2)
+        lev_bnds = np.array([[1499.5, 500.5], [500.5, -498.5]])
+
+        with warnings.catch_warnings(record=True) as w:
+            new_grid = grid.create_grid(lev=(lev, lev_bnds))
+
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert (
+                str(w[0].message)
+                == "**kwargs will be deprecated, see docstring and use 'x', 'y', or 'z' arguments"
+            )
+
+        assert np.array_equal(new_grid.lev, lev)
+        assert np.array_equal(new_grid.lev_bnds, lev_bnds)
+
+    def test_deprecated_create_grid(self):
         lat = np.array([-45, 0, 45])
         lon = np.array([30, 60, 90, 120, 150])
         lat_bnds = np.array([[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
