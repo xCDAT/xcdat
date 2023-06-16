@@ -428,13 +428,31 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     # Ignore `Argument 1 to "create_grid" has incompatible type
     # "Union[Dataset, DataArray]"; expected "Union[ndarray[Any, Any], DataArray]"
     # mypy(error)` because this arg is validated to be a DataArray beforehand.
-    return create_grid(lat=(lat, lat_bnds), lon=(out_lon_data, lon_bnds))  # type: ignore
+    return create_grid(x=create_axis("lon", out_lon_data, bounds=lon_bnds), y=create_axis("lat", lat, bounds=lat_bnds))  # type: ignore
 
 
 def create_grid(
-    x: Optional[Union[xr.DataArray, Tuple[xr.DataArray, xr.DataArray]]] = None,
-    y: Optional[Union[xr.DataArray, Tuple[xr.DataArray, xr.DataArray]]] = None,
-    z: Optional[Union[xr.DataArray, Tuple[xr.DataArray, xr.DataArray]]] = None,
+    x: Optional[
+        Union[
+            xr.DataArray,
+            Tuple[xr.DataArray, xr.DataArray],
+            Tuple[xr.DataArray, Optional[xr.DataArray]],
+        ]
+    ] = None,
+    y: Optional[
+        Union[
+            xr.DataArray,
+            Tuple[xr.DataArray, xr.DataArray],
+            Tuple[xr.DataArray, Optional[xr.DataArray]],
+        ]
+    ] = None,
+    z: Optional[
+        Union[
+            xr.DataArray,
+            Tuple[xr.DataArray, xr.DataArray],
+            Tuple[xr.DataArray, Optional[xr.DataArray]],
+        ]
+    ] = None,
     attrs: Optional[Dict[str, str]] = None,
     **kwargs: CoordOptionalBnds,
 ) -> xr.Dataset:
@@ -507,10 +525,8 @@ def create_grid(
 
         return _deprecated_create_grid(**kwargs)
 
-    attrs = {} if attrs is None else attrs.copy()
     axes = {"x": x, "y": y, "z": z}
-    data_vars = {}
-    coords = {}
+    ds = xr.Dataset(attrs={} if attrs is None else attrs.copy())
 
     for key, item in axes.items():
         if item is None:
@@ -522,18 +538,18 @@ def create_grid(
                     f"Argument {key!r} should either be a xr.DataArray or (xr.DataArray, xr.DataArray)"
                 )
 
-            axis, bnds = item[0], item[1]
+            axis, bnds = item[0].copy(deep=True), item[1].copy(deep=True)  # type: ignore[union-attr]
 
             # ensure bnds attribute is set
-            axis.attrs["bnds"] = bnds.name
+            axis.attrs["bounds"] = bnds.name
 
-            data_vars[bnds.name] = bnds
+            ds = ds.assign({bnds.name: bnds})
         else:
-            axis = item
+            axis = item.copy(deep=True)
 
-        coords[axis.name] = axis
+        ds = ds.assign_coords({axis.name: axis})
 
-    return xr.Dataset(data_vars, coords=coords, attrs=attrs)
+    return ds
 
 
 def _deprecated_create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
@@ -685,7 +701,7 @@ def create_axis(
         bnds = xr.DataArray(bounds, name=f"{name}_bnds", dims=[name, "bnds"])
 
     if bnds is not None:
-        da.attrs["bnds"] = bnds.name
+        da.attrs["bounds"] = bnds.name
 
     return da, bnds
 
