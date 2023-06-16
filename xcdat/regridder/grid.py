@@ -95,7 +95,7 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
 
     lon = _create_uniform_axis(0.0, 360.0, (360.0 / (2.0 * nlats)))
 
-    return create_grid(lat=(lat, lat_bnds), lon=lon)
+    return create_grid(x=create_axis("lon", lon), y=(lat, lat_bnds))
 
 
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
@@ -341,7 +341,7 @@ def create_uniform_grid(
 
     lon = _create_uniform_axis(lon_start, lon_stop + 0.0001, lon_delta)
 
-    return create_grid(lat=lat, lon=lon)
+    return create_grid(x=create_axis("lon", lon), y=create_axis("lat", lat))
 
 
 def _create_uniform_axis(start: float, stop: float, delta: float) -> np.ndarray:
@@ -395,7 +395,10 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
     lon_bnds = grid.bounds.get_bounds("X", var_key=lon.name)
     lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
-    return create_grid(lat=(lat_data, lat_bnds), lon=(lon_data, lon_bnds))
+    return create_grid(
+        x=create_axis("lon", lon_data, bounds=lon_bnds),
+        y=create_axis("lat", lat_data, lat_bnds),
+    )
 
 
 def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:

@@ -797,7 +797,7 @@ class TestGrid:
             "axis": "Y",
             "units": "degrees_north",
             "coordinate": "latitude",
-            "bnds": "lat_bnds",
+            "bounds": "lat_bnds",
         }
 
         axis, bnds = grid.create_axis("lat", self.lat_data)
@@ -812,7 +812,7 @@ class TestGrid:
             "axis": "Y",
             "units": "degrees_south",
             "coordinate": "latitude",
-            "bnds": "lat_bnds",
+            "bounds": "lat_bnds",
             "custom": "value",
         }
 
@@ -850,7 +850,7 @@ class TestGrid:
             "axis": "Y",
             "units": "degrees_north",
             "coordinate": "latitude",
-            "bnds": "lat_bnds",
+            "bounds": "lat_bnds",
         }
 
         axis, bnds = grid.create_axis("lat", self.lat_data, bounds=self.lat_bnds_data)
@@ -885,11 +885,11 @@ class TestGrid:
         )
 
         assert np.array_equal(new_grid.lat, self.lat)
-        assert new_grid.lat.attrs["bnds"] == self.lat_bnds.name
+        assert new_grid.lat.attrs["bounds"] == self.lat_bnds.name
         assert np.array_equal(new_grid.lat_bnds, self.lat_bnds)
 
         assert np.array_equal(new_grid.lon, self.lon)
-        assert new_grid.lon.attrs["bnds"] == self.lon_bnds.name
+        assert new_grid.lon.attrs["bounds"] == self.lon_bnds.name
         assert np.array_equal(new_grid.lon_bnds, self.lon_bnds)
 
     def test_create_grid_user_attrs(self):
