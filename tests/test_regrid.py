@@ -794,6 +794,91 @@ class TestGrid:
         assert np.array_equal(new_grid.lev, lev)
         assert np.array_equal(new_grid.lev_bnds, lev_bnds)
 
+    def test_create_axis(self):
+        lat = np.array([-45, 0, 45])
+        expected_axis_attrs = {
+            "axis": "Y",
+            "units": "degrees_north",
+            "coordinate": "latitude",
+            "bnds": "lat_bnds",
+        }
+
+        axis, bnds = grid.create_axis("lat", lat)
+
+        assert np.array_equal(axis, lat)
+        assert bnds is not None
+        assert bnds.attrs["xcdat_bounds"] == "True"
+        assert axis.attrs == expected_axis_attrs
+
+    def test_create_axis_user_attrs(self):
+        lat = np.array([-45, 0, 45])
+        expected_axis_attrs = {
+            "axis": "Y",
+            "units": "degrees_south",
+            "coordinate": "latitude",
+            "bnds": "lat_bnds",
+            "custom": "value",
+        }
+
+        axis, bnds = grid.create_axis(
+            "lat", lat, attrs={"custom": "value", "units": "degrees_south"}
+        )
+
+        assert np.array_equal(axis, lat)
+        assert bnds is not None
+        assert bnds.attrs["xcdat_bounds"] == "True"
+        assert axis.attrs == expected_axis_attrs
+
+    def test_create_axis_from_list(self):
+        lat = [-45.0, 0.0, 45.0]
+        lat_bnds = [[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]]
+
+        axis, bnds = grid.create_axis("lat", lat, bounds=lat_bnds)
+
+        assert np.array_equal(axis, lat)
+        assert bnds is not None
+        assert np.array_equal(bnds, lat_bnds)
+
+    def test_create_axis_no_bnds(self):
+        lat = np.array([-45, 0, 45])
+        expected_axis_attrs = {
+            "axis": "Y",
+            "units": "degrees_north",
+            "coordinate": "latitude",
+        }
+
+        axis, bnds = grid.create_axis("lat", lat, generate_bounds=False)
+
+        assert np.array_equal(axis, lat)
+        assert bnds is None
+        assert axis.attrs == expected_axis_attrs
+
+    def test_create_axis_user_bnds(self):
+        lat = np.array([-45, 0, 45])
+        lat_bnds = np.array([[-90, -22.5], [-22.5, 22.5], [22.5, 90]])
+        expected_axis_attrs = {
+            "axis": "Y",
+            "units": "degrees_north",
+            "coordinate": "latitude",
+            "bnds": "lat_bnds",
+        }
+
+        axis, bnds = grid.create_axis("lat", lat, bounds=lat_bnds)
+
+        assert np.array_equal(axis, lat)
+        assert bnds is not None
+        assert np.array_equal(bnds, lat_bnds)
+        assert "xcdat_bounds" not in bnds.attrs
+        assert axis.attrs == expected_axis_attrs
+
+    def test_create_axis_invalid_name(self):
+        lat = np.array([-45, 0, 45])
+
+        with pytest.raises(
+            ValueError, match="The name 'mass' is not valid for an axis name."
+        ):
+            grid.create_axis("mass", lat)
+
     def test_create_grid(self):
         lat = np.array([-45, 0, 45])
         lon = np.array([30, 60, 90, 120, 150])

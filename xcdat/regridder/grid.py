@@ -1,9 +1,10 @@
-from typing import Any, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
 
 from xcdat.axis import COORD_DEFAULT_ATTRS, VAR_NAME_MAP, CFAxisKey, get_dim_coords
+from xcdat.bounds import create_bounds
 from xcdat.regridder.base import CoordOptionalBnds
 
 # First 50 zeros for the bessel function
@@ -524,6 +525,100 @@ def _prepare_coordinate(name: str, data: CoordOptionalBnds, **attrs: Any):
         )
 
     return coord, bnds
+
+
+def create_axis(
+    name: str,
+    data: Union[List[Union[int, float]], np.ndarray],
+    bounds: Optional[Union[List[List[Union[int, float]]], np.ndarray]] = None,
+    generate_bounds: Optional[bool] = True,
+    attrs: Optional[Dict[str, str]] = None,
+) -> Tuple[xr.DataArray, Optional[xr.DataArray]]:
+    """Creates axis and optional bounds.
+
+    User provided ``attributes`` will be merged with a set of default
+    attributes. Default attributes (`axis`, `coordinate`, `bnds`)
+    cannot be overwritten. The `units` attribute is the only default
+    that can be overwritten.
+
+    Parameters
+    ----------
+    name : str
+        CF name for the axis, e.g. lat, lon, lev, etc.
+    data : Union[List[Union[int, float]], np.ndarray]
+        1-D axis data.
+    bounds : Optional[Union[List[List[Union[int, float]]], np.ndarray]]
+        2-D axis bounds data. Must be shaped as n x 2 where n is the length of ``data``. Defaults to 'None'.
+    generate_bounds : Optiona[bool]
+        Controls bounds generation behavior. Defaults to `True`.
+    attrs : Optional[Dict[str, str]]
+        Custom attributes to be added to the generated `xr.DataArray`.
+
+    Returns
+    -------
+    Tuple[xr.DataArray, Optional[xr.DataArray]]
+        A DataArray containing the axis data and optional bounds.
+
+    Raises
+    ------
+    ValueError
+        If ``name`` is not valid CF axis name.
+
+    Examples
+    --------
+    Create axis and generate bounds:
+
+    >>> lat, bnds = create_axis("lat", np.array([-45, 0, 45]))
+
+    Create axis and bounds from List:
+
+    >>> lat, bnds = create_axis("lat", [-45, 0, 45], bounds=[[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
+
+    Create axis and disable generating bounds:
+
+    >>> lat, _ = create_axis("lat", np.array([-45, 0, 45]), generate_bounds=False)
+
+    Provide additional attributes and overwrite `units`:
+
+    >>> lat, _ = create_axis("lat", np.array([-45, 0, 45]), attrs={"generated": str(datetime.date.today()), "units": "degrees_south"})
+    """
+    bnds = None
+    axis_key = None
+
+    if attrs is None:
+        attrs = {}
+
+    for x, y in VAR_NAME_MAP.items():
+        if name in y:
+            axis_key = x
+
+            break
+
+    if axis_key is None:
+        raise ValueError(f"The name {name!r} is not valid for an axis name.")
+
+    default_axis_attrs = attrs.copy()
+
+    default_axis_attrs.update(COORD_DEFAULT_ATTRS[axis_key].copy())
+
+    # allow units to be overwritten if present
+    try:
+        default_axis_attrs["units"] = attrs["units"]
+    except KeyError:
+        pass
+
+    da = xr.DataArray(data, name=name, dims=[name], attrs=default_axis_attrs)
+
+    if bounds is None:
+        if generate_bounds:
+            bnds = create_bounds(axis_key, da)
+    else:
+        bnds = xr.DataArray(bounds, name=f"{name}_bnds", dims=[name, "bnds"])
+
+    if bnds is not None:
+        da.attrs["bnds"] = bnds.name
+
+    return da, bnds
 
 
 def _validate_grid_has_single_axis_dim(
