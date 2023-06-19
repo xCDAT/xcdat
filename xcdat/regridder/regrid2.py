@@ -44,7 +44,7 @@ class Regrid2Regridder(BaseRegridder):
 
         Create regridder:
 
-        >>> regridder = regrid2.Regrid2Regridder(ds.grid, output_grid)
+        >>> regridder = regrid2.Regrid2Regridder(ds.regridder.grid, output_grid)
 
         Regrid data:
 
