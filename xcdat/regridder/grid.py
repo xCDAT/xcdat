@@ -438,21 +438,18 @@ def create_grid(
     x: Optional[
         Union[
             xr.DataArray,
-            Tuple[xr.DataArray, xr.DataArray],
             Tuple[xr.DataArray, Optional[xr.DataArray]],
         ]
     ] = None,
     y: Optional[
         Union[
             xr.DataArray,
-            Tuple[xr.DataArray, xr.DataArray],
             Tuple[xr.DataArray, Optional[xr.DataArray]],
         ]
     ] = None,
     z: Optional[
         Union[
             xr.DataArray,
-            Tuple[xr.DataArray, xr.DataArray],
             Tuple[xr.DataArray, Optional[xr.DataArray]],
         ]
     ] = None,
