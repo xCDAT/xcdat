@@ -1,9 +1,11 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple
+import warnings
+from typing import Any, Dict, List, Literal, Optional, Tuple, Union
 
 import xarray as xr
 
 from xcdat.axis import CFAxisKey, get_dim_coords
 from xcdat.regridder import regrid2, xgcm
+from xcdat.regridder.xgcm import XGCMVerticalMethods
 from xcdat.utils import _has_module
 
 HorizontalRegridTools = Literal["xesmf", "regrid2"]
@@ -325,6 +327,114 @@ class RegridderAccessor:
 
         return output_ds
 
+    def vertical_xgcm(
+        self,
+        data_var: str,
+        output_grid: xr.Dataset,
+        method: XGCMVerticalMethods = "linear",
+        target_data: Optional[Union[str, xr.DataArray]] = None,
+        grid_positions: Optional[Dict[str, str]] = None,
+        periodic: bool = False,
+        extra_init_options: Optional[Dict[str, Any]] = None,
+        **options,
+    ) -> xr.Dataset:
+        """Extension of ``xgcm`` regridder.
+
+        The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the
+        ``Grid`` object, transposing the output data to match the dimensional
+        order of the input data, and ensuring bounds and metadata are preserved
+        in the output dataset.
+
+        Linear and log methods require a single dimension position, which can
+        usually be automatically derived. A custom position can be specified using
+        the `grid_positions` argument.
+
+        Conservative regridding requires multiple dimension positions, e.g.,
+        {"center": "xc", "left": "xg"} which can be passed using the `grid_positions`
+        argument.
+
+        ``xgcm.Grid`` can be passed additional arguments using ``extra_init_options``.
+        These arguments can be found on `XGCM's Grid documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.__init__>`_.
+
+        ``xgcm.Grid.transform`` can be passed additional arguments using ``options``.
+        These arguments can be found on `XGCM's Grid.transform documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.transform>`_.
+
+        Parameters
+        ----------
+        data_var : str
+            Name of the variable to regrid.
+        output_grid : xr.Dataset
+            Contains destination grid coordinates.
+        method : XGCMVerticalMethods
+            Regridding method, by default "linear". Options are
+               - linear (default)
+               - log
+               - conservative
+        target_data : Optional[Union[str, xr.DataArray]]
+            Data to transform target data onto, either the key of a variable
+            in the input dataset or an ``xr.DataArray``, by default None.
+        grid_positions : Optional[Dict[str, str]]
+            Mapping of dimension positions, by default None. If ``None`` then an
+            attempt is made to derive this argument.
+        periodic : bool
+            Whether the grid is periodic, by default False.
+        extra_init_options : Optional[Dict[str, Any]]
+            Extra options passed to the ``xgcm.Grid`` constructor, by default
+            None.
+        options : Optional[Dict[str, Any]]
+            Extra options passed to the ``xgcm.Grid.transform`` method.
+
+        Raises
+        ------
+        KeyError
+            If data variable does not exist in the Dataset.
+        ValueError
+            If ``method`` is not valid.
+
+        Examples
+        --------
+        Import xCDAT:
+
+        >>> import xcdat
+        >>> from xcdat.regridder import xgcm
+
+        Open a dataset:
+
+        >>> ds = xcdat.open_dataset("so.nc")
+
+        Create output grid:
+
+        >>> output_grid = xcdat.create_grid(lev=np.linspace(1000, 1, 5))
+
+        Create theta:
+
+        >>> ds["pressure"] = (ds["hyam"] * ds["P0"] + ds["hybm"] * ds["PS"]).transpose(**ds["T"].dims)
+
+        Create regridder:
+
+        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", target_data="pressure")
+
+        Regrid data:
+
+        >>> data_new_grid = regridder.vertical("so", ds)
+
+        Passing additional arguments to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
+
+        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", extra_init_options={"boundary": "fill", "fill_value": 1e27}, mask_edges=True)
+        """
+        regridder = VERTICAL_REGRID_TOOLS["xgcm"](
+            self._ds,
+            output_grid,
+            method=method,
+            target_data=target_data,
+            grid_positions=grid_positions,
+            periodic=periodic,
+            extra_init_options=extra_init_options,
+            **options,
+        )
+
+        return regridder.vertical(data_var, self._ds)
+
     def vertical(
         self,
         data_var: str,
@@ -333,6 +443,10 @@ class RegridderAccessor:
         **options: Any,
     ) -> xr.Dataset:
         """
+        .. deprecated:: v0.6.0
+            `vertical` is being deprecated, please migrate to using tool specific methods,
+            e.g. :py:func:`xarray.Dataset.regridder.vertical_xgcm`.
+
         Apply vertical regridding to ``data_var`` of the current ``xr.Dataset``
         to ``output_grid``.
 
@@ -378,6 +492,13 @@ class RegridderAccessor:
 
         >>> ds.regridder.vertical("so", output_grid, method="linear")
         """
+        warnings.warn(
+            "`vertical` is being deprecated, please migrate to using "
+            "tool specific methods, e.g. `vertical_xgcm`.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         try:
             regrid_tool = VERTICAL_REGRID_TOOLS[tool]
         except KeyError as e:

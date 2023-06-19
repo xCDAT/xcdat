@@ -125,6 +125,7 @@ Methods
     Dataset.regridder.horizontal_xesmf
     Dataset.regridder.horizontal_regrid2
     Dataset.regridder.vertical
+    Dataset.regridder.vertical_xgcm
 
 .. _dsmeth_1:
 
