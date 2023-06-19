@@ -86,9 +86,6 @@ Classes
     xcdat.spatial.SpatialAccessor
     xcdat.temporal.TemporalAccessor
     xcdat.regridder.accessor.RegridderAccessor
-    xcdat.regridder.regrid2.Regrid2Regridder
-    xcdat.regridder.xesmf.XESMFRegridder
-    xcdat.regridder.xgcm.XGCMRegridder
 
 .. currentmodule:: xarray
 
