@@ -33,20 +33,26 @@ class RegridderAccessor:
 
     Import RegridderAccessor class:
 
-    >>> import xcdat  # or from xcdat import regridder
+    >>> import xcdat
 
     Use RegridderAccessor class:
 
-    >>> ds = xcdat.open_dataset("/path/to/file")
+    >>> ds = xcdat.open_dataset("...")
     >>>
     >>> ds.regridder.<attribute>
     >>> ds.regridder.<method>
     >>> ds.regridder.<property>
 
+    Regrid a variable using tool specific methods:
+
+    >>> ds.regridder.horizontal_xesmf("ts", output_grid, method="bilinear")
+    >>>
+    >>> ds.regridder.vertical_xgcm("ts", output_grid, method="linear")
+
     Parameters
     ----------
     dataset : xr.Dataset
-        A Dataset object.
+        The Dataset to attach this accessor.
     """
 
     def __init__(self, dataset: xr.Dataset):
@@ -55,12 +61,13 @@ class RegridderAccessor:
     @property
     def grid(self) -> xr.Dataset:
         """
-        Returns ``xr.Dataset`` containing grid information.
+        The `X`, `Y`, and `Z` axes are extracted from the Dataset and returned
+        in a new ``xr.Dataset``.
 
         Returns
         -------
         xr.Dataset
-            With data variables describing the grid.
+            Containing grid axes.
 
         Raises
         ------
@@ -86,7 +93,7 @@ class RegridderAccessor:
 
         ds = xr.Dataset(coords, attrs=self._ds.attrs)
 
-        ds = ds.bounds.add_missing_bounds(axes=["X", "Y"])
+        ds = ds.bounds.add_missing_bounds(axes=["X", "Y", "Z"])
 
         return ds
 
@@ -119,38 +126,37 @@ class RegridderAccessor:
         extrap_dist_exponent: Optional[float] = None,
         extrap_num_src_pnts: Optional[int] = None,
         ignore_degenerate: bool = True,
-        **options,
+        **options: Any,
     ) -> xr.Dataset:
-        """Extension of ``xESMF`` regridder.
+        """
+        Extension of ``xESMF`` regridder.
 
-        The ``XESMFRegridder`` extends ``xESMF`` by automatically constructing
-        the ``xe.XESMFRegridder`` object, preserving source bounds and
-        generating missing bounds.
+        This method extends ``xESMF`` by automatically constructing the ``xe.XESMFRegridder``
+        object and ensuring bounds and metadata are preseved in the output dataset.
+
+        The ``method`` argument can take any of the following values: `bilinear`, `conservative`,
+        `conservative_normed`, `patch`, `nearest_s2d`, or `nearest_d2s`. You can find a comparison
+        of the methods `here <https://xesmf.readthedocs.io/en/latest/notebooks/Compare_algorithms.html>`_.
+
+        The ``extrap_method`` argument can take any of the following values: `inverse_dist` or `nearest_s2d`.
+        This argument along with ``extrap_dist_exponent`` and ``extrap_num_src_pnts`` can be used to
+        configure how extrapolation is applied.
+
+        The ``**options`` arguments are additional values passed to the ``xe.XESMFRegridder``
+        constructor. A description of these arguments can be found on `xESMF's documentation <https://github.com/pangeo-data/xESMF/blob/892ac87064d98d98d732ad8a79aa1682b081cdc2/xesmf/frontend.py#L702-L744>`_.
 
         Parameters
         ----------
         data_var : str
-            The variable to regrid.
+            Name of the variable to regrid.
         output_grid : xr.Dataset
-            Contains desintation grid coordinates.
+            Dataset containing the output grid axes.
         method : str
-            Regridding method.
-
-            Options:
-               - bilinear
-               - conservative
-               - conservative_normed
-               - patch
-               - nearest_s2d
-               - nearest_d2s
+            The regridding method to apply, defaults to "bilinear".
         periodic : bool
-            Treat longitude as periodic. Used for global grids.
+            Treat longitude as periodic, used for global grids.
         extrap_method : Optional[str]
-            Extrapolation method.
-
-            Options:
-               - inverse_dist
-               - nearest_s2d
+            Extrapolation method, useful when moving from a fine to coarse grid.
         extrap_dist_exponent : Optional[float]
             The exponent to raise the distance to when calculating weights for
             the extrapolation method.
@@ -163,6 +169,9 @@ class RegridderAccessor:
 
             This only applies to "conservative" and "conservative_normed"
             regridding methods.
+        **options : Any
+            Additional arguments passed to the underlying ``xe.XESMFRegridder``
+            constructor.
 
         Raises
         ------
@@ -178,23 +187,22 @@ class RegridderAccessor:
         Import xCDAT:
 
         >>> import xcdat
-        >>> from xcdat.regridder import xesmf
 
         Open a dataset:
 
-        >>> ds = xcdat.open_dataset("ts.nc")
+        >>> ds = xcdat.open_dataset("...")
 
         Create output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Create regridder:
+        Regrid the "ts" variable using the "bilinear" method:
 
-        >>> regridder = xesmf.XESMFRegridder(ds, output_grid, method="bilinear")
+        >>> output_data = ds.regridder.horizontal_xesmf("ts", output_grid)
 
-        Regrid data:
+        Passing additional values to ``xe.XESMFRegridder``:
 
-        >>> data_new_grid = regridder.horizontal("ts", ds)
+        >>> output_data = ds.regridder.horizontal_xesmf("ts", output_grid, unmapped_to_nan=True)
         """
         # TODO: Test this conditional.
         if _has_xesmf:  # pragma: no cover
@@ -211,50 +219,37 @@ class RegridderAccessor:
             )
 
     def horizontal_regrid2(
-        self,
-        data_var: str,
-        output_grid: xr.Dataset,
-        **options: Dict[str, Any],
+        self, data_var: str, output_grid: xr.Dataset, **options: Any
     ) -> xr.Dataset:
         """
-        Pure python implementation of the regrid2 horizontal regridder from
-        CDMS2's regrid2 module.
-
-        Regrid data from ``input_grid`` to ``output_grid``.
-
-        Available options: None
+        Pure python implementation of CDMS2's Regrid2 horizontal regridder.
 
         Parameters
         ----------
-        input_grid : xr.Dataset
-            Dataset containing the source grid.
+        data_var : str
+            Name of the varibale to regrid.
         output_grid : xr.Dataset
-            Dataset containing the destination grid.
-        options : Dict[str, Any]
-            Dictionary with extra parameters for the regridder.
+            Dataset containing the output grid axes.
+        **options : Any
+            Additional arguments passed to Regrid2.
 
         Examples
         --------
         Import xCDAT:
 
         >>> import xcdat
-        >>> from xcdat.regridder import regrid2
 
         Open a dataset:
 
-        >>> ds = xcdat.open_dataset("ts.nc")
+        >>> ds = xcdat.open_dataset("...")
 
         Create output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Create regridder:
+        Regrid the "ts" variable:
 
-        >>> regridder = regrid2.Regrid2Regridder(ds.grid, output_grid)
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.horizontal("ts", ds)
+        >>> output_data = ds.regridder.horizontal_regrid2("ts", output_grid)
         """
         regridder = HORIZONTAL_REGRID_TOOLS["regrid2"](self._ds, output_grid, **options)
 
@@ -392,51 +387,56 @@ class RegridderAccessor:
         extra_init_options: Optional[Dict[str, Any]] = None,
         **options,
     ) -> xr.Dataset:
-        """Extension of ``xgcm`` regridder.
+        """
+        Extension of ``xgcm`` regridder.
 
-        The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the
+        This method extends ``xgcm`` by automatically constructing the
         ``Grid`` object, transposing the output data to match the dimensional
         order of the input data, and ensuring bounds and metadata are preserved
         in the output dataset.
 
-        Linear and log methods require a single dimension position, which can
+        The ``method`` argument can take any of the following values: `linear`, `log`, or
+        `conservative`.
+
+        The ``linear`` and ``log`` methods require a single dimension position, which can
         usually be automatically derived. A custom position can be specified using
         the `grid_positions` argument.
 
-        Conservative regridding requires multiple dimension positions, e.g.,
+        The ``conservative`` method requires multiple dimension positions, e.g.,
         {"center": "xc", "left": "xg"} which can be passed using the `grid_positions`
         argument.
 
-        ``xgcm.Grid`` can be passed additional arguments using ``extra_init_options``.
-        These arguments can be found on `XGCM's Grid documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.__init__>`_.
+        If ``target_data`` is ``None`` then the regridding process will simply transform
+        the ``data_var`` onto the ``output_grid`` and no conversion is done. If ``target_data``
+        is provided then the ``data_var`` is transformed onto the ``ouput_grid`` and the data
+        is converted with respect to ``target_data``.
 
-        ``xgcm.Grid.transform`` can be passed additional arguments using ``options``.
-        These arguments can be found on `XGCM's Grid.transform documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.transform>`_.
+        The ``extra_init_options`` argument are additional values passed to the ``xgcm.Grid``
+        constructor. A description of these arguments can be found on `XGCM's Grid documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.__init__>`_.
+
+        The ``**options`` arguments are additional values passed to the ``xgcm.Grid.transform``
+        method. A description of these arguments can be found on `XGCM's Grid.transform documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.transform>`_.
 
         Parameters
         ----------
         data_var : str
             Name of the variable to regrid.
         output_grid : xr.Dataset
-            Contains destination grid coordinates.
+            Dataset containing the output grid axes.
         method : XGCMVerticalMethods
-            Regridding method, by default "linear". Options are
-               - linear (default)
-               - log
-               - conservative
+            Regridding method, defaults to "linear".
         target_data : Optional[Union[str, xr.DataArray]]
-            Data to transform target data onto, either the key of a variable
-            in the input dataset or an ``xr.DataArray``, by default None.
+            Data to transform onto (e.g. a tracer like density or temperature).
+            Defaults to ``None``.
         grid_positions : Optional[Dict[str, str]]
-            Mapping of dimension positions, by default None. If ``None`` then an
-            attempt is made to derive this argument.
+            Mapping of axes point position on the grid. Defaults to ``None``,
+            which the regridder will try to infer this mapping.
         periodic : bool
-            Whether the grid is periodic, by default False.
+            Whether the grid is periodic, defaults to `False`.
         extra_init_options : Optional[Dict[str, Any]]
-            Extra options passed to the ``xgcm.Grid`` constructor, by default
-            None.
-        options : Optional[Dict[str, Any]]
-            Extra options passed to the ``xgcm.Grid.transform`` method.
+            Extra values to pass to the ``xgcm.Grid`` constructor, defaults to ``None``.
+        **options : Optional[Dict[str, Any]]
+            Extra values to pass to the ``xgcm.Grid.transform`` method.
 
         Raises
         ------
@@ -450,31 +450,30 @@ class RegridderAccessor:
         Import xCDAT:
 
         >>> import xcdat
-        >>> from xcdat.regridder import xgcm
 
         Open a dataset:
 
-        >>> ds = xcdat.open_dataset("so.nc")
+        >>> ds = xcdat.open_dataset("...")
 
         Create output grid:
 
         >>> output_grid = xcdat.create_grid(lev=np.linspace(1000, 1, 5))
 
-        Create theta:
+        Regrid "so" variable from input to output levels using the "linear" method:
 
+        >>> output_data = ds.regridder.vertical_xgcm("so", output_grid)
+
+        Regrid "so", additionally convert from model to pressure units:
+
+        >>> # Create pressure variable
         >>> ds["pressure"] = (ds["hyam"] * ds["P0"] + ds["hybm"] * ds["PS"]).transpose(**ds["T"].dims)
+        >>>
+        >>> output_data = ds.regridder.vertical_xgcm("so", output_grid, target_data="pressure")
 
-        Create regridder:
+        Passing additional values to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
 
-        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", target_data="pressure")
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.vertical("so", ds)
-
-        Passing additional arguments to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
-
-        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", extra_init_options={"boundary": "fill", "fill_value": 1e27}, mask_edges=True)
+        >>> extra_init_options = {"boundary": "fill", "fill_value": 1e27}
+        >>> output_data = ds.regridder.vertical_xgcm("so", output_grid, extra_init_options=extra_init_options, mask_edges=True)
         """
         regridder = VERTICAL_REGRID_TOOLS["xgcm"](
             self._ds,

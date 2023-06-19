@@ -42,6 +42,9 @@ class XESMFRegridder(BaseRegridder):
         ignore_degenerate: bool = True,
         **options,
     ):
+        """
+        See documentation at `xcdat.regridder.RegridderAccessor.horizontal_xesmf`.
+        """
         super().__init__(input_grid, output_grid)
 
         if method not in VALID_METHODS:
@@ -68,14 +71,15 @@ class XESMFRegridder(BaseRegridder):
         raise NotImplementedError()
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """Regrid ``data_var`` in ``ds`` to output grid.
+        """
+        Apply xESMF horizontal regridding to ``data_var`` in ``ds``.
 
         Parameters
         ----------
         data_var : str
-            The name of the data variable inside the dataset to regrid.
+            Name of the variable to regrid.
         ds : xr.Dataset
-            The dataset containing ``data_var``.
+            Input dataset containing ``data_var``.
 
         Returns
         -------
@@ -86,21 +90,6 @@ class XESMFRegridder(BaseRegridder):
         ------
         KeyError
             If data variable does not exist in the Dataset.
-
-        Examples
-        --------
-
-        Create output grid:
-
-        >>> output_grid = xcdat.create_gaussian_grid(32)
-
-        Create regridder:
-
-        >>> regridder = xesmf.XESMFRegridder(ds, output_grid, method="bilinear")
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.horizontal("ts", ds)
         """
         input_da = ds.get(data_var, None)
 

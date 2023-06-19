@@ -24,6 +24,9 @@ class XGCMRegridder(BaseRegridder):
         extra_init_options: Optional[Dict[str, Any]] = None,
         **options,
     ):
+        """
+        See documentation at `xcdat.regridder.accessor.RegridderAccessor.vertical_xgcm`.
+        """
         super().__init__(input_grid, output_grid)
 
         if method not in get_args(XGCMVerticalMethods):
@@ -49,17 +52,15 @@ class XGCMRegridder(BaseRegridder):
         raise NotImplementedError()
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """Regrid ``data_var`` in ``ds`` to output grid.
-
-        To pass additional arguments to ``xgcm.Grid`` or ``xgcm.Grid.transform``
-        see the documentation in the constructor :py:func:`xcdat.regridder.xgcm.XGCMRegridder.__init__`.
+        """
+        Apply xgcm vertical regridding to ``data_var`` in ``ds``.
 
         Parameters
         ----------
         data_var : str
-            The name of the data variable inside the dataset to regrid.
+            Name of the variable to regrid.
         ds : xr.Dataset
-            The dataset containing ``data_var``.
+            Input dataset containing ``data_var``.
 
         Returns
         -------
@@ -72,20 +73,6 @@ class XGCMRegridder(BaseRegridder):
             If data variable does not exist in the Dataset.
         RuntimeError
             If "Z" coordinate is not detected.
-
-        Examples
-        --------
-        Create output grid:
-
-        >>> output_grid = xcdat.create_grid(np.linspace(1000, 1, 20))
-
-        Create regridder:
-
-        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", target_data="pressure")
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.vertical("T", ds)
         """
         try:
             output_coord_z = get_dim_coords(self._output_grid, "Z")
