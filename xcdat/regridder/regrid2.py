@@ -10,46 +10,6 @@ class Regrid2Regridder(BaseRegridder):
     def __init__(
         self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Dict[str, Any]
     ):
-        """
-        Pure python implementation of the regrid2 horizontal regridder from
-        CDMS2's regrid2 module.
-
-        Regrid data from ``input_grid`` to ``output_grid``.
-
-        Available options: None
-
-        Parameters
-        ----------
-        input_grid : xr.Dataset
-            Dataset containing the source grid.
-        output_grid : xr.Dataset
-            Dataset containing the destination grid.
-        options : Dict[str, Any]
-            Dictionary with extra parameters for the regridder.
-
-        Examples
-        --------
-        Import xCDAT:
-
-        >>> import xcdat
-        >>> from xcdat.regridder import regrid2
-
-        Open a dataset:
-
-        >>> ds = xcdat.open_dataset("ts.nc")
-
-        Create output grid:
-
-        >>> output_grid = xcdat.create_gaussian_grid(32)
-
-        Create regridder:
-
-        >>> regridder = regrid2.Regrid2Regridder(ds.grid, output_grid)
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.horizontal("ts", ds)
-        """
         super().__init__(input_grid, output_grid, **options)
 
         self._src_lat = self._input_grid.bounds.get_bounds("Y")

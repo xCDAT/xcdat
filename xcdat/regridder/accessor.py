@@ -113,48 +113,88 @@ class RegridderAccessor:
         self,
         data_var: str,
         output_grid: xr.Dataset,
-        **options: Any,
+        method: str,
+        periodic: bool = False,
+        extrap_method: Optional[str] = None,
+        extrap_dist_exponent: Optional[float] = None,
+        extrap_num_src_pnts: Optional[int] = None,
+        ignore_degenerate: bool = True,
+        **options,
     ) -> xr.Dataset:
-        """
-        Extends the xESMF library for horizontal regridding between structured
-        rectilinear and curvilinear grids.
+        """Extension of ``xESMF`` regridder.
 
-        This method extends ``xESMF`` by automatically constructing the
-        ``xe.XESMFRegridder`` object, preserving source bounds, and generating
-        missing bounds. It regrids ``data_var`` in the dataset to
-        ``output_grid``.
-
-        Option documentation :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
+        The ``XESMFRegridder`` extends ``xESMF`` by automatically constructing
+        the ``xe.XESMFRegridder`` object, preserving source bounds and
+        generating missing bounds.
 
         Parameters
         ----------
-        data_var: str
-            Name of the variable in the `xr.Dataset` to regrid.
+        data_var : str
+            The variable to regrid.
         output_grid : xr.Dataset
-            Dataset containing output grid.
-        options : Dict[str, Any]
-            Dictionary with extra parameters for the regridder.
+            Contains desintation grid coordinates.
+        method : str
+            Regridding method.
 
-        Returns
-        -------
-        xr.Dataset
-            With the ``data_var`` variable on the grid defined in ``output_grid``.
+            Options:
+               - bilinear
+               - conservative
+               - conservative_normed
+               - patch
+               - nearest_s2d
+               - nearest_d2s
+        periodic : bool
+            Treat longitude as periodic. Used for global grids.
+        extrap_method : Optional[str]
+            Extrapolation method.
+
+            Options:
+               - inverse_dist
+               - nearest_s2d
+        extrap_dist_exponent : Optional[float]
+            The exponent to raise the distance to when calculating weights for
+            the extrapolation method.
+        extrap_num_src_pnts : Optional[int]
+            The number of source points to use for the extrapolation methods
+            that use more than one source point.
+        ignore_degenerate : bool
+            Ignore degenerate cells when checking the `input_grid` for errors.
+            If set False, a degenerate cell produces an error.
+
+            This only applies to "conservative" and "conservative_normed"
+            regridding methods.
 
         Raises
         ------
+        KeyError
+            If data variable does not exist in the Dataset.
         ValueError
-            If tool is not supported.
+            If ``method`` is not valid.
+        ValueError
+            If ``extrap_method`` is not valid.
 
         Examples
         --------
+        Import xCDAT:
 
-        Generate output grid:
+        >>> import xcdat
+        >>> from xcdat.regridder import xesmf
+
+        Open a dataset:
+
+        >>> ds = xcdat.open_dataset("ts.nc")
+
+        Create output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Regrid data to output grid using xesmf:
+        Create regridder:
 
-        >>> ds.regridder.horizontal_xesmf("ts", output_grid)
+        >>> regridder = xesmf.XESMFRegridder(ds, output_grid, method="bilinear")
+
+        Regrid data:
+
+        >>> data_new_grid = regridder.horizontal("ts", ds)
         """
         # TODO: Test this conditional.
         if _has_xesmf:  # pragma: no cover
@@ -177,41 +217,44 @@ class RegridderAccessor:
         **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
-        Pure python implementation of CDAT's regrid2 horizontal regridder.
+        Pure python implementation of the regrid2 horizontal regridder from
+        CDMS2's regrid2 module.
 
-        Regrids ``data_var`` in dataset to ``output_grid`` using regrid2's
-        algorithm.
+        Regrid data from ``input_grid`` to ``output_grid``.
 
-        Options documentation :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`
+        Available options: None
 
         Parameters
         ----------
-        data_var: str
-            Name of the variable in the `xr.Dataset` to regrid.
+        input_grid : xr.Dataset
+            Dataset containing the source grid.
         output_grid : xr.Dataset
-            Dataset containing output grid.
+            Dataset containing the destination grid.
         options : Dict[str, Any]
             Dictionary with extra parameters for the regridder.
 
-        Returns
-        -------
-        xr.Dataset
-            With the ``data_var`` variable on the grid defined in ``output_grid``.
-
-        Raises
-        ------
-        ValueError
-            If tool is not supported.
-
         Examples
         --------
-        Generate output grid:
+        Import xCDAT:
+
+        >>> import xcdat
+        >>> from xcdat.regridder import regrid2
+
+        Open a dataset:
+
+        >>> ds = xcdat.open_dataset("ts.nc")
+
+        Create output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Regrid data to output grid using regrid2:
+        Create regridder:
 
-        >>> ds.regridder.horizontal_regrid2("ts", output_grid)
+        >>> regridder = regrid2.Regrid2Regridder(ds.grid, output_grid)
+
+        Regrid data:
+
+        >>> data_new_grid = regridder.horizontal("ts", ds)
         """
         regridder = HORIZONTAL_REGRID_TOOLS["regrid2"](self._ds, output_grid, **options)
 
@@ -225,6 +268,10 @@ class RegridderAccessor:
         **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
+        .. deprecated:: v0.6.0
+            `horizontal` will be deprecated, please migrate to using tool specific methods,
+            e.g. :py:func:`xarray.Dataset.regridder.horizontal_xesmf` or :py:func:`xarray.Dataset.regridder.horizontal_regrid2`.
+
         Apply horizontal regridding to ``data_var`` of the current
         ``xr.Dataset`` to ``output_grid``.
 
@@ -307,6 +354,13 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_regrid2("ts", output_grid)
         """
+        warnings.warn(
+            "`horizontal` will be deprecated, please migrate to using tool "
+            "specific methods, e.g. `horizontal_xesmf` or `horizontal_regrid2`",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         # TODO: Test this conditional.
         if tool == "xesmf" and not _has_xesmf:  # pragma: no cover
             raise ModuleNotFoundError(
