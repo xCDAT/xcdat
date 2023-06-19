@@ -113,7 +113,7 @@ class RegridderAccessor:
         self,
         data_var: str,
         output_grid: xr.Dataset,
-        method: str,
+        method: str = "bilinear",
         periodic: bool = False,
         extrap_method: Optional[str] = None,
         extrap_dist_exponent: Optional[float] = None,

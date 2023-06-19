@@ -34,7 +34,7 @@ class XESMFRegridder(BaseRegridder):
         self,
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
-        method: str,
+        method: str = "bilinear",
         periodic: bool = False,
         extrap_method: Optional[str] = None,
         extrap_dist_exponent: Optional[float] = None,
