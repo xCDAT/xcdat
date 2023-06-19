@@ -473,9 +473,6 @@ def create_grid(
         Data with optional bounds to use for the `Z` axis. Defaults to `None`.
     attrs : Optional[Dict[str, str]]
         Custom attributes to be added to the generated `xr.Dataset`.
-    **kwargs : CoordOptionalBnds
-        Mapping of coordinate name and data with optional bounds. See
-        :py:data:`xcdat.axis.VAR_NAME_MAP` for valid coordinate names.
 
     Returns
     -------
