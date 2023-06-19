@@ -456,12 +456,12 @@ def create_grid(
     attrs: Optional[Dict[str, str]] = None,
     **kwargs: CoordOptionalBnds,
 ) -> xr.Dataset:
-    """Creates a grid dataset.
+    """
+    Creates a grid dataset.
 
-    Deprecation Warning:
-    The ``**kwargs`` argument will be removed in a future release.
-    Please migrate to using 'x', 'y', or 'z' arguments to create
-    future grids.
+    .. deprecated:: v0.6.0
+        ``**kwargs`` argument is being deprecated, please migrate to
+        'x', 'y', or 'z' arguments to create future grids.
 
     Parameters
     ----------
