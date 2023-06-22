@@ -50,7 +50,7 @@ jobs:
                 shell: bash -l {0}
         strategy:
             matrix:
-                python-version: ["3.8", "3.9", "3.10"]
+                python-version: ["3.9", "3.10", "3.11"]
         steps:
             - id: skip_check
               uses: fkirc/skip-duplicate-actions@master
@@ -98,7 +98,10 @@ jobs:
 
             - if: $${{ steps.skip_check.outputs.should_skip != 'true' || steps.cache.outputs.cache-hit != 'true' }}
               name: Update environment
-              run: mamba env update -n xcdat_ci -f conda-env/ci.yml
+              run: |
+                  mamba env update -n xcdat_ci -f conda-env/ci.yml
+                  # Make sure the Python version in the env matches the current matrix version.
+                  mamba install -c conda-forge python=${{ matrix.python-version }}
 
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
               name: Install xcdat
