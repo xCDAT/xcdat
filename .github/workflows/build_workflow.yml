@@ -94,7 +94,7 @@ jobs:
                       steps.get-date.outputs.today }}-${{hashFiles('conda-env/ci.yml') }}-${{ env.CACHE_NUMBER}}
               env:
                   # Increase this value to reset cache if conda-env/ci.yml has not changed in the workflow
-                  CACHE_NUMBER: 0
+                  CACHE_NUMBER: 1
 
             - if: $${{ steps.skip_check.outputs.should_skip != 'true' || steps.cache.outputs.cache-hit != 'true' }}
               name: Update environment
