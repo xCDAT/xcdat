@@ -94,11 +94,11 @@ jobs:
                       steps.get-date.outputs.today }}-${{hashFiles('conda-env/ci.yml') }}-${{ env.CACHE_NUMBER}}
               env:
                   # Increase this value to reset cache if conda-env/ci.yml has not changed in the workflow
-                  CACHE_NUMBER: 1
+                  CACHE_NUMBER: 0
 
             - if: $${{ steps.skip_check.outputs.should_skip != 'true' || steps.cache.outputs.cache-hit != 'true' }}
               name: Update environment
-              run: mamba update -n xcdat_ci -f conda-env/ci.yml --freeze-installed
+              run: mamba env update -n xcdat_ci -f conda-env/ci.yml
 
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
               name: Install xcdat
