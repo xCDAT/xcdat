@@ -13,7 +13,8 @@ Prerequisites
      pages if you aren't familiar with ``xarray``.
 
 2. xCDAT is distributed available on Anaconda. We recommend installing `mamba`_, which
-   is a drop-in replacement of ``conda``.
+   is a drop-in replacement of ``conda``. Note, ``conda`` commands are still available
+   with Mambaforge.
 
    We recommend following these steps to install Mambaforge (Linux example):
 

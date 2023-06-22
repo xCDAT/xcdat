@@ -31,7 +31,7 @@ dependencies:
     - nbsphinx
     - pandoc
     - ipython >=8.0.0 # Required for nbsphinx syntax highlighting
-    - gsw-xarray=0.3.0 # Required for vertical regridding example
+    - gsw-xarray # Required for vertical regridding example
     # Quality Assurance
     # ==================
     - types-python-dateutil
