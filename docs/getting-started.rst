@@ -12,7 +12,7 @@ Prerequisites
    - We highly recommend visiting the `xarray tutorial`_ and `xarray documentation`_
      pages if you aren't familiar with ``xarray``.
 
-2. xCDAT is distributed available on the Anaconda `conda-forge`_ channel. We recommend
+2. xCDAT is distributed on the Anaconda `conda-forge`_ channel. We recommend
    installing `mamba`_ to access xCDAT. mamba is is a drop-in replacement of conda.
    Note, ``conda`` commands are still available with Mambaforge.
 
