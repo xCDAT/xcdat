@@ -98,7 +98,7 @@ jobs:
 
             - if: $${{ steps.skip_check.outputs.should_skip != 'true' || steps.cache.outputs.cache-hit != 'true' }}
               name: Update environment
-              run: mamba env update -n xcdat_ci -f conda-env/ci.yml --no-update-deps
+              run: mamba update -n xcdat_ci -f conda-env/ci.yml --freeze-installed
 
             - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
               name: Install xcdat
