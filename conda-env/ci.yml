@@ -15,7 +15,7 @@ dependencies:
     - numpy >=1.23.0 # This version of numpy includes support for Python 3.11.
     - pandas
     - python-dateutil
-    - xarray >=2022.02.0 # This version of Xarray drops support for Python 3.9.
+    - xarray >=2022.02.0 # This version of Xarray drops support for Python 3.8.
     - xgcm
     # Optional - enables additional features.
     # =========================================
