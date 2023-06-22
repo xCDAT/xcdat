@@ -137,15 +137,17 @@ Local Development
     Linux
         ::
 
-            $ wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-Linux-x86_64.sh
-            $ bash ./Mambaforge-Linux-x86_64.sh
+            $ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+            $ bash ./Miniconda3-latest-Linux-x86_64.sh
+            Do you wish the installer to initialize Miniconda3 by running conda init? [yes|no] yes
 
 
     MacOS
         ::
 
-            $ wget https://github.com/conda-forge/miniforge/releases/latest/download/Mambaforge-MacOSX-x86_64.sh
-            $ bash ./Mambaforge-MacOSX-x86_64.sh
+            $ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            $ bash ./Miniconda3-latest-MacOSX-x86_64.sh
+            Do you wish the installer to initialize Miniconda3 by running conda init? [yes|no] yes
 
 2. Fork the ``xcdat`` repo on GitHub.
 
@@ -158,11 +160,11 @@ Local Development
 4. <OPTIONAL> Open ``.vscode/xcdat.code-settings`` in VS Code
 
 
-5. Create and activate the development environment::
+5. Create and activate Conda development environment::
 
     $ cd xcdat
-    $ mamba env create -f conda-env/dev.yml
-    $ mamba activate xcdat_dev
+    $ conda env create -f conda-env/dev.yml
+    $ conda activate xcdat_dev
 
 6. <OPTIONAL> Set VS Code Python interpretor to ``xcdat_dev``
 
