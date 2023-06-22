@@ -53,7 +53,7 @@ Installation
 
    Note that ``xesmf`` is an optional dependency, which is required for using ``xesmf``
    based horizontal regridding APIs in ``xcdat``. ``xesmf`` is not currently supported
-   on `windows`_ because ``esmpy`` is not yet available on these platforms. Windows
+   on `windows`_ because ``esmpy`` is not yet available on this platform. Windows
    users can try `WSL2`_ as a workaround.
 
 .. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
