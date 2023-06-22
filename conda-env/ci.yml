@@ -1,13 +1,12 @@
-# Conda xcdat CI/CD environment (used in GH Actions)
+# Conda xcdat CI/CD environment (used in GH Actions).
 name: xcdat_ci
 channels:
     - conda-forge
     - defaults
 dependencies:
-    # ==================
-    # Base
-    # ==================
-    - python >=3.8
+    # Base - required for building the package.
+    # =========================================
+    - python >=3.9
     - pip
     - cf_xarray
     - cftime
@@ -15,14 +14,14 @@ dependencies:
     - esmpy
     - lxml
     - netcdf4
-    - numpy
+    - numpy >=1.23.0 # This version of numpy includes support for Python 3.11.
     - pandas
     - python-dateutil
-    - xarray
-    # Constrained because 0.6.3 breaks with import ESMF
-    # Source: https://github.com/pangeo-data/xESMF/issues/212
-    - xesmf >0.6.3
+    - xarray >=2022.02.0 # This version of Xarray drops support for Python 3.9.
     - xgcm
+    # Optional - enables additional features.
+    # =========================================
+    - xesmf >=0.7.0 # Constrained because https://github.com/pangeo-data/xESMF/issues/212.
     # Quality Assurance
     # ==================
     - types-python-dateutil
