@@ -456,21 +456,20 @@ def create_grid(
     attrs: Optional[Dict[str, str]] = None,
     **kwargs: CoordOptionalBnds,
 ) -> xr.Dataset:
-    """
-    Creates a grid dataset.
+    """Creates a grid dataset using the specified axes.
 
     .. deprecated:: v0.6.0
         ``**kwargs`` argument is being deprecated, please migrate to
-        'x', 'y', or 'z' arguments to create future grids.
+        ``x``, ``y``, or ``z`` arguments to create future grids.
 
     Parameters
     ----------
     x : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
-        Data with optional bounds to use for the `X` axis. Defaults to `None`.
+        Data with optional bounds to use for the "X" axis, by default None.
     y : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
-        Data with optional bounds to use for the `Y` axis. Defaults to `None`.
+        Data with optional bounds to use for the "Y" axis, by default None.
     z : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
-        Data with optional bounds to use for the `Z` axis. Defaults to `None`.
+        Data with optional bounds to use for the "Z" axis, by default None.
     attrs : Optional[Dict[str, str]]
         Custom attributes to be added to the generated `xr.Dataset`.
 
@@ -491,7 +490,9 @@ def create_grid(
 
     With custom attributes:
 
-    >>> grid = create_grid(x=lon_axis, y=lat_axis, attrs={"created": str(datatime.date.today())})
+    >>> grid = create_grid(
+    >>>    x=lon_axis, y=lat_axis, attrs={"created": str(datatime.date.today())}
+    >>> )
 
     Create grid using existing `xr.DataArray`'s:
 
@@ -509,7 +510,10 @@ def create_grid(
 
     Create vertical grid:
 
-    >>> grid = create_grid(z=create_axis("lev", np.linspace(1000, 1, 20), attrs={"units": "meters", "positive": "down"}))
+    >>> z = create_axis(
+    >>>   "lev", np.linspace(1000, 1, 20), attrs={"units": "meters", "positive": "down"}
+    >>> )
+    >>> grid = create_grid(z=z)
     """
     if np.all([item is None for item in (x, y, z)]) and len(kwargs) == 0:
         raise ValueError("Must pass at least 1 axis to create a grid.")
@@ -532,7 +536,9 @@ def create_grid(
         if isinstance(item, (tuple, list)):
             if len(item) != 2:
                 raise ValueError(
-                    f"Argument {key!r} should either be a xr.DataArray or (xr.DataArray, xr.DataArray)"
+                    f"Argument {key!r} should be an xr.DataArray representing "
+                    "coordinates or a tuple (xr.DataArray, xr.DataArray) representing "
+                    "coordinates and bounds."
                 )
 
             axis, bnds = item[0].copy(deep=True), item[1].copy(deep=True)  # type: ignore[union-attr]
@@ -616,25 +622,30 @@ def create_axis(
     generate_bounds: Optional[bool] = True,
     attrs: Optional[Dict[str, str]] = None,
 ) -> Tuple[xr.DataArray, Optional[xr.DataArray]]:
-    """Creates axis and optional bounds.
+    """Creates an axis and optional bounds.
 
-    User provided ``attributes`` will be merged with a set of default
-    attributes. Default attributes (`axis`, `coordinate`, `bnds`)
-    cannot be overwritten. The `units` attribute is the only default
-    that can be overwritten.
 
     Parameters
     ----------
     name : str
-        CF name for the axis, e.g. lat, lon, lev, etc.
+        The CF standard name for the axis (e.g., "longitude", "latitude",
+        "height"). xCDAT also accepts additional names such as "lon", "lat",
+        and "lev". Refer to ``xcdat.axis.VAR_NAME_MAP`` for accepted names.
     data : Union[List[Union[int, float]], np.ndarray]
         1-D axis data.
     bounds : Optional[Union[List[List[Union[int, float]]], np.ndarray]]
-        2-D axis bounds data. Must be shaped as n x 2 where n is the length of ``data``. Defaults to 'None'.
+        2-D axis bounds data consisting of integers or floats, defaults to None. 
+        Must have a shape of n x 2, where n is the length of ``data``.
     generate_bounds : Optiona[bool]
-        Controls bounds generation behavior. Defaults to `True`.
+        Generate bounds for the axis if ``bounds`` is None, by default True.
     attrs : Optional[Dict[str, str]]
-        Custom attributes to be added to the generated `xr.DataArray`.
+    attrs : Optional[Dict[str, str]]
+        Custom attributes to be added to the generated `xr.DataArray` axis, by
+        default None.
+
+        User provided ``attrs`` will be merged with a set of default attributes.
+        Default attributes ("axis", "coordinate", "bnds") cannot be overwritten.
+        The default "units" attribute is the only default that can be overwritten.
 
     Returns
     -------
@@ -648,7 +659,7 @@ def create_axis(
 
     Examples
     --------
-    Create axis and generate bounds:
+    Create axis and generate bounds (by default):
 
     >>> lat, bnds = create_axis("lat", np.array([-45, 0, 45]))
 
@@ -662,7 +673,11 @@ def create_axis(
 
     Provide additional attributes and overwrite `units`:
 
-    >>> lat, _ = create_axis("lat", np.array([-45, 0, 45]), attrs={"generated": str(datetime.date.today()), "units": "degrees_south"})
+    >>> lat, _ = create_axis(
+    >>>     "lat",
+    >>>     np.array([-45, 0, 45]),
+    >>>     attrs={"generated": str(datetime.date.today()), "units": "degrees_south"},
+    >>> )
     """
     bnds = None
     axis_key = None
@@ -670,20 +685,20 @@ def create_axis(
     if attrs is None:
         attrs = {}
 
-    for x, y in VAR_NAME_MAP.items():
-        if name in y:
-            axis_key = x
+    for cf_axis, names in VAR_NAME_MAP.items():
+        if name in names:
+            axis_key = name
 
             break
 
     if axis_key is None:
         raise ValueError(f"The name {name!r} is not valid for an axis name.")
 
+    # Replace user attributes with default attributes that can't be overwritten.
     default_axis_attrs = attrs.copy()
-
     default_axis_attrs.update(COORD_DEFAULT_ATTRS[axis_key].copy())
 
-    # allow units to be overwritten if present
+    # Use the user specified "units" attribute if set.
     try:
         default_axis_attrs["units"] = attrs["units"]
     except KeyError:
