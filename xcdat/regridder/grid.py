@@ -632,7 +632,7 @@ def create_axis(
         "height"). xCDAT also accepts additional names such as "lon", "lat",
         and "lev". Refer to ``xcdat.axis.VAR_NAME_MAP`` for accepted names.
     data : Union[List[Union[int, float]], np.ndarray]
-        1-D axis data.
+        1-D axis data consisting of integers or floats.
     bounds : Optional[Union[List[List[Union[int, float]]], np.ndarray]]
         2-D axis bounds data consisting of integers or floats, defaults to None.
         Must have a shape of n x 2, where n is the length of ``data``.
@@ -663,7 +663,7 @@ def create_axis(
 
     >>> lat, bnds = create_axis("lat", np.array([-45, 0, 45]))
 
-    Create axis and bounds from List:
+    Create axis and bounds from list of floats:
 
     >>> lat, bnds = create_axis("lat", [-45, 0, 45], bounds=[[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
 
