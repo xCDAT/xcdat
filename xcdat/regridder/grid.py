@@ -687,7 +687,7 @@ def create_axis(
 
     for cf_axis, names in VAR_NAME_MAP.items():
         if name in names:
-            axis_key = name
+            axis_key = cf_axis
 
             break
 
