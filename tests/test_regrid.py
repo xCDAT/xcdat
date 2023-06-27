@@ -904,7 +904,7 @@ class TestGrid:
         with pytest.raises(
             ValueError,
             match=re.escape(
-                "Argument 'x' should either be a xr.DataArray or (xr.DataArray, xr.DataArray)"
+                "Argument 'x' should be an xr.DataArray representing coordinates or a tuple (xr.DataArray, xr.DataArray) representing coordinates and bounds."
             ),
         ):
             grid.create_grid(x=(self.lon, self.lon_bnds, self.lat))  # type: ignore[arg-type]

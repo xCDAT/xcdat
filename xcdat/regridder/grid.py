@@ -634,7 +634,7 @@ def create_axis(
     data : Union[List[Union[int, float]], np.ndarray]
         1-D axis data.
     bounds : Optional[Union[List[List[Union[int, float]]], np.ndarray]]
-        2-D axis bounds data consisting of integers or floats, defaults to None. 
+        2-D axis bounds data consisting of integers or floats, defaults to None.
         Must have a shape of n x 2, where n is the length of ``data``.
     generate_bounds : Optiona[bool]
         Generate bounds for the axis if ``bounds`` is None, by default True.
