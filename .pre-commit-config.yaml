@@ -11,7 +11,7 @@ repos:
           - id: check-yaml
 
     - repo: https://github.com/psf/black
-      rev: 23.1.0
+      rev: 23.3.0
       hooks:
           - id: black
 
@@ -30,15 +30,15 @@ repos:
             additional_dependencies: [flake8-isort]
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.1.1
+      rev: v1.4.0
       hooks:
           - id: mypy
-            args: ["--config=setup.cfg"]
+            args: ["--config=pyproject.toml"]
             additional_dependencies:
                 [
-                    dask==2023.3.2,
-                    numpy==1.23.5,
-                    pandas==1.5.3,
-                    xarray==2023.3.0,
-                    types-python-dateutil==2.8.19,
+                    dask,
+                    numpy>=1.23.0,
+                    pandas,
+                    xarray>=2023.2.0,
+                    types-python-dateutil,
                 ]
