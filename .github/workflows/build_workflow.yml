@@ -24,17 +24,17 @@ jobs:
                   cancel_others: ${{ env.CANCEL_OTHERS }}
                   paths_ignore: ${{ env.PATHS_IGNORE }}
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               name: Checkout Code Repository
               uses: actions/checkout@v3
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               name: Set up Python 3.10
               uses: actions/setup-python@v3
               with:
                   python-version: "3.10"
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               # Run all pre-commit hooks on all the files.
               # Getting only staged files can be tricky in case a new PR is opened
               # since the action is run on a branch in detached head state
@@ -59,10 +59,10 @@ jobs:
                   paths_ignore: ${{ env.PATHS_IGNORE }}
                   do_not_skip: '["push", "workflow_dispatch"]'
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               uses: actions/checkout@v3
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               name: Set up Conda Environment
               uses: conda-incubator/setup-miniconda@v2
               with:
@@ -77,13 +77,13 @@ jobs:
 
             # Refresh the cache every 24 hours to avoid inconsistencies of package versions
             # between the CI pipeline and local installations.
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               id: get-date
               name: Get Date
               run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
               shell: bash
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               id: cache
               name: Cache Conda env
               uses: actions/cache@v3
@@ -96,25 +96,27 @@ jobs:
                   # Increase this value to reset cache if conda-env/ci.yml has not changed in the workflow
                   CACHE_NUMBER: 0
 
-            - if: $${{ steps.skip_check.outputs.should_skip != 'true' || steps.cache.outputs.cache-hit != 'true' }}
+            - if: |
+                  steps.skip_check.outputs.should_skip == 'false' &&
+                  steps.cache.outputs.cache-hit == 'false'
               name: Update environment
               run: |
                   mamba env update -n xcdat_ci -f conda-env/ci.yml
                   # Make sure the Python version in the env matches the current matrix version.
                   mamba install -c conda-forge python=${{ matrix.python-version }}
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               name: Install xcdat
               # Source: https://github.com/conda/conda-build/issues/4251#issuecomment-1053460542
               run: |
                   python -m pip install --no-build-isolation --no-deps -e .
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               name: Run Tests
               run: |
                   pytest
 
-            - if: ${{ steps.skip_check.outputs.should_skip != 'true' }}
+            - if: ${{ steps.skip_check.outputs.should_skip == 'false' }}
               name: Upload Coverage Report
               uses: codecov/codecov-action@v3
               with:

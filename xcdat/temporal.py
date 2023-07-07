@@ -290,7 +290,7 @@ class TemporalAccessor:
                 >>> custom_seasons = [
                 >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
                 >>>     ["Apr", "May", "Jun"],  # "AprMayJun"
-                >>>     ["Jul", "Aug", "Sep"],  # "JunJulAug"
+                >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
 
@@ -326,7 +326,7 @@ class TemporalAccessor:
         >>> custom_seasons = [
         >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
         >>>     ["Apr", "May", "Jun"],  # "AprMayJun"
-        >>>     ["Jul", "Aug", "Sep"],  # "JunJulAug"
+        >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
         >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
         >>> ]
         >>>
@@ -445,7 +445,7 @@ class TemporalAccessor:
                 >>> custom_seasons = [
                 >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
                 >>>     ["Apr", "May", "Jun"],  # "AprMayJun"
-                >>>     ["Jul", "Aug", "Sep"],  # "JunJulAug"
+                >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
 
@@ -485,7 +485,7 @@ class TemporalAccessor:
         >>> custom_seasons = [
         >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
         >>>     ["Apr", "May", "Jun"],  # "AprMayJun"
-        >>>     ["Jul", "Aug", "Sep"],  # "JunJulAug"
+        >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
         >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
         >>> ]
         >>>
@@ -614,7 +614,7 @@ class TemporalAccessor:
                 >>> custom_seasons = [
                 >>>     ["Jan", "Feb", "Mar"],  # "JanFebMar"
                 >>>     ["Apr", "May", "Jun"],  # "AprMayJun"
-                >>>     ["Jul", "Aug", "Sep"],  # "JunJulAug"
+                >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
 
