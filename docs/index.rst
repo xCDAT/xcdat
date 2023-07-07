@@ -103,15 +103,13 @@ Available Features
 * Horizontal structured regridding
 
   * Supports rectilinear and curvilinear grids
-  * Python implementation of `regrid2`_ for handling cartesian latitude longitude grids
-  * API that wraps `xESMF`_
-
-Planned Features
-----------------
+  * Extends the `xESMF`_ horizontal regridding API
+  * Python implementation of  `regrid2`_ for handling cartesian latitude longitude grids
 
 * Vertical structured regridding
 
   * Support rectilinear and curvilinear grids
+  * Extends the `xgcm` vertical regridding API
 
 Things We Are Striving For
 --------------------------
@@ -154,6 +152,17 @@ Subscribe to our `mailing list`_ to stay notified of new releases.
 
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
 .. _GitHub Releases: https://anaconda.org/conda-forge/xcdat
+
+Useful Resources
+-----------------
+
+We highly encourage you to checkout the awesome resources below to learn more about
+Xarray and Xarray usage in climate science!
+
+- `Official Xarray Tutorials <https://tutorial.xarray.dev/intro.html>`_
+- `Xarray GitHub Discussion Forum <https://github.com/pydata/xarray/discussions>`_
+- `Pangeo Forum <https://foundations.projectpythia.org/core/xarray.html>`_
+- `Project Pythia <https://foundations.projectpythia.org/core/xarray.html>`_
 
 Acknowledgement
 ---------------

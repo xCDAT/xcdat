@@ -245,7 +245,7 @@ class BoundsAccessor:
                 "the dataset has bound data vars and their names match the 'bounds' "
                 "attributes found on their related time coordinate variables. "
                 "Alternatively, you can add bounds with `ds.bounds.add_missing_bounds()` "
-                "or `ds.bounds.add_bounds`."
+                "or `ds.bounds.add_bounds()`."
             )
 
         bounds: Union[xr.Dataset, xr.DataArray] = self._dataset[
