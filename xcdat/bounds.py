@@ -177,7 +177,7 @@ class BoundsAccessor:
 
                 try:
                     if axis in ["X", "Y", "Z"]:
-                        bounds = self._create_bounds(axis, coord)
+                        bounds = create_bounds(axis, coord)
                     elif axis == "T":
                         bounds = self._create_time_bounds(coord)
                 except (ValueError, TypeError) as e:
@@ -306,7 +306,7 @@ class BoundsAccessor:
 
                 continue
             except KeyError:
-                bounds = self._create_bounds(axis, coord)
+                bounds = create_bounds(axis, coord)
 
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
@@ -404,7 +404,7 @@ class BoundsAccessor:
                         coord, freq, daily_subfreq, end_of_month
                     )
                 elif method == "midpoint":
-                    bounds = self._create_bounds("T", coord)
+                    bounds = create_bounds("T", coord)
 
                 ds[bounds.name] = bounds
                 ds[coord.name].attrs["bounds"] = bounds.name
@@ -491,111 +491,6 @@ class BoundsAccessor:
             pass
 
         return list(set(keys))
-
-    def _create_bounds(self, axis: CFAxisKey, coord_var: xr.DataArray) -> xr.DataArray:
-        """Creates bounds for an axis using coordinate points as midpoints.
-
-        This method uses each coordinate point as the midpoint between its
-        lower and upper bound.
-
-        Parameters
-        ----------
-        axis: CFAxisKey
-            The CF axis key ("X", "Y", "T" ,"Z").
-        coord_var : xr.DataArray
-            The coordinate variable for the axis.
-
-        Returns
-        -------
-        xr.DataArray
-            The axis coordinate bounds.
-
-        Raises
-        ------
-        ValueError
-            If coords dimensions does not equal 1.
-
-        Notes
-        -----
-        Based on [2]_ ``iris.coords._guess_bounds`` and [3]_
-        ``cf_xarray.accessor.add_bounds``.
-
-        For temporal coordinates ``_create_bounds`` will attempt to set the
-        bounds to the start and end of each time step's period. Time axes are
-        expected to be composed of ``cftime`` objects.
-
-        References
-        ----------
-        .. [2] https://scitools-iris.readthedocs.io/en/stable/generated/api/iris/coords.html#iris.coords.AuxCoord.guess_bounds
-
-        .. [3] https://cf-xarray.readthedocs.io/en/latest/generated/xarray.Dataset.cf.add_bounds.html#
-        """
-        is_singleton = coord_var.size <= 1
-        if is_singleton:
-            raise ValueError(
-                f"Cannot generate bounds for coordinate variable '{coord_var.name}'"
-                " which has a length <= 1 (singleton)."
-            )
-
-        # Retrieve coordinate dimension to calculate the diffs between points.
-        dim = coord_var.dims[0]
-        diffs = coord_var.diff(dim).values
-
-        # Add beginning and end points to account for lower and upper bounds.
-        # np.array of string values with `dtype="timedelta64[ns]"`
-        diffs = np.insert(diffs, 0, diffs[0])
-        diffs = np.append(diffs, diffs[-1])
-
-        # `cftime` objects only support arithmetic using `timedelta` objects, so
-        # the values of  `diffs` must be casted from `dtype="timedelta64[ns]"`
-        # to `timedelta` objects.
-        if axis == "T" and contains_cftime_datetimes(xr.as_variable(coord_var)):
-            diffs = pd.to_timedelta(diffs)
-
-        # FIXME: These lines produces the warning: `PerformanceWarning:
-        # Adding/subtracting object-dtype array to TimedeltaArray not
-        # vectorized` after converting diffs to `timedelta`. I (Tom) was not
-        # able to find an alternative, vectorized solution at the time of this
-        # implementation.
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
-
-            width = 0.5
-            lower_bounds = coord_var - diffs[:-1] * width
-            upper_bounds = coord_var + diffs[1:] * (1 - width)
-
-        # Transpose both bound arrays into a 2D array.
-        data = np.array([lower_bounds, upper_bounds]).transpose()
-
-        # Clip latitude bounds at (-90, 90)
-        if axis == "Y":
-            units = coord_var.attrs.get("units")
-
-            if units is None:
-                coord_var.attrs["units"] = "degrees_north"
-                logger.warning(
-                    f"The '{coord_var.name}' coordinate variable is missing "
-                    "a 'units' attribute. Assuming 'units' is 'degrees_north'."
-                )
-            elif "degree" not in units.lower():
-                raise ValueError(
-                    f"The {coord_var.name} coord variable has a 'units' attribute that "
-                    "is not in degrees."
-                )
-
-            if (coord_var >= -90).all() and (coord_var <= 90).all():
-                np.clip(data, -90, 90, out=data)
-
-        # Create the bounds data variable and add it to the Dataset.
-        bounds = xr.DataArray(
-            name=f"{coord_var.name}_bnds",
-            data=data,
-            coords={coord_var.name: coord_var},
-            dims=[*coord_var.dims, "bnds"],
-            attrs={"xcdat_bounds": "True"},
-        )
-
-        return bounds
 
     def _create_time_bounds(
         self,
@@ -935,3 +830,109 @@ class BoundsAccessor:
             )
 
         get_dim_coords(self._dataset, axis)
+
+
+def create_bounds(axis: CFAxisKey, coord_var: xr.DataArray) -> xr.DataArray:
+    """Creates bounds for an axis using coordinate points as midpoints.
+
+    This method uses each coordinate point as the midpoint between its
+    lower and upper bound.
+
+    Parameters
+    ----------
+    axis: CFAxisKey
+        The CF axis key ("X", "Y", "T" ,"Z").
+    coord_var : xr.DataArray
+        The coordinate variable for the axis.
+
+    Returns
+    -------
+    xr.DataArray
+        The axis coordinate bounds.
+
+    Raises
+    ------
+    ValueError
+        If coords dimensions does not equal 1.
+
+    Notes
+    -----
+    Based on [2]_ ``iris.coords._guess_bounds`` and [3]_
+    ``cf_xarray.accessor.add_bounds``.
+
+    For temporal coordinates ``create_bounds`` will attempt to set the
+    bounds to the start and end of each time step's period. Time axes are
+    expected to be composed of ``cftime`` objects.
+
+    References
+    ----------
+    .. [2] https://scitools-iris.readthedocs.io/en/stable/generated/api/iris/coords.html#iris.coords.AuxCoord.guess_bounds
+
+    .. [3] https://cf-xarray.readthedocs.io/en/latest/generated/xarray.Dataset.cf.add_bounds.html#
+    """
+    is_singleton = coord_var.size <= 1
+    if is_singleton:
+        raise ValueError(
+            f"Cannot generate bounds for coordinate variable '{coord_var.name}'"
+            " which has a length <= 1 (singleton)."
+        )
+
+    # Retrieve coordinate dimension to calculate the diffs between points.
+    dim = coord_var.dims[0]
+    diffs = coord_var.diff(dim).values
+
+    # Add beginning and end points to account for lower and upper bounds.
+    # np.array of string values with `dtype="timedelta64[ns]"`
+    diffs = np.insert(diffs, 0, diffs[0])
+    diffs = np.append(diffs, diffs[-1])
+
+    # `cftime` objects only support arithmetic using `timedelta` objects, so
+    # the values of  `diffs` must be casted from `dtype="timedelta64[ns]"`
+    # to `timedelta` objects.
+    if axis == "T" and contains_cftime_datetimes(xr.as_variable(coord_var)):
+        diffs = pd.to_timedelta(diffs)
+
+    # FIXME: These lines produces the warning: `PerformanceWarning:
+    # Adding/subtracting object-dtype array to TimedeltaArray not
+    # vectorized` after converting diffs to `timedelta`. I (Tom) was not
+    # able to find an alternative, vectorized solution at the time of this
+    # implementation.
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=pd.errors.PerformanceWarning)
+
+        width = 0.5
+        lower_bounds = coord_var - diffs[:-1] * width
+        upper_bounds = coord_var + diffs[1:] * (1 - width)
+
+    # Transpose both bound arrays into a 2D array.
+    data = np.array([lower_bounds, upper_bounds]).transpose()
+
+    # Clip latitude bounds at (-90, 90)
+    if axis == "Y":
+        units = coord_var.attrs.get("units")
+
+        if units is None:
+            coord_var.attrs["units"] = "degrees_north"
+            logger.warning(
+                f"The '{coord_var.name}' coordinate variable is missing "
+                "a 'units' attribute. Assuming 'units' is 'degrees_north'."
+            )
+        elif "degree" not in units.lower():
+            raise ValueError(
+                f"The {coord_var.name} coord variable has a 'units' attribute that "
+                "is not in degrees."
+            )
+
+        if (coord_var >= -90).all() and (coord_var <= 90).all():
+            np.clip(data, -90, 90, out=data)
+
+    # Create the bounds data variable and add it to the Dataset.
+    bounds = xr.DataArray(
+        name=f"{coord_var.name}_bnds",
+        data=data,
+        coords={coord_var.name: coord_var},
+        dims=[*coord_var.dims, "bnds"],
+        attrs={"xcdat_bounds": "True"},
+    )
+
+    return bounds
