@@ -123,8 +123,8 @@ For more instructions on how to contribute, please checkout our `Contributing Gu
 .. _GitHub Issue Tracker: https://github.com/xCDAT/xcdat/issues
 .. _Contributing Guide: https://xcdat.readthedocs.io/en/stable/contributing.html
 
-Available Features
-------------------
+Features
+--------
 
 * Extension of xarray's ``open_dataset()`` and ``open_mfdataset()`` with post-processing options
 
