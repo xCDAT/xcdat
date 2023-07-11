@@ -1,9 +1,11 @@
-from typing import Any, Tuple, Union
+import warnings
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
 
 from xcdat.axis import COORD_DEFAULT_ATTRS, VAR_NAME_MAP, CFAxisKey, get_dim_coords
+from xcdat.bounds import create_bounds
 from xcdat.regridder.base import CoordOptionalBnds
 
 # First 50 zeros for the bessel function
@@ -93,7 +95,7 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
 
     lon = _create_uniform_axis(0.0, 360.0, (360.0 / (2.0 * nlats)))
 
-    return create_grid(lat=(lat, lat_bnds), lon=lon)
+    return create_grid(x=create_axis("lon", lon), y=(lat, lat_bnds))
 
 
 def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
@@ -339,7 +341,7 @@ def create_uniform_grid(
 
     lon = _create_uniform_axis(lon_start, lon_stop + 0.0001, lon_delta)
 
-    return create_grid(lat=lat, lon=lon)
+    return create_grid(x=create_axis("lon", lon), y=create_axis("lat", lat))
 
 
 def _create_uniform_axis(start: float, stop: float, delta: float) -> np.ndarray:
@@ -393,7 +395,10 @@ def create_global_mean_grid(grid: xr.Dataset) -> xr.Dataset:
     lon_bnds = grid.bounds.get_bounds("X", var_key=lon.name)
     lon_bnds = np.array([[lon_bnds[0, 0], lon_bnds[-1, 1]]])
 
-    return create_grid(lat=(lat_data, lat_bnds), lon=(lon_data, lon_bnds))
+    return create_grid(
+        x=create_axis("lon", lon_data, bounds=lon_bnds),
+        y=create_axis("lat", lat_data, lat_bnds),
+    )
 
 
 def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
@@ -426,47 +431,131 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     # Ignore `Argument 1 to "create_grid" has incompatible type
     # "Union[Dataset, DataArray]"; expected "Union[ndarray[Any, Any], DataArray]"
     # mypy(error)` because this arg is validated to be a DataArray beforehand.
-    return create_grid(lat=(lat, lat_bnds), lon=(out_lon_data, lon_bnds))  # type: ignore
+    return create_grid(x=create_axis("lon", out_lon_data, bounds=lon_bnds), y=create_axis("lat", lat, bounds=lat_bnds))  # type: ignore
 
 
-def create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
-    """Creates a grid from coordinate mapping.
+def create_grid(
+    x: Optional[
+        Union[
+            xr.DataArray,
+            Tuple[xr.DataArray, Optional[xr.DataArray]],
+        ]
+    ] = None,
+    y: Optional[
+        Union[
+            xr.DataArray,
+            Tuple[xr.DataArray, Optional[xr.DataArray]],
+        ]
+    ] = None,
+    z: Optional[
+        Union[
+            xr.DataArray,
+            Tuple[xr.DataArray, Optional[xr.DataArray]],
+        ]
+    ] = None,
+    attrs: Optional[Dict[str, str]] = None,
+    **kwargs: CoordOptionalBnds,
+) -> xr.Dataset:
+    """Creates a grid dataset using the specified axes.
+
+    .. deprecated:: v0.6.0
+        ``**kwargs`` argument is being deprecated, please migrate to
+        ``x``, ``y``, or ``z`` arguments to create future grids.
 
     Parameters
     ----------
-    **kwargs : CoordOptionalBnds
-        Mapping of coordinate name and data with optional bounds. See
-        :py:data:`xcdat.axis.VAR_NAME_MAP` for valid coordinate names.
+    x : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
+        Data with optional bounds to use for the "X" axis, by default None.
+    y : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
+        Data with optional bounds to use for the "Y" axis, by default None.
+    z : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
+        Data with optional bounds to use for the "Z" axis, by default None.
+    attrs : Optional[Dict[str, str]]
+        Custom attributes to be added to the generated `xr.Dataset`.
 
     Returns
     -------
     xr.Dataset
-        Dataset with grid.
+        Dataset with grid axes.
 
     Examples
     --------
-    Create uniform 2.5 x 2.5 degree grid:
+    Create uniform 2.5 x 2.5 degree grid using ``create_axis``:
 
-    >>> import xcdat
-    >>> import numpy as np
+    >>> # NOTE: `create_axis` returns (axis, bnds)
+    >>> lat_axis = create_axis("lat", np.arange(-90, 90, 2.5))
+    >>> lon_axis = create_axis("lon", np.arange(1.25, 360, 2.5))
     >>>
-    >>> lat = np.arange(-90, 90, 2.5)
-    >>> lon = np.arange(1.25, 360, 2.5)
+    >>> grid = create_grid(x=lon_axis, y=lat_axis)
+
+    With custom attributes:
+
+    >>> grid = create_grid(
+    >>>    x=lon_axis, y=lat_axis, attrs={"created": str(datatime.date.today())}
+    >>> )
+
+    Create grid using existing `xr.DataArray`'s:
+
+    >>> lat = xr.DataArray(...)
+    >>> lon = xr.DataArray(...)
     >>>
-    >>> xcdat.create_grid(lat=lat, lon=lon)
+    >>> grid = create_grid(x=lon, x=lat)
 
-    Create grid with bounds:
+    With existing bounds:
 
-    >>> lat_bnds = np.vstack((lat - (2.5 / 2), lat + (2.5 / 2))).T
-    >>> xcdat.create_grid(lat=(lat, lat_bnds), lon=lon)
+    >>> lat_bnds = xr.DataArray(...)
+    >>> lon_bnds = xr.DataArray(...)
+    >>>
+    >>> grid = create_grid(x=(lat, lat_bnds), y=(lon, lon_bnds))
 
     Create vertical grid:
 
-    >>> xcdat.create_grid(lev=np.linspace(1000, 1, 20))
+    >>> z = create_axis(
+    >>>   "lev", np.linspace(1000, 1, 20), attrs={"units": "meters", "positive": "down"}
+    >>> )
+    >>> grid = create_grid(z=z)
     """
-    if len(kwargs) == 0:
-        raise ValueError("Must pass at least 1 coordinate to create a grid.")
+    if np.all([item is None for item in (x, y, z)]) and len(kwargs) == 0:
+        raise ValueError("Must pass at least 1 axis to create a grid.")
+    elif np.all([item is None for item in (x, y, z)]) and len(kwargs) > 0:
+        warnings.warn(
+            "**kwargs will be deprecated, see docstring and use 'x', 'y', or 'z' arguments",
+            DeprecationWarning,
+            stacklevel=2,
+        )
 
+        return _deprecated_create_grid(**kwargs)
+
+    axes = {"x": x, "y": y, "z": z}
+    ds = xr.Dataset(attrs={} if attrs is None else attrs.copy())
+
+    for key, item in axes.items():
+        if item is None:
+            continue
+
+        if isinstance(item, (tuple, list)):
+            if len(item) != 2:
+                raise ValueError(
+                    f"Argument {key!r} should be an xr.DataArray representing "
+                    "coordinates or a tuple (xr.DataArray, xr.DataArray) representing "
+                    "coordinates and bounds."
+                )
+
+            axis, bnds = item[0].copy(deep=True), item[1].copy(deep=True)  # type: ignore[union-attr]
+
+            # ensure bnds attribute is set
+            axis.attrs["bounds"] = bnds.name
+
+            ds = ds.assign({bnds.name: bnds})
+        else:
+            axis = item.copy(deep=True)
+
+        ds = ds.assign_coords({axis.name: axis})
+
+    return ds
+
+
+def _deprecated_create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
     coords = {}
     data_vars = {}
 
@@ -524,6 +613,109 @@ def _prepare_coordinate(name: str, data: CoordOptionalBnds, **attrs: Any):
         )
 
     return coord, bnds
+
+
+def create_axis(
+    name: str,
+    data: Union[List[Union[int, float]], np.ndarray],
+    bounds: Optional[Union[List[List[Union[int, float]]], np.ndarray]] = None,
+    generate_bounds: Optional[bool] = True,
+    attrs: Optional[Dict[str, str]] = None,
+) -> Tuple[xr.DataArray, Optional[xr.DataArray]]:
+    """Creates an axis and optional bounds.
+
+
+    Parameters
+    ----------
+    name : str
+        The CF standard name for the axis (e.g., "longitude", "latitude",
+        "height"). xCDAT also accepts additional names such as "lon", "lat",
+        and "lev". Refer to ``xcdat.axis.VAR_NAME_MAP`` for accepted names.
+    data : Union[List[Union[int, float]], np.ndarray]
+        1-D axis data consisting of integers or floats.
+    bounds : Optional[Union[List[List[Union[int, float]]], np.ndarray]]
+        2-D axis bounds data consisting of integers or floats, defaults to None.
+        Must have a shape of n x 2, where n is the length of ``data``.
+    generate_bounds : Optiona[bool]
+        Generate bounds for the axis if ``bounds`` is None, by default True.
+    attrs : Optional[Dict[str, str]]
+    attrs : Optional[Dict[str, str]]
+        Custom attributes to be added to the generated `xr.DataArray` axis, by
+        default None.
+
+        User provided ``attrs`` will be merged with a set of default attributes.
+        Default attributes ("axis", "coordinate", "bnds") cannot be overwritten.
+        The default "units" attribute is the only default that can be overwritten.
+
+    Returns
+    -------
+    Tuple[xr.DataArray, Optional[xr.DataArray]]
+        A DataArray containing the axis data and optional bounds.
+
+    Raises
+    ------
+    ValueError
+        If ``name`` is not valid CF axis name.
+
+    Examples
+    --------
+    Create axis and generate bounds (by default):
+
+    >>> lat, bnds = create_axis("lat", np.array([-45, 0, 45]))
+
+    Create axis and bounds from list of floats:
+
+    >>> lat, bnds = create_axis("lat", [-45, 0, 45], bounds=[[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
+
+    Create axis and disable generating bounds:
+
+    >>> lat, _ = create_axis("lat", np.array([-45, 0, 45]), generate_bounds=False)
+
+    Provide additional attributes and overwrite `units`:
+
+    >>> lat, _ = create_axis(
+    >>>     "lat",
+    >>>     np.array([-45, 0, 45]),
+    >>>     attrs={"generated": str(datetime.date.today()), "units": "degrees_south"},
+    >>> )
+    """
+    bnds = None
+    axis_key = None
+
+    if attrs is None:
+        attrs = {}
+
+    for cf_axis, names in VAR_NAME_MAP.items():
+        if name in names:
+            axis_key = cf_axis
+
+            break
+
+    if axis_key is None:
+        raise ValueError(f"The name {name!r} is not valid for an axis name.")
+
+    # Replace user attributes with default attributes that can't be overwritten.
+    default_axis_attrs = attrs.copy()
+    default_axis_attrs.update(COORD_DEFAULT_ATTRS[axis_key].copy())
+
+    # Use the user specified "units" attribute if set.
+    try:
+        default_axis_attrs["units"] = attrs["units"]
+    except KeyError:
+        pass
+
+    da = xr.DataArray(data, name=name, dims=[name], attrs=default_axis_attrs)
+
+    if bounds is None:
+        if generate_bounds:
+            bnds = create_bounds(axis_key, da)
+    else:
+        bnds = xr.DataArray(bounds, name=f"{name}_bnds", dims=[name, "bnds"])
+
+    if bnds is not None:
+        da.attrs["bounds"] = bnds.name
+
+    return da, bnds
 
 
 def _validate_grid_has_single_axis_dim(
