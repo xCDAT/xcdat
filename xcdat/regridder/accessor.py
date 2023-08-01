@@ -385,7 +385,28 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices "
                 f"{list(VERTICAL_REGRID_TOOLS)}"
             )
-        regridder = regrid_tool(self._ds, output_grid, **options)
+        input_grid = _get_vertical_input_grid(self._ds, data_var)
+        regridder = regrid_tool(input_grid, output_grid, **options)
         output_ds = regridder.vertical(data_var, self._ds)
 
         return output_ds
+
+
+def _get_vertical_input_grid(ds: xr.Dataset, data_var: str):
+    coords = get_dim_coords(ds, "Z")
+
+    if isinstance(coords, xr.Dataset):
+        coord_z = set([get_dim_coords(ds[data_var], "Z").name])
+
+        all_coords = set(ds.cf[["Z"]].coords.keys())
+
+        # need to take the intersection after as `ds.cf[["Z"]]` will hand back data variables
+        to_drop = all_coords.difference(coord_z).intersection(set(ds.coords.keys()))
+
+        shallow = ds.drop_dims(to_drop)
+
+        input_grid = shallow.regridder.grid
+    else:
+        input_grid = ds.regridder.grid
+
+    return input_grid

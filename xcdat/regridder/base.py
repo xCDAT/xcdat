@@ -41,7 +41,14 @@ def _preserve_bounds(
     xr.Dataset
         Target Dataset with preserved bounds.
     """
-    input_ds = input_ds.drop_dims([input_ds.cf[x].name for x in ignore_dims])
+    for x in ignore_dims:
+        try:
+            input_ds = input_ds.drop_dims([input_ds.cf[x].name])
+        except KeyError:
+            to_drop = set(input_ds.cf[[x]].coords.keys()).intersection(
+                set(input_ds.coords.keys())
+            )
+            input_ds = input_ds.drop_dims(list(to_drop))
 
     for ds in (output_grid, input_ds):
         for axis in ("X", "Y", "Z", "T"):
