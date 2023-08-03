@@ -1334,6 +1334,18 @@ class TestBase:
         assert "lev_bnds" in output_ds
         assert output_ds.lev_bnds.attrs["source"] == "input_ds"
 
+    def test_preserve_bounds_does_not_drop_axis_if_axis_does_not_exist(self):
+        output_grid = fixtures.generate_lev_dataset()
+        output_grid = output_grid.drop_dims("lat")
+
+        input_ds = output_grid.copy(deep=True)
+
+        target = xr.Dataset()
+        output_ds = base._preserve_bounds(input_ds, output_grid, target, ["Y"])
+
+        # Check that lat is still not in the dimensions (nothing happens).
+        assert "lat" not in output_ds.dims
+
     def test_regridder_implementation(self):
         class NewRegridder(base.BaseRegridder):
             def __init__(self, src_grid, dst_grid, **options):

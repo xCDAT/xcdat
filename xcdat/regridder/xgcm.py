@@ -248,10 +248,9 @@ class XGCMRegridder(BaseRegridder):
             coords = ", ".join(sorted(list(coord_z.coords.keys())))  # type: ignore[arg-type]
 
             raise RuntimeError(
-                "Could not determine the `Z` coordinate "
-                "in the input grid. Found multiple axes "
-                f"({coords}), ensure there is only a single "
-                "`Z` axis in the input grid.",
+                "Could not determine the `Z` coordinate in the input grid. "
+                f"Found multiple axes ({coords}), ensure there is only a "
+                "single `Z` axis in the input grid.",
                 list(coord_z.coords.keys()),
             )
 

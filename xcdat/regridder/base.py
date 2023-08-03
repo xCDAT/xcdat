@@ -6,7 +6,7 @@ import xarray as xr
 
 import xcdat.bounds  # noqa: F401
 from xcdat._logger import _setup_custom_logger
-from xcdat.axis import CFAxisKey
+from xcdat.axis import CFAxisKey, get_dim_keys
 
 logger = _setup_custom_logger(__name__)
 
@@ -19,7 +19,7 @@ def _preserve_bounds(
     input_ds: xr.Dataset,
     output_grid: xr.Dataset,
     output_ds: xr.Dataset,
-    ignore_dims: List[CFAxisKey],
+    drop_axis: List[CFAxisKey],
 ) -> xr.Dataset:
     """Preserves existing bounds from datasets.
 
@@ -33,22 +33,17 @@ def _preserve_bounds(
         Output grid Dataset used for regridding.
     output_ds : xr.Dataset
         Dataset bounds will be copied to.
-    ignore_dims : List[CFAxisKey]
-        Dimensions to drop from `input_ds`.
+    drop_axis : List[CFAxisKey]
+        Axis or axes to drop from `input_ds`, which drops the related coords
+        and bounds. For example, dropping the "Y" axis in `input_ds` ensures
+        that the "Y" axis in `output_grid` is referenced for bounds.
 
     Returns
     -------
     xr.Dataset
         Target Dataset with preserved bounds.
     """
-    for x in ignore_dims:
-        try:
-            input_ds = input_ds.drop_dims([input_ds.cf[x].name])
-        except KeyError:
-            to_drop = set(input_ds.cf[[x]].coords.keys()).intersection(
-                set(input_ds.coords.keys())
-            )
-            input_ds = input_ds.drop_dims(list(to_drop))
+    input_ds = _drop_axis(input_ds, drop_axis)
 
     for ds in (output_grid, input_ds):
         for axis in ("X", "Y", "Z", "T"):
@@ -61,6 +56,40 @@ def _preserve_bounds(
                     output_ds[bnds.name] = bnds.copy()
 
     return output_ds
+
+
+def _drop_axis(ds: xr.Dataset, axis: List[CFAxisKey]) -> xr.Dataset:
+    """Drops an axis or axes in a dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset.
+    axis : List[CFAxisKey]
+        The axis or axes to drop.
+
+    Returns
+    -------
+    xr.Daatset
+        The dataset with axis or axes dropped.
+    """
+    dims: List[str] = []
+
+    for ax in axis:
+        try:
+            dim = get_dim_keys(ds, ax)
+        except KeyError:
+            pass
+        else:
+            if isinstance(dim, str):
+                dims.append(dim)
+            elif isinstance(dim, list):
+                dims = dims + dim
+
+    if len(dims) > 0:
+        ds = ds.drop_dims(dims)
+
+    return ds
 
 
 class BaseRegridder(abc.ABC):
