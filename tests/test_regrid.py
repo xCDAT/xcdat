@@ -43,6 +43,18 @@ class TestXGCMRegridder:
 
         self.output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
 
+    def test_multiple_z_axes(self):
+        self.ds = self.ds.assign_coords({"ilev": self.ds.lev.copy().rename("ilev")})
+
+        self.ds = self.ds.assign(so_1=self.ds.so.copy().rename("so_1"))
+
+        self.ds["so_1"] = self.ds.so_1.swap_dims({"lev": "ilev"})
+
+        regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
+
+        with pytest.raises(RuntimeError, match=r".*ilev, lev.*"):
+            regridder.vertical("so", self.ds)
+
     def test_vertical_regrid_level_name_mismatch(self):
         self.ds = self.ds.rename({"lev": "plev"})
 
@@ -207,7 +219,7 @@ class TestXGCMRegridder:
         )
 
         with pytest.raises(
-            RuntimeError, match="Could not determine 'Z' coordinate in input dataset"
+            RuntimeError, match="Could not determine `Z` coordinate in dataset."
         ):
             regridder.vertical("ts", ds)
 
@@ -235,7 +247,7 @@ class TestXGCMRegridder:
         )
 
         with pytest.raises(
-            RuntimeError, match="Could not determine 'Z' bounds in input dataset"
+            RuntimeError, match="Could not determine `Z` bounds in dataset."
         ):
             regridder.vertical("so", ds)
 
@@ -1162,6 +1174,35 @@ class TestAccessor:
     def setup(self):
         self.data = mock.MagicMock()
         self.ac = accessor.RegridderAccessor(self.data)
+        self.vertical_ds = fixtures.generate_lev_dataset()
+
+    def test_vertical(self):
+        output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+
+        output_data = self.vertical_ds.regridder.vertical(
+            "so", output_grid, tool="xgcm", method="linear"
+        )
+
+        assert output_data.so.shape == (15, 2, 4, 4)
+
+    def test_vertical_multiple_z_axes(self):
+        output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+
+        self.vertical_ds = self.vertical_ds.assign_coords(
+            {"ilev": self.vertical_ds.lev.copy().rename("ilev")}
+        )
+
+        self.vertical_ds = self.vertical_ds.assign(
+            so_1=self.vertical_ds.so.copy().rename("so_1")
+        )
+
+        self.vertical_ds["so_1"] = self.vertical_ds.so_1.swap_dims({"lev": "ilev"})
+
+        output_data = self.vertical_ds.regridder.vertical(
+            "so", output_grid, tool="xgcm", method="linear"
+        )
+
+        assert output_data.so.shape == (15, 2, 4, 4)
 
     def test_grid(self):
         ds_bounds = fixtures.generate_dataset(
@@ -1217,7 +1258,8 @@ class TestAccessor:
         ):
             self.ac.horizontal("ts", mock_data, tool="dummy")  # type: ignore
 
-    def test_vertical_tool_check(self):
+    @mock.patch("xcdat.regridder.accessor._get_vertical_input_grid")
+    def test_vertical_tool_check(self, _get_vertical_input_grid):
         mock_regridder = mock.MagicMock()
         mock_regridder.return_value.vertical.return_value = "output data"
 
@@ -1291,6 +1333,18 @@ class TestBase:
         assert output_ds.time_bnds.attrs["source"] == "input_ds"
         assert "lev_bnds" in output_ds
         assert output_ds.lev_bnds.attrs["source"] == "input_ds"
+
+    def test_preserve_bounds_does_not_drop_axis_if_axis_does_not_exist(self):
+        output_grid = fixtures.generate_lev_dataset()
+        output_grid = output_grid.drop_dims("lat")
+
+        input_ds = output_grid.copy(deep=True)
+
+        target = xr.Dataset()
+        output_ds = base._preserve_bounds(input_ds, output_grid, target, ["Y"])
+
+        # Check that lat is still not in the dimensions (nothing happens).
+        assert "lat" not in output_ds.dims
 
     def test_regridder_implementation(self):
         class NewRegridder(base.BaseRegridder):

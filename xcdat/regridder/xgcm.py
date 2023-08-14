@@ -62,7 +62,7 @@ class XGCMRegridder(BaseRegridder):
         grid_positions : Optional[Dict[str, str]]
             Mapping of dimension positions, by default None. If ``None`` then an
             attempt is made to derive this argument.
-        periodic : bool
+        periodic : Optional[bool]
             Whether the grid is periodic, by default False.
         extra_init_options : Optional[Dict[str, Any]]
             Extra options passed to the ``xgcm.Grid`` constructor, by default
@@ -213,7 +213,7 @@ class XGCMRegridder(BaseRegridder):
         # when the order of dimensions are mismatched, the output data will be
         # transposed to match the input dimension order
         if output_da.dims != ds[data_var].dims:
-            input_coord_z = get_dim_coords(ds, "Z")
+            input_coord_z = get_dim_coords(ds[data_var], "Z")
 
             output_order = [
                 x.replace(input_coord_z.name, output_coord_z.name)  # type: ignore[attr-defined]
@@ -236,18 +236,28 @@ class XGCMRegridder(BaseRegridder):
         if self._method == "conservative":
             raise RuntimeError(
                 "Conservative regridding requires a second point position, pass these "
-                "manually"
+                "manually."
             )
 
         try:
             coord_z = get_dim_coords(self._input_grid, "Z")
         except KeyError:
-            raise RuntimeError("Could not determine 'Z' coordinate in input dataset")
+            raise RuntimeError("Could not determine `Z` coordinate in dataset.")
+
+        if isinstance(coord_z, xr.Dataset):
+            coords = ", ".join(sorted(list(coord_z.coords.keys())))  # type: ignore[arg-type]
+
+            raise RuntimeError(
+                "Could not determine the `Z` coordinate in the input grid. "
+                f"Found multiple axes ({coords}), ensure there is only a "
+                "single `Z` axis in the input grid.",
+                list(coord_z.coords.keys()),
+            )
 
         try:
             bounds_z = self._input_grid.bounds.get_bounds("Z")
         except KeyError:
-            raise RuntimeError("Could not determine 'Z' bounds in input dataset")
+            raise RuntimeError("Could not determine `Z` bounds in dataset.")
 
         # handle simple point positions based on point and bounds
         if (coord_z[0] > bounds_z[0][0] and coord_z[0] < bounds_z[0][1]) or (
