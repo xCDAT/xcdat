@@ -52,11 +52,11 @@ class Regrid2Regridder(BaseRegridder):
         """
         super().__init__(input_grid, output_grid, **options)
 
-        self._src_lat = self._input_grid.bounds.get_bounds("Y")
-        self._src_lon = self._input_grid.bounds.get_bounds("X")
+        self._src_lat = self._input_grid.bounds.get_bounds("Y").values
+        self._src_lon = self._input_grid.bounds.get_bounds("X").values
 
-        self._dst_lat = self._output_grid.bounds.get_bounds("Y")
-        self._dst_lon = self._output_grid.bounds.get_bounds("X")
+        self._dst_lat = self._output_grid.bounds.get_bounds("Y").values
+        self._dst_lon = self._output_grid.bounds.get_bounds("X").values
 
         self._lat_mapping: Any = None
         self._lon_mapping: Any = None
@@ -127,12 +127,12 @@ class Regrid2Regridder(BaseRegridder):
 
         src_mask = self._input_grid.get("mask", None)
 
+        # operate on pure numpy
+        input_data: np.ndarray = input_data_var.values
+
         # apply source mask to input data
         if src_mask is not None:
-            input_data_var = input_data_var.where(src_mask == 0.0)
-
-        # operate on pure numpy
-        input_data = input_data_var.values
+            input_data = np.where(src_mask.values == 0.0, input_data, np.NAN)
 
         axis_variable_name_map = {x: y[0] for x, y in input_data_var.cf.axes.items()}
 
@@ -332,15 +332,15 @@ class Regrid2Regridder(BaseRegridder):
         return xr.Dataset(data_vars, attrs=input_ds.attrs.copy())
 
 
-def _map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
+def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     """
     Map source to destination latitude.
 
     Parameters
     ----------
-    src : xr.DataArray
+    src : np.ndarray
         DataArray containing the source latitude bounds.
-    dst : xr.DataArray
+    dst : np.ndarray
         DataArray containing the destination latitude bounds.
 
     Returns
@@ -366,20 +366,20 @@ def _map_latitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
 
         weight = np.sin(np.deg2rad(north_bounds)) - np.sin(np.deg2rad(south_bounds))
 
-        weights.append(weight.values.reshape(contrib.shape[0], 1))
+        weights.append(weight.reshape(contrib.shape[0], 1))
 
     return mapping, weights
 
 
-def _map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
+def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     """
     Map source to destination longitude.
 
     Parameters
     ----------
-    src : xr.DataArray
+    src : np.ndarray
         DataArray containing source longitude bounds.
-    dst : xr.DataArray
+    dst : np.ndarray
         DataArray containing destination longitude bounds.
 
     Returns
@@ -409,7 +409,7 @@ def _map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
             dst_west[i], shifted_src_west[contrib]
         )
 
-        weights.append(weight.values.reshape(1, contrib.shape[0]))
+        weights.append(weight.reshape(1, contrib.shape[0]))
 
         contrib += shift
 
@@ -422,18 +422,18 @@ def _map_longitude(src: xr.DataArray, dst: xr.DataArray) -> Tuple[List, List]:
     return mapping, weights
 
 
-def _extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
+def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
      Extract lower and upper bounds from an axis.
 
      Parameters
      ----------
-     bounds : xr.DataArray
+     bounds : np.ndarray
          Dataset containing axis with bounds.
 
      Returns
      -------
-    Tuple[xr.DataArray, xr.DataArray]
+    Tuple[np.ndarray, np.ndarray]
          A tuple containing the lower and upper bounds for the axis.
     """
     if bounds[0, 0] < bounds[0, 1]:
@@ -447,23 +447,23 @@ def _extract_bounds(bounds: xr.DataArray) -> Tuple[xr.DataArray, xr.DataArray]:
 
 
 def _align_axis(
-    src_west: xr.DataArray, src_east: xr.DataArray, dst_west: xr.DataArray
-) -> Tuple[xr.DataArray, xr.DataArray, int]:
+    src_west: np.ndarray, src_east: np.ndarray, dst_west: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, int]:
     """
     Aligns a longitudinal source axis to the destination axis.
 
     Parameters
     ----------
-    src_west : xr.DataArray
+    src_west : np.ndarray
         DataArray containing the western source bounds.
-    src_east : xr.DataArray
+    src_east : np.ndarray
         DataArray containing the eastern source bounds.
-    dst_west : xr.DataArray
+    dst_west : np.ndarray
         DataArray containing the western destination bounds.
 
     Returns
     -------
-    Tuple[xr.DataArray, xr.DataArray, int]
+    Tuple[np.ndarray, np.ndarray, int]
         A tuple containing the shifted western source bounds, the shifted eastern
         source bounds, and the number of places shifted to align axis.
     """
@@ -519,7 +519,7 @@ def _align_axis(
     return shifted_src_west, shifted_src_east, shift
 
 
-def _pertub(value: xr.DataArray) -> xr.DataArray:
+def _pertub(value: np.ndarray) -> np.ndarray:
     """
     Pertub a value.
 
@@ -528,12 +528,12 @@ def _pertub(value: xr.DataArray) -> xr.DataArray:
 
     Parameters
     ----------
-    value : xr.DataArray
+    value : np.ndarray
         Value to pertub.
 
     Returns
     -------
-    xr.DataArray
+    np.ndarray
         Value that's been pertubed.
     """
     if value >= 0.0:
@@ -541,7 +541,7 @@ def _pertub(value: xr.DataArray) -> xr.DataArray:
     else:
         offset = np.floor(value - 0.000001) + 1.0
 
-    return xr.DataArray(offset)
+    return offset
 
 
 # vectorize version of pertub

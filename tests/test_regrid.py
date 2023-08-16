@@ -588,7 +588,7 @@ class TestRegrid2Regridder:
 
     def test_map_longitude_coarse_to_fine(self):
         mapping, weights = regrid2._map_longitude(
-            self.coarse_lon_bnds, self.fine_lon_bnds
+            self.coarse_lon_bnds.values, self.fine_lon_bnds.values
         )
 
         expected_mapping = [
@@ -610,7 +610,7 @@ class TestRegrid2Regridder:
 
     def test_map_longitude_fine_to_coarse(self):
         mapping, weights = regrid2._map_longitude(
-            self.fine_lon_bnds, self.coarse_lon_bnds
+            self.fine_lon_bnds.values, self.coarse_lon_bnds.values
         )
 
         expected_mapping = [
@@ -625,7 +625,7 @@ class TestRegrid2Regridder:
 
     def test_map_latitude_coarse_to_fine(self):
         mapping, weights = regrid2._map_latitude(
-            self.coarse_lat_bnds, self.fine_lat_bnds
+            self.coarse_lat_bnds.values, self.fine_lat_bnds.values
         )
 
         expected_mapping = [
@@ -654,7 +654,7 @@ class TestRegrid2Regridder:
 
     def test_map_latitude_fine_to_coarse(self):
         mapping, weights = regrid2._map_latitude(
-            self.fine_lat_bnds, self.coarse_lat_bnds
+            self.fine_lat_bnds.values, self.coarse_lat_bnds.values
         )
 
         expected_mapping = [
