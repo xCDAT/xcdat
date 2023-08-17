@@ -639,7 +639,6 @@ def create_axis(
     generate_bounds : Optiona[bool]
         Generate bounds for the axis if ``bounds`` is None, by default True.
     attrs : Optional[Dict[str, str]]
-    attrs : Optional[Dict[str, str]]
         Custom attributes to be added to the generated `xr.DataArray` axis, by
         default None.
 
