@@ -84,7 +84,7 @@ class RegridderAccessor:
 
         ds = xr.Dataset(coords, attrs=self._ds.attrs)
 
-        ds = ds.bounds.add_missing_bounds(axes=["X", "Y"])
+        ds = ds.bounds.add_missing_bounds(axes=["X", "Y", "Z"])
 
         return ds
 
