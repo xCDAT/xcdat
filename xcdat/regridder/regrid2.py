@@ -24,31 +24,27 @@ class Regrid2Regridder(BaseRegridder):
             Dataset containing the source grid.
         output_grid : xr.Dataset
             Dataset containing the destination grid.
-        options : Dict[str, Any]
+        options : Any
             Dictionary with extra parameters for the regridder.
 
         Examples
         --------
+
         Import xCDAT:
 
         >>> import xcdat
-        >>> from xcdat.regridder import regrid2
 
         Open a dataset:
 
-        >>> ds = xcdat.open_dataset("ts.nc")
+        >>> ds = xcdat.open_dataset("...")
 
         Create output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Create regridder:
-
-        >>> regridder = regrid2.Regrid2Regridder(ds.regridder.grid, output_grid)
-
         Regrid data:
 
-        >>> data_new_grid = regridder.horizontal("ts", ds)
+        >>> output_data = ds.regridder.horizontal("ts", output_grid)
         """
         super().__init__(input_grid, output_grid, **options)
 
@@ -69,44 +65,7 @@ class Regrid2Regridder(BaseRegridder):
         raise NotImplementedError()
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """Regrid ``data_var`` in ``ds`` to output grid.
-
-        Mappings and weights between input and output grid are calculated
-        on the first call, allowing a regridder to be applied to many input
-        datasets.
-
-        Parameters
-        ----------
-        data_var : str
-            The name of the data variable inside the dataset to regrid.
-        ds : xr.Dataset
-            The dataset containing ``data_var``.
-
-        Returns
-        -------
-        xr.Dataset
-            Dataset with variable on the destination grid.
-
-        Raises
-        ------
-        KeyError
-            If data variable does not exist in the Dataset.
-
-        Examples
-        --------
-
-        Create output grid:
-
-        >>> output_grid = xcdat.create_gaussian_grid(32)
-
-        Create regridder:
-
-        >>> regridder = regrid2.Regrid2Regridder(ds, output_grid)
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.horizontal("ts", ds)
-        """
+        """See documentation in :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`"""
         input_data_var = ds.get(data_var, None)
 
         if input_data_var is None:

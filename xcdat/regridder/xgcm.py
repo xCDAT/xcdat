@@ -24,7 +24,8 @@ class XGCMRegridder(BaseRegridder):
         extra_init_options: Optional[Dict[str, Any]] = None,
         **options,
     ):
-        """Extension of ``xgcm`` regridder.
+        """
+        Extension of ``xgcm`` regridder.
 
         The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the
         ``Grid`` object, transposing the output data to match the dimensional
@@ -82,27 +83,26 @@ class XGCMRegridder(BaseRegridder):
         Import xCDAT:
 
         >>> import xcdat
-        >>> from xcdat.regridder import xgcm
 
         Open a dataset:
 
-        >>> ds = xcdat.open_dataset("so.nc")
+        >>> ds = xcdat.open_dataset("...")
 
         Create output grid:
 
         >>> output_grid = xcdat.create_grid(lev=np.linspace(1000, 1, 5))
 
-        Create theta:
+        Regrid data to ``output_grid``:
+
+        >>> output_data = ds.regridder.vertical("so", output_grid, tool="xgcm", method="linear")
+
+        Create pressure variable:
 
         >>> ds["pressure"] = (ds["hyam"] * ds["P0"] + ds["hybm"] * ds["PS"]).transpose(**ds["T"].dims)
 
-        Create regridder:
+        Regrid data to ``output_grid`` in pressure space:
 
-        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", target_data="pressure")
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.vertical("so", ds)
+        >>> output_data = ds.regridder.vertical("so", output_grid, tool="xgcm", method="linear", target_data="pressure")
 
         Passing additional arguments to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
 
@@ -133,44 +133,7 @@ class XGCMRegridder(BaseRegridder):
         raise NotImplementedError()
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """Regrid ``data_var`` in ``ds`` to output grid.
-
-        To pass additional arguments to ``xgcm.Grid`` or ``xgcm.Grid.transform``
-        see the documentation in the constructor :py:func:`xcdat.regridder.xgcm.XGCMRegridder.__init__`.
-
-        Parameters
-        ----------
-        data_var : str
-            The name of the data variable inside the dataset to regrid.
-        ds : xr.Dataset
-            The dataset containing ``data_var``.
-
-        Returns
-        -------
-        xr.Dataset
-            Dataset with variable on the destination grid.
-
-        Raises
-        ------
-        KeyError
-            If data variable does not exist in the Dataset.
-        RuntimeError
-            If "Z" coordinate is not detected.
-
-        Examples
-        --------
-        Create output grid:
-
-        >>> output_grid = xcdat.create_grid(np.linspace(1000, 1, 20))
-
-        Create regridder:
-
-        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", target_data="pressure")
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.vertical("T", ds)
-        """
+        """See documentation in :py:func:`xcdat.regridder.xgcm.XGCMRegridder`"""
         try:
             output_coord_z = get_dim_coords(self._output_grid, "Z")
         except KeyError:
