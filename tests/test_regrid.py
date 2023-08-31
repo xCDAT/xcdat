@@ -885,13 +885,21 @@ class TestGrid:
         ):
             grid.create_grid()
 
-    def test_create_grid(self):
+    def test_create_grid_with_coords(self):
         new_grid = grid.create_grid(x=self.lon, y=self.lat)
 
         assert np.array_equal(new_grid.lat, self.lat)
         assert np.array_equal(new_grid.lon, self.lon)
 
-    def test_create_grid_with_bounds(self):
+    def test_create_grid_with_tuple_of_coords_and_no_bounds(self):
+        # This case happens if `create_axis` is used without creating bounds,
+        # which will return a tuple of (xr.DataArray, None).
+        new_grid = grid.create_grid(x=(self.lon, None), y=(self.lat, None))
+
+        assert np.array_equal(new_grid.lat, self.lat)
+        assert np.array_equal(new_grid.lon, self.lon)
+
+    def test_create_grid_with_tuple_of_coords_and_bounds(self):
         new_grid = grid.create_grid(
             x=(self.lon, self.lon_bnds), y=(self.lat, self.lat_bnds)
         )
