@@ -136,7 +136,6 @@ class XESMFRegridder(BaseRegridder):
         self._extrap_dist_exponent = extrap_dist_exponent
         self._extrap_num_src_pnts = extrap_num_src_pnts
         self._ignore_degenerate = ignore_degenerate
-        self._regridder: xe.XESMFRegridder = None
         self._extra_options = options
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
@@ -152,20 +151,19 @@ class XESMFRegridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        if self._regridder is None:
-            self._regridder = xe.Regridder(
-                self._input_grid,
-                self._output_grid,
-                method=self._method,
-                periodic=self._periodic,
-                extrap_method=self._extrap_method,
-                extrap_dist_exponent=self._extrap_dist_exponent,
-                extrap_num_src_pnts=self._extrap_num_src_pnts,
-                ignore_degenerate=self._ignore_degenerate,
-                **self._extra_options,
-            )
+        regridder = xe.Regridder(
+            self._input_grid,
+            self._output_grid,
+            method=self._method,
+            periodic=self._periodic,
+            extrap_method=self._extrap_method,
+            extrap_dist_exponent=self._extrap_dist_exponent,
+            extrap_num_src_pnts=self._extrap_num_src_pnts,
+            ignore_degenerate=self._ignore_degenerate,
+            **self._extra_options,
+        )
 
-        output_da = self._regridder(input_da, keep_attrs=True)
+        output_da = regridder(input_da, keep_attrs=True)
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
         output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["X", "Y"])
