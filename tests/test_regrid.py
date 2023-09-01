@@ -1233,7 +1233,7 @@ class TestAccessor:
 
         with pytest.raises(
             ValueError,
-            match=".*lon\d?.*lon\d?.*",
+            match=r".*lon\d?.*lon\d?.*",
         ):
             ds_multi.regridder.grid
 
