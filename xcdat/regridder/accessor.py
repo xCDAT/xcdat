@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, List, Literal, Tuple, Union
 
 import xarray as xr
@@ -127,6 +128,8 @@ class RegridderAccessor:
         **options: Any,
     ) -> xr.Dataset:
         """
+        Will be deprecated with 0.7.0 release.
+
         Extends the xESMF library for horizontal regridding between structured
         rectilinear and curvilinear grids.
 
@@ -167,6 +170,13 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_xesmf("ts", output_grid)
         """
+        warnings.warn(
+            "`horizontal_xesmf` will be deprecated in 0.7.x, please migrate to using "
+            "`horizontal(..., tool='xesmf')` method.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         # TODO: Test this conditional.
         if _has_xesmf:  # pragma: no cover
             regridder = HORIZONTAL_REGRID_TOOLS["xesmf"](
@@ -189,6 +199,8 @@ class RegridderAccessor:
         **options: Dict[str, Any],
     ) -> xr.Dataset:
         """
+        Will be deprecated with 0.7.0 release.
+
         Pure python implementation of CDAT's regrid2 horizontal regridder.
 
         Regrids ``data_var`` in dataset to ``output_grid`` using regrid2's
@@ -225,6 +237,13 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_regrid2("ts", output_grid)
         """
+        warnings.warn(
+            "`horizontal_regrid2` will be deprecated in 0.7.x, please migrate to using "
+            "`horizontal(..., tool='regrid2')` method.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         regridder = HORIZONTAL_REGRID_TOOLS["regrid2"](self._ds, output_grid, **options)
 
         return regridder.horizontal(data_var, self._ds)
