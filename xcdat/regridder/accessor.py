@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, Dict, List, Literal, Tuple, Union
+from typing import Any, List, Literal, Tuple, Union
 
 import xarray as xr
 
@@ -196,7 +196,7 @@ class RegridderAccessor:
         self,
         data_var: str,
         output_grid: xr.Dataset,
-        **options: Dict[str, Any],
+        **options: Any,
     ) -> xr.Dataset:
         """
         Will be deprecated with 0.7.0 release.
@@ -253,7 +253,7 @@ class RegridderAccessor:
         data_var: str,
         output_grid: xr.Dataset,
         tool: HorizontalRegridTools = "xesmf",
-        **options: Dict[str, Any],
+        **options: Any,
     ) -> xr.Dataset:
         """
         Transform ``data_var`` to ``output_grid``.

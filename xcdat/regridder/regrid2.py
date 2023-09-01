@@ -8,7 +8,7 @@ from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 class Regrid2Regridder(BaseRegridder):
     def __init__(
-        self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Dict[str, Any]
+        self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Any
     ):
         """
         Pure python implementation of the regrid2 horizontal regridder from

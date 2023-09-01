@@ -22,7 +22,7 @@ class XGCMRegridder(BaseRegridder):
         grid_positions: Optional[Dict[str, str]] = None,
         periodic: bool = False,
         extra_init_options: Optional[Dict[str, Any]] = None,
-        **options,
+        **options: Any,
     ):
         """
         Extension of ``xgcm`` regridder.

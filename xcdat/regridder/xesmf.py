@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import xarray as xr
 
@@ -40,7 +40,7 @@ class XESMFRegridder(BaseRegridder):
         extrap_dist_exponent: Optional[float] = None,
         extrap_num_src_pnts: Optional[int] = None,
         ignore_degenerate: bool = True,
-        **options,
+        **options: Any,
     ):
         """
         Extension of ``xESMF`` regridder.
