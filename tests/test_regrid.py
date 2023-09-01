@@ -1174,7 +1174,41 @@ class TestAccessor:
     def setup(self):
         self.data = mock.MagicMock()
         self.ac = accessor.RegridderAccessor(self.data)
+        self.horizontal_ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=True, has_bounds=True
+        )
         self.vertical_ds = fixtures.generate_lev_dataset()
+
+    @requires_xesmf
+    def test_horizontal(self):
+        output_grid = grid.create_gaussian_grid(32)
+
+        output_data = self.horizontal_ds.regridder.horizontal(
+            "ts", output_grid, tool="xesmf", method="bilinear"
+        )
+
+        assert output_data.ts.shape == (15, 32, 65)
+
+        # use dataset with time dimension
+        output_data = self.horizontal_ds.regridder.horizontal(
+            "ts", self.horizontal_ds, tool="xesmf", method="bilinear"
+        )
+
+        assert output_data.ts.shape == (15, 4, 4)
+
+        ds_multi = fixtures.generate_multiple_variable_dataset(
+            1,
+            separate_dims=True,
+            decode_times=True,
+            cf_compliant=True,
+            has_bounds=True,
+        )
+
+        output_data = ds_multi.regridder.horizontal(
+            "ts", self.horizontal_ds, tool="xesmf", method="bilinear"
+        )
+
+        assert output_data.ts.shape == (15, 4, 4)
 
     def test_vertical(self):
         output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
@@ -1184,6 +1218,13 @@ class TestAccessor:
         )
 
         assert output_data.so.shape == (15, 2, 4, 4)
+
+        # use dataset with time dimension
+        output_data = self.vertical_ds.regridder.vertical(
+            "so", self.vertical_ds, tool="xgcm", method="linear"
+        )
+
+        assert output_data.so.shape == (15, 4, 4, 4)
 
     def test_vertical_multiple_z_axes(self):
         output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
@@ -1248,7 +1289,8 @@ class TestAccessor:
         with pytest.raises(ValueError):
             ds_bounds.regridder.grid
 
-    def test_horizontal_tool_check(self):
+    @mock.patch("xcdat.regridder.accessor._get_input_grid")
+    def test_horizontal_tool_check(self, _get_input_grid):
         mock_regridder = mock.MagicMock()
         mock_regridder.return_value.horizontal.return_value = "output data"
 
@@ -1268,8 +1310,8 @@ class TestAccessor:
         ):
             self.ac.horizontal("ts", mock_data, tool="dummy")  # type: ignore
 
-    @mock.patch("xcdat.regridder.accessor._get_vertical_input_grid")
-    def test_vertical_tool_check(self, _get_vertical_input_grid):
+    @mock.patch("xcdat.regridder.accessor._get_input_grid")
+    def test_vertical_tool_check(self, _get_input_grid):
         mock_regridder = mock.MagicMock()
         mock_regridder.return_value.vertical.return_value = "output data"
 
