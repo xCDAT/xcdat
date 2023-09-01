@@ -1234,7 +1234,7 @@ class TestAccessor:
         with pytest.raises(
             ValueError,
             match=re.escape(
-                "Multiple 'X' axis dims were found in this dataset, ['lon', 'lon1']. Please drop the unused dimension(s) before getting grid information."
+                "Multiple 'X' axis dims were found in this dataset, ['lon', 'lon1']. Please drop the unused dimension(s) before performing grid operations."
             ),
         ):
             ds_multi.regridder.grid

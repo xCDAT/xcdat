@@ -1,9 +1,10 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from typing import Any, Dict, List, Literal, Tuple, Union
 
 import xarray as xr
 
 from xcdat.axis import CFAxisKey, get_dim_coords
 from xcdat.regridder import regrid2, xgcm
+from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
 from xcdat.utils import _has_module
 
 HorizontalRegridTools = Literal["xesmf", "regrid2"]
@@ -106,15 +107,10 @@ class RegridderAccessor:
 
     def _get_axis_data(
         self, name: CFAxisKey
-    ) -> Tuple[xr.DataArray, Optional[xr.DataArray]]:
+    ) -> Tuple[Union[xr.DataArray, xr.Dataset], xr.DataArray]:
         coord_var = get_dim_coords(self._ds, name)
 
-        if isinstance(coord_var, xr.Dataset):
-            raise ValueError(
-                f"Multiple '{name}' axis dims were found in this dataset, "
-                f"{sorted(list(coord_var.dims))}. Please drop the unused dimension(s) before "  # type: ignore[type-var]
-                "getting grid information."
-            )
+        _validate_grid_has_single_axis_dim(name, coord_var)
 
         try:
             bounds_var = self._ds.bounds.get_bounds(name, coord_var.name)
