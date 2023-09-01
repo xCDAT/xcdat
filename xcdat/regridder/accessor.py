@@ -112,7 +112,7 @@ class RegridderAccessor:
         if isinstance(coord_var, xr.Dataset):
             raise ValueError(
                 f"Multiple '{name}' axis dims were found in this dataset, "
-                f"{list(coord_var.dims)}. Please drop the unused dimension(s) before "
+                f"{sorted(list(coord_var.dims))}. Please drop the unused dimension(s) before "  # type: ignore[type-var]
                 "getting grid information."
             )
 
