@@ -1227,6 +1227,18 @@ class TestAccessor:
         assert "lat_bnds" in grid
         assert "lon_bnds" in grid
 
+        ds_multi = fixtures.generate_multiple_variable_dataset(
+            1, separate_dims=True, decode_times=True, cf_compliant=True, has_bounds=True
+        )
+
+        with pytest.raises(
+            ValueError,
+            match=re.escape(
+                "Multiple 'X' axis dims were found in this dataset, ['lon', 'lon1']. Please drop the unused dimension(s) before getting grid information."
+            ),
+        ):
+            ds_multi.regridder.grid
+
     def test_grid_raises_error_when_dataset_has_multiple_dims_for_an_axis(self):
         ds_bounds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=True, has_bounds=True
