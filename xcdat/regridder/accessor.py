@@ -128,7 +128,7 @@ class RegridderAccessor:
         **options: Any,
     ) -> xr.Dataset:
         """
-        Will be deprecated with 0.7.0 release.
+        Deprecated, will be removed with 0.7.0 release.
 
         Extends the xESMF library for horizontal regridding between structured
         rectilinear and curvilinear grids.
@@ -199,7 +199,7 @@ class RegridderAccessor:
         **options: Any,
     ) -> xr.Dataset:
         """
-        Will be deprecated with 0.7.0 release.
+        Deprecated, will be removed with 0.7.0 release.
 
         Pure python implementation of CDAT's regrid2 horizontal regridder.
 
