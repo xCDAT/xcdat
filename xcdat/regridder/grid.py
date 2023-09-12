@@ -529,28 +529,30 @@ def create_grid(
     axes = {"x": x, "y": y, "z": z}
     ds = xr.Dataset(attrs={} if attrs is None else attrs.copy())
 
-    for key, item in axes.items():
+    for axis, item in axes.items():
         if item is None:
             continue
 
         if isinstance(item, (tuple, list)):
             if len(item) != 2:
                 raise ValueError(
-                    f"Argument {key!r} should be an xr.DataArray representing "
+                    f"Argument {axis!r} should be an xr.DataArray representing "
                     "coordinates or a tuple (xr.DataArray, xr.DataArray) representing "
                     "coordinates and bounds."
                 )
 
-            axis, bnds = item[0].copy(deep=True), item[1].copy(deep=True)  # type: ignore[union-attr]
+            coords = item[0].copy(deep=True)
 
-            # ensure bnds attribute is set
-            axis.attrs["bounds"] = bnds.name
+            if item[1] is not None:
+                bnds = item[1].copy(deep=True)
 
-            ds = ds.assign({bnds.name: bnds})
+                coords.attrs["bounds"] = bnds.name
+
+                ds = ds.assign({bnds.name: bnds})
         else:
-            axis = item.copy(deep=True)
+            coords = item.copy(deep=True)
 
-        ds = ds.assign_coords({axis.name: axis})
+        ds = ds.assign_coords({coords.name: coords})
 
     return ds
 
