@@ -144,7 +144,7 @@ class BoundsAccessor:
              ``"time_bnds"`` and ``ds.time_bnds`` is present in the dataset.
 
         5. For the "T" axis, its coordinates must be composed of datetime-like
-            objects (`np.datetime64` or `cftime`).
+           objects (`np.datetime64` or `cftime`).
 
         Parameters
         ----------
