@@ -264,7 +264,7 @@ class BoundsAccessor:
         is the midpoint between their lower and upper bounds.
 
         To add bounds for an axis its coordinates must meet the following
-        criteria, otherwise an error is thrown.
+        criteria, otherwise an error is thrown:
 
         1. Axis is either X", "Y", "T", or "Z"
         2. Coordinates are single dimensional, not multidimensional
