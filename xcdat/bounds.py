@@ -127,10 +127,14 @@ class BoundsAccessor:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
         This function loops through the Dataset's axes and attempts to adds
-        bounds to its coordinates if they don't exist. The coordinates must meet
-        the following criteria in order to add bounds:
+        bounds to its coordinates if they don't exist. "X", "Y" , and "Z" axes
+        bounds are the midpoints between coordinates. "T" axis bounds are based
+        on the time frequency of the coordinates.
 
-        1. The axis for the coordinates are "X", "Y", "T", or "Z"
+        An axis must meet the following criteria to add bounds for it, otherwise
+        they are ignored:
+
+        1. Axis is either X", "Y", "T", or "Z"
         2. Coordinates are a single dimension, not multidimensional
         3. Coordinates are a length > 1 (not singleton)
         4. Bounds must not already exist
@@ -139,10 +143,8 @@ class BoundsAccessor:
              example, bounds exist if ``ds.time.attrs["bounds"]`` is set to
              ``"time_bnds"`` and ``ds.time_bnds`` is present in the dataset.
 
-        5. Time axes must be composed of datetime-like objects
-           (`np.datetime64` or `cftime`).
-
-        If coordinates do not meet that criteria, bounds are not added for them.
+        5. For the "T" axis, its coordinates must be composed of datetime-like
+            objects (`np.datetime64` or `cftime`).
 
         Parameters
         ----------
@@ -261,10 +263,10 @@ class BoundsAccessor:
         add bounds for each of them if they don't exist. Each coordinate point
         is the midpoint between their lower and upper bounds.
 
-        To add bounds for an axis, its coordinates must be the following
-        criteria:
+        To add bounds for an axis its coordinates must meet the following
+        criteria, otherwise an error is thrown.
 
-        1. The axis for the coordinates are "X", "Y", "T", or "Z"
+        1. Axis is either X", "Y", "T", or "Z"
         2. Coordinates are single dimensional, not multidimensional
         3. Coordinates are a length > 1 (not singleton)
         4. Bounds must not already exist
@@ -291,10 +293,10 @@ class BoundsAccessor:
         coord_vars: Union[xr.DataArray, xr.Dataset] = get_dim_coords(
             self._dataset, axis
         )
-        # In xarray, ancillary singleton coordinates that aren't related to axis
-        # can still be attached to dimension coordinates (e.g., "height" is
-        # attached to "time"). We ignore these singleton coordinates to avoid
-        # adding bounds for them.
+        # In xarray, ancillary singleton coordinates that aren't related to the
+        # axis can still be attached to dimension coordinates. For example,
+        # if the "height" singleton exists, it will be attached to "time".
+        # Singleton coordinates are dropped in order to add bounds for the axis.
         coord_vars = self._drop_ancillary_singleton_coords(coord_vars)
 
         for coord in coord_vars.coords.values():
@@ -759,6 +761,16 @@ class BoundsAccessor:
 
         Bounds for each timestep corresponds to 00:00:00 timepoint on the
         current day and 00:00:00 on the subsequent day.
+
+        If time steps are sub-daily, then the bounds will begin at 00:00 and end
+        at 00:00 of the following day. For example, for 3-hourly data, the
+        bounds would be:
+            [
+                ["01/01/2000 00:00", "01/01/2000 03:00"],
+                ["01/01/2000 03:00", "01/01/2000 06:00"],
+                ...
+                ["01/01/2000 21:00", "02/01/2000 00:00"],
+            ]
 
         Parameters
         ----------
