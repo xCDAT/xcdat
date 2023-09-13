@@ -764,7 +764,8 @@ class BoundsAccessor:
 
         If time steps are sub-daily, then the bounds will begin at 00:00 and end
         at 00:00 of the following day. For example, for 3-hourly data, the
-        bounds would be:
+        bounds would be::
+
             [
                 ["01/01/2000 00:00", "01/01/2000 03:00"],
                 ["01/01/2000 03:00", "01/01/2000 06:00"],
