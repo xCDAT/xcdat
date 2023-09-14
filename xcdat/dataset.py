@@ -632,8 +632,10 @@ def _postprocess_dataset(
     elif add_bounds is False:
         add_bounds = None
         warnings.warn(
-            "`add_bounds=False` will be deprecated after v0.6.0. Please use "
-            "`add_bounds=None`` instead.",
+            (
+                "`add_bounds=False` will be deprecated after v0.6.0. Please use "
+                "`add_bounds=None`` instead."
+            ),
             DeprecationWarning,
             stacklevel=2,
         )
