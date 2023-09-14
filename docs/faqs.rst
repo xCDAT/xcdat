@@ -279,4 +279,4 @@ Automatically deriving `Parametric Vertical Coordinates`_ is a planned feature f
 
 Can I regrid data on unstructured grids?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Regridding data on unstructured grids is a planned feature for ``xcdat``.
+Regridding data on unstructured grids is a feature we are exploring for ``xcdat``.
