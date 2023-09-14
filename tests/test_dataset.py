@@ -337,7 +337,7 @@ class TestOpenDataset:
             assert issubclass(w[0].category, DeprecationWarning)
             assert str(w[0].message) == (
                 "`add_bounds=True` will be deprecated after v0.6.0. Please use a list "
-                "of axis strings instead (e.g., `add_bounds=['X', 'Y'])."
+                "of axis strings instead (e.g., `add_bounds=['X', 'Y']`)."
             )
 
         expected = generate_dataset(
@@ -361,7 +361,7 @@ class TestOpenDataset:
             assert issubclass(w[0].category, DeprecationWarning)
             assert str(w[0].message) == (
                 "`add_bounds=False` will be deprecated after v0.6.0. Please use "
-                "`add_bounds=None`` instead."
+                "`add_bounds=None` instead."
             )
 
         assert result.identical(ds_no_bounds)
