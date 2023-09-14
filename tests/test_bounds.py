@@ -8,6 +8,7 @@ import xarray as xr
 from tests.fixtures import (
     generate_dataset,
     generate_dataset_by_frequency,
+    generate_lev_dataset,
     lat_bnds,
     lon_bnds,
 )
@@ -70,19 +71,23 @@ class TestAddMissingBounds:
             decode_times=True, cf_compliant=False, has_bounds=True
         )
 
-    def test_adds_bounds_to_the_dataset(self):
-        ds = self.ds_with_bnds.copy()
-        ds = ds.drop_vars(["lat_bnds", "lon_bnds"])
+    def test_adds_x_y_and_z_bounds_to_the_dataset_using_midpoints(self):
+        ds = generate_lev_dataset()
+        ds_no_bnds = ds.drop_vars(["lev_bnds", "lat_bnds", "lon_bnds"])
 
-        # Compare the result against the expected.
-        result = ds.bounds.add_missing_bounds(axes=["X", "Y"])
-        assert result.identical(self.ds_with_bnds)
+        result = ds_no_bnds.bounds.add_missing_bounds(axes=["X", "Y", "Z"])
+        assert result.identical(ds)
+
+    def test_adds_t_bounds_to_the_dataset_using_time_frequency(self):
+        ds = generate_dataset_by_frequency(freq="month")
+        ds_no_bnds = ds.drop_vars(["time_bnds"])
+
+        result = ds_no_bnds.bounds.add_missing_bounds(axes=["T"])
+        assert result.identical(ds)
 
     def test_skips_adding_bounds_for_coords_that_are_1_dim_singleton(self, caplog):
         # NOTE: Suppress logger warning to avoid polluting test suite.
         caplog.set_level(logging.CRITICAL)
-
-        # Create the input dataset.
         ds = xr.Dataset(
             coords={
                 "lon": xr.DataArray(
@@ -93,15 +98,12 @@ class TestAddMissingBounds:
             }
         )
 
-        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["X"])
         assert result.identical(ds)
 
     def test_skips_adding_bounds_for_coords_that_are_0_dim_singleton(self, caplog):
         # NOTE: Suppress logger warning to avoid polluting test suite.
         caplog.set_level(logging.CRITICAL)
-
-        # Create the input dataset.
         ds = xr.Dataset(
             coords={
                 "lon": xr.DataArray(
@@ -111,15 +113,12 @@ class TestAddMissingBounds:
             }
         )
 
-        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["X"])
         assert result.identical(ds)
 
     def test_skips_adding_time_bounds_for_coords_that_are_1_dim_singleton(self, caplog):
         # NOTE: Suppress logger warning to avoid polluting test suite.
         caplog.set_level(logging.CRITICAL)
-
-        # Create the input dataset.
         ds = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -131,8 +130,6 @@ class TestAddMissingBounds:
                 )
             }
         )
-
-        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["T"])
         assert result.identical(ds)
 
@@ -141,8 +138,6 @@ class TestAddMissingBounds:
     ):
         # NOTE: Suppress logger warning to avoid polluting test suite.
         caplog.set_level(logging.CRITICAL)
-
-        # Create the input dataset.
         ds = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -152,8 +147,6 @@ class TestAddMissingBounds:
                 )
             }
         )
-
-        # Compare the result against the expected.
         result = ds.bounds.add_missing_bounds(axes=["T"])
         assert result.identical(ds)
 

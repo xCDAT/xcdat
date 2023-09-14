@@ -68,14 +68,14 @@ def open_dataset(
     add_bounds: List[CFAxisKey] | None | Literal[False]
         List of CF axes to try to add bounds for (if missing), default
         ["X", "Y"]. Set to ``None`` or ``False`` to not try to add any missing
-        bounds.
+        bounds. Please note that bounds are required for many xCDAT features.
 
-        * This parameter simply calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
+        * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
         * Supported CF axes include "X", "Y", "Z", and "T"
-        * Bounds are required for many xCDAT features
-        * If desired, use :py:func:`xarray.Dataset.bounds.add_time_bounds`
-          if you require more granular configuration for how "T" bounds
-          are generated
+        * By default, missing "T" bounds are generated using the time frequency
+          of the coordinates. If desired, refer to
+          :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
+          granular configuration for how "T" bounds are generated.
 
     decode_times: bool, optional
         If True, attempt to decode times encoded in the standard NetCDF
@@ -169,14 +169,14 @@ def open_mfdataset(
     add_bounds: List[CFAxisKey] | None | Literal[False]
         List of CF axes to try to add bounds for (if missing), default
         ["X", "Y"]. Set to ``None`` or ``False`` to not try to add any missing
-        bounds.
+        bounds. Please note that bounds are required for many xCDAT features.
 
-        * This parameter simply calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
+        * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
         * Supported CF axes include "X", "Y", "Z", and "T"
-        * Bounds are required for many xCDAT features
-        * If desired, use :py:func:`xarray.Dataset.bounds.add_time_bounds`
-          if you require more granular configuration for how "T" bounds
-          are generated
+        * By default, missing "T" bounds are generated using the time frequency
+          of the coordinates. If desired, refer to
+          :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
+          granular configuration for how "T" bounds are generated.
 
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
