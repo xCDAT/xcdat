@@ -112,7 +112,13 @@ class XGCMRegridder(BaseRegridder):
 
         Passing additional arguments to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
 
-        >>> regridder = xgcm.XGCMRegridder(ds, output_grid, method="linear", extra_init_options={"boundary": "fill", "fill_value": 1e27}, mask_edges=True)
+        >>> regridder = xgcm.XGCMRegridder(
+        >>>     ds,
+        >>>     output_grid,
+        >>>     method="linear",
+        >>>     extra_init_options={"boundary": "fill", "fill_value": 1e27},
+        >>>     mask_edges=True
+        >>> )
         """
         super().__init__(input_grid, output_grid)
 
