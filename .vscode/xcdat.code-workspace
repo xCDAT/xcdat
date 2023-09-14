@@ -21,17 +21,17 @@
             "editor.rulers": [80, 88, 120],
             "editor.wordWrap": "wordWrapColumn",
             "editor.wordWrapColumn": 120,
-            "editor.defaultFormatter": "ms-python.python"
+            "editor.defaultFormatter": "ms-python.black-formatter"
         },
+        "black-formatter.importStrategy": "fromEnvironment",
         // Code Formatting and Linting
         // ---------------------------
-        "python.formatting.provider": "black",
-        "python.linting.flake8Enabled": true,
-        "python.linting.flake8Args": ["--config=setup.cfg"],
+        "flake8.args": ["--config=setup.cfg"],
+        "flake8.importStrategy": "fromEnvironment",
         // Type checking
         // ---------------------------
-        "python.linting.mypyEnabled": true,
-        "python.linting.mypyArgs": ["--config=setup.cfg"],
+        "mypy-type-checker.args": ["--config=pyproject.toml"],
+        "mypy-type-checker.importStrategy": "fromEnvironment",
         // Testing
         // ---------------------------
         "python.testing.unittestEnabled": false,

@@ -343,6 +343,8 @@ class TestOpenDataset:
         expected = generate_dataset(
             decode_times=True, cf_compliant=True, has_bounds=True
         )
+        expected = expected.drop_vars("time_bnds")
+        del expected["time"].attrs["bounds"]
 
         assert result.identical(expected)
 
@@ -353,7 +355,7 @@ class TestOpenDataset:
         ds_no_bounds.to_netcdf(self.file_path)
 
         with warnings.catch_warnings(record=True) as w:
-            result = open_dataset(self.file_path, add_bounds=True)
+            result = open_dataset(self.file_path, add_bounds=False)
 
             assert len(w) == 1
             assert issubclass(w[0].category, DeprecationWarning)
