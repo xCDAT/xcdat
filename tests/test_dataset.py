@@ -324,6 +324,48 @@ class TestOpenDataset:
 
         assert result.identical(expected)
 
+    def test_raises_deprecation_warning_when_passing_add_bounds_true(self):
+        ds_no_bounds = generate_dataset(
+            decode_times=True, cf_compliant=True, has_bounds=False
+        )
+        ds_no_bounds.to_netcdf(self.file_path)
+
+        with warnings.catch_warnings(record=True) as w:
+            result = open_dataset(self.file_path, add_bounds=True)
+
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert str(w[0].message) == (
+                "`add_bounds=True` will be deprecated after v0.6.0. Please use a list "
+                "of axis strings instead (e.g., `add_bounds=['X', 'Y']`)."
+            )
+
+        expected = generate_dataset(
+            decode_times=True, cf_compliant=True, has_bounds=True
+        )
+        expected = expected.drop_vars("time_bnds")
+        del expected["time"].attrs["bounds"]
+
+        assert result.identical(expected)
+
+    def test_raises_deprecation_warning_when_passing_add_bounds_false(self):
+        ds_no_bounds = generate_dataset(
+            decode_times=True, cf_compliant=True, has_bounds=False
+        )
+        ds_no_bounds.to_netcdf(self.file_path)
+
+        with warnings.catch_warnings(record=True) as w:
+            result = open_dataset(self.file_path, add_bounds=False)
+
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert str(w[0].message) == (
+                "`add_bounds=False` will be deprecated after v0.6.0. Please use "
+                "`add_bounds=None` instead."
+            )
+
+        assert result.identical(ds_no_bounds)
+
 
 class TestOpenMfDataset:
     @pytest.fixture(autouse=True)
