@@ -94,15 +94,21 @@ class XGCMRegridder(BaseRegridder):
 
         Regrid data to ``output_grid``:
 
-        >>> output_data = ds.regridder.vertical("so", output_grid, tool="xgcm", method="linear")
+        >>> output_data = ds.regridder.vertical(
+        >>>     "so", output_grid, tool="xgcm", method="linear"
+        >>> )
 
         Create pressure variable:
 
-        >>> ds["pressure"] = (ds["hyam"] * ds["P0"] + ds["hybm"] * ds["PS"]).transpose(**ds["T"].dims)
+        >>> ds["pressure"] = (ds["hyam"] * ds["P0"] + ds["hybm"] * ds["PS"]).transpose(
+        >>>     **ds["T"].dims
+        >>> )
 
         Regrid data to ``output_grid`` in pressure space:
 
-        >>> output_data = ds.regridder.vertical("so", output_grid, tool="xgcm", method="linear", target_data="pressure")
+        >>> output_data = ds.regridder.vertical(
+        >>>     "so", output_grid, tool="xgcm", method="linear", target_data="pressure"
+        >>> )
 
         Passing additional arguments to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
 

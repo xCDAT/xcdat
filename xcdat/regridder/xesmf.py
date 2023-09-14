@@ -42,22 +42,25 @@ class XESMFRegridder(BaseRegridder):
         ignore_degenerate: bool = True,
         **options: Any,
     ):
-        """
-        Extension of ``xESMF`` regridder.
+        """Extension of ``xESMF`` regridder.
 
-        This method extends ``xESMF`` by automatically constructing by ``xe.XESMFRegridder``
-        object and ensuring bounds and metadata are preserved in the output dataset.
+        This method extends ``xESMF`` by automatically constructing by
+        ``xe.XESMFRegridder`` object and ensuring bounds and metadata are
+        preserved in the output dataset.
 
-        The ``method`` argument can take any of the following values: `bilinear`, `conservative`,
-        `conservative_normed`, `patch`, `nearest_s2d`, or `nearest_d2s`. You can find a comparison
-        of the methods `here <https://xesmf.readthedocs.io/en/latest/notebooks/Compare_algorithms.html>`_.
+        The ``method`` argument can take any of the following values:
+        `bilinear`, `conservative`, `conservative_normed`, `patch`,
+        `nearest_s2d`, or `nearest_d2s`. You can find a comparison of the
+        methods `here <https://xesmf.readthedocs.io/en/latest/notebooks/Compare_algorithms.html>`_.
 
-        The ``extrap_method`` argument can take any of the following values: `inverse_dist` or `nearest_s2d`.
-        This argument along with ``extrap_dist_exponent`` and ``extrap_num_src_pnts`` can be used to
+        The ``extrap_method`` argument can take any of the following values:
+        `inverse_dist` or `nearest_s2d`. This argument along with
+        ``extrap_dist_exponent`` and ``extrap_num_src_pnts`` can be used to
         configure how extrapolation is applied.
 
-        The ``**options`` arguments are additional values passed to the ``xe.XESMFRegridder``
-        constructor. A description of these arguments can be found on `xESMF's documentation <https://github.com/pangeo-data/xESMF/blob/892ac87064d98d98d732ad8a79aa1682b081cdc2/xesmf/frontend.py#L702-L744>`_.
+        The ``**options`` arguments are additional values passed to the
+        ``xe.XESMFRegridder`` constructor. A description of these arguments can
+        be found on `xESMF's documentation <https://github.com/pangeo-data/xESMF/blob/892ac87064d98d98d732ad8a79aa1682b081cdc2/xesmf/frontend.py#L702-L744>`_.
 
         Parameters
         ----------
@@ -112,11 +115,15 @@ class XESMFRegridder(BaseRegridder):
 
         Regrid the "ts" variable using the "bilinear" method:
 
-        >>> output_data = ds.regridder.horizontal("ts", output_grid, tool="xesmf", method="bilinear")
+        >>> output_data = ds.regridder.horizontal(
+        >>>     "ts", output_grid, tool="xesmf", method="bilinear"
+        >>> )
 
         Passing additional values to ``xe.XESMFRegridder``:
 
-        >>> output_data = ds.regridder.horizontal("ts", output_grid, tool="xesmf", method="bilinear", unmapped_to_nan=True)
+        >>> output_data = ds.regridder.horizontal(
+        >>>     "ts", output_grid, tool="xesmf", method="bilinear", unmapped_to_nan=True
+        >>> )
         """
         super().__init__(input_grid, output_grid)
 
@@ -143,7 +150,7 @@ class XESMFRegridder(BaseRegridder):
         raise NotImplementedError()
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """See documentaion in :py:func:`xcdat.regridder.xesmf.XESMFRegridder`"""
+        """See documentation in :py:func:`xcdat.regridder.xesmf.XESMFRegridder`"""
         input_da = ds.get(data_var, None)
 
         if input_da is None:
