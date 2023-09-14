@@ -624,7 +624,7 @@ def _postprocess_dataset(
         warnings.warn(
             (
                 "`add_bounds=True` will be deprecated after v0.6.0. Please use a list "
-                "of axis strings instead (e.g., `add_bounds=['X', 'Y'])."
+                "of axis strings instead (e.g., `add_bounds=['X', 'Y']`)."
             ),
             DeprecationWarning,
             stacklevel=2,
@@ -634,7 +634,7 @@ def _postprocess_dataset(
         warnings.warn(
             (
                 "`add_bounds=False` will be deprecated after v0.6.0. Please use "
-                "`add_bounds=None`` instead."
+                "`add_bounds=None` instead."
             ),
             DeprecationWarning,
             stacklevel=2,
