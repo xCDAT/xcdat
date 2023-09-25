@@ -228,7 +228,7 @@ For more information on these options, visit the `xarray.open_mfdataset`_ docume
 
 Regridding
 ----------
-``xcdat`` extends several regridding packages; `xESMF`_ and `xgcm`_. ``xcdat`` provides a uniform interface to these tools. Along with extending these packages ``xcdat`` provides a port of the ``CDAT`` ``regrid2`` package.
+``xcdat`` extends and provides a uniform interface to `xESMF`_ and `xgcm`_. In addition, ``xcdat`` provides a port of the ``CDAT`` ``regrid2`` package.
 
 Structured rectilinear and curvilinear grids are supported.
 
