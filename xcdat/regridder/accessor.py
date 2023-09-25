@@ -424,6 +424,27 @@ class RegridderAccessor:
 
 
 def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: List[CFAxisKey]):
+    """
+    Extract the grid from ``ds``.
+
+    This function will remove any duplicate dimensions leaving only dimensions
+    used by the ``data_var``. All extraneous dimensions and variables are
+    dropped, returning only the grid.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to extract grid from.
+    data_var : str
+        Name of target data variable.
+    dup_check_dims : List[CFAxisKey]
+        List of dimensions to check for duplicates.
+
+    Returns
+    -------
+    xr.Dataset
+        Dataset containing grid dataset.
+    """
     to_drop = []
 
     all_coords = set(ds.coords.keys())
@@ -441,4 +462,5 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: List[CFAxisKe
 
     input_grid = ds.drop_dims(to_drop)
 
+    # drops extra dimensions on input grid
     return input_grid.regridder.grid
