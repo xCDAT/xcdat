@@ -45,7 +45,7 @@ class XESMFRegridder(BaseRegridder):
         """Extension of ``xESMF`` regridder.
 
         This method extends ``xESMF`` by automatically constructing by
-        ``xe.XESMFRegridder`` object and ensuring bounds and metadata are
+        ``xesmf.XESMFRegridder`` object and ensuring bounds and metadata are
         preserved in the output dataset.
 
         The ``method`` argument can take any of the following values:
@@ -59,7 +59,7 @@ class XESMFRegridder(BaseRegridder):
         configure how extrapolation is applied.
 
         The ``**options`` arguments are additional values passed to the
-        ``xe.XESMFRegridder`` constructor. A description of these arguments can
+        ``xesmf.XESMFRegridder`` constructor. A description of these arguments can
         be found on `xESMF's documentation <https://github.com/pangeo-data/xESMF/blob/892ac87064d98d98d732ad8a79aa1682b081cdc2/xesmf/frontend.py#L702-L744>`_.
 
         Parameters
@@ -87,7 +87,7 @@ class XESMFRegridder(BaseRegridder):
             This only applies to "conservative" and "conservative_normed"
             regridding methods.
         **options : Any
-            Additional arguments passed to the underlying ``xe.XESMFRegridder``
+            Additional arguments passed to the underlying ``xesmf.XESMFRegridder``
             constructor.
 
         Raises
@@ -119,7 +119,7 @@ class XESMFRegridder(BaseRegridder):
         >>>     "ts", output_grid, tool="xesmf", method="bilinear"
         >>> )
 
-        Passing additional values to ``xe.XESMFRegridder``:
+        Passing additional values to ``xesmf.XESMFRegridder``:
 
         >>> output_data = ds.regridder.horizontal(
         >>>     "ts", output_grid, tool="xesmf", method="bilinear", unmapped_to_nan=True
