@@ -13,10 +13,10 @@ Prerequisites
      pages if you aren't familiar with ``xarray``.
 
 2. xCDAT is distributed through the `conda-forge`_ channel of Anaconda. We recommend
-  using Mamba (via `Miniforge`_), a drop-in replacement of Conda that is faster and more
-  reliable than Conda. Miniforge ships with `conda-forge` set as the prioritized channel.
-  Mamba also uses the same commands and configurations as Conda, and you can swap
-  commands between both tools.
+   using Mamba (via `Miniforge`_), a drop-in replacement of Conda that is faster and more
+   reliable than Conda. Miniforge ships with `conda-forge` set as the prioritized channel.
+   Mamba also uses the same commands and configurations as Conda, and you can swap
+   commands between both tools.
 
    Follow these steps to install Miniforge (Mac OS & Linux):
 
