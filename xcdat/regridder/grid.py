@@ -491,7 +491,7 @@ def create_grid(
     With custom attributes:
 
     >>> grid = create_grid(
-    >>>    x=lon_axis, y=lat_axis, attrs={"created": str(datatime.date.today())}
+    >>>    x=lon_axis, y=lat_axis, attrs={"created": str(datetime.date.today())}
     >>> )
 
     Create grid using existing `xr.DataArray`'s:
