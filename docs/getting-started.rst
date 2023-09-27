@@ -14,26 +14,25 @@ Prerequisites
 
 2. xCDAT is distributed through the `conda-forge`_ channel of Anaconda. We recommend
    using Mamba (via `Miniforge`_), a drop-in replacement of Conda that is faster and more
-   reliable than Conda. Miniforge ships with `conda-forge` set as the prioritized channel.
+   reliable than Conda. Miniforge ships with ``conda-forge`` set as the prioritized channel.
    Mamba also uses the same commands and configurations as Conda, and you can swap
    commands between both tools.
 
    Follow these steps to install Miniforge (Mac OS & Linux):
 
-   .. code-block:: console
+   .. code-block:: bash
 
       curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
       bash Miniforge3-$(uname)-$(uname -m).sh
 
-   Then follow the instructions for installation. To have conda and mamba added to
-   your path you will need to type ``yes`` in response to ``"Do you wish the
-   installer to initialize Miniforge by running conda init?"`` (we recommend
-   that you do this). Note that this will modify your shell profile (e.g.,
-   ``~/.bashrc``) to add ``conda`` to your path.
+   Then follow the instructions for installation. We recommend you type ``yes`` in
+   response to ``"Do you wish the installer to initialize Miniforge by running conda init?"``
+   to add ``conda`` and ``mamba`` to your path. Note that this will modify your shell
+   profile (e.g., ``~/.bashrc``).
 
-   Note: After installation completes you may need to type ``bash`` to
+   *Note: After installation completes you may need to type ``bash`` to
    restart your shell (if you use bash). Alternatively, you can log out and
-   log back in.
+   log back in.*
 
 .. _xarray tutorial: https://tutorial.xarray.dev/intro.html
 .. _xarray documentation: https://docs.xarray.dev/en/stable/getting-started-guide/index.html
@@ -52,7 +51,7 @@ Installation
    To create an ``xcdat`` Mamba environment with ``xesmf`` (a recommended dependency),
    run:
 
-   .. code-block:: console
+   .. code-block:: bash
 
        >>> mamba create -n <ENV_NAME> -c conda-forge xcdat xesmf
        >>> mamba activate <ENV_NAME>
@@ -70,7 +69,7 @@ Installation
    You can also install ``xcdat`` in an existing Mamba environment, granted that Mamba
    is able to resolve the compatible dependencies.
 
-   .. code-block:: console
+   .. code-block:: bash
 
        >>> mamba activate <ENV_NAME>
        >>> mamba install -c conda-forge xcdat xesmf
@@ -95,14 +94,14 @@ Updating
 New versions of ``xcdat`` will be released periodically. We recommend you use the
 latest stable version of ``xcdat`` for the latest features and bug fixes.
 
-.. code-block:: console
+.. code-block:: bash
 
    >>> mamba activate <ENV_NAME>
    >>> mamba update xcdat
 
 To update to a specific version of ``xcdat``:
 
-.. code-block:: console
+.. code-block:: bash
 
    >>> mamba activate <ENV_NAME>
    >>> mamba update xcdat=<MAJOR.MINOR.PATCH>
