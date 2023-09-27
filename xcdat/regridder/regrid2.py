@@ -86,7 +86,7 @@ class Regrid2Regridder(BaseRegridder):
 
         # apply source mask to input data
         if src_mask is not None:
-            input_data_var = input_data_var.where(src_mask == 0.0)
+            input_data_var = input_data_var.where(src_mask != 0.0)
 
         # operate on pure numpy
         input_data = input_data_var.values
