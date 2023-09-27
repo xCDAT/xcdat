@@ -463,4 +463,10 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: List[CFAxisKe
     input_grid = ds.drop_dims(to_drop)
 
     # drops extra dimensions on input grid
-    return input_grid.regridder.grid
+    grid = input_grid.regridder.grid
+
+    # preserve mask on grid
+    if "mask" in ds:
+        grid["mask"] = ds["mask"].copy()
+
+    return grid
