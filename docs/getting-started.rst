@@ -58,10 +58,10 @@ Installation
 
    Note that ``xesmf`` is an optional dependency, which is required for using ``xesmf``
    based horizontal regridding APIs in ``xcdat``. ``xesmf`` is not currently supported
-   on `windows`_ because it depends on ``esmpy``, which also does not support Windows.
+   on `Windows`_ because it depends on ``esmpy``, which also does not support Windows.
    Windows users can try `WSL2`_ as a workaround.
 
-.. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
+.. _Windows: https://github.com/conda-forge/esmf-feedstock/issues/64
 .. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
 
 2. Install ``xcdat`` in an existing Mamba environment (`mamba install`_)
