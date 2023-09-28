@@ -194,8 +194,9 @@ class Regrid2Regridder(BaseRegridder):
                 )
 
                 data = (
-                    np.multiply(input_lon_segment, dot_weight).sum(
-                        axis=(input_lat_index, input_lon_index)
+                    np.nansum(
+                        np.multiply(input_lon_segment, dot_weight),
+                        axis=(input_lat_index, input_lon_index),
                     )
                     / cell_weight
                 )

@@ -502,16 +502,13 @@ class TestRegrid2Regridder:
 
         expected_output = np.array(
             [
-                [1.0, 1.0, 1.0, 1.0],
-                [1e20, 1e20, 1e20, 1e20],
-                [1e20, 1e20, 1e20, 1e20],
-                [1.0, 1.0, 1.0, 1.0],
+                [0.0, 0.0, 0.0, 0.0],
+                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
+                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
+                [0.0, 0.0, 0.0, 0.0],
             ],
             dtype=np.float32,
         )
-
-        # need to replace nans since nan != nan
-        output_data["ts"] = output_data.ts.fillna(1e20)
 
         assert np.all(output_data.ts.values == expected_output)
 
