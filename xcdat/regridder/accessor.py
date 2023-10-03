@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import warnings
-from typing import Any, List, Literal, Tuple, Union
+from typing import Any, List, Literal, Tuple
 
 import xarray as xr
 
@@ -108,7 +110,7 @@ class RegridderAccessor:
 
     def _get_axis_data(
         self, name: CFAxisKey
-    ) -> Tuple[Union[xr.DataArray, xr.Dataset], xr.DataArray]:
+    ) -> Tuple[xr.DataArray | xr.Dataset, xr.DataArray]:
         coord_var = get_dim_coords(self._ds, name)
 
         _validate_grid_has_single_axis_dim(name, coord_var)
