@@ -1,9 +1,13 @@
-from typing import Any, Dict, List, Literal, Optional, Tuple
+from __future__ import annotations
+
+import warnings
+from typing import Any, List, Literal, Tuple
 
 import xarray as xr
 
 from xcdat.axis import CFAxisKey, get_dim_coords
 from xcdat.regridder import regrid2, xgcm
+from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
 from xcdat.utils import _has_module
 
 HorizontalRegridTools = Literal["xesmf", "regrid2"]
@@ -23,19 +27,19 @@ VERTICAL_REGRID_TOOLS = {"xgcm": xgcm.XGCMRegridder}
 @xr.register_dataset_accessor(name="regridder")
 class RegridderAccessor:
     """
-    An accessor class that provides regridding attributes and methods on xarray
-    Datasets through the ``.regridder`` attribute.
+    An accessor class that provides regridding attributes and methods for
+    xarray Datasets through the ``.regridder`` attribute.
 
     Examples
     --------
 
-    Import RegridderAccessor class:
+    Import xCDAT:
 
-    >>> import xcdat  # or from xcdat import regridder
+    >>> import xcdat
 
     Use RegridderAccessor class:
 
-    >>> ds = xcdat.open_dataset("/path/to/file")
+    >>> ds = xcdat.open_dataset("...")
     >>>
     >>> ds.regridder.<attribute>
     >>> ds.regridder.<method>
@@ -44,7 +48,7 @@ class RegridderAccessor:
     Parameters
     ----------
     dataset : xr.Dataset
-        A Dataset object.
+        The Dataset to attach this accessor.
     """
 
     def __init__(self, dataset: xr.Dataset):
@@ -53,12 +57,13 @@ class RegridderAccessor:
     @property
     def grid(self) -> xr.Dataset:
         """
-        Returns ``xr.Dataset`` containing grid information.
+        Extract the `X`, `Y`, and `Z` axes from the Dataset and return a new
+        ``xr.Dataset``.
 
         Returns
         -------
         xr.Dataset
-            With data variables describing the grid.
+            Containing grid axes.
 
         Raises
         ------
@@ -66,6 +71,21 @@ class RegridderAccessor:
             If axis dimension coordinate variable is not correctly identified.
         ValueError
             If axis has multiple dimensions (only one is expected).
+
+        Examples
+        --------
+
+        Import xCDAT:
+
+        >>> import xcdat
+
+        Open a dataset:
+
+        >>> ds = xcdat.open_dataset("...")
+
+        Extract grid from dataset:
+
+        >>> grid = ds.regridder.grid
         """
         with xr.set_options(keep_attrs=True):
             coords = {}
@@ -84,21 +104,16 @@ class RegridderAccessor:
 
         ds = xr.Dataset(coords, attrs=self._ds.attrs)
 
-        ds = ds.bounds.add_missing_bounds(axes=["X", "Y"])
+        ds = ds.bounds.add_missing_bounds(axes=["X", "Y", "Z"])
 
         return ds
 
     def _get_axis_data(
         self, name: CFAxisKey
-    ) -> Tuple[xr.DataArray, Optional[xr.DataArray]]:
+    ) -> Tuple[xr.DataArray | xr.Dataset, xr.DataArray]:
         coord_var = get_dim_coords(self._ds, name)
 
-        if isinstance(coord_var, xr.Dataset):
-            raise ValueError(
-                f"Multiple '{name}' axis dims were found in this dataset, "
-                f"{list(coord_var.dims)}. Please drop the unused dimension(s) before "
-                "getting grid information."
-            )
+        _validate_grid_has_single_axis_dim(name, coord_var)
 
         try:
             bounds_var = self._ds.bounds.get_bounds(name, coord_var.name)
@@ -107,6 +122,7 @@ class RegridderAccessor:
 
         return coord_var, bounds_var
 
+    # TODO Either provide generic `horizontal` and `vertical` methods or tool specific
     def horizontal_xesmf(
         self,
         data_var: str,
@@ -114,6 +130,8 @@ class RegridderAccessor:
         **options: Any,
     ) -> xr.Dataset:
         """
+        Deprecated, will be removed with 0.7.0 release.
+
         Extends the xESMF library for horizontal regridding between structured
         rectilinear and curvilinear grids.
 
@@ -154,6 +172,13 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_xesmf("ts", output_grid)
         """
+        warnings.warn(
+            "`horizontal_xesmf` will be deprecated in 0.7.x, please migrate to using "
+            "`horizontal(..., tool='xesmf')` method.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         # TODO: Test this conditional.
         if _has_xesmf:  # pragma: no cover
             regridder = HORIZONTAL_REGRID_TOOLS["xesmf"](
@@ -168,13 +193,16 @@ class RegridderAccessor:
                 "in your conda environment."
             )
 
+    # TODO Either provide generic `horizontal` and `vertical` methods or tool specific
     def horizontal_regrid2(
         self,
         data_var: str,
         output_grid: xr.Dataset,
-        **options: Dict[str, Any],
+        **options: Any,
     ) -> xr.Dataset:
         """
+        Deprecated, will be removed with 0.7.0 release.
+
         Pure python implementation of CDAT's regrid2 horizontal regridder.
 
         Regrids ``data_var`` in dataset to ``output_grid`` using regrid2's
@@ -211,6 +239,13 @@ class RegridderAccessor:
 
         >>> ds.regridder.horizontal_regrid2("ts", output_grid)
         """
+        warnings.warn(
+            "`horizontal_regrid2` will be deprecated in 0.7.x, please migrate to using "
+            "`horizontal(..., tool='regrid2')` method.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         regridder = HORIZONTAL_REGRID_TOOLS["regrid2"](self._ds, output_grid, **options)
 
         return regridder.horizontal(data_var, self._ds)
@@ -220,11 +255,10 @@ class RegridderAccessor:
         data_var: str,
         output_grid: xr.Dataset,
         tool: HorizontalRegridTools = "xesmf",
-        **options: Dict[str, Any],
+        **options: Any,
     ) -> xr.Dataset:
         """
-        Apply horizontal regridding to ``data_var`` of the current
-        ``xr.Dataset`` to ``output_grid``.
+        Transform ``data_var`` to ``output_grid``.
 
         When might ``Regrid2`` be preferred over ``xESMF``?
 
@@ -236,44 +270,30 @@ class RegridderAccessor:
         Supported tools, methods and grids:
 
         - xESMF (https://pangeo-xesmf.readthedocs.io/en/latest/)
-           - Methods:
-
-             - Bilinear
-             - Conservative
-             - Conservative Normed
-             - Patch
-             - Nearest s2d
-             - Nearest d2s
-           - Grids:
-
-             - Rectilinear
-             - Curvilinear
+           - Methods: Bilinear, Conservative, Conservative Normed, Patch, Nearest s2d, or Nearest d2s.
+           - Grids: Rectilinear, or Curvilinear.
            - Find options at :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
         - Regrid2
-           - Methods:
-
-             - Conservative
-           - Grids:
-
-             - Rectilinear
+           - Methods: Conservative
+           - Grids: Rectilinear
            - Find options at :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`
 
         Parameters
         ----------
         data_var: str
-            Name of the variable in the ``xr.Dataset`` to regrid.
+            Name of the variable to transform.
         output_grid : xr.Dataset
-            Dataset containing output grid.
+            Grid to transform ``data_var`` to.
         tool : str
-            Name of the regridding tool.
-        **options : Dict[str, Any]
-            These options are passed to the tool being used for regridding.
-            See specific regridder documentation for available options.
+            Name of the tool to use.
+        **options : Any
+            These options are passed directly to the ``tool``. See specific
+            regridder for available options.
 
         Returns
         -------
         xr.Dataset
-            With the ``data_var`` variable on the grid defined in ``output_grid``.
+            With the ``data_var`` transformed to the ``output_grid``.
 
         Raises
         ------
@@ -287,23 +307,25 @@ class RegridderAccessor:
         Examples
         --------
 
-        Create destination grid:
+        Import xCDAT:
+
+        >>> import xcdat
+
+        Open a dataset:
+
+        >>> ds = xcdat.open_dataset("...")
+
+        Create output grid:
 
         >>> output_grid = xcdat.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
         Regrid variable using "xesmf":
 
-        >>> ds.regridder.horizontal("ts", output_grid, tool="xesmf", method="bilinear")
+        >>> output_data = ds.regridder.horizontal("ts", output_grid, tool="xesmf", method="bilinear")
 
         Regrid variable using "regrid2":
 
-        >>> ds.regridder.horizontal("ts", output_grid, tool="regrid2")
-
-        Use convenience methods:
-
-        >>> ds.regridder.horizontal_xesmf("ts", output_grid, method="bilinear")
-
-        >>> ds.regridder.horizontal_regrid2("ts", output_grid)
+        >>> output_data = ds.regridder.horizontal("ts", output_grid, tool="regrid2")
         """
         # TODO: Test this conditional.
         if tool == "xesmf" and not _has_xesmf:  # pragma: no cover
@@ -320,7 +342,8 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices {list(HORIZONTAL_REGRID_TOOLS)}"
             )
 
-        regridder = regrid_tool(self._ds, output_grid, **options)
+        input_grid = _get_input_grid(self._ds, data_var, ["X", "Y"])
+        regridder = regrid_tool(input_grid, output_grid, **options)
         output_ds = regridder.horizontal(data_var, self._ds)
 
         return output_ds
@@ -333,35 +356,30 @@ class RegridderAccessor:
         **options: Any,
     ) -> xr.Dataset:
         """
-        Apply vertical regridding to ``data_var`` of the current ``xr.Dataset``
-        to ``output_grid``.
+        Transform ``data_var`` to ``output_grid``.
 
         Supported tools:
 
         - xgcm (https://xgcm.readthedocs.io/en/latest/index.html)
-           - Methods:
-
-             - Linear
-             - Conservative
-             - Log
+           - Methods: Linear, Conservative, Log
            - Find options at :py:func:`xcdat.regridder.xgcm.XGCMRegridder`
 
         Parameters
         ----------
         data_var: str
-            Name of the variable in the ``xr.Dataset`` to regrid.
+            Name of the variable to transform.
         output_grid : xr.Dataset
-            Dataset containing output grid.
+            Grid to transform ``data_var`` to.
         tool : str
-            Name of the regridding tool.
-        **options : Dict[str, Any]
-            These options are passed to the tool being used for regridding.
-            See specific regridder documentation for available options.
+            Name of the tool to use.
+        **options : Any
+            These options are passed directly to the ``tool``. See specific
+            regridder for available options.
 
         Returns
         -------
         xr.Dataset
-            With the ``data_var`` variable on the grid defined in ``output_grid``.
+            With the ``data_var`` transformed to the ``output_grid``.
 
         Raises
         ------
@@ -370,13 +388,22 @@ class RegridderAccessor:
 
         Examples
         --------
-        Create destination grid:
+
+        Import xCDAT:
+
+        >>> import xcdat
+
+        Open a dataset:
+
+        >>> ds = xcdat.open_dataset("...")
+
+        Create output grid:
 
         >>> output_grid = xcdat.create_grid(lev=np.linspace(1000, 1, 20))
 
         Regrid variable using "xgcm":
 
-        >>> ds.regridder.vertical("so", output_grid, method="linear")
+        >>> output_data = ds.regridder.vertical("so", output_grid, method="linear")
         """
         try:
             regrid_tool = VERTICAL_REGRID_TOOLS[tool]
@@ -385,28 +412,63 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices "
                 f"{list(VERTICAL_REGRID_TOOLS)}"
             )
-        input_grid = _get_vertical_input_grid(self._ds, data_var)
+        input_grid = _get_input_grid(
+            self._ds,
+            data_var,
+            [
+                "Z",
+            ],
+        )
         regridder = regrid_tool(input_grid, output_grid, **options)
         output_ds = regridder.vertical(data_var, self._ds)
 
         return output_ds
 
 
-def _get_vertical_input_grid(ds: xr.Dataset, data_var: str):
-    coords = get_dim_coords(ds, "Z")
+def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: List[CFAxisKey]):
+    """
+    Extract the grid from ``ds``.
 
-    if isinstance(coords, xr.Dataset):
-        coord_z = set([get_dim_coords(ds[data_var], "Z").name])
+    This function will remove any duplicate dimensions leaving only dimensions
+    used by the ``data_var``. All extraneous dimensions and variables are
+    dropped, returning only the grid.
 
-        all_coords = set(ds.cf[["Z"]].coords.keys())
+    Parameters
+    ----------
+    ds : xr.Dataset
+        Dataset to extract grid from.
+    data_var : str
+        Name of target data variable.
+    dup_check_dims : List[CFAxisKey]
+        List of dimensions to check for duplicates.
 
-        # need to take the intersection after as `ds.cf[["Z"]]` will hand back data variables
-        to_drop = all_coords.difference(coord_z).intersection(set(ds.coords.keys()))
+    Returns
+    -------
+    xr.Dataset
+        Dataset containing grid dataset.
+    """
+    to_drop = []
 
-        shallow = ds.drop_dims(to_drop)
+    all_coords = set(ds.coords.keys())
 
-        input_grid = shallow.regridder.grid
-    else:
-        input_grid = ds.regridder.grid
+    for dimension in dup_check_dims:
+        coords = get_dim_coords(ds, dimension)
 
-    return input_grid
+        if isinstance(coords, xr.Dataset):
+            coord = set([get_dim_coords(ds[data_var], dimension).name])
+
+            dimension_coords = set(ds.cf[[dimension]].coords.keys())
+
+            # need to take the intersection after as `ds.cf[["Z"]]` will hand back data variables
+            to_drop += list(dimension_coords.difference(coord).intersection(all_coords))
+
+    input_grid = ds.drop_dims(to_drop)
+
+    # drops extra dimensions on input grid
+    grid = input_grid.regridder.grid
+
+    # preserve mask on grid
+    if "mask" in ds:
+        grid["mask"] = ds["mask"].copy()
+
+    return grid

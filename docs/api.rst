@@ -123,8 +123,6 @@ Methods
     Dataset.temporal.climatology
     Dataset.temporal.departures
     Dataset.regridder.horizontal
-    Dataset.regridder.horizontal_xesmf
-    Dataset.regridder.horizontal_regrid2
     Dataset.regridder.vertical
 
 .. _dsmeth_1:
@@ -184,5 +182,5 @@ It is especially useful for those who are transitioning over from CDAT to xarray
      - ``Dataset.temporal.departures("VAR_KEY", freq=<"season"|"month"|"day">)``, subset results for individual seasons, months, or days
      - ``cdutil.SEASONALCYCLE.departures()``, ``cdutil.ANNUALCYCLE.departures()``, ``cdutil.<DJF|MAM|JJA|SON>.departures()``, ``cdutil.<JAN|FEB|...|DEC>.departures()``
    * - Regrid horizontally?
-     - ``Dataset.regridder.horizontal_regrid2()``, ``Dataset.regridder.horizontal_xesmf()``
+     - ``Dataset.regridder.horizontal(tool="regrid2")``
      - ``cdms2.regrid2()``

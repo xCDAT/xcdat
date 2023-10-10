@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Any, Optional
 
 import xarray as xr
 
@@ -40,13 +40,27 @@ class XESMFRegridder(BaseRegridder):
         extrap_dist_exponent: Optional[float] = None,
         extrap_num_src_pnts: Optional[int] = None,
         ignore_degenerate: bool = True,
-        **options,
+        **options: Any,
     ):
         """Extension of ``xESMF`` regridder.
 
-        The ``XESMFRegridder`` extends ``xESMF`` by automatically constructing
-        the ``xe.XESMFRegridder`` object, preserving source bounds and
-        generating missing bounds.
+        This method extends ``xESMF`` by automatically constructing by
+        ``xesmf.XESMFRegridder`` object and ensuring bounds and metadata are
+        preserved in the output dataset.
+
+        The ``method`` argument can take any of the following values:
+        `bilinear`, `conservative`, `conservative_normed`, `patch`,
+        `nearest_s2d`, or `nearest_d2s`. You can find a comparison of the
+        methods `here <https://xesmf.readthedocs.io/en/latest/notebooks/Compare_algorithms.html>`_.
+
+        The ``extrap_method`` argument can take any of the following values:
+        `inverse_dist` or `nearest_s2d`. This argument along with
+        ``extrap_dist_exponent`` and ``extrap_num_src_pnts`` can be used to
+        configure how extrapolation is applied.
+
+        The ``**options`` arguments are additional values passed to the
+        ``xesmf.XESMFRegridder`` constructor. A description of these arguments can
+        be found on `xESMF's documentation <https://github.com/pangeo-data/xESMF/blob/892ac87064d98d98d732ad8a79aa1682b081cdc2/xesmf/frontend.py#L702-L744>`_.
 
         Parameters
         ----------
@@ -55,23 +69,11 @@ class XESMFRegridder(BaseRegridder):
         output_grid : xr.Dataset
             Contains desintation grid coordinates.
         method : str
-            Regridding method.
-
-            Options:
-               - bilinear
-               - conservative
-               - conservative_normed
-               - patch
-               - nearest_s2d
-               - nearest_d2s
+            The regridding method to apply, defaults to "bilinear".
         periodic : bool
-            Treat longitude as periodic. Used for global grids.
+            Treat longitude as periodic, used for global grids.
         extrap_method : Optional[str]
-            Extrapolation method.
-
-            Options:
-               - inverse_dist
-               - nearest_s2d
+            Extrapolation method, useful when moving from a fine to coarse grid.
         extrap_dist_exponent : Optional[float]
             The exponent to raise the distance to when calculating weights for
             the extrapolation method.
@@ -84,6 +86,9 @@ class XESMFRegridder(BaseRegridder):
 
             This only applies to "conservative" and "conservative_normed"
             regridding methods.
+        **options : Any
+            Additional arguments passed to the underlying ``xesmf.XESMFRegridder``
+            constructor.
 
         Raises
         ------
@@ -99,23 +104,26 @@ class XESMFRegridder(BaseRegridder):
         Import xCDAT:
 
         >>> import xcdat
-        >>> from xcdat.regridder import xesmf
 
         Open a dataset:
 
-        >>> ds = xcdat.open_dataset("ts.nc")
+        >>> ds = xcdat.open_dataset("...")
 
         Create output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Create regridder:
+        Regrid the "ts" variable using the "bilinear" method:
 
-        >>> regridder = xesmf.XESMFRegridder(ds, output_grid, method="bilinear")
+        >>> output_data = ds.regridder.horizontal(
+        >>>     "ts", output_grid, tool="xesmf", method="bilinear"
+        >>> )
 
-        Regrid data:
+        Passing additional values to ``xesmf.XESMFRegridder``:
 
-        >>> data_new_grid = regridder.horizontal("ts", ds)
+        >>> output_data = ds.regridder.horizontal(
+        >>>     "ts", output_grid, tool="xesmf", method="bilinear", unmapped_to_nan=True
+        >>> )
         """
         super().__init__(input_grid, output_grid)
 
@@ -135,7 +143,6 @@ class XESMFRegridder(BaseRegridder):
         self._extrap_dist_exponent = extrap_dist_exponent
         self._extrap_num_src_pnts = extrap_num_src_pnts
         self._ignore_degenerate = ignore_degenerate
-        self._regridder: xe.XESMFRegridder = None
         self._extra_options = options
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
@@ -143,40 +150,7 @@ class XESMFRegridder(BaseRegridder):
         raise NotImplementedError()
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """Regrid ``data_var`` in ``ds`` to output grid.
-
-        Parameters
-        ----------
-        data_var : str
-            The name of the data variable inside the dataset to regrid.
-        ds : xr.Dataset
-            The dataset containing ``data_var``.
-
-        Returns
-        -------
-        xr.Dataset
-            Dataset with variable on the destination grid.
-
-        Raises
-        ------
-        KeyError
-            If data variable does not exist in the Dataset.
-
-        Examples
-        --------
-
-        Create output grid:
-
-        >>> output_grid = xcdat.create_gaussian_grid(32)
-
-        Create regridder:
-
-        >>> regridder = xesmf.XESMFRegridder(ds, output_grid, method="bilinear")
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.horizontal("ts", ds)
-        """
+        """See documentation in :py:func:`xcdat.regridder.xesmf.XESMFRegridder`"""
         input_da = ds.get(data_var, None)
 
         if input_da is None:
@@ -184,20 +158,19 @@ class XESMFRegridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        if self._regridder is None:
-            self._regridder = xe.Regridder(
-                self._input_grid,
-                self._output_grid,
-                method=self._method,
-                periodic=self._periodic,
-                extrap_method=self._extrap_method,
-                extrap_dist_exponent=self._extrap_dist_exponent,
-                extrap_num_src_pnts=self._extrap_num_src_pnts,
-                ignore_degenerate=self._ignore_degenerate,
-                **self._extra_options,
-            )
+        regridder = xe.Regridder(
+            self._input_grid,
+            self._output_grid,
+            method=self._method,
+            periodic=self._periodic,
+            extrap_method=self._extrap_method,
+            extrap_dist_exponent=self._extrap_dist_exponent,
+            extrap_num_src_pnts=self._extrap_num_src_pnts,
+            ignore_degenerate=self._ignore_degenerate,
+            **self._extra_options,
+        )
 
-        output_da = self._regridder(input_da, keep_attrs=True)
+        output_da = regridder(input_da, keep_attrs=True)
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
         output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["X", "Y"])
