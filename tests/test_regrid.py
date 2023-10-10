@@ -1184,6 +1184,20 @@ class TestAccessor:
         )
         self.vertical_ds = fixtures.generate_lev_dataset()
 
+    def test_preserve_mask_from_input(self):
+        mask = xr.zeros_like(self.horizontal_ds.isel(time=0), dtype=int)
+        mask = mask.drop_vars("time")
+
+        mask.ts[1:3] = 1.0
+
+        self.horizontal_ds["mask"] = mask.ts
+
+        grid = accessor._get_input_grid(self.horizontal_ds, "ts", ["X", "Y"])
+
+        assert "mask" in grid
+
+        xr.testing.assert_allclose(mask.ts, grid.mask)
+
     @requires_xesmf
     def test_horizontal(self):
         output_grid = grid.create_gaussian_grid(32)
