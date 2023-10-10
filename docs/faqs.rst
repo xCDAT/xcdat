@@ -228,13 +228,13 @@ For more information on these options, visit the `xarray.open_mfdataset`_ docume
 
 Regridding
 ----------
-``xcdat`` extends and provides a uniform interface to `xESMF`_ and `xgcm`_. In addition, ``xcdat`` provides a port of the ``CDAT`` `regrid2`_ package.
+``xcdat`` extends and provides a uniform interface to `xESMF`_ and `xgcm`_. In addition, ``xcdat`` provides a port of the ``CDAT`` `regrid2 package`_.
 
 Structured rectilinear and curvilinear grids are supported.
 
 .. _`xESMF`: https://xesmf.readthedocs.io/en/stable/
 .. _`xgcm`: https://xgcm.readthedocs.io/en/latest/
-.. _`regrid2`: https://cdms.readthedocs.io/en/latest/regrid2.html
+.. _`regrid2 package`: https://cdms.readthedocs.io/en/latest/regrid2.html
 
 How can I retrieve the grid from a dataset?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

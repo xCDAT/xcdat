@@ -2,6 +2,97 @@
 History
 =======
 
+v0.6.0 (10 October 2023)
+------------------------
+
+This minor version update consists of new features including vertical
+regridding (extension of ``xgcm``), functions for producing accurate
+time bounds, and improving the usability of the ``create_grid`` API. It
+also includes bug fixes to preserve attributes when using regrid2
+horizontal regridder and fixing multi-file datasets spatial average
+orientation and weights when lon bounds span prime meridian.
+
+Features
+--------
+
+-  Functions to produce accurate time bounds by `Stephen Po-Chedley`_ in
+   https://github.com/xCDAT/xcdat/pull/418
+-  Add API extending xgcm vertical regridding by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/388,
+   https://github.com/xCDAT/xcdat/pull/535,
+   https://github.com/xCDAT/xcdat/pull/525
+-  Update ``create_grid`` args to improve usability by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/507,
+   https://github.com/xCDAT/xcdat/pull/539
+
+Deprecation
+-----------
+
+-  Add deprecation warnings for ``add_bounds`` boolean args by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/548,
+-  Add deprecation warning for CDML/XML support in ``open_mfdataset()`` by `Tom Vo`_
+   in https://github.com/xCDAT/xcdat/pull/503,
+   https://github.com/xCDAT/xcdat/pull/504
+
+Bug Fixes
+---------
+
+Horizontal Regridding
+~~~~~~~~~~~~~~~~~~~~~
+
+-  Improves error when axis is missing/incorrect attributes with regrid2
+   by `Jason Boutte`_ in https://github.com/xCDAT/xcdat/pull/481
+-  Fixes preserving ds/da attributes in the regrid2 module by `Jason Boutte`_
+   in https://github.com/xCDAT/xcdat/pull/468
+-  Fixes duplicate parameter in regrid2 docs by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/532
+
+Spatial Averaging
+~~~~~~~~~~~~~~~~~
+-  Fix multi-file dataset spatial average orientation and weights when
+   lon bounds span prime meridian by `Stephen Po-Chedley`_ in
+   https://github.com/xCDAT/xcdat/pull/495
+
+Documentation
+-------------
+
+-  Typo fix for climatology code example in docs by `Jiwoo Lee`_ in
+   https://github.com/xCDAT/xcdat/pull/491
+-  Update documentation in regrid2.py by `Jiwoo Lee`_ in
+   https://github.com/xCDAT/xcdat/pull/509
+-  Add more fields to GH Discussions question form by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/480
+-  Add Q&A GH discussions template by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/479
+-  Update FAQs question covering datasets with conflicting bounds by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/474
+-  Add Google Groups mailing list to docs by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/452
+-  Fix README link to CODE-OF-CONDUCT.rst by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/444
+-  Replace LLNL E3SM License with xCDAT License by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/443
+-  Update getting started and HPC documentation by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/553
+
+DevOps
+------
+
+-  Fix Python deprecation comment in conda env yml files by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/514
+-  Simplify conda environments and move configs to ``pyproject.toml`` by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/512
+-  Update DevOps to cache conda and fix attributes not being preserved
+   with ``xarray > 2023.3.0`` by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/465
+-  Update GH Actions to use ``mamba`` by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/450
+-  Update constraint ``cf_xarray >=0.7.3`` to workaround xarray import
+   issue by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/547
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.5.0...v0.6.0
+
+
 v0.5.0 (27 March 2023)
 --------------------------
 
