@@ -7,6 +7,9 @@
             "path": ".."
         }
     ],
+    // ===========================
+    // VS Code Workspace Settings.
+    // ===========================
     "settings": {
         // ===================
         // Editor settings
@@ -49,5 +52,24 @@
             "editor.wordWrap": "wordWrapColumn",
             "editor.wordWrapColumn": 120
         }
+    },
+    // =====================================
+    // VS Code Python Debugger Configuration
+    // =====================================
+    "launch": {
+        "version": "0.2.0",
+        "configurations": [
+            {
+                "name": "Python: Current File",
+                "type": "python",
+                "request": "launch",
+                "program": "${file}",
+                "console": "integratedTerminal",
+                "justMyCode": true,
+                "env": {
+                    "PYTHONPATH": "${workspaceFolder}"
+                }
+            }
+        ]
     }
 }
