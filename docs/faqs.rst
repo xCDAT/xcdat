@@ -225,3 +225,59 @@ caution. You should understand the potential implications of these workarounds.*
 For more information on these options, visit the `xarray.open_mfdataset`_ documentation.
 
 .. _`xarray.open_mfdataset`: https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html#xarray-open-mfdataset
+
+Regridding
+----------
+``xcdat`` extends and provides a uniform interface to `xESMF`_ and `xgcm`_. In addition, ``xcdat`` provides a port of the ``CDAT`` `regrid2 package`_.
+
+Structured rectilinear and curvilinear grids are supported.
+
+.. _`xESMF`: https://xesmf.readthedocs.io/en/stable/
+.. _`xgcm`: https://xgcm.readthedocs.io/en/latest/
+.. _`regrid2 package`: https://cdms.readthedocs.io/en/latest/regrid2.html
+
+How can I retrieve the grid from a dataset?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The :py:func:`xcdat.regridder.accessor.RegridderAccessor.grid` property is provided to extract the grid information from a dataset.
+
+.. code-block:: python
+
+  ds = xcdat.open_dataset(...)
+  grid = ds.regridder.grid
+
+How do I perform horizontal regridding?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The :py:func:`xcdat.regridder.accessor.RegridderAccessor.horizontal` method provides access to the `xESMF`_ and `Regrid2`_ packages.
+
+The arguments for each regridder can be found:
+
+* :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
+* :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`
+
+An example of `horizontal`_ regridding can be found in the `gallery`_.
+
+.. _`Regrid2`: generated/xcdat.regridder.regrid2.Regrid2Regridder.html
+.. _`horizontal`: examples/regridding-horizontal.html
+.. _`gallery`: gallery.html
+
+How do I perform vertical regridding?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+The :py:func:`xcdat.regridder.accessor.RegridderAccessor.vertical` method provides access to the `xgcm`_ package.
+
+The arguments for each regridder can be found:
+
+* :py:func:`xcdat.regridder.xgcm.XGCMRegridder`
+
+An example of `vertical`_ regridding can be found in the `gallery`_.
+
+.. _`vertical`: examples/regridding-vertical.html
+
+Can ``xcdat`` automatically derive Parametric Vertical Coordinates in a dataset?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Automatically deriving `Parametric Vertical Coordinates`_ is a planned feature for ``xcdat``.
+
+.. _`Parametric Vertical Coordinates`: http://cfconventions.org/cf-conventions/cf-conventions.html#parametric-vertical-coordinate
+
+Can I regrid data on unstructured grids?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Regridding data on unstructured grids is a feature we are exploring for ``xcdat``.

@@ -7,9 +7,7 @@ from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 
 class Regrid2Regridder(BaseRegridder):
-    def __init__(
-        self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Dict[str, Any]
-    ):
+    def __init__(self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Any):
         """
         Pure python implementation of the regrid2 horizontal regridder from
         CDMS2's regrid2 module.
@@ -24,31 +22,27 @@ class Regrid2Regridder(BaseRegridder):
             Dataset containing the source grid.
         output_grid : xr.Dataset
             Dataset containing the destination grid.
-        options : Dict[str, Any]
+        options : Any
             Dictionary with extra parameters for the regridder.
 
         Examples
         --------
+
         Import xCDAT:
 
         >>> import xcdat
-        >>> from xcdat.regridder import regrid2
 
         Open a dataset:
 
-        >>> ds = xcdat.open_dataset("ts.nc")
+        >>> ds = xcdat.open_dataset("...")
 
         Create output grid:
 
         >>> output_grid = xcdat.create_gaussian_grid(32)
 
-        Create regridder:
-
-        >>> regridder = regrid2.Regrid2Regridder(ds.regridder.grid, output_grid)
-
         Regrid data:
 
-        >>> data_new_grid = regridder.horizontal("ts", ds)
+        >>> output_data = ds.regridder.horizontal("ts", output_grid)
         """
         super().__init__(input_grid, output_grid, **options)
 
@@ -69,44 +63,7 @@ class Regrid2Regridder(BaseRegridder):
         raise NotImplementedError()
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
-        """Regrid ``data_var`` in ``ds`` to output grid.
-
-        Mappings and weights between input and output grid are calculated
-        on the first call, allowing a regridder to be applied to many input
-        datasets.
-
-        Parameters
-        ----------
-        data_var : str
-            The name of the data variable inside the dataset to regrid.
-        ds : xr.Dataset
-            The dataset containing ``data_var``.
-
-        Returns
-        -------
-        xr.Dataset
-            Dataset with variable on the destination grid.
-
-        Raises
-        ------
-        KeyError
-            If data variable does not exist in the Dataset.
-
-        Examples
-        --------
-
-        Create output grid:
-
-        >>> output_grid = xcdat.create_gaussian_grid(32)
-
-        Create regridder:
-
-        >>> regridder = regrid2.Regrid2Regridder(ds, output_grid)
-
-        Regrid data:
-
-        >>> data_new_grid = regridder.horizontal("ts", ds)
-        """
+        """See documentation in :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`"""
         input_data_var = ds.get(data_var, None)
 
         if input_data_var is None:
@@ -132,7 +89,10 @@ class Regrid2Regridder(BaseRegridder):
 
         # apply source mask to input data
         if src_mask is not None:
-            input_data = np.where(src_mask.values == 0.0, input_data, np.NAN)
+            input_data_var = input_data_var.where(src_mask != 0.0)
+
+        # operate on pure numpy
+        input_data = input_data_var.values
 
         axis_variable_name_map = {x: y[0] for x, y in input_data_var.cf.axes.items()}
 
@@ -237,8 +197,9 @@ class Regrid2Regridder(BaseRegridder):
                 )
 
                 data = (
-                    np.multiply(input_lon_segment, dot_weight).sum(
-                        axis=(input_lat_index, input_lon_index)
+                    np.nansum(
+                        np.multiply(input_lon_segment, dot_weight),
+                        axis=(input_lat_index, input_lon_index),
                     )
                     / cell_weight
                 )

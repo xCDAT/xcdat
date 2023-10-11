@@ -491,7 +491,7 @@ def create_grid(
     With custom attributes:
 
     >>> grid = create_grid(
-    >>>    x=lon_axis, y=lat_axis, attrs={"created": str(datatime.date.today())}
+    >>>    x=lon_axis, y=lat_axis, attrs={"created": str(datetime.date.today())}
     >>> )
 
     Create grid using existing `xr.DataArray`'s:
@@ -529,28 +529,30 @@ def create_grid(
     axes = {"x": x, "y": y, "z": z}
     ds = xr.Dataset(attrs={} if attrs is None else attrs.copy())
 
-    for key, item in axes.items():
+    for axis, item in axes.items():
         if item is None:
             continue
 
         if isinstance(item, (tuple, list)):
             if len(item) != 2:
                 raise ValueError(
-                    f"Argument {key!r} should be an xr.DataArray representing "
+                    f"Argument {axis!r} should be an xr.DataArray representing "
                     "coordinates or a tuple (xr.DataArray, xr.DataArray) representing "
                     "coordinates and bounds."
                 )
 
-            axis, bnds = item[0].copy(deep=True), item[1].copy(deep=True)  # type: ignore[union-attr]
+            coords = item[0].copy(deep=True)
 
-            # ensure bnds attribute is set
-            axis.attrs["bounds"] = bnds.name
+            if item[1] is not None:
+                bnds = item[1].copy(deep=True)
 
-            ds = ds.assign({bnds.name: bnds})
+                coords.attrs["bounds"] = bnds.name
+
+                ds = ds.assign({bnds.name: bnds})
         else:
-            axis = item.copy(deep=True)
+            coords = item.copy(deep=True)
 
-        ds = ds.assign_coords({axis.name: axis})
+        ds = ds.assign_coords({coords.name: coords})
 
     return ds
 
@@ -638,7 +640,6 @@ def create_axis(
         Must have a shape of n x 2, where n is the length of ``data``.
     generate_bounds : Optiona[bool]
         Generate bounds for the axis if ``bounds`` is None, by default True.
-    attrs : Optional[Dict[str, str]]
     attrs : Optional[Dict[str, str]]
         Custom attributes to be added to the generated `xr.DataArray` axis, by
         default None.

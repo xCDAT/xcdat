@@ -405,6 +405,28 @@ def generate_lev_dataset(position="center") -> xr.Dataset:
     return ds
 
 
+def generate_multiple_variable_dataset(
+    copies: int, separate_dims: bool = False, **kwargs
+) -> xr.Dataset:
+    ds_base = generate_dataset(**kwargs)
+
+    datasets = [ds_base]
+
+    for idx in range(copies):
+        ds_copy = ds_base.copy(deep=True)
+
+        var_names = list(["ts"])
+
+        if separate_dims:
+            var_names += list(ds_base.dims.keys())  # type: ignore[arg-type]
+
+        ds_copy = ds_copy.rename({x: f"{x}{idx+1}" for x in var_names})
+
+        datasets.append(ds_copy)
+
+    return xr.merge(datasets, compat="override")
+
+
 def generate_dataset(
     decode_times: bool, cf_compliant: bool, has_bounds: bool
 ) -> xr.Dataset:

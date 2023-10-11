@@ -1688,9 +1688,9 @@ def _infer_freq(time_coords: xr.DataArray) -> Frequency:
 
     if min_delta < pd.Timedelta(days=1):
         return "hour"
-    elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=28):
+    elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=21):
         return "day"
-    elif min_delta >= pd.Timedelta(days=28) and min_delta < pd.Timedelta(days=365):
+    elif min_delta >= pd.Timedelta(days=21) and min_delta < pd.Timedelta(days=300):
         return "month"
     else:
         return "year"

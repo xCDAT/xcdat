@@ -6,9 +6,12 @@ In general, xCDAT is available on Anaconda via the ``conda-forge`` channel.
 xCDAT follows the same convention as other conda-based packages by being installable via
 `conda <https://www.anaconda.com/products/distribution>`_. The conda installation
 instructions in this guide are based on the instructions provided by
-`NERSC <https://docs.nersc.gov/development/languages/python/nersc-python/>`_. However,
-setup can vary depending on the exact HPC environment you are working in so please
-consult your HPC documentation and/or HPC support resources.
+`NERSC <https://docs.nersc.gov/development/languages/python/nersc-python/>`_.
+
+**Setup can vary depending on the exact HPC environment you are working in so please
+consult your HPC documentation and/or HPC support resources. Some HPC environments
+might have security settings that restrict user-managed conda installations and
+environments.**
 
 Setting up your xCDAT environment
 ---------------------------------
