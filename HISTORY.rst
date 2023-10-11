@@ -13,7 +13,7 @@ horizontal regridder and fixing multi-file datasets spatial average
 orientation and weights when lon bounds span prime meridian.
 
 Features
---------
+~~~~~~~~
 
 -  Functions to produce accurate time bounds by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/418
@@ -26,7 +26,7 @@ Features
    https://github.com/xCDAT/xcdat/pull/539
 
 Deprecation
------------
+~~~~~~~~~~~
 
 -  Add deprecation warnings for ``add_bounds`` boolean args by
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/548,
@@ -35,10 +35,10 @@ Deprecation
    https://github.com/xCDAT/xcdat/pull/504
 
 Bug Fixes
----------
+~~~~~~~~~
 
 Horizontal Regridding
-~~~~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^^^^
 
 -  Improves error when axis is missing/incorrect attributes with regrid2
    by `Jason Boutte`_ in https://github.com/xCDAT/xcdat/pull/481
@@ -48,13 +48,13 @@ Horizontal Regridding
    https://github.com/xCDAT/xcdat/pull/532
 
 Spatial Averaging
-~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^
 -  Fix multi-file dataset spatial average orientation and weights when
    lon bounds span prime meridian by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/495
 
 Documentation
--------------
+~~~~~~~~~~~~~
 
 -  Typo fix for climatology code example in docs by `Jiwoo Lee`_ in
    https://github.com/xCDAT/xcdat/pull/491
@@ -76,7 +76,7 @@ Documentation
    https://github.com/xCDAT/xcdat/pull/553
 
 DevOps
-------
+~~~~~~
 
 -  Fix Python deprecation comment in conda env yml files by
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/514
