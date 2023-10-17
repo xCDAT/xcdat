@@ -9,6 +9,9 @@ API computation and not I/O. The `flox` package is used for map-reduce grouping
 instead of the native Xarray serial grouping logic for temporal averaging APIs
 that use Xarray's groupby() under the hood (e.g., `group_average()`,
 `climatology()`, and `departures()`)
+
+TODO: Record runtimes for temporal averaging APIs. Only spatial averaging
+is being recorded.
 """
 from __future__ import annotations
 
@@ -304,5 +307,3 @@ def plot_metrics(df_serial, df_parallel):
 
 if __name__ == "__main__":
     get_runtimes()
-
-# %%
