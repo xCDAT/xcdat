@@ -29,12 +29,18 @@ from __future__ import annotations
 
 import time
 import timeit
+import warnings
 from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from xcdat._logger import _setup_custom_logger
+
+warnings.filterwarnings(
+    action="ignore", category=xr.SerializationWarning, module=".*conventions"
+)
 
 # FIXME: I can't get the logger to not print out two messages.
 # I already tried logger.propagate=False and using the root logger.
@@ -172,9 +178,15 @@ def _get_xcdat_runtimes(
         setup = _get_xr_setup(dir_path, chunks, parallel)
         api_map = _get_xr_api_map(var_key)
 
-        logger.info(f"Opening '{var_key}' dataset ({fsize}, `{dir_path}`.")
+        logger.info(
+            f"Variable: '{var_key}', File Size: {fsize}, Dir Path: `{dir_path}`."
+        )
+        open_stmt = setup.split("\n")[-1]
+        logger.info(f"  * I/O code: `{open_stmt}`")
+
         for api, call in api_map.items():
-            logger.info(f"Getting runtime for `{api}()`.")
+            logger.info(f"  * Getting runtime for {api}: `{call}`.")
+
             entry: Dict[str, str | float | None] = {
                 "pkg": "xcdat",
                 "gb": fsize.split("_")[0],
@@ -188,7 +200,7 @@ def _get_xcdat_runtimes(
                 runtime = None
 
             entry[f"runtime_{process_type}"] = runtime
-            logger.info(f"`{api}()` runtime: {runtime}")
+            logger.info(f"  * Runtime: {runtime}")
 
             api_runtimes.append(entry)
 
@@ -214,7 +226,7 @@ def _get_xr_setup(dir_path: str, chunks: None | Dict[str, str], parallel: bool):
     return (
         "import xarray as xr\n"
         "import xcdat as xc\n"
-        f"ds = xc.open_mfdataset('{dir_path}', chunks={chunks}, parallel={parallel})\n"
+        f"ds = xc.open_mfdataset('{dir_path}', chunks={chunks}, parallel={parallel})"
     )
 
 
@@ -251,9 +263,12 @@ def _get_cdat_runtimes(repeat: int) -> pd.DataFrame:
         setup = _get_cdat_setup(var_key, xml_path)
         api_map = _get_cdat_api_map()
 
-        logger.info(f"Opening '{var_key}' dataset ({fsize}, `{xml_path}`.")
+        logger.info(
+            f"Variable: '{var_key}', File Size: {fsize}, XML Path: `{xml_path}`."
+        )
         for api, call in api_map.items():
-            logger.info(f"Getting runtime for `{api}()`.")
+            logger.info(f"  * Getting runtime for {api}: `{call}`.")
+
             entry: Dict[str, str | float | None] = {
                 "pkg": "cdat",
                 "gb": fsize.split("_")[0],
@@ -266,7 +281,7 @@ def _get_cdat_runtimes(repeat: int) -> pd.DataFrame:
                 runtime = None
 
             entry["runtime_serial"] = runtime
-            logger.info(f"`{api}()` runtime: {runtime}")
+            logger.info(f"  * Runtime: {runtime}")
 
         runtimes.append(entry)
 
