@@ -1,7 +1,0 @@
-pkg,gb,api,runtime_serial,runtime_parallel
-xcdat,7,spatial_avg,0.908335,0.219098
-xcdat,12,spatial_avg,1.714594,0.207057
-xcdat,22,spatial_avg,1.268768, 0.273772
-xcdat,50,spatial_avg,1.004576,0.23627
-xcdat,74,spatial_avg,1.294496,0.20441
-xcdat,105,spatial_avg,2.506387,0.266126

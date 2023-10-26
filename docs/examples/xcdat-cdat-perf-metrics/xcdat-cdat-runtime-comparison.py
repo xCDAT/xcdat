@@ -1,3 +1,4 @@
+# %%
 """
 A script that compares the API runtimes of xCDAT against CDAT using multi-file
 time series datasets with varying sizes. The default number of samples taken
@@ -21,9 +22,6 @@ How to use:
       - `mamba activate xcdat-cdat-runtime`
    3. Run the script
       - `python xcdat-cdat-runtime-comparison.py`
-
-TODO: Record runtimes for temporal averaging APIs, only spatial averaging is
-being recorded.
 """
 from __future__ import annotations
 
@@ -77,35 +75,35 @@ FILES_DICT: Dict[str, Dict[str, str]] = {
         "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/day/tas/gn/v20190308/",
         "xml_path": "/p/user_pub/e3sm/vo13/xclim/CMIP6/CMIP/historical/atmos/day/tas/CMIP6.CMIP.historical.NCAR.CESM2.r1i1p1f1.day.tas.atmos.glb-p8-gn.v20190308.0000000.0.xml",
     },
-    # "12_gb": {
-    #     "var_key": "tas",
-    #     "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/MRI/MRI-ESM2-0/amip/r1i1p1f1/3hr/tas/gn/v20190829/",
-    #     "xml_path": "/p/user_pub/e3sm/vo13/xclim/CMIP6/CMIP/historical/atmos/3hr/tas/CMIP6.CMIP.historical.MRI.MRI-ESM2-0.r1i1p1f1.3hr.tas.gn.v20190829.0000000.0.xml",
-    # },
-    # "22_gb": {
-    #     "var_key": "ta",
-    #     "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/MOHC/UKESM1-0-LL/historical/r5i1p1f3/day/ta/gn/v20191115/",
-    #     "xml_path": "/p/user_pub/xclim/CMIP6/CMIP/historical/atmos/day/ta/CMIP6.CMIP.historical.MOHC.UKESM1-0-LL.r5i1p1f3.day.ta.atmos.glb-p8-gn.v20191115.0000000.0.xml",
-    # },
-    # "50_gb": {
-    #     "var_key": "ta",
-    #     "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/day/ta/gn/v20190308/",
-    #     "xml_path": "/p/user_pub/xclim/CMIP6/CMIP/historical/atmos/day/ta/CMIP6.CMIP.historical.NCAR.CESM2.r1i1p1f1.day.ta.atmos.glb-p8-gn.v20190308.0000000.0.xml",
-    # },
-    # "74_gb": {
-    #     "var_key": "ta",
-    #     "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p2f1/CFday/ta/gn/v20190429/",
-    #     "xml_path": "/p/user_pub/e3sm/vo13/xclim/CMIP6/CMIP/historical/atmos/day/ta/CMIP6.CMIP.historical.CCCma.CanESM5.r1i1p2f1.CFday.ta.atmos.glb-p80-gn.v20190429.0000000.0.xml",
-    # },
-    # "105_gb": {
-    #     "var_key": "ta",
-    #     "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/MOHC/HadGEM3-GC31-MM/historical/r2i1p1f3/day/ta/gn/v20191218",
-    #     "xml_path": "/p/user_pub/xclim/CMIP6/CMIP/historical/atmos/day/ta/CMIP6.CMIP.historical.MOHC.HadGEM3-GC31-MM.r2i1p1f3.day.ta.atmos.glb-p8-gn.v20191218.0000000.0.xml",
-    # },
+    "12_gb": {
+        "var_key": "tas",
+        "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/MRI/MRI-ESM2-0/amip/r1i1p1f1/3hr/tas/gn/v20190829/",
+        "xml_path": "/p/user_pub/e3sm/vo13/xclim/CMIP6/CMIP/historical/atmos/3hr/tas/CMIP6.CMIP.historical.MRI.MRI-ESM2-0.r1i1p1f1.3hr.tas.gn.v20190829.0000000.0.xml",
+    },
+    "22_gb": {
+        "var_key": "ta",
+        "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/MOHC/UKESM1-0-LL/historical/r5i1p1f3/day/ta/gn/v20191115/",
+        "xml_path": "/p/user_pub/xclim/CMIP6/CMIP/historical/atmos/day/ta/CMIP6.CMIP.historical.MOHC.UKESM1-0-LL.r5i1p1f3.day.ta.atmos.glb-p8-gn.v20191115.0000000.0.xml",
+    },
+    "50_gb": {
+        "var_key": "ta",
+        "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/NCAR/CESM2/historical/r1i1p1f1/day/ta/gn/v20190308/",
+        "xml_path": "/p/user_pub/xclim/CMIP6/CMIP/historical/atmos/day/ta/CMIP6.CMIP.historical.NCAR.CESM2.r1i1p1f1.day.ta.atmos.glb-p8-gn.v20190308.0000000.0.xml",
+    },
+    "74_gb": {
+        "var_key": "ta",
+        "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/CCCma/CanESM5/historical/r1i1p2f1/CFday/ta/gn/v20190429/",
+        "xml_path": "/p/user_pub/e3sm/vo13/xclim/CMIP6/CMIP/historical/atmos/day/ta/CMIP6.CMIP.historical.CCCma.CanESM5.r1i1p2f1.CFday.ta.atmos.glb-p80-gn.v20190429.0000000.0.xml",
+    },
+    "105_gb": {
+        "var_key": "ta",
+        "dir_path": "/p/css03/esgf_publish/CMIP6/CMIP/MOHC/HadGEM3-GC31-MM/historical/r2i1p1f3/day/ta/gn/v20191218",
+        "xml_path": "/p/user_pub/xclim/CMIP6/CMIP/historical/atmos/day/ta/CMIP6.CMIP.historical.MOHC.HadGEM3-GC31-MM.r2i1p1f3.day.ta.atmos.glb-p8-gn.v20191218.0000000.0.xml",
+    },
 }
 
 
-def main(repeat: int = 5):
+def main(repeat: int):
     """Get the API runtimes for xCDAT and CDAT.
 
     APIs tested include:
@@ -117,8 +115,8 @@ def main(repeat: int = 5):
     Parameters
     ----------
     repeat : int
-        Number of samples to take for each API call, by default 5. The minimum
-        runtime is taken as the final runtime (refer to Notes).
+        Number of samples to take for each API call. The minimum runtime is
+        taken as the final runtime (refer to Notes).
 
     Notes
     -----
@@ -132,14 +130,22 @@ def main(repeat: int = 5):
 
     Source: https://github.com/python/cpython/blob/2587b9f64eefde803a5e0b050171ad5f6654f31b/Lib/timeit.py#L193-L203
     """
+    # 1. Get xCDAT runtimes and plot results.
     df_xc_serial = _get_xcdat_runtimes(parallel=False, repeat=repeat)
     df_xc_parallel = _get_xcdat_runtimes(parallel=True, repeat=repeat)
-    df_xc_times = pd.merge(df_xc_serial, df_xc_parallel, on=["pkg", "gb", "api"])
-    df_xc_times.to_csv(f"{XC_FILENAME}.csv", index=False)
-    plot_xcdat_runtimes(df_xc_times)
 
+    df_xc_times = pd.merge(df_xc_serial, df_xc_parallel, on=["pkg", "gb", "api"])
+    df_xc_times = df_xc_times.sort_values(by=["pkg", "api", "gb"])
+    df_xc_times.to_csv(f"{XC_FILENAME}.csv", index=False)
+
+    # 2. Get CDAT runtimes and plot results.
     df_cdat_times = _get_cdat_runtimes(repeat=repeat)
+    df_cdat_times = df_cdat_times.sort_values(by=["pkg", "api", "gb"])
     df_cdat_times.to_csv(f"{CD_FILENAME}.csv", index=False)
+
+    # 3. Plot the results.
+    # TODO: Update plots to dynamically fit larger floating point values.
+    plot_xcdat_runtimes(df_xc_times)
     plot_cdat_runtimes(df_cdat_times)
 
 
@@ -226,16 +232,16 @@ def _get_xr_setup(dir_path: str, chunks: None | Dict[str, str], parallel: bool):
     return (
         "import xarray as xr\n"
         "import xcdat as xc\n"
-        f"ds = xc.open_mfdataset('{dir_path}', chunks={chunks}, parallel={parallel})"
+        f"ds = xc.open_mfdataset('{dir_path}', chunks={chunks}, add_bounds=['X', 'Y', 'T'], parallel={parallel})"
     )
 
 
 def _get_xr_api_map(var_key: str):
     return {
         "spatial_avg": f"ds.spatial.average('{var_key}', axis=['X', 'Y'])",
-        # "temporal_avg": f"ds.temporal.average('{var_key}', weighted=True)",
-        # "climatology": f"ds.temporal.climatology('{var_key}', freq='month', weighted=True)",
-        # "departures": f"ds.temporal.departures('{var_key}', freq='month', weighted=True)",
+        "temporal_avg": f"ds.temporal.average('{var_key}', weighted=True)",
+        "climatology": f"ds.temporal.climatology('{var_key}', freq='month', weighted=True)",
+        "departures": f"ds.temporal.departures('{var_key}', freq='month', weighted=True)",
     }
 
 
@@ -294,8 +300,10 @@ def _get_cdat_setup(var_key: str, xml_path: str):
     setup = (
         "import cdms2\n"
         "import cdutil\n"
+        "cdms2.setAutoBounds('on')\n"
         f"ds = cdms2.open('{xml_path}')\n"
-        f"t_var = ds['{var_key}']"
+        f"t_var = ds['{var_key}']\n"
+        "tvar.getTime().getBounds()"
     )
 
     return setup
@@ -304,9 +312,9 @@ def _get_cdat_setup(var_key: str, xml_path: str):
 def _get_cdat_api_map():
     api_calls = {
         "spatial_avg": "cdutil.averager(t_var, axis='xy')",
-        # "temporal_avg": "cdutil.averager(t_var, axis='t')",
-        # "climatology": "cdutil.ANNUALCYCLE.climatology(t_var)",
-        # "departures": "cdutil.ANNUALCYCLE.departures(t_var)",
+        "temporal_avg": "cdutil.averager(t_var, axis='t')",
+        "climatology": "cdutil.ANNUALCYCLE.climatology(t_var)",
+        "departures": "cdutil.ANNUALCYCLE.departures(t_var)",
     }
 
     return api_calls
@@ -385,4 +393,4 @@ def plot_cdat_runtimes(df_cdat: pd.DataFrame):
 
 
 if __name__ == "__main__":
-    main()
+    main(repeat=3)
