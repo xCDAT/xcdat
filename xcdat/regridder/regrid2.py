@@ -64,12 +64,12 @@ class Regrid2Regridder(BaseRegridder):
 
     def horizontal(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """See documentation in :py:func:`xcdat.regridder.regrid2.Regrid2Regridder`"""
-        input_data_var = ds.get(data_var, None)
-
-        if input_data_var is None:
+        try:
+            input_data_var = ds[data_var]
+        except KeyError:
             raise KeyError(
-                f"The data variable '{data_var}' does not exist in the dataset."
-            )
+                f"The data variable {data_var!r} does not exist in the dataset."
+            ) from None
 
         # Do initial mapping between src/dst latitude and longitude.
         if self._lat_mapping is None and self._lat_weights is None:
