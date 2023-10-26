@@ -106,11 +106,6 @@ class Regrid2Regridder(BaseRegridder):
             ds, data_var, output_data, axis_variable_name_map, ordered_axis_names
         )
 
-        dst_mask = self._output_grid.get("mask", None)
-
-        if dst_mask is not None:
-            output_ds[data_var] = output_ds[data_var].where(dst_mask == 0.0)
-
         output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["X", "Y"])
 
         return output_ds

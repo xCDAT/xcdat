@@ -512,35 +512,6 @@ class TestRegrid2Regridder:
 
         assert np.all(output_data.ts.values == expected_output)
 
-    def test_regrid_output_mask(self):
-        output_mask = [
-            [0, 0, 0, 0],
-            [1, 1, 1, 1],
-            [1, 1, 1, 1],
-            [0, 0, 0, 0],
-        ]
-
-        self.fine_2d_ds["mask"] = (("lat", "lon"), output_mask)
-
-        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
-
-        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
-
-        expected_output = np.array(
-            [
-                [1.0, 1.0, 1.0, 1.0],
-                [1e20, 1e20, 1e20, 1e20],
-                [1e20, 1e20, 1e20, 1e20],
-                [1.0, 1.0, 1.0, 1.0],
-            ],
-            dtype=np.float32,
-        )
-
-        # need to replace nans since nan != nan
-        output_data["ts"] = output_data.ts.fillna(1e20)
-
-        assert np.all(output_data.ts.values == expected_output)
-
     def test_preserve_attrs(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
