@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, List, Tuple
 
 import numpy as np
 import xarray as xr
@@ -46,18 +46,6 @@ class Regrid2Regridder(BaseRegridder):
         """
         super().__init__(input_grid, output_grid, **options)
 
-        self._src_lat = self._input_grid.bounds.get_bounds("Y").values
-        self._src_lon = self._input_grid.bounds.get_bounds("X").values
-
-        self._dst_lat = self._output_grid.bounds.get_bounds("Y").values
-        self._dst_lon = self._output_grid.bounds.get_bounds("X").values
-
-        self._lat_mapping: Any = None
-        self._lon_mapping: Any = None
-
-        self._lat_weights: Any = None
-        self._lon_weights: Any = None
-
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Placeholder for base class."""
         raise NotImplementedError()
@@ -71,221 +59,152 @@ class Regrid2Regridder(BaseRegridder):
                 f"The data variable {data_var!r} does not exist in the dataset."
             ) from None
 
-        # Do initial mapping between src/dst latitude and longitude.
-        if self._lat_mapping is None and self._lat_weights is None:
-            self._lat_mapping, self._lat_weights = _map_latitude(
-                self._src_lat, self._dst_lat
-            )
+        src_lat_bnds = self._input_grid.bounds.get_bounds("Y").data
+        src_lon_bnds = self._input_grid.bounds.get_bounds("X").data
 
-        if self._lon_mapping is None and self._lon_weights is None:
-            self._lon_mapping, self._lon_weights = _map_longitude(
-                self._src_lon, self._dst_lon
-            )
+        dst_lat_bnds = self._output_grid.bounds.get_bounds("Y").data
+        dst_lon_bnds = self._output_grid.bounds.get_bounds("X").data
 
         src_mask = self._input_grid.get("mask", None)
-
-        # operate on pure numpy
-        input_data: np.ndarray = input_data_var.values
 
         # apply source mask to input data
         if src_mask is not None:
             input_data_var = input_data_var.where(src_mask != 0.0)
 
-        # operate on pure numpy
-        input_data = input_data_var.values
-
-        axis_variable_name_map = {x: y[0] for x, y in input_data_var.cf.axes.items()}
-
-        output_axis_sizes = self._output_axis_sizes(input_data_var)
-
-        ordered_axis_names = list(output_axis_sizes)
-
-        output_data = self._regrid(input_data, output_axis_sizes, ordered_axis_names)
-
-        output_ds = self._create_output_dataset(
-            ds, data_var, output_data, axis_variable_name_map, ordered_axis_names
+        output_data = _regrid(
+            input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
         )
 
-        output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["X", "Y"])
+        output_ds = _build_dataset(
+            ds,
+            data_var,
+            output_data,
+            dst_lat_bnds,
+            dst_lon_bnds,
+            self._input_grid,
+            self._output_grid,
+        )
 
         return output_ds
 
-    def _output_axis_sizes(self, da: xr.DataArray) -> Dict[str, int]:
-        """Maps axes to output array sizes.
 
-        Parameters
-        ----------
-        da : xr.DataArray
-            Data array containing variable to be regridded.
+def _regrid(
+    input_data_var: xr.DataArray,
+    src_lat_bnds: list,
+    src_lon_bnds: list,
+    dst_lat_bnds: list,
+    dst_lon_bnds: list,
+) -> np.ndarray:
+    lat_mapping, lat_weights = _map_latitude(src_lat_bnds, dst_lat_bnds)
+    lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
 
-        Returns
-        -------
-        Dict
-            Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
-        """
-        output_sizes = {}
+    # convert to pure numpy
+    input_data = input_data_var.data
 
-        axis_name_map = {y[0]: x for x, y in da.cf.axes.items()}
+    # convert frozendict
+    data_shape = dict(input_data_var.sizes)
 
-        for standard_name in da.sizes.keys():
-            try:
-                axis_name = axis_name_map[standard_name]
-            except KeyError:
-                raise RuntimeError(
-                    f"Could not find axis {standard_name!r}, ensure {standard_name!r} "
-                    "exists and the attributes are correct."
-                )
+    y_length = len(lat_mapping)
+    x_length = len(lon_mapping)
 
-            if standard_name in self._output_grid:
-                output_sizes[axis_name] = self._output_grid.sizes[standard_name]
-            else:
-                output_sizes[axis_name] = da.sizes[standard_name]
+    y_name = input_data_var.cf.axes["Y"]
+    x_name = input_data_var.cf.axes["X"]
 
-        return output_sizes
+    if isinstance(y_name, list):
+        y_name = y_name[0]
 
-    def _regrid(
-        self,
-        input_data: np.ndarray,
-        axis_sizes: Dict[str, int],
-        ordered_axis_names: List[str],
-    ) -> np.ndarray:
-        """Applies regridding to input data.
+    if isinstance(x_name, list):
+        x_name = x_name[0]
 
-        Parameters
-        ----------
-        input_data : np.ndarray
-            Input multi-dimensional array on source grid.
-        axis_sizes : Dict[str, int]
-            Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
-        ordered_axis_names : List[str]
-            List of axis name in order of dimensions of ``input_data``.
+    # update y, x shape
+    data_shape[y_name] = y_length
+    data_shape[x_name] = x_length
 
-        Returns
-        -------
-        np.ndarray
-            Multi-dimensional array on destination grid.
-        """
-        input_lat_index = ordered_axis_names.index("Y")
+    dims = input_data_var.dims
+    y_index = dims.index(y_name)
+    x_index = dims.index(x_name)
 
-        input_lon_index = ordered_axis_names.index("X")
+    output_data = []
 
-        output_shape = [axis_sizes[x] for x in ordered_axis_names]
+    # need to optimize
+    for y in range(y_length):
+        y_seg = np.take(input_data, lat_mapping[y], axis=y_index)
 
-        output_data = np.zeros(output_shape, dtype=np.float32)
+        for x in range(x_length):
+            x_seg = np.take(y_seg, lon_mapping[x], axis=x_index, mode="clip")
 
-        base_put_index = self._base_put_indexes(axis_sizes)
+            cell_weight = np.dot(
+                lat_weights[y].reshape((-1, 1)), lon_weights[x].reshape((1, -1))
+            )
 
-        for lat_index, lat_map in enumerate(self._lat_mapping):
-            lat_weight = self._lat_weights[lat_index]
+            cell_value = np.nansum(
+                np.multiply(x_seg, cell_weight), axis=(y_index, x_index)
+            ) / np.sum(cell_weight)
 
-            input_lat_segment = np.take(input_data, lat_map, axis=input_lat_index)
+            output_data.append(cell_value)
 
-            for lon_index, lon_map in enumerate(self._lon_mapping):
-                lon_weight = self._lon_weights[lon_index]
+    output_data = np.asarray(output_data, dtype=np.float32)
+    output_data = output_data.reshape(tuple(data_shape.values()))
 
-                dot_weight = np.dot(lat_weight, lon_weight)
+    return output_data
 
-                cell_weight = np.sum(dot_weight)
 
-                input_lon_segment = np.take(
-                    input_lat_segment, lon_map, axis=input_lon_index
-                )
+def _build_dataset(
+    ds: xr.DataArray,
+    data_var: str,
+    output_data: np.ndarray,
+    dst_lat_bnds,
+    dst_lon_bnds,
+    input_grid: xr.Dataset,
+    output_grid: xr.Dataset,
+) -> xr.Dataset:
+    input_data_var = ds[data_var]
 
-                data = (
-                    np.nansum(
-                        np.multiply(input_lon_segment, dot_weight),
-                        axis=(input_lat_index, input_lon_index),
-                    )
-                    / cell_weight
-                )
+    output_coords = {}
+    output_data_vars = {}
+    output_bnds = {
+        "Y": dst_lat_bnds,
+        "X": dst_lon_bnds,
+    }
 
-                # This only handles lat by lon and not lon by lat
-                put_index = base_put_index + ((lat_index * axis_sizes["X"]) + lon_index)
+    for cf_axis_name, dim_names in input_data_var.cf.axes.items():
+        dim_name = dim_names[0]
 
-                np.put(output_data, put_index, data)
+        if cf_axis_name in ("X", "Y"):
+            output_coords[dim_name] = output_grid[dim_name].copy()
 
-        return output_data
+            bnds_name = f"{dim_name}_bnds"
 
-    def _base_put_indexes(self, axis_sizes: Dict[str, int]) -> np.ndarray:
-        """Calculates the base indexes to place cell (0, 0).
+            output_data_vars[bnds_name] = xr.DataArray(
+                output_bnds[cf_axis_name].copy(),
+                dims=(dim_name, "bnds"),
+                name=bnds_name,
+            )
+        else:
+            output_coords[dim_name] = input_data_var[dim_name].copy()
 
-        Example:
-        For a 3D array (time, lat, lon) with the shape (2, 2, 2) the offsets to
-        place cell (0, 0) in each time step would be [0, 4].
+            bnds_name = input_data_var[dim_name].attrs.get("bnds", None)
 
-        For a 4D array (time, plev, lat, lon) with shape (2, 2, 2, 2) the offsets
-        to place cell (0, 0) in each time step would be [0, 4, 8, 16].
+            if bnds_name is not None:
+                output_data_vars[bnds_name] = input_data_var[bnds_name].copy()
 
-        Parameters
-        ----------
-        axis_sizes : Dict[str, int]
-            Mapping of axis name e.g. ("X", "Y", etc) to output sizes.
+    output_da = xr.DataArray(
+        output_data,
+        dims=input_data_var.dims,
+        coords=output_coords,
+        attrs=input_grid[data_var].attrs.copy(),
+    )
 
-        Returns
-        -------
-        np.ndarray
-            Array containing the base indexes to be used in np.put operations.
-        """
-        extra_dims = set(axis_sizes) - set(["X", "Y"])
+    output_data_vars[input_data_var.name] = output_da
 
-        number_of_offsets = np.multiply.reduce([axis_sizes[x] for x in extra_dims])
+    output_ds = xr.Dataset(
+        output_data_vars,
+        attrs=input_grid.attrs.copy(),
+    )
 
-        offset = np.multiply.reduce(
-            [axis_sizes[x] for x in extra_dims ^ set(axis_sizes)]
-        )
+    output_ds = _preserve_bounds(ds, output_grid, output_ds, ["X", "Y"])
 
-        return (np.arange(number_of_offsets) * offset).astype(np.int64)
-
-    def _create_output_dataset(
-        self,
-        input_ds: xr.Dataset,
-        data_var: str,
-        output_data: np.ndarray,
-        axis_variable_name_map: Dict[str, str],
-        ordered_axis_names: List[str],
-    ) -> xr.Dataset:
-        """
-        Creates the output Dataset containing the new variable on the destination grid.
-
-        Parameters
-        ----------
-        input_ds : xr.Dataset
-            Input dataset containing coordinates and bounds for unmodified axes.
-        data_var : str
-            The name of the regridded variable.
-        output_data : np.ndarray
-            Output data array.
-        axis_variable_name_map : Dict[str, str]
-            Map of axis name e.g. ("X", "Y", etc) to variable name e.g. ("lon", "lat", etc).
-        ordered_axis_names : List[str]
-            List of axis names in the order observed for ``output_data``.
-
-        Returns
-        -------
-        xr.Dataset
-            Dataset containing the variable on the destination grid.
-        """
-        variable_axis_name_map = {y: x for x, y in axis_variable_name_map.items()}
-
-        coords = {}
-
-        # Grab coords and bounds from appropriate dataset.
-        for variable_name, axis_name in variable_axis_name_map.items():
-            if axis_name in ["X", "Y"]:
-                coords[variable_name] = self._output_grid[variable_name].copy()
-            else:
-                coords[variable_name] = input_ds[variable_name].copy()
-
-        output_da = xr.DataArray(
-            output_data,
-            dims=[axis_variable_name_map[x] for x in ordered_axis_names],
-            coords=coords,
-            attrs=input_ds[data_var].attrs.copy(),
-        )
-
-        data_vars = {data_var: output_da}
-
-        return xr.Dataset(data_vars, attrs=input_ds.attrs.copy())
+    return output_ds
 
 
 def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
@@ -307,22 +226,19 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     src_south, src_north = _extract_bounds(src)
     dst_south, dst_north = _extract_bounds(dst)
 
-    mapping = []
-    weights = []
+    dst_length = dst_south.shape[0]
 
-    for i in range(dst.shape[0]):
-        contrib = np.where(
-            np.logical_and(src_south < dst_north[i], src_north > dst_south[i])
-        )[0]
+    mapping = [
+        np.where(np.logical_and(src_south < dst_north[x], src_north > dst_south[x]))[0]
+        for x in range(dst_length)
+    ]
 
-        mapping.append(contrib)
+    bounds = [
+        (np.minimum(dst_north[x], src_north[y]), np.maximum(dst_south[x], src_south[y]))
+        for x, y in enumerate(mapping)
+    ]
 
-        north_bounds = np.minimum(dst_north[i], src_north[contrib])
-        south_bounds = np.maximum(dst_south[i], src_south[contrib])
-
-        weight = np.sin(np.deg2rad(north_bounds)) - np.sin(np.deg2rad(south_bounds))
-
-        weights.append(weight.reshape(contrib.shape[0], 1))
+    weights = [np.sin(np.deg2rad(x)) - np.sin(np.deg2rad(y)) for x, y in bounds]
 
     return mapping, weights
 
@@ -350,45 +266,48 @@ def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
         src_west, src_east, dst_west
     )
 
-    mapping = []
-    weights = []
     src_length = src_west.shape[0]
+    dst_length = dst_west.shape[0]
 
-    for i in range(dst_west.shape[0]):
-        contrib = np.where(
+    mapping = [
+        np.where(
             np.logical_and(
-                shifted_src_west < dst_east[i], shifted_src_east > dst_west[i]
+                shifted_src_west < dst_east[x], shifted_src_east > dst_west[x]
             )
         )[0]
+        for x in range(dst_length)
+    ]
 
-        weight = np.minimum(dst_east[i], shifted_src_east[contrib]) - np.maximum(
-            dst_west[i], shifted_src_west[contrib]
-        )
+    weights = [
+        np.minimum(dst_east[x], shifted_src_east[y])
+        - np.maximum(dst_west[x], shifted_src_west[y])
+        for x, y in enumerate(mapping)
+    ]
 
-        weights.append(weight.reshape(1, contrib.shape[0]))
+    for x in mapping:
+        shifted = x + shift
 
-        contrib += shift
+        wrapped = np.where(shifted > src_length - 1)[0]
 
-        wrapped = np.where(contrib > src_length - 1)
-
-        contrib[wrapped] -= src_length
-
-        mapping.append(contrib)
+        try:
+            mapping[wrapped] -= src_length
+        except TypeError:
+            pass
 
     return mapping, weights
 
 
 def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
-     Extract lower and upper bounds from an axis.
+    Extract lower and upper bounds from an axis.
 
-     Parameters
-     ----------
-     bounds : np.ndarray
-         Dataset containing axis with bounds.
+    Parameters
+    ----------
+    bounds : np.ndarray
+     Dataset containing axis with bounds.
 
-     Returns
-     -------
+    Returns
+    -------
     Tuple[np.ndarray, np.ndarray]
          A tuple containing the lower and upper bounds for the axis.
     """
@@ -427,14 +346,13 @@ def _align_axis(
 
     alignment_index = _vpertub((west_most - src_west[-1]) / 360.0)
 
-    if src_west[0] < src_west[-1]:
-        alignment_index += 1
-    else:
-        alignment_index -= 1
+    alignment_index = (
+        alignment_index + 1 if src_west[0] < src_west[-1] else alignment_index - 1
+    )
 
-    src_alignment_index = np.where(
-        _vpertub((west_most - src_west) / 360.0) != alignment_index
-    )[0][0]
+    relative_postition = _vpertub((west_most - src_west) / 360.0)
+
+    src_alignment_index = np.where(relative_postition != alignment_index)[0][0]
 
     if src_west[0] < src_west[-1]:
         if west_most == src_west[src_alignment_index]:
@@ -455,12 +373,12 @@ def _align_axis(
 
     shifted_indexes[wrapped] -= src_length
 
-    shifted_src_west = src_west[shifted_indexes] + 360.0 * _vpertub(
-        (west_most - src_west[shifted_indexes]) / 360.0
+    shifted_src_west = (
+        src_west[shifted_indexes] + 360.0 * relative_postition[shifted_indexes]
     )
 
-    shifted_src_east = src_east[shifted_indexes] + 360.0 * _vpertub(
-        (west_most - src_west[shifted_indexes]) / 360.0
+    shifted_src_east = (
+        src_east[shifted_indexes] + 360.0 * relative_postition[shifted_indexes]
     )
 
     if src_west[-1] > src_west[0]:

@@ -387,23 +387,6 @@ class TestRegrid2Regridder:
         with pytest.raises(NotImplementedError, match=""):
             regridder.vertical("so", ds)
 
-    def test_missing_dimension(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
-
-        del ds.lat.attrs["axis"]
-
-        output_grid = grid.create_gaussian_grid(32)
-
-        regridder = regrid2.Regrid2Regridder(ds, output_grid)
-
-        with pytest.raises(
-            RuntimeError,
-            match="Could not find axis 'lat', ensure 'lat' exists and the attributes are correct.",
-        ):
-            regridder.horizontal("ts", ds)
-
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_output_bounds(self):
         ds = fixtures.generate_dataset(
@@ -567,10 +550,10 @@ class TestRegrid2Regridder:
         ]
 
         expected_weigths = [
-            [[90]],
-            [[90]],
-            [[90]],
-            [[90]],
+            [90],
+            [90],
+            [90],
+            [90],
         ]
 
         np.testing.assert_allclose(mapping, expected_mapping)
@@ -586,7 +569,7 @@ class TestRegrid2Regridder:
             [2, 3],
         ]
 
-        expected_weigths = [[[90, 90]], [[90, 90]]]
+        expected_weigths = [[90, 90], [90, 90]]
 
         np.testing.assert_allclose(mapping, expected_mapping)
         np.testing.assert_allclose(weights, expected_weigths)
@@ -632,9 +615,9 @@ class TestRegrid2Regridder:
         ]
 
         expected_weigths = [
-            [[0.29289322], [0.20710678]],
-            [[0.5], [0.5]],
-            [[0.20710678], [0.29289322]],
+            [0.29289322, 0.20710678],
+            [0.5, 0.5],
+            [0.20710678, 0.29289322],
         ]
 
         np.testing.assert_allclose(mapping, expected_mapping)
