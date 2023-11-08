@@ -126,6 +126,8 @@ def _regrid(
 
     output_data = []
 
+    target_dtype = input_data.dtype
+
     # need to optimize
     for y in range(y_length):
         y_seg = np.take(input_data, lat_mapping[y], axis=y_index)
@@ -138,12 +140,12 @@ def _regrid(
             )
 
             cell_value = np.nansum(
-                np.multiply(x_seg, cell_weight), axis=(y_index, x_index)
-            ) / np.sum(cell_weight)
+                np.multiply(x_seg, cell_weight, dtype=target_dtype), axis=(y_index, x_index), dtype=target_dtype
+            ) / np.sum(cell_weight, dtype=target_dtype)
 
             output_data.append(cell_value)
 
-    output_data = np.asarray(output_data, dtype=np.float32)
+    output_data = np.asarray(output_data, dtype=target_dtype)
     output_data = output_data.reshape(tuple(data_shape.values()))
 
     return output_data
