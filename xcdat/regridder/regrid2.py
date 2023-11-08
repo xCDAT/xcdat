@@ -90,10 +90,10 @@ class Regrid2Regridder(BaseRegridder):
 
 def _regrid(
     input_data_var: xr.DataArray,
-    src_lat_bnds: list,
-    src_lon_bnds: list,
-    dst_lat_bnds: list,
-    dst_lon_bnds: list,
+    src_lat_bnds: np.ndarray,
+    src_lon_bnds: np.ndarray,
+    dst_lat_bnds: np.ndarray,
+    dst_lon_bnds: np.ndarray,
 ) -> np.ndarray:
     lat_mapping, lat_weights = _map_latitude(src_lat_bnds, dst_lat_bnds)
     lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
@@ -124,7 +124,7 @@ def _regrid(
     y_index = dims.index(y_name)
     x_index = dims.index(x_name)
 
-    output_data = []
+    output_points = []
 
     target_dtype = input_data.dtype
 
@@ -145,16 +145,16 @@ def _regrid(
                 dtype=target_dtype,
             ) / np.sum(cell_weight, dtype=target_dtype)
 
-            output_data.append(cell_value)
+            output_points.append(cell_value)
 
-    output_data = np.asarray(output_data, dtype=target_dtype)
+    output_data = np.array(output_points, dtype=target_dtype)
     output_data = output_data.reshape(tuple(data_shape.values()))
 
     return output_data
 
 
 def _build_dataset(
-    ds: xr.DataArray,
+    ds: xr.Dataset,
     data_var: str,
     output_data: np.ndarray,
     dst_lat_bnds,
@@ -164,8 +164,8 @@ def _build_dataset(
 ) -> xr.Dataset:
     input_data_var = ds[data_var]
 
-    output_coords = {}
-    output_data_vars = {}
+    output_coords: dict[str, xr.DataArray] = {}
+    output_data_vars: dict[str, xr.DataArray] = {}
     output_bnds = {
         "Y": dst_lat_bnds,
         "X": dst_lon_bnds,
@@ -197,9 +197,10 @@ def _build_dataset(
         dims=input_data_var.dims,
         coords=output_coords,
         attrs=ds[data_var].attrs.copy(),
+        name=data_var,
     )
 
-    output_data_vars[input_data_var.name] = output_da
+    output_data_vars[data_var] = output_da
 
     output_ds = xr.Dataset(
         output_data_vars,
