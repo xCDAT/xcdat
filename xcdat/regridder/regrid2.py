@@ -130,10 +130,10 @@ def _regrid(
 
     # need to optimize
     for y in range(y_length):
-        y_seg = np.take(input_data, lat_mapping[y], axis=y_index)
+        y_seg = np.take(input_data, lat_mapping[y], axis=y_index, mode="wrap")
 
         for x in range(x_length):
-            x_seg = np.take(y_seg, lon_mapping[x], axis=x_index, mode="clip")
+            x_seg = np.take(y_seg, lon_mapping[x], axis=x_index, mode="wrap")
 
             cell_weight = np.dot(
                 lat_weights[y].reshape((-1, 1)), lon_weights[x].reshape((1, -1))
