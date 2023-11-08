@@ -140,7 +140,9 @@ def _regrid(
             )
 
             cell_value = np.nansum(
-                np.multiply(x_seg, cell_weight, dtype=target_dtype), axis=(y_index, x_index), dtype=target_dtype
+                np.multiply(x_seg, cell_weight, dtype=target_dtype),
+                axis=(y_index, x_index),
+                dtype=target_dtype,
             ) / np.sum(cell_weight, dtype=target_dtype)
 
             output_data.append(cell_value)
@@ -194,7 +196,7 @@ def _build_dataset(
         output_data,
         dims=input_data_var.dims,
         coords=output_coords,
-        attrs=input_grid[data_var].attrs.copy(),
+        attrs=ds[data_var].attrs.copy(),
     )
 
     output_data_vars[input_data_var.name] = output_da
