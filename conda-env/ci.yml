@@ -16,10 +16,8 @@ dependencies:
     - pandas
     - python-dateutil
     - xarray >=2022.02.0 # This version of Xarray drops support for Python 3.8.
-    - xgcm
-    # Optional - enables additional features.
-    # =========================================
     - xesmf >=0.7.0 # Constrained because https://github.com/pangeo-data/xESMF/issues/212.
+    - xgcm
     # Quality Assurance
     # ==================
     - types-python-dateutil

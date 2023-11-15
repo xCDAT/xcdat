@@ -48,21 +48,13 @@ Installation
    The advantage with following this approach is that Mamba will attempt to resolve
    dependencies (e.g. ``python >= 3.8``) for compatibility.
 
-   To create an ``xcdat`` Mamba environment with ``xesmf`` (a recommended dependency),
+   To create an ``xcdat`` Mamba environment,
    run:
 
    .. code-block:: bash
 
-       >>> mamba create -n <ENV_NAME> -c conda-forge xcdat xesmf
+       >>> mamba create -n <ENV_NAME> -c conda-forge xcdat
        >>> mamba activate <ENV_NAME>
-
-   Note that ``xesmf`` is an optional dependency, which is required for using ``xesmf``
-   based horizontal regridding APIs in ``xcdat``. ``xesmf`` is not currently supported
-   on `Windows`_ because it depends on ``esmpy``, which also does not support Windows.
-   Windows users can try `WSL2`_ as a workaround.
-
-.. _Windows: https://github.com/conda-forge/esmf-feedstock/issues/64
-.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
 
 2. Install ``xcdat`` in an existing Mamba environment (`mamba install`_)
 
@@ -72,9 +64,7 @@ Installation
    .. code-block:: bash
 
        >>> mamba activate <ENV_NAME>
-       >>> mamba install -c conda-forge xcdat xesmf
-
-   Note: As above, ``xesmf`` is an optional dependency.
+       >>> mamba install -c conda-forge xcdat
 
 3. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
    either in step 1 or step 2 above:
