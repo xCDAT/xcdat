@@ -15,8 +15,8 @@ authors:
       orcid: 0000-0002-0390-238X
       affiliation: 1
     - name: Jason Boutte
+      orcid: 0009-0009-3996-3772
       affiliation: 1
-      # TODO: Does Jason have an ORCID?
     - name: Jiwoo Lee
       orcid: 0000-0002-0016-7199
       affiliation: 1
