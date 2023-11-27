@@ -78,8 +78,8 @@ class TestAddMissingBounds:
         result = ds_no_bnds.bounds.add_missing_bounds(axes=["X", "Y", "Z"])
         assert result.identical(ds)
 
-    def test_adds_default_bounds_to_the_dataset_using_midpoints(self):
-        ds = generate_lev_dataset()
+    def test_adds_default_bounds_to_the_dataset_using_time_frequency(self):
+        ds = generate_dataset_by_frequency(freq="month")
         ds_no_bnds = ds.drop_vars(["time_bnds", "lat_bnds", "lon_bnds"])
 
         result = ds_no_bnds.bounds.add_missing_bounds()
