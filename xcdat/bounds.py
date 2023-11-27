@@ -124,8 +124,8 @@ class BoundsAccessor:
         )
 
     def add_missing_bounds(  # noqa: C901
-        self, axes: List[CFAxisKey] = ["X", "Y", "T"]  # noqa: C901
-    ) -> xr.Dataset:  # noqa: C901
+        self, axes: List[CFAxisKey] = ["X", "Y", "T"]
+    ) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
         This function loops through the Dataset's axes and attempts to adds
