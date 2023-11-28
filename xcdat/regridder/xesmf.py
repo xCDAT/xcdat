@@ -1,21 +1,9 @@
 from typing import Any, Optional
 
 import xarray as xr
+import xesmf as xe
 
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
-from xcdat.utils import _has_module
-
-# TODO: Test this conditional.
-_has_xesmf = _has_module("xesmf")
-if _has_xesmf:  # pragma: no cover
-    import xesmf as xe
-else:  # pragma: no cover
-    raise ModuleNotFoundError(
-        "The `xesmf` package is required for horizontal regridding with `xesmf`. Make "
-        "sure your platform supports `xesmf` and it is installed in your conda "
-        "environment."
-    )
-
 
 VALID_METHODS = [
     "bilinear",

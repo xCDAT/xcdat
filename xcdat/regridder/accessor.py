@@ -6,19 +6,14 @@ from typing import Any, List, Literal, Tuple
 import xarray as xr
 
 from xcdat.axis import CFAxisKey, get_dim_coords
-from xcdat.regridder import regrid2, xgcm
+from xcdat.regridder import regrid2, xesmf, xgcm
 from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
-from xcdat.utils import _has_module
 
 HorizontalRegridTools = Literal["xesmf", "regrid2"]
-HORIZONTAL_REGRID_TOOLS = {"regrid2": regrid2.Regrid2Regridder}
-
-# TODO: Test this conditional.
-_has_xesmf = _has_module("xesmf")
-if _has_xesmf:  # pragma: no cover
-    from xcdat.regridder import xesmf
-
-    HORIZONTAL_REGRID_TOOLS["xesmf"] = xesmf.XESMFRegridder  # type: ignore
+HORIZONTAL_REGRID_TOOLS = {
+    "regrid2": regrid2.Regrid2Regridder,
+    "xesmf": xesmf.XESMFRegridder,
+}
 
 VerticalRegridTools = Literal["xgcm"]
 VERTICAL_REGRID_TOOLS = {"xgcm": xgcm.XGCMRegridder}
@@ -179,19 +174,9 @@ class RegridderAccessor:
             stacklevel=2,
         )
 
-        # TODO: Test this conditional.
-        if _has_xesmf:  # pragma: no cover
-            regridder = HORIZONTAL_REGRID_TOOLS["xesmf"](
-                self._ds, output_grid, **options
-            )
+        regridder = HORIZONTAL_REGRID_TOOLS["xesmf"](self._ds, output_grid, **options)
 
-            return regridder.horizontal(data_var, self._ds)
-        else:  # pragma: no cover
-            raise ModuleNotFoundError(
-                "The `xesmf` package is required for horizontal regridding with "
-                "`xesmf`. Make sure your platform supports `xesmf` and it is installed "
-                "in your conda environment."
-            )
+        return regridder.horizontal(data_var, self._ds)
 
     # TODO Either provide generic `horizontal` and `vertical` methods or tool specific
     def horizontal_regrid2(
@@ -327,14 +312,6 @@ class RegridderAccessor:
 
         >>> output_data = ds.regridder.horizontal("ts", output_grid, tool="regrid2")
         """
-        # TODO: Test this conditional.
-        if tool == "xesmf" and not _has_xesmf:  # pragma: no cover
-            raise ModuleNotFoundError(
-                "The `xesmf` package is required for horizontal regridding with "
-                "`xesmf`. Make sure your platform supports `xesmf` and it is installed "
-                "in your conda environment."
-            )
-
         try:
             regrid_tool = HORIZONTAL_REGRID_TOOLS[tool]
         except KeyError as e:
