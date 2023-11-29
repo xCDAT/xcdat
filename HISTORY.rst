@@ -2,6 +2,40 @@
 History
 =======
 
+0.6.1 (29 November 2023)
+------------------------
+
+This patch version adds a default value to the ``axes`` argument in
+``ds.bounds.add_missing_bounds()``. The ``axes`` argument was added in
+v0.6.0 and did not have a default value, which inadvertently introduced
+a breaking change to the API.
+
+``xesmf`` is now a required dependency because its core library, ESMF,
+supports Windows as of Feb/2023. More information can be found
+`here <https://github.com/conda-forge/esmf-feedstock/pull/65>`__.
+
+Bug Fixes
+~~~~~~~~~
+
+-  Add defaults to add_missing_bounds by `Ana Ordonez`_ in
+   https://github.com/xCDAT/xcdat/pull/569
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Update doc: Add link to the video by `Jiwoo Lee`_ in
+   https://github.com/xCDAT/xcdat/pull/571
+-  Fix v0.6.0 changelog headers for proper nesting by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/559
+
+DevOps
+~~~~~~
+
+-  Make xESMF a required dependency by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/566
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.6.0...0.6.1
+
 v0.6.0 (10 October 2023)
 ------------------------
 
@@ -634,3 +668,4 @@ DevOps
 .. _Jiwoo Lee: https://github.com/lee1043
 .. _Jill Chengzhu Zhang: https://github.com/chengzhuzhang
 .. _Paul Durack: https://github.com/durack1
+.. _Ana Ordonez: https://github.com/durack1
