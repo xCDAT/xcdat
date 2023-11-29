@@ -34,7 +34,7 @@ Documentation
 -  Fix v0.6.0 changelog headers for proper nesting by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/559
 
-**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.6.0...0.6.1
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.6.0...v0.6.1
 
 v0.6.0 (10 October 2023)
 ------------------------
