@@ -146,13 +146,13 @@ class BoundsAccessor:
              ``"time_bnds"`` and ``ds.time_bnds`` is present in the dataset.
 
         5. For the "T" axis, its coordinates must be composed of datetime-like
-           objects (`np.datetime64` or `cftime`).
+           objects (``np.datetime64`` or ``cftime``).
 
         Parameters
         ----------
         axes : List[str]
-            List of CF axes that function should operate on. Options include
-            "X", "Y", "T", or "Z".
+            List of CF axes that function should operate on, by default
+            ["X", "Y", "T"]. Options include "X", "Y", "T", or "Z".
 
         Returns
         -------
