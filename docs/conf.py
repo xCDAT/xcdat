@@ -26,12 +26,9 @@ import sphinx_autosummary_accessors
 
 # A workaround that sets the "ESMFMKFILE" env variable for the Read The Docs
 # build to work. Read The Docs does not activate the conda environment which
-# causes "ESMFMKFILE" to not be set.
+# causes "ESMFMKFILE" to not be set (required by `esmpy` and `xesmf`).
 # Source: https://github.com/conda-forge/esmf-feedstock/issues/91
 if os.environ.get("READTHEDOCS") and "ESMFMKFILE" not in os.environ:
-    # RTD doesn't activate the env, and esmpy depends on a env var set there
-    # We assume the `os` package is in {ENV}/lib/pythonX.X/os.py
-    # See conda-forge/esmf-feedstock#91 and readthedocs/readthedocs.org#4067
     os.environ["ESMFMKFILE"] = str(Path(os.__file__).parent.parent / "esmf.mk")
 
 sys.path.insert(0, os.path.abspath(".."))  # noqa: I001, I003
