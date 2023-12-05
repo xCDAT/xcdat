@@ -53,7 +53,7 @@ autosummary_generate = True
 # with xesmf.
 # Related issue: https://github.com/readthedocs/readthedocs.org/issues/5512
 # Solution: https://docs.readthedocs.io/en/stable/faq.html#why-do-i-get-import-errors-from-libraries-depending-on-c-modules
-autodoc_mock_imports = ["ESMF"]
+autodoc_mock_imports = ["ESMF", "esmpy"]
 autodoc_member_order = "bysource"
 autodoc_default_options = {
     "members": True,
