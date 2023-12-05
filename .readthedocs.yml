@@ -9,6 +9,11 @@ build:
     os: "ubuntu-20.04"
     tools:
         python: "mambaforge-4.10"
+    jobs:
+        post_create_environment:
+            # Use conda run executable wrapper to set all env variables, including ESMFMKFILE.
+            # Source: https://github.com/readthedocs/readthedocs.org/issues/5339#issuecomment-1576603529
+            - conda run -n ${CONDA_DEFAULT_ENV} pip install . --no-deps
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:

@@ -19,17 +19,9 @@
 #
 import os
 import sys
-from pathlib import Path
 from typing import Dict
 
 import sphinx_autosummary_accessors
-
-# A workaround that sets the "ESMFMKFILE" env variable for the Read The Docs
-# build to work. Read The Docs does not activate the conda environment which
-# causes "ESMFMKFILE" to not be set (required by `esmpy` and `xesmf`).
-# Source: https://github.com/conda-forge/esmf-feedstock/issues/91
-if os.environ.get("READTHEDOCS") and "ESMFMKFILE" not in os.environ:
-    os.environ["ESMFMKFILE"] = str(Path(os.__file__).parent.parent / "esmf.mk")
 
 sys.path.insert(0, os.path.abspath(".."))  # noqa: I001, I003
 import xcdat  # noqa: I001, E402
