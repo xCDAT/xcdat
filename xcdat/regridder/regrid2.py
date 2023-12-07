@@ -134,7 +134,7 @@ def _regrid(
 
     # need to optimize
     for y in range(y_length):
-        y_seg = np.take(input_data, lat_mapping[y], axis=y_index, mode="wrap")
+        y_seg = np.take(input_data, lat_mapping[y], axis=y_index)
 
         for x in range(x_length):
             x_seg = np.take(y_seg, lon_mapping[x], axis=x_index, mode="wrap")
