@@ -181,7 +181,9 @@ def _build_dataset(
         dim_name = dim_names[0]
 
         if cf_axis_name in ("X", "Y"):
-            output_coords[dim_name] = output_grid[dim_name].copy()
+            output_grid_dim_name = output_grid.cf.axes[cf_axis_name][0]
+
+            output_coords[dim_name] = output_grid[output_grid_dim_name].copy()
 
             bnds_name = f"{dim_name}_bnds"
 
