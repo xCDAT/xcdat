@@ -299,15 +299,12 @@ def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
         for x, y in enumerate(mapping)
     ]
 
-    for x in mapping:
-        shifted = x + shift
+    for x in range(len(mapping)):
+        mapping[x] += shift
 
-        wrapped = np.where(shifted > src_length - 1)[0]
+        wrapped = np.where(mapping[x] > src_length - 1)[0]
 
-        try:
-            mapping[wrapped] -= src_length
-        except TypeError:
-            pass
+        mapping[x][wrapped] -= src_length
 
     return mapping, weights
 
