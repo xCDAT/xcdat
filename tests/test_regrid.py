@@ -485,12 +485,11 @@ class TestRegrid2Regridder:
 
         expected_output = np.array(
             [
-                [0.0, 0.0, 0.0, 0.0],
-                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
-                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
-                [0.0, 0.0, 0.0, 0.0],
-            ],
-            dtype=np.float32,
+                [0.0] * 4,
+                [0.7071067811865476] * 4,
+                [0.7071067811865476] * 4,
+                [0.0] * 4,
+            ]
         )
 
         assert np.all(output_data.ts.values == expected_output)
@@ -504,7 +503,7 @@ class TestRegrid2Regridder:
         assert output_data["ts"].attrs == self.da_attrs
 
         for x in output_data.coords:
-            assert output_data[x].attrs == self.coarse_2d_ds[x].attrs
+            assert output_data[x].attrs == self.coarse_2d_ds[x].attrs, f"{x}"
 
     def test_regrid_2d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
