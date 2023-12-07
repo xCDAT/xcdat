@@ -9,11 +9,8 @@ import pandas as pd
 import pytest
 import xarray as xr
 
-from tests import fixtures, has_xesmf, requires_xesmf
-from xcdat.regridder import accessor, base, grid, regrid2, xgcm
-
-if has_xesmf:
-    from xcdat.regridder import xesmf
+from tests import fixtures
+from xcdat.regridder import accessor, base, grid, regrid2, xesmf, xgcm
 
 np.set_printoptions(threshold=sys.maxsize, suppress=True)
 
@@ -641,7 +638,6 @@ class TestRegrid2Regridder:
         assert north[0], north[-1] == (60, 90)
 
 
-@requires_xesmf
 class TestXESMFRegridder:
     @pytest.fixture(autouse=True)
     def setup(self):
@@ -649,13 +645,6 @@ class TestXESMFRegridder:
             decode_times=True, cf_compliant=False, has_bounds=True
         )
         self.new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
-
-    @pytest.mark.xfail
-    def test_raises_error_if_xesmf_is_not_installed(self):
-        # TODO Find a way to mock the value of `_has_xesmf` to False or
-        # to remove the `xesmf` module entirely
-        with pytest.raises(ModuleNotFoundError):
-            xesmf.XESMFRegridder(self.ds, self.new_grid, "bilinear")
 
     def test_vertical_placeholder(self):
         ds = self.ds.copy()
@@ -1151,7 +1140,6 @@ class TestAccessor:
 
         xr.testing.assert_allclose(mask.ts, grid.mask)
 
-    @requires_xesmf
     def test_horizontal(self):
         output_grid = grid.create_gaussian_grid(32)
 
@@ -1301,7 +1289,6 @@ class TestAccessor:
         ):
             self.ac.vertical("ts", mock_data, tool="dummy", target_data=None)  # type: ignore
 
-    @requires_xesmf
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_convenience_methods(self):
         ds = fixtures.generate_dataset(
@@ -1317,18 +1304,6 @@ class TestAccessor:
         output_regrid2 = ds.regridder.horizontal_regrid2("ts", out_grid)
 
         assert output_regrid2.ts.shape == (15, 32, 65)
-
-    @pytest.mark.xfail
-    def test_raises_error_if_xesmf_is_not_installed(self):
-        # TODO Find a way to mock the value of `_has_xesmf` to False or
-        # to remove the `xesmf` module entirely
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
-
-        out_grid = grid.create_gaussian_grid(32)
-        with pytest.raises(ModuleNotFoundError):
-            ds.regridder.horizontal_xesmf("ts", out_grid, method="bilinear")
 
 
 class TestBase:

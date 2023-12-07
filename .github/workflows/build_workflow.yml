@@ -11,7 +11,7 @@ on:
 
 env:
     CANCEL_OTHERS: true
-    PATHS_IGNORE: '["**/README.rst", "**/docs/**", "**/ISSUE_TEMPLATE/**", "**/pull_request_template.md", "**/.vscode/**"]'
+    PATHS_IGNORE: '["**/README.rst", "**/AUTHORS.rst", "**/CODE_OF_CONDUCT.rst", "**/HISTORY.rst", "**/CONTRIBUTING.rst", "**/docs/**", "**/ISSUE_TEMPLATE/**", "**/pull_request_template.md", "**/.vscode/**"]'
 
 jobs:
     skip-duplicate-actions:
