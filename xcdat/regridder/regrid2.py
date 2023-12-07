@@ -177,15 +177,25 @@ def _build_dataset(
         "X": dst_lon_bnds,
     }
 
+    dims = list(input_data_var.dims)
+
     for cf_axis_name, dim_names in input_data_var.cf.axes.items():
         dim_name = dim_names[0]
 
         if cf_axis_name in ("X", "Y"):
             output_grid_dim_name = output_grid.cf.axes[cf_axis_name][0]
 
-            output_coords[dim_name] = output_grid[output_grid_dim_name].copy()
+            output_coords[output_grid_dim_name] = output_grid[
+                output_grid_dim_name
+            ].copy()
 
-            bnds_name = f"{dim_name}_bnds"
+            for i, x in enumerate(dims):
+                if x == dim_name:
+                    dims[i] = output_grid_dim_name
+
+                    break
+
+            bnds_name = f"{output_grid_dim_name}_bnds"
 
             output_data_vars[bnds_name] = xr.DataArray(
                 output_bnds[cf_axis_name].copy(),
@@ -202,7 +212,7 @@ def _build_dataset(
 
     output_da = xr.DataArray(
         output_data,
-        dims=input_data_var.dims,
+        dims=dims,
         coords=output_coords,
         attrs=ds[data_var].attrs.copy(),
         name=data_var,
