@@ -59,11 +59,17 @@ class Regrid2Regridder(BaseRegridder):
                 f"The data variable {data_var!r} does not exist in the dataset."
             ) from None
 
-        src_lat_bnds = self._input_grid.bounds.get_bounds("Y").data
-        src_lon_bnds = self._input_grid.bounds.get_bounds("X").data
+        target_dtype = input_data_var.dtype
 
-        dst_lat_bnds = self._output_grid.bounds.get_bounds("Y").data
-        dst_lon_bnds = self._output_grid.bounds.get_bounds("X").data
+        src_lat_bnds = self._input_grid.bounds.get_bounds("Y").astype(target_dtype).data
+        src_lon_bnds = self._input_grid.bounds.get_bounds("X").astype(target_dtype).data
+
+        dst_lat_bnds = (
+            self._output_grid.bounds.get_bounds("Y").astype(target_dtype).data
+        )
+        dst_lon_bnds = (
+            self._output_grid.bounds.get_bounds("X").astype(target_dtype).data
+        )
 
         src_mask = self._input_grid.get("mask", None)
 
@@ -73,7 +79,7 @@ class Regrid2Regridder(BaseRegridder):
 
         output_data = _regrid(
             input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
-        )
+        ).astype(target_dtype)
 
         output_ds = _build_dataset(
             ds,
@@ -126,8 +132,6 @@ def _regrid(
 
     output_points = []
 
-    target_dtype = input_data.dtype
-
     # need to optimize
     for y in range(y_length):
         y_seg = np.take(input_data, lat_mapping[y], axis=y_index, mode="wrap")
@@ -139,15 +143,17 @@ def _regrid(
                 lat_weights[y].reshape((-1, 1)), lon_weights[x].reshape((1, -1))
             )
 
-            cell_value = np.nansum(
-                np.multiply(x_seg, cell_weight, dtype=target_dtype),
-                axis=(y_index, x_index),
-                dtype=target_dtype,
-            ) / np.sum(cell_weight, dtype=target_dtype)
+            cell_value = np.divide(
+                np.nansum(
+                    np.multiply(x_seg, cell_weight),
+                    axis=(y_index, x_index),
+                ),
+                np.sum(cell_weight),
+            )
 
             output_points.append(cell_value)
 
-    output_data = np.array(output_points, dtype=target_dtype)
+    output_data = np.array(output_points)
     output_data = output_data.reshape(tuple(data_shape.values()))
 
     return output_data
@@ -268,7 +274,9 @@ def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     dst_west, dst_east = _extract_bounds(dst)
 
     shifted_src_west, shifted_src_east, shift = _align_axis(
-        src_west, src_east, dst_west
+        src_west,
+        src_east,
+        dst_west,
     )
 
     src_length = src_west.shape[0]
@@ -327,7 +335,9 @@ def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
 
 def _align_axis(
-    src_west: np.ndarray, src_east: np.ndarray, dst_west: np.ndarray
+    src_west: np.ndarray,
+    src_east: np.ndarray,
+    dst_west: np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray, int]:
     """
     Aligns a longitudinal source axis to the destination axis.
