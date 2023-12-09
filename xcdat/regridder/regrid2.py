@@ -115,6 +115,8 @@ def _regrid(
     data_shape = [y_length * x_length] + other_sizes
     output_data = np.zeros(data_shape, dtype=np.float32)
 
+    is_2d = input_data_var.ndim <= 2
+
     # need to optimize
     for y in range(y_length):
         y_seg = np.take(input_data, lat_mapping[y], axis=y_index)
@@ -122,13 +124,19 @@ def _regrid(
         for x in range(x_length):
             x_seg = np.take(y_seg, lon_mapping[x], axis=x_index, mode="wrap")
 
-            cell_weight = np.dot(
-                lat_weights[y].reshape((-1, 1)), lon_weights[x].reshape((1, -1))
-            )
+            cell_weight = np.dot(lat_weights[y], lon_weights[x])
 
             output_seg_index = y * x_length + x
 
-            if input_data_var.ndim > 2:
+            if is_2d:
+                output_data[output_seg_index] = np.divide(
+                    np.nansum(
+                        np.multiply(x_seg, cell_weight),
+                        axis=(y_index, x_index),
+                    ),
+                    np.sum(cell_weight),
+                )
+            else:
                 output_seg = output_data[output_seg_index]
 
                 np.divide(
@@ -136,16 +144,8 @@ def _regrid(
                         np.multiply(x_seg, cell_weight),
                         axis=(y_index, x_index),
                     ),
-                    np.nansum(cell_weight),
+                    np.sum(cell_weight),
                     out=output_seg,
-                )
-            else:
-                output_data[output_seg_index] = np.divide(
-                    np.nansum(
-                        np.multiply(x_seg, cell_weight),
-                        axis=(y_index, x_index),
-                    ),
-                    np.nansum(cell_weight),
                 )
 
     output_data_shape = [y_length, x_length] + other_sizes
@@ -156,7 +156,7 @@ def _regrid(
 
     output_data = output_data.transpose(output_order)
 
-    return output_data
+    return output_data.astype(np.float32)
 
 
 def _build_dataset(
@@ -261,7 +261,10 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
         for x, y in enumerate(mapping)
     ]
 
-    weights = [np.sin(np.deg2rad(x)) - np.sin(np.deg2rad(y)) for x, y in bounds]
+    weights = [
+        (np.sin(np.deg2rad(x)) - np.sin(np.deg2rad(y))).reshape((-1, 1))
+        for x, y in bounds
+    ]
 
     return mapping, weights
 
@@ -304,8 +307,10 @@ def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     ]
 
     weights = [
-        np.minimum(dst_east[x], shifted_src_east[y])
-        - np.maximum(dst_west[x], shifted_src_west[y])
+        (
+            np.minimum(dst_east[x], shifted_src_east[y])
+            - np.maximum(dst_west[x], shifted_src_west[y])
+        ).reshape((1, -1))
         for x, y in enumerate(mapping)
     ]
 
@@ -458,9 +463,15 @@ def _get_dimension(input_data_var, cf_axis_name):
 
 
 def _get_bounds_ensure_dtype(da, axis):
-    bounds = da.bounds.get_bounds(axis)
+    # Avoid DataSet.bounds.get_bounds, can be slow
+    if axis in da.cf.bounds:
+        name = da.cf.bounds[axis][0]
+
+        bounds = da[name]
+    else:
+        bounds = da.bounds.get_bounds(axis)
 
     if bounds.dtype != np.float32:
-        return bounds.astype(np.float32).data
+        bounds = bounds.astype(np.float32)
 
     return bounds.data
