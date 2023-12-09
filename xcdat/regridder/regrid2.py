@@ -59,17 +59,11 @@ class Regrid2Regridder(BaseRegridder):
                 f"The data variable {data_var!r} does not exist in the dataset."
             ) from None
 
-        target_dtype = input_data_var.dtype
+        src_lat_bnds = _get_bounds_ensure_dtype(self._input_grid, "Y")
+        src_lon_bnds = _get_bounds_ensure_dtype(self._input_grid, "X")
 
-        src_lat_bnds = self._input_grid.bounds.get_bounds("Y").astype(target_dtype).data
-        src_lon_bnds = self._input_grid.bounds.get_bounds("X").astype(target_dtype).data
-
-        dst_lat_bnds = (
-            self._output_grid.bounds.get_bounds("Y").astype(target_dtype).data
-        )
-        dst_lon_bnds = (
-            self._output_grid.bounds.get_bounds("X").astype(target_dtype).data
-        )
+        dst_lat_bnds = _get_bounds_ensure_dtype(self._output_grid, "Y")
+        dst_lon_bnds = _get_bounds_ensure_dtype(self._output_grid, "X")
 
         src_mask = self._input_grid.get("mask", None)
 
@@ -79,7 +73,7 @@ class Regrid2Regridder(BaseRegridder):
 
         output_data = _regrid(
             input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
-        ).astype(target_dtype)
+        )
 
         output_ds = _build_dataset(
             ds,
@@ -105,32 +99,21 @@ def _regrid(
     lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
 
     # convert to pure numpy
-    input_data = input_data_var.data
+    input_data = input_data_var.astype(np.float32).data
 
-    # convert frozendict
-    data_shape = dict(input_data_var.sizes)
+    y_name, y_index = _get_dimension(input_data_var, "Y")
+    x_name, x_index = _get_dimension(input_data_var, "X")
 
     y_length = len(lat_mapping)
     x_length = len(lon_mapping)
 
-    y_name = input_data_var.cf.axes["Y"]
-    x_name = input_data_var.cf.axes["X"]
+    other_dims = {
+        x: y for x, y in input_data_var.sizes.items() if x not in (y_name, x_name)
+    }
+    other_sizes = list(other_dims.values())
 
-    if isinstance(y_name, list):
-        y_name = y_name[0]
-
-    if isinstance(x_name, list):
-        x_name = x_name[0]
-
-    # update y, x shape
-    data_shape[y_name] = y_length
-    data_shape[x_name] = x_length
-
-    dims = input_data_var.dims
-    y_index = dims.index(y_name)
-    x_index = dims.index(x_name)
-
-    output_points = []
+    data_shape = [y_length * x_length] + other_sizes
+    output_data = np.zeros(data_shape, dtype=np.float32)
 
     # need to optimize
     for y in range(y_length):
@@ -143,18 +126,35 @@ def _regrid(
                 lat_weights[y].reshape((-1, 1)), lon_weights[x].reshape((1, -1))
             )
 
-            cell_value = np.divide(
-                np.nansum(
-                    np.multiply(x_seg, cell_weight),
-                    axis=(y_index, x_index),
-                ),
-                np.sum(cell_weight),
-            )
+            output_seg_index = y * x_length + x
 
-            output_points.append(cell_value)
+            if input_data_var.ndim > 2:
+                output_seg = output_data[output_seg_index]
 
-    output_data = np.array(output_points)
-    output_data = output_data.reshape(tuple(data_shape.values()))
+                np.divide(
+                    np.nansum(
+                        np.multiply(x_seg, cell_weight),
+                        axis=(y_index, x_index),
+                    ),
+                    np.nansum(cell_weight),
+                    out=output_seg,
+                )
+            else:
+                output_data[output_seg_index] = np.divide(
+                    np.nansum(
+                        np.multiply(x_seg, cell_weight),
+                        axis=(y_index, x_index),
+                    ),
+                    np.nansum(cell_weight),
+                )
+
+    output_data_shape = [y_length, x_length] + other_sizes
+
+    output_data = output_data.reshape(output_data_shape)
+
+    output_order = [x + 2 for x in range(input_data_var.ndim - 2)] + [0, 1]
+
+    output_data = output_data.transpose(output_order)
 
     return output_data
 
@@ -444,3 +444,23 @@ def _pertub(value: np.ndarray) -> np.ndarray:
 
 # vectorize version of pertub
 _vpertub = np.vectorize(_pertub)
+
+
+def _get_dimension(input_data_var, cf_axis_name):
+    name = input_data_var.cf.axes[cf_axis_name]
+
+    if isinstance(name, list):
+        name = name[0]
+
+    index = input_data_var.dims.index(name)
+
+    return name, index
+
+
+def _get_bounds_ensure_dtype(da, axis):
+    bounds = da.bounds.get_bounds(axis)
+
+    if bounds.dtype != np.float32:
+        return bounds.astype(np.float32).data
+
+    return bounds.data
