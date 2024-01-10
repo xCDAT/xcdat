@@ -43,7 +43,9 @@ xCDAT addresses this need by combining the power of Xarray with meticulously dev
 
 xCDAT's intentional design emphasizes software sustainability and reproducible science. It aims to make analysis code reusable, readable, and less-error prone by abstracting common Xarray boilerplate logic into simple and configurable APIs. xCDAT extends Xarray by using [accessor classes](https://docs.xarray.dev/en/stable/internals/extending-xarray.html) that operate directly on Xarray Dataset objects. xCDAT is rigorously tested using real-world datasets and maintains 100% unit test coverage (at the time this paper was written). To demonstrate the value in xCDAT's API design, Figure 1 compares code to calculate annual averages for global climatological anomalies using Xarray against xCDAT. Figure 2 shows the plots for the results produced by xCDAT.
 
-![A comparison of the code to calculate annual averages for global climatological anomalies in Xarray (left) versus xCDAT (right). xCDAT abstracts most of the Xarray boilerplate logic for calculating weights and grouping data by specific time frequencies, leading to code that is more readable, maintainable, and flexible. The results from both sets of code are within machine precision. \label{fig:fig1}](../docs/paper/figures/fig1.png){ width=100% }
+![Figure 1](figures/fig1.png){height="9pt"}
+
+**Figure 1:** A comparison of the code to calculate annual averages for global climatological anomalies in Xarray (left) versus xCDAT (right). xCDAT abstracts most of the Xarray boilerplate logic for calculating weights and grouping data by specific time frequencies, leading to code that is more readable, maintainable, and flexible. The results from both sets of code are within machine precision.
 
 ![Figure 2](figures/fig2.png){height="9pt"}
 
