@@ -43,27 +43,23 @@ xCDAT addresses this need by combining the power of Xarray with meticulously dev
 
 xCDAT's intentional design emphasizes software sustainability and reproducible science. It aims to make analysis code reusable, readable, and less-error prone by abstracting common Xarray boilerplate logic into simple and configurable APIs. xCDAT extends Xarray by using [accessor classes](https://docs.xarray.dev/en/stable/internals/extending-xarray.html) that operate directly on Xarray Dataset objects. xCDAT is rigorously tested using real-world datasets and maintains 100% unit test coverage (at the time this paper was written). To demonstrate the value in xCDAT's API design, Figure 1 compares code to calculate annual averages for global climatological anomalies using Xarray against xCDAT. Figure 2 shows the plots for the results produced by xCDAT.
 
-![Figure 1](figures/fig1.png){height="9pt"}
+<!-- Fix the resolution of this plot -->
 
-**Figure 1:** A comparison of the code to calculate annual averages for global climatological anomalies in Xarray (left) versus xCDAT (right). xCDAT abstracts most of the Xarray boilerplate logic for calculating weights and grouping data by specific time frequencies, leading to code that is more readable, maintainable, and flexible. The results from both sets of code are within machine precision.
+![A comparison of the code to calculate annual averages for global climatological anomalies in A) Xarray and B) xCDAT. xCDAT abstracts most of the Xarray boilerplate logic for calculating weights and grouping data by specific time frequencies, leading to code that is more readable, maintainable, and flexible. The results from both sets of code are within machine precision. \label{fig:fig1}](figures/combined.png){ height=100% }
 
-![Figure 2](figures/fig2.png){height="9pt"}
-
-**Figure 2:** A) Monthly surface skin temperature anomalies for September 1850. B) Monthly (gray) and annual (black) global mean surface skin temperature anomaly values. Temperature data is from an E3SMv2 climate model simulation over the historical period (1850 – 2014).
+![A) Monthly surface skin temperature anomalies for September 1850. B) Monthly (gray) and annual (black) global mean surface skin temperature anomaly values. Temperature data is from an E3SMv2 climate model simulation over the historical period (1850 – 2014). \label{fig:fig2}](figures/fig2.png){ height=45% }
 
 Performance is another fundamental driver in how xCDAT is designed, especially with large datasets. xCDAT conveniently inherits Xarray's support for parallel computing with Dask [@dask:2016]. [Parallel computing with Dask](https://docs.xarray.dev/en/stable/user-guide/dask.html) enables users to take advantage of compute resources through multithreading or multiprocessing. To use Dask's default multithreading scheduler, users only need to open and chunk datasets in Xarray before calling xCDAT APIs. xCDAT's seamless support for parallel computing enables users to run large-scale computations with minimal effort. If users require more resources, they can also configure and use a local Dask cluster to meet resource-intensive computational needs. Figure 3 shows xCDAT's significant performance advantage over CDAT for spatial averaging on datasets of varying sizes.
 
-![Figure 3](figures/fig3.png){height="9pt"}
-
-**Figure 3:** A performance benchmark for spatial averaging computations using xCDAT (serial and parallel using local Dask distributed scheduler) and CDAT (serial only). xCDAT serial and parallel outperforms CDAT by a wide margin for the 7 GB and 12 GB datasets. Note, runtimes could not be captured with xCDAT serial for the 105 GB file and CDAT with file sizes \>= 22 GB due to memory allocation errors. _Note: performance will vary depending on hardware, datasets, and how Dask and chunking schemes are configured. The performance benchmark setup and scripts are available in the_ [_xCDAT validation repo_](https://github.com/xCDAT/xcdat-validation/tree/main/validation/v0.6.0/xcdat-cdat-perf-metrics)_._
+![A performance benchmark for spatial averaging computations using xCDAT (serial and parallel using local Dask distributed scheduler) and CDAT (serial only). xCDAT serial and parallel outperforms CDAT by a wide margin for the 7 GB and 12 GB datasets. Note, runtimes could not be captured with xCDAT serial for the 105 GB file and CDAT with file sizes >= 22 GB due to memory allocation errors. _Note: performance will vary depending on hardware, datasets, and how Dask and chunking schemes are configured. The performance benchmark setup and scripts are available in the_ [_xCDAT validation repo_](https://github.com/xCDAT/xcdat-validation/tree/main/validation/v0.6.0/xcdat-cdat-perf-metrics)_._ \label{fig:fig3}](figures/fig3.png){ height=30% }
 
 xCDAT's mission is to provide a maintainable and extensible package that serves the needs of the climate community in the long-term. xCDAT is a community-driven project and the development team encourages all who are interested to get involved through the [GitHub repository](https://github.com/xCDAT/xcdat).
 
 # Key Features
 
-## Extension of Xarray's `open_dataset()` and `open_mfdataset()` with post-processing options
+## Extension of `xarray.open_dataset()` and `xarray.open_mfdataset()` with post-processing options
 
-xCDAT extends Xarray's `open_dataset()` and `open_mfdataset()` APIs with additional post-processing operations to support climate and weather data analysis. These APIs can generate missing coordinate bounds for the X, Y, T, and/or Z axes and lazily decode time coordinates represented by `cftime` ([more info](https://github.com/xCDAT/xcdat/pull/489#issuecomment-1579275827)). Other abilities include centering time coordinates between time bounds and converting the longitudinal axis orientation between [0, 360) and [-180, 180).
+xCDAT extends `xarray.open_dataset()` and `xarray.open_mfdataset()` with additional post-processing operations to support climate and weather data analysis. These APIs can generate missing coordinate bounds for the X, Y, T, and/or Z axes and lazily decode time coordinates represented by `cftime` ([more info](https://github.com/xCDAT/xcdat/pull/489#issuecomment-1579275827)). Other abilities include centering time coordinates between time bounds and converting the longitudinal axis orientation between [0, 360) and [-180, 180).
 
 ## Robust interpretation of CF metadata
 
@@ -83,7 +79,7 @@ xCDAT makes use of [xESMF](https://pangeo-xesmf.readthedocs.io/en/latest/) for h
 
 ## Vertical structured regridding
 
-xCDAT makes use of [xgcm](https://xgcm.readthedocs.io/en/latest/) for vertical regridding capabilities. It extends thexgcm vertical regridding API by transposing the output data to match the dimensional order of the input data, and ensuring bounds and metadata are preserved in the output dataset.
+xCDAT makes use of [xgcm](https://xgcm.readthedocs.io/en/latest/) for vertical regridding capabilities. It extends the xgcm vertical regridding API by transposing the output data to match the dimensional order of the input data, and ensuring bounds and metadata are preserved in the output dataset.
 
 # Documentation & Case Studies
 
