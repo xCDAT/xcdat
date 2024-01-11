@@ -73,7 +73,7 @@ xCDAT's geospatial weighted averaging supports rectilinear grids with an option 
 
 ## Horizontal structured regridding
 
-xCDAT makes use of [xESMF](https://pangeo-xesmf.readthedocs.io/en/latest/) for horizontal regridding capabilities. It extends the xESMF horizontal regridding API by generating missing bounds and ensuring bounds and metadata are preserved in the output dataset. xCDAT also offers a Python implementation of[regrid2](https://cdms.readthedocs.io/en/latest/regrid2.html) for handling cartesian latitude by longitude grids.
+xCDAT makes use of [xESMF](https://pangeo-xesmf.readthedocs.io/en/latest/) for horizontal regridding capabilities. It extends the xESMF horizontal regridding API by generating missing bounds and ensuring bounds and metadata are preserved in the output dataset. xCDAT also offers a Python implementation of [regrid2](https://cdms.readthedocs.io/en/latest/regrid2.html) for handling cartesian latitude by longitude grids.
 
 ## Vertical structured regridding
 
