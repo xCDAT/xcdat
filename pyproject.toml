@@ -40,7 +40,7 @@ markers = ["flaky", "network"]
 
 [tool.mypy]
 # Docs: https://mypy.readthedocs.io/en/stable/config_file.html
-python_version = 3.10
+python_version = "3.10"
 check_untyped_defs = true
 ignore_missing_imports = true
 warn_unused_ignores = true
