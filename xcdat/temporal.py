@@ -732,7 +732,7 @@ class TemporalAccessor:
             # The original time dimension name is restored after grouped
             # arithmetic, so the labeled time dimension name is no longer needed
             # and therefore dropped.
-            ds_obs = ds_obs.drop_vars(self._labeled_time.name)
+            ds_obs = ds_obs.drop_vars(str(self._labeled_time.name))
 
         if weighted and keep_weights:
             self._weights = ds_climo.time_wts
