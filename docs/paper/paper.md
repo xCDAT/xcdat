@@ -73,11 +73,11 @@ xCDAT’s geospatial weighted averaging supports rectilinear grids with an optio
 
 ## Horizontal structured regridding
 
-xCDAT makes use of [xESMF](https://pangeo-xesmf.readthedocs.io/en/latest/) for horizontal regridding capabilities. It extends the xESMF horizontal regridding API by generating missing bounds and ensuring bounds and metadata are preserved in the output dataset. xCDAT also offers a Python implementation of [regrid2](https://cdms.readthedocs.io/en/latest/regrid2.html) for handling cartesian latitude by longitude grids.
+xCDAT makes use of [xESMF](https://pangeo-xesmf.readthedocs.io/en/latest/) for horizontal regridding capabilities. It simplifies and extends the xESMF horizontal regridding API by generating missing bounds and ensuring bounds and metadata are preserved in the output dataset. xCDAT also offers a Python implementation of [regrid2](https://cdms.readthedocs.io/en/latest/regrid2.html) for handling cartesian latitude by longitude grids.
 
 ## Vertical structured regridding
 
-xCDAT makes use of [xgcm](https://xgcm.readthedocs.io/en/latest/) for vertical regridding capabilities. It extends the xgcm vertical regridding API by transposing the output data to match the dimensional order of the input data, and ensuring bounds and metadata are preserved in the output dataset.
+xCDAT makes use of [xgcm](https://xgcm.readthedocs.io/en/latest/) for vertical regridding capabilities. It simplifies and extends the xgcm vertical regridding API by automatically attempting to determine the grid point position relative to the bounds, transposing the output data to match the dimensional order of the input data, and ensuring bounds and metadata are preserved in the output dataset.
 
 # Documentation & Case Studies
 
@@ -103,6 +103,6 @@ xCDAT is actively being integrated as a core component of the [Program for Clima
 
 xCDAT is jointly developed by scientists and developers at Lawrence Livermore National Laboratory ([LLNL](https://www.llnl.gov/)) from the Energy Exascale Earth System Model ([E3SM](https://e3sm.org/)) Project and Program for Climate Model Diagnosis and Intercomparison ([PCMDI](https://pcmdi.llnl.gov/)). The work is performed for the E3SM project, which is sponsored by Earth System Model Development ([ESMD](https://climatemodeling.science.energy.gov/program/earth-system-model-development)) program, and the Simplifying ESM Analysis Through Standards ([SEATS](https://www.seatstandards.org/)) project, which is sponsored by the Regional and Global Model Analysis ([RGMA](https://climatemodeling.science.energy.gov/program/regional-global-model-analysis)) program. ESMD and RGMA are programs for the Earth and Environmental Systems Sciences Division ([EESSD](https://science.osti.gov/ber/Research/eessd)) in the Office of Biological and Environmental Research ([BER](https://science.osti.gov/ber)) within the [Department of Energy](https://www.energy.gov/)'s [Office of Science](https://science.osti.gov/). This work is performed under the auspices of the U.S. Department of Energy by LLNL under Contract No. DE-AC52-07NA27344.
 
-Thank you to all of the xCDAT contributors and users including Ana Ordonez, Mark Zelinka, Christopher Terai, Min-Seop Ahn, Celine Bonfils, Jean-Yves Peterschmitt, Olivier Marti, Andrew Manaster, and Andrew Friedman. We also give a special thanks to Karl Taylor, Peter Gleckler, Paul Durack, and Chris Golaz who all have provided valuable knowledge and guidance throughout the course of this project.
+Thank you to all of the xCDAT contributors and users including Rob Jacob, Ana Ordonez, Mark Zelinka, Christopher Terai, Min-Seop Ahn, Celine Bonfils, Jean-Yves Peterschmitt, Olivier Marti, Andrew Manaster, and Andrew Friedman. We also give a special thanks to Karl Taylor, Peter Gleckler, Paul Durack, and Chris Golaz who all have provided valuable knowledge and guidance throughout the course of this project.
 
 # References
