@@ -483,10 +483,11 @@ class TestRegrid2Regridder:
         expected_output = np.array(
             [
                 [0.0] * 4,
-                [0.7071067811865476] * 4,
-                [0.7071067811865476] * 4,
+                [0.70710677] * 4,
+                [0.70710677] * 4,
                 [0.0] * 4,
-            ]
+            ],
+            dtype=np.float32,
         )
 
         assert np.all(output_data.ts.values == expected_output)
@@ -546,10 +547,10 @@ class TestRegrid2Regridder:
         ]
 
         expected_weigths = [
-            [90],
-            [90],
-            [90],
-            [90],
+            [[90]],
+            [[90]],
+            [[90]],
+            [[90]],
         ]
 
         np.testing.assert_allclose(mapping, expected_mapping)
@@ -565,7 +566,7 @@ class TestRegrid2Regridder:
             [2, 3],
         ]
 
-        expected_weigths = [[90, 90], [90, 90]]
+        expected_weigths = [[[90, 90]], [[90, 90]]]
 
         np.testing.assert_allclose(mapping, expected_mapping)
         np.testing.assert_allclose(weights, expected_weigths)
@@ -611,9 +612,9 @@ class TestRegrid2Regridder:
         ]
 
         expected_weigths = [
-            [0.29289322, 0.20710678],
-            [0.5, 0.5],
-            [0.20710678, 0.29289322],
+            [[0.29289322], [0.20710678]],
+            [[0.5], [0.5]],
+            [[0.20710678], [0.29289322]],
         ]
 
         np.testing.assert_allclose(mapping, expected_mapping)
