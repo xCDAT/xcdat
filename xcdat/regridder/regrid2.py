@@ -130,7 +130,7 @@ def _regrid(
 
             if is_2d:
                 output_data[output_seg_index] = np.divide(
-                    np.nansum(
+                    np.sum(
                         np.multiply(x_seg, cell_weight),
                         axis=(y_index, x_index),
                     ),
@@ -140,7 +140,7 @@ def _regrid(
                 output_seg = output_data[output_seg_index]
 
                 np.divide(
-                    np.nansum(
+                    np.sum(
                         np.multiply(x_seg, cell_weight),
                         axis=(y_index, x_index),
                     ),
@@ -345,7 +345,7 @@ def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
         lower = bounds[:, 1]
         upper = bounds[:, 0]
 
-    return lower, upper
+    return lower.astype(np.float32), upper.astype(np.float32)
 
 
 def _align_axis(
