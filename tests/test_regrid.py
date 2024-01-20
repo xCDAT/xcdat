@@ -386,9 +386,7 @@ class TestRegrid2Regridder:
 
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_output_bounds(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
+        ds = self.coarse_3d_ds
 
         output_grid = grid.create_gaussian_grid(32)
 
@@ -399,6 +397,24 @@ class TestRegrid2Regridder:
         assert "lat_bnds" in output_ds
         assert "lon_bnds" in output_ds
         assert "time_bnds" in output_ds
+
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
+    def test_output_bounds_missing_temporal(self):
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+        ds = self.coarse_3d_ds.drop("time_bnds")
+
+        output_grid = grid.create_gaussian_grid(32)
+
+        regridder = regrid2.Regrid2Regridder(ds, output_grid)
+
+        output_ds = regridder.horizontal("ts", ds)
+
+        assert "lat_bnds" in output_ds
+        assert "lon_bnds" in output_ds
+        assert "time_bnds" not in output_ds
 
     @pytest.mark.parametrize(
         "src,dst,expected_west,expected_east,expected_shift",
@@ -637,6 +653,12 @@ class TestRegrid2Regridder:
 
         assert north.shape == (3,)
         assert north[0], north[-1] == (60, 90)
+
+    def test_get_bounds_ensure_dtype(self):
+        del self.coarse_2d_ds.lon.attrs["bounds"]
+
+        with pytest.raises(RuntimeError):
+            regrid2._get_bounds_ensure_dtype(self.coarse_2d_ds, "X")
 
 
 class TestXESMFRegridder:

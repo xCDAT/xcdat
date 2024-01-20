@@ -178,43 +178,8 @@ def _build_dataset(
 
     output_coords: dict[str, xr.DataArray] = {}
     output_data_vars: dict[str, xr.DataArray] = {}
-    output_bnds = {
-        "Y": dst_lat_bnds,
-        "X": dst_lon_bnds,
-    }
 
     dims = list(input_data_var.dims)
-
-    for cf_axis_name, dim_names in input_data_var.cf.axes.items():
-        dim_name = dim_names[0]
-
-        if cf_axis_name in ("X", "Y"):
-            output_grid_dim_name = output_grid.cf.axes[cf_axis_name][0]
-
-            output_coords[output_grid_dim_name] = output_grid[
-                output_grid_dim_name
-            ].copy()
-
-            for i, x in enumerate(dims):
-                if x == dim_name:
-                    dims[i] = output_grid_dim_name
-
-                    break
-
-            bnds_name = f"{output_grid_dim_name}_bnds"
-
-            output_data_vars[bnds_name] = xr.DataArray(
-                output_bnds[cf_axis_name].copy(),
-                dims=(dim_name, "bnds"),
-                name=bnds_name,
-            )
-        else:
-            output_coords[dim_name] = input_data_var[dim_name].copy()
-
-            bnds_name = input_data_var[dim_name].attrs.get("bnds", None)
-
-            if bnds_name is not None:
-                output_data_vars[bnds_name] = input_data_var[bnds_name].copy()
 
     output_da = xr.DataArray(
         output_data,
@@ -468,14 +433,13 @@ def _get_dimension(input_data_var, cf_axis_name):
     return name, index
 
 
-def _get_bounds_ensure_dtype(da, axis):
-    # Avoid DataSet.bounds.get_bounds, can be slow
-    if axis in da.cf.bounds:
-        name = da.cf.bounds[axis][0]
-
-        bounds = da[name]
+def _get_bounds_ensure_dtype(ds, axis):
+    try:
+        name = ds.cf.bounds[axis][0]
+    except (KeyError, IndexError):
+        raise RuntimeError(f"Could not determine {axis!r} bounds")
     else:
-        bounds = da.bounds.get_bounds(axis)
+        bounds = ds[name]
 
     if bounds.dtype != np.float32:
         bounds = bounds.astype(np.float32)
