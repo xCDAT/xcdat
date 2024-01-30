@@ -1,330 +1,249 @@
 .. highlight:: shell
 
+.. note::
+
+  Large portions of this document came from or are inspired by the `Xarray Contributing
+  Guide <https://docs.xarray.dev/en/stable/contributing.html>`_.
+
 ============
-Contributing
+Overview
 ============
 
-Contributions are welcome and greatly appreciated! Every little bit helps, and credit will always be given.
+xCDAT is a community-driven open source project and we welcome everyone who would like to
+contribute! Feel free to open a `GitHub Issue`_ or start a `GitHub Discussion`_ for bug
+reports, bug fixes, documentation improvements, enhancement suggestions, and other ideas.
 
-Types of Contributions
-----------------------
+We encourage discussion on any xCDAT related topic in the `GitHub Discussion`_ forum.
+You can also subscribe to our `mailing list`_ for news and announcements related to xCDAT,
+such as software version releases or future roadmap plans.
 
-xCDAT includes issue templates based on the contribution type: https://github.com/xCDAT/xcdat/issues/new/choose.
-Note, new contributions must be made under the Apache-2.0 with LLVM exception license.
+Please note that xCDAT has a `Code of Conduct`_. By participating in the xCDAT
+community, you agree to abide by its rules.
 
-Bug Report
-~~~~~~~~~~
+.. _GitHub Issue: https://github.com/xCDAT/xcdat/issues
+.. _GitHub Discussion: https://github.com/xCDAT/xcdat/discussions
+.. _Code of Conduct: CODE-OF-CONDUCT.rst
+.. _mailing list: https://groups.google.com/g/xcdat
 
-Look through the `GitHub Issues`_ for bugs to fix. Any unassigned issues tagged with "Type: Bug" is open for implementation.
+Where to start?
+===============
 
-Feature Request
-~~~~~~~~~~~~~~~
+If you are brand new to xCDAT or open-source development, we recommend going
+through the `GitHub Issues`_ page to find issues that interest you. If you are
+interested in opening a GitHub issue, you can use the templates `here <https://github.com/xCDAT/xcdat/issues/new/choose>`_
 
-Look through the `GitHub Issues`_ for feature suggestions. Any unassigned issues tagged with "Type: Enhancement" is open for implementation.
+Some issues are particularly suited for new contributors by the label
+`Documentation <https://github.com/xCDAT/xcdat/labels/type%3A%20documentation>`_ and
+`good first issue <https://github.com/xCDAT/xcdat/labels/good-first-issue>`_ where
+you could start out. These are well documented issues, that do not require a deep
+understanding of the internals of xCDAT. Once you've found an interesting issue, you can
+return here to get your development environment setup.
 
-If you are proposing a feature:
+**New contributions must be made under the Apache-2.0 with LLVM exception license.**
 
-* Explain in detail how it would work.
-* Keep the scope as narrow as possible, to make it easier to implement.
-* Remember that this is a open-source project, and that contributions are welcome :)
+Documentation Updates
+~~~~~~~~~~~~~~~~~~~~~
 
-Features must meet the following criteria before they are considered for implementation:
+Contributing to the `documentation <https://xcdat.readthedocs.io/en/latest/>`_ is an
+excellent way to help xCDAT. You don't need to be an expert in xCDAT to help with
+documentation!
 
-1. Feature is not implemented by ``xarray``
-2. Feature is not implemented in another actively developed xarray-based package
+Bug Reports and enhancement requests
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Bug reports are an important part of making xCDAT more stable. Having a complete bug
+report will allow others to reproduce the bug and provide insight into fixing.
 
-   * For example,  `cf_xarray`_ already handles interpretation of `CF convention`_ attributes on xarray objects
+Trying out the bug-producing code on the ``main`` branch is often a worthwhile exercise
+to confirm that the bug still exists. It is also worth searching existing bug reports and
+pull requests to see if the issue has already been reported and/or fixed.
 
-3. Feature is not limited to specific use cases (e.g., data quality issues)
-4. Feature is generally reusable
-5. Feature is relatively simple and lightweight to implement and use
-
-Documentation Update
-~~~~~~~~~~~~~~~~~~~~
-
-Help improve xCDAT's documentation, whether that be the Sphinx documentation or the API docstrings.
-
-Community Discussion
-~~~~~~~~~~~~~~~~~~~~
-
-Take a look at the `GitHub Discussions`_ page to get involved, share ideas, or ask questions.
-
-.. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
-.. _CF convention: http://cfconventions.org/
 .. _GitHub Issues: https://github.com/xCDAT/xcdat/issues
-.. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
 
-Version Control
----------------
+Version control, Git, and GitHub
+================================
 
-The repository uses branch-based (core team) and fork-based (external collaborators)
-Git workflows with tagged software releases.
+The code is hosted on `GitHub <https://www.github.com/xCDAT/xcdat>`_. To
+contribute you will need to sign up for a `free GitHub account
+<https://github.com/signup/free>`_. We use `Git <http://git-scm.com/>`_ for
+version control to allow many people to work together on the project.
 
-.. figure:: _static/git-flow.svg
-   :alt: Git Flow Diagram
+Some great resources for learning Git:
 
-Guidelines
-~~~~~~~~~~
+* the `GitHub help pages <https://help.github.com/>`_.
+* the `NumPy's documentation <https://numpy.org/doc/stable/dev/index.html>`_.
+* Matthew Brett's `Pydagogue <https://matthew-brett.github.io/pydagogue/>`_.
 
-1. ``main`` must always be deployable
-2. All changes are made through support branches
-3. Rebase with the latest ``main`` to avoid/resolve conflicts
-4. Make sure pre-commit quality assurance checks pass when committing (enforced in CI/CD build)
-5. Open a pull request early for discussion
-6. Once the CI/CD build passes and pull request is approved, squash and rebase your commits
-7. Merge pull request into ``main`` and delete the branch
+Getting started with Git
+------------------------
 
-Things to Avoid
+`GitHub has instructions for setting up Git <https://help.github.com/set-up-git-redirect>`__ including installing git,
+setting up your SSH key, and configuring git.  All these steps need to be completed before
+you can work seamlessly between your local repository and GitHub.
+
+.. note::
+
+    The following instructions assume you want to learn how to interact with github via the git command-line utility,
+    but contributors who are new to git may find it easier to use other tools instead such as
+    `Github Desktop <https://desktop.github.com/>`_.
+
+Creating a development environment
+==================================
+
+Before starting any development, you'll need to create an isolated xCDAT
+development environment:
+
+- Install either `Anaconda <https://www.anaconda.com/download/>`_ or `miniconda
+  <https://conda.io/miniconda.html>`_
+- Make sure your conda is up to date (``conda update conda``)
+- Make sure that you have forked and cloned the repository
+- ``cd`` to the *xcdat* source directory
+
+Now we are going through a two-step process:
+
+    1. Install the build dependencies
+    2. Build and install `xcdat`
+
+    .. code-block:: bash
+       # Create and activate the conda/mamba development environment
+       >>> mamba env create -f conda-env/dev.yml
+       >>> mamba activate xcdat_dev
+
+       # Build and install xcdat
+       >>> make install # or python -m pip install .
+
+At this point you should be able to import ``xcdat`` from your locally built version:
+
+.. code-block:: sh
+
+   $ python  # start an interpreter
+   >>> import xcdat
+   >>> xcdat.__version__
+   '0.6.1'
+
+This will create the new environment, and not touch any of your existing environments,
+nor any existing Python installation.
+
+To view your environments::
+
+      conda info -e
+
+To return to your root environment::
+
+      conda deactivate
+
+See the full `conda docs here <http://conda.pydata.org/docs>`__.
+
+Install pre-commit hooks
+------------------------
+
+We highly recommend that you setup `pre-commit <https://pre-commit.com/>`_ hooks to automatically
+run all the above tools every time you make a git commit. To install the hooks
+
+.. code-block:: bash
+    >>> python -m pip install pre-commit
+    >>> pre-commit install
+
+This can be done by running:
+
+.. code-block:: bash
+    >>> pre-commit run
+
+from the root of the ``xcdat`` repository. You can skip the pre-commit checks with
+``git commit --no-verify``.
+
+Note, these hooks are also executed in the GitHub CI/CD build workflow and must
+pass before pull requests can be merged.
+
+Contributing to the code base
+=============================
+
+.. contents:: Code Base:
+   :local:
+
+Pull Request (PR)
+-----------------
+
+When you open a `pull request <https://github.com/xCDAT/xcdat/compare>`_ on GitHub,
+there a template with a checklist available to use.
+
+Here's a simple checklist for PRs:
+- **Properly comment and document your code.** API docstrings are formatted using the
+`numpy style guide <https://numpydoc.readthedocs.io/en/latest/format.html>`_
+- **Test that the documentation builds correctly** by typing ``make doc`` in the root of the ``xcdat`` directory. This is not strictly necessary, but this may be easier than waiting for CI to catch a mistake. See `"Contributing to the documentation" <https://docs.xarray.dev/en/stable/contributing.html#contributing-to-the-documentation>`_.
+- **Test your code**.
+
+  - Write new tests if needed.
+  - Test the code using `Pytest <http://doc.pytest.org/en/latest/>`_. Running all tests (type ``make test`` or ``pytest`` in the root directory) takes a while, so feel free to only run the tests you think are needed based on your PR (example: ``pytest xarray/tests/test_dataarray.py``). CI will catch any failing tests.
+
+- **Properly format your code** and verify that it passes the formatting guidelines set by `Black <https://black.readthedocs.io/en/stable/>`_ and `flake8`_. You can use `pre-commit <https://pre-commit.com/>`_ to run these automatically on each commit.
+
+  - Run ``pre-commit run --all-files`` in the root directory. This may modify some files. Confirm and commit any formatting changes.
+
+- **Push your code** and `create a PR on GitHub <https://help.github.com/en/articles/creating-a-pull-request>`_.
+- **Use a helpful title for your pull request** by summarizing the main contributions rather than using the latest commit message. If the PR addresses an `issue <https://github.com/xCDAT/xcdat/issues>`_, please `reference it <https://help.github.com/en/articles/autolinked-references-and-urls>`_.
+
+Code Formatting
 ~~~~~~~~~~~~~~~
 
-1. Don't merge in broken or commented out code
-2. Don't commit directly to ``main``
+xCDAT uses several tools to ensure a consistent code format throughout the project:
 
-   *  There are branch-protection rules for ``main``
+- `Black <https://black.readthedocs.io/en/stable/>`_ for standardized
+  code formatting,
+- `Flake8 <https://flake8.pycqa.org/en/latest/>`_ for code linting
+- `isort <https://pycqa.github.io/isort/>`_ for standardized order of imports
+- `mypy <http://mypy-lang.org/>`_ for static type checking on `type hints
+  <https://docs.python.org/3/library/typing.html>`_.
 
-3. Don't merge with conflicts. Instead, handle conflicts upon rebasing
+We highly recommend that you setup `pre-commit hooks <https://pre-commit.com/>`_
+to automatically run all the above tools every time you make a git commit. This
+can be done by running::
 
-Source: https://gist.github.com/jbenet/ee6c9ac48068889b0912
+   pre-commit install
 
-Pre-commit
-~~~~~~~~~~
-The repository uses the pre-commit package to manage pre-commit hooks.
-These hooks help with quality assurance standards by identifying simple issues
-at the commit level before submitting code reviews.
+from the root of the ``xcdat`` repository. You can skip the pre-commit checks
+with ``git commit --no-verify``.
 
-.. figure:: _static/pre-commit-flow.svg
-   :alt: Pre-commit Flow Diagram
+Testing With Continuous Integration
+-----------------------------------
 
-   pre-commit Flow
+The xCDAT `build workflow <https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml>`_
+runs the test suite automatically via the
+`GitHub Actions <https://docs.github.com/en/free-pro-team@latest/actions>`__,
+continuous integration service, once your pull request is submitted.
 
+A pull-request will be considered for merging when you have an all 'green' build. If any
+tests are failing, then you will get a red 'X', where you can click through to see the
+individual failed tests. This is an example of a green build.
 
-Get Started
-------------
+.. image:: _static/ci.png
 
-Ready to contribute? Here's how to set up xCDAT for local development.
+.. note::
 
-VS Code, the editor of choice
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   Each time you push to your PR branch, a new run of the tests will be
+   triggered on the CI. If they haven't already finished, tests for any older
+   commits on the same branch will be automatically cancelled.
 
-We recommend using VS Code as your IDE because it is open-source and has great Python development support.
+Writing tests
+~~~~~~~~~~~~~
 
-Get VS Code here: https://code.visualstudio.com
+All tests should go into the ``tests`` subdirectory of the specific package.
+This folder contains many current examples of tests, and we suggest looking to these for
+inspiration.
 
-VS Code Setup
-^^^^^^^^^^^^^
-xCDAT includes a VS Code workspace file (``.vscode/xcdat.code-setting``). This file automatically configures your IDE with the quality assurance tools, code line-length rulers, and more.
+The ``xarray.testing`` module has many special ``assert`` functions that
+make it easier to make statements about whether DataArray or Dataset objects are
+equivalent. The easiest way to verify that your code is correct is to
+explicitly construct the result you expect, then compare the actual result to
+the expected correct result::
 
-Make sure to follow the :ref:`Local Development` section below.
+    def test_constructor_from_0d():
+        expected = Dataset({None: ([], 0)})[None]
+        actual = DataArray(0)
+        assert_identical(expected, actual)
 
-Recommended VS Code Extensions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-    * `Python <https://marketplace.visualstudio.com/items?itemName=ms-python.python>`_
-    * `Pylance <https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance>`_
-    * `Python Docstring Generator <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
-    * `Python Type Hint <https://marketplace.visualstudio.com/items?itemName=njqdev.vscode-python-typehint>`_
-    * `Better Comments <https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments>`_
-    * `Jupyter <https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter>`_
-    * `Visual Studio Intellicode <https://marketplace.visualstudio.com/items?itemName=VisualStudioExptTeam.vscodeintellicode>`_
-
-
-.. _Local Development:
-
-Local Development
-~~~~~~~~~~~~~~~~~
-
-1. Download and install Conda
-
-    Linux
-        ::
-
-            $ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-            $ bash ./Miniconda3-latest-Linux-x86_64.sh
-            Do you wish the installer to initialize Miniconda3 by running conda init? [yes|no] yes
-
-
-    MacOS
-        ::
-
-            $ wget https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
-            $ bash ./Miniconda3-latest-MacOSX-x86_64.sh
-            Do you wish the installer to initialize Miniconda3 by running conda init? [yes|no] yes
-
-2. Fork the ``xcdat`` repo on GitHub.
-
-     - If you are a maintainer, you can clone and branch directly from the root repository here: https://github.com/xCDAT/xcdat
-
-3. Clone your fork locally::
-
-    $ git clone git@github.com:your_name_here/xcdat.git
-
-4. <OPTIONAL> Open ``.vscode/xcdat.code-settings`` in VS Code
-
-
-5. Create and activate Conda development environment::
-
-    $ cd xcdat
-    $ conda env create -f conda-env/dev.yml
-    $ conda activate xcdat_dev
-
-6. <OPTIONAL> Set VS Code Python interpretor to ``xcdat_dev``
-
-7. Install pre-commit::
-
-    $ pre-commit install
-    pre-commit installed at .git/hooks/pre-commit
-
-8. Create a branch for local development and make changes::
-
-    $ git checkout -b <BRANCH-NAME>
-
-9. `<OPTIONAL>` During or after making changes, check for formatting or linting issues using pre-commit::
-
-    # Step 9 performs this automatically on staged files in a commit
-    $ pre-commit run --all-files
-
-    Trim Trailing Whitespace.................................................Passed
-    Fix End of Files.........................................................Passed
-    Check Yaml...............................................................Passed
-    black....................................................................Passed
-    isort....................................................................Passed
-    flake8...................................................................Passed
-    mypy.....................................................................Passed
-
-10. Generate code coverage report and check unit tests pass::
-
-     $ make test # Automatically opens HTML report in your browser
-     $ pytest # Does not automatically open HTML report in your browser
-
-     ================================= test session starts =================================
-     platform darwin -- Python 3.8.8, pytest-6.2.2, py-1.10.0, pluggy-0.13.1
-     rootdir: <your-local-dir/xcdat>, configfile: setup.cfg
-     plugins: anyio-2.2.0, cov-2.11.1
-     collected 3 items
-
-     tests/test_dataset.py ..
-     tests/test_xcdat.py .
-
-     ---------- coverage: platform darwin, python 3.8.8-final-0 -----------
-     Name                Stmts   Miss  Cover
-     ---------------------------------------
-     xcdat/__init__.py       3      0   100%
-     xcdat/dataset.py       18      0   100%
-     xcdat/xcdat.py          0      0   100%
-     ---------------------------------------
-     TOTAL                  21      0   100%
-     Coverage HTML written to dir tests_coverage_reports/htmlcov
-     Coverage XML written to file tests_coverage_reports/coverage.xml
-
-    - The Coverage HTML report is much more detailed (e.g., exact lines of tested/untested code)
-
-11. Commit your changes::
-
-     $ git add .
-     $ git commit -m <Your detailed description of your changes>
-
-     Trim Trailing Whitespace.................................................Passed
-     Fix End of Files.........................................................Passed
-     Check Yaml...............................................................Passed
-     black....................................................................Passed
-     isort....................................................................Passed
-     flake8...................................................................Passed
-     mypy.....................................................................Passed
-
-12. Make sure pre-commit QA checks pass. Otherwise, fix any caught issues.
-
-    - Most of the tools fix issues automatically so you just need to re-stage the files.
-    - flake8 and mypy issues must be fixed automatically.
-
-13. Push changes::
-
-    $ git push origin <BRANCH-NAME>
-
-14. Submit a pull request through the GitHub website.
-
-
-Pull Request Guidelines
------------------------
-
-Before you submit a pull request, check that it meets these guidelines:
-
-1. The pull request should include tests for new or modified code.
-2. Link issues to pull requests.
-3. If the pull request adds functionality, the docs should be updated. Put
-   your new functionality into a function with a docstring, and add the
-   feature to the list in README.rst.
-4. Squash and rebase commits for a clean and navigable Git history.
-
-When you open a pull request on GitHub, there is a template available for use.
-
-
-Style Guide
------------
-
-xCDAT integrates the Black code formatter for code styling. If you want to learn more, please read about it `here <https://black.readthedocs.io/en/stable/the_black_code_style.html>`__.
-
-xCDAT also leverages `Python Type Annotations <https://docs.python.org/3.8/library/typing.html>`_ to help the project scale.
-`mypy <https://mypy.readthedocs.io/en/stable/introduction.html>`_ performs optional static type checking through pre-commit.
-
-Testing
--------
-
-Testing your local changes are important to ensure long-term maintainability and extensibility of the project.
-Since xCDAT is an open source library, we aim to avoid as many bugs as possible from reaching the end-user.
-
-To get started, here are guides on how to write tests using pytest:
-
-- https://docs.pytest.org/en/latest/
-- https://docs.python-guide.org/writing/tests/#py-test
-
-In most cases, if a function is hard to test, it is usually a symptom of being too complex (high cyclomatic-complexity).
-
-DOs for Testing
-~~~~~~~~~~~~~~~
-
-*  *DO* write tests for new or refactored code
-*  *DO* try to follow test-driven-development
-*  *DO* use the Coverage reports to see lines of code that need to be tested
-*  *DO* focus on simplistic, small, reusable modules for unit testing
-*  *DO* cover as many edge cases as possible when testing
-
-DON'Ts for Testing
-~~~~~~~~~~~~~~~~~~
-
-*  *DON'T* push or merge untested code
-*  *DON'T* introduce tests that fail or produce warnings
-
-Documenting Code
-----------------
-
-If you are using VS code, the `Python Docstring Generator <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_ extension can be used to auto-generate a docstring snippet once a function/class has been written.
-If you want the extension to generate docstrings in Sphinx format, you must set the ``"autoDocstring.docstringFormat": "sphinx"`` setting, under File > Preferences > Settings.
-
-Note that it is best to write the docstrings once you have fully defined the function/class, as then the extension will generate the full docstring.
-If you make any changes to the code once a docstring is generated, you will have to manually go and update the affected docstrings.
-
-More info on docstrings here: https://sphinx-rtd-tutorial.readthedocs.io/en/latest/docstrings.html
-
-DOs for Documenting Code
-~~~~~~~~~~~~~~~~~~~~~~~~
-
-*  *DO* explain **why** something is done, its purpose, and its goal. The code shows **how** it is done, so commenting on this can be redundant.
-*  *DO* explain ambiguity or complexities to avoid confusion
-*  *DO* embrace documentation as an integral part of the overall development process
-*  *DO* treat documenting as code and follow principles such as *Don't Repeat Yourself* and *Easier to Change*
-
-DON'Ts for Documenting Code
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-*  *DON'T* write comments as a crutch for poor code
-*  *DON'T* comment *every* function, data structure, type declaration
 
 Developer Tips
---------------
-
-* flake8 will warn you if the cyclomatic complexity of a function is too high.
-
-    * https://github.com/PyCQA/mccabe
-
+==============
 
 Helpful Commands
 ----------------
@@ -332,63 +251,24 @@ Helpful Commands
 .. note::
     Run ``make help`` in the root of the project for a list of useful commands
 
-To run a subset of tests::
 
-$ pytest tests.test_xcdat
+xCDAT and Visual Studio Code
+----------------------------
 
-FAQs
-----
+We recommend using `VS Code <https://code.visualstudio.com>`_ as your code editor because
+it is open-source and has great Python development support.
 
-.. _Why squash and rebase?:
+xCDAT includes a
+`VS Code Workspace file <https://github.com/xCDAT/xcdat/blob/main/.vscode/xcdat.code-workspace>`_, which conveniently configures VS Code for quality assurance tools, code line-length rulers, and more.
+Just open ``.vscode/xcdat-workspace.code-settings`` using VS Code.
 
-Why squash and rebase commits?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Some recommended extensions include:
 
-Before you merge a support branch back into ``main``, the branch is typically squashed down to a single buildable commit, and then rebased on top of the main repo's ``main`` branch.
-
-Why?
-
-* Ensures build passes from the commit
-* Cleans up Git history for easy navigation
-* Makes collaboration and review process more efficient
-* Makes handling conflicts from rebasing simple since you only have to deal with conflicted commits
-
-
-How do I squash and rebase commits?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-* Use GitHub's Squash and Merge feature in the pull request
-
-   * You still need to rebase on the latest ``main`` if ``main`` is ahead of your branch.
-
-* Manually squash and rebase
-
-   1. `<OPTIONAL if you are forking>` Sync your fork of ``main`` (aka ``origin``) with the root ``main`` (aka ``upstream``) ::
-
-        git checkout main
-        git rebase upstream/main
-        git push -f origin main
-
-   2. Get the SHA of the commit OR number of commits to rebase to ::
-
-        git checkout <branch-name>
-        git log --graph --decorate --pretty=oneline --abbrev-commit
-
-   3. Squash commits::
-
-        git rebase -i [SHA]
-
-        # OR
-
-        git rebase -i HEAD~[NUMBER OF COMMITS]
-
-   4. Rebase branch onto ``main`` ::
-
-        git rebase main
-        git push -f origin <BRANCH-NAME>
-
-   5. Make sure your squashed commit messages are refined
-
-   6. Force push to remote branch ::
-
-        git push -f origin <BRANCH-NAME>
+    * `Python <https://marketplace.visualstudio.com/items?itemName=ms-python.python>`_
+    * `Pylance <https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance>`_
+    * `Python Docstring Generator <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
+    * `Python Type Hint <https://marketplace.visualstudio.com/items?itemName=njqdev.vscode-python-typehint>`_
+    * `Better Comments <https://marketplace.visualstudio.com/items?itemName=aaron-bond.better-comments>`_
+    * `Jupyter <https://marketplace.visualstudio.com/items?itemName=ms-toolsai.jupyter>`_
+    * `Visual Studio Intellicode <https://marketplace.visualstudio.com/items?itemName=VisualStudioExptTeam.vscodeintellicode>`_
+    * `autoDocstring <https://marketplace.visualstudio.com/items?itemName=njpwerner.autodocstring>`_
