@@ -86,9 +86,9 @@ together on the project.
 
 Some great resources for learning Git:
 
-* the `GitHub help pages`_.
-* the `NumPy's documentation`_.
-* Matthew Brett's `Pydagogue`_.
+* the `GitHub help pages`_
+* the `NumPy's documentation`_
+* Matthew Brett's `Pydagogue`_
 
 Getting started with Git
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -131,10 +131,10 @@ Before starting any development, you'll need to create an isolated xCDAT
 development environment:
 
 - We recommend installing `Miniforge`_ to use ``mamba``. If you prefer, you can install
-  `Anaconda`_ or `Miniconda`_ to use ``conda`` instead.
+  `Anaconda`_ or `Miniconda`_ to use ``conda`` instead
 - Make sure your conda is up to date (``conda update conda``)
 - Make sure that you have forked and cloned the `repository`_. If you are in the xCDAT
-  organization, forking is not needed since you will have direct read access to the repo.
+  organization, forking is not needed since you will have direct read access to the repo
 - ``cd`` to the ``xcdat`` source directory
 
 Now we are going through a two-step process:
@@ -221,15 +221,17 @@ Pull request (PR)
 When you open a `pull request`_ on GitHub, there a template with a checklist available to use.
 
 Here's a simple checklist for PRs:
+
 - **Properly comment and document your code.** API docstrings are formatted using the
-`NumPy style guide`_
+  `NumPy style guide`_
 - **Test that the documentation builds correctly** by typing ``make docs`` in the root of the ``xcdat`` directory. This is not strictly necessary, but this may be easier than waiting for CI to catch a mistake.
 - **Test your code**.
 
   - Write new tests if needed.
   - Test the code using `Pytest`_. Running all tests (type ``make test`` or ``pytest`` in the root directory) takes a while, so feel free to only run the tests you think are needed based on your PR (example: ``pytest xarray/tests/test_dataarray.py``). CI will catch any failing tests.
 
-- **Properly format your code** and verify that it passes the formatting guidelines set by `Black`_ and `Flake8`_. You can use `pre-commit`_ to run these automatically on each commit.
+- **Properly format your code** and verify that it passes the formatting guidelines set by `Black`_ and `Flake8`_.
+  You can use `pre-commit`_ to run these automatically on each commit.
 
   - Run ``pre-commit run --all-files`` in the root directory. This may modify some files. Confirm and commit any formatting changes.
 
