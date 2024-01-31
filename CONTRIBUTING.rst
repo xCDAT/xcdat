@@ -184,7 +184,7 @@ See the full `conda docs here`_.
 .. _repository: https://github.com/xCDAT/xcdat
 .. _conda docs here: http://conda.pydata.org/docs
 
-.. _installing pre-commit hooks:
+.. _install pre-commit hooks:
 
 Install pre-commit hooks
 ~~~~~~~~~~~~~~~~~~~~~~~~
@@ -251,7 +251,7 @@ xCDAT uses several tools to ensure a consistent code format throughout the proje
 - `mypy`_ for static type checking on `type hints`_
 
 We highly recommend that you setup `pre-commit hooks`_ to automatically run all the
-above tools every time you make a git commit. Check out the :ref:`installing pre-commit
+above tools every time you make a git commit. Check out the :ref:`install pre-commit
 hooks` section above for instructions.
 
 .. _pull request: https://github.com/xCDAT/xcdat/compare
