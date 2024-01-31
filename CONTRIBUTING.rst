@@ -36,7 +36,7 @@ return here to get your development environment setup.
 
 **New contributions must be made under the Apache-2.0 with LLVM exception license.**
 
-Documentation Updates
+Documentation updates
 ~~~~~~~~~~~~~~~~~~~~~
 
 Contributing to the `documentation`_ is an excellent way to help xCDAT. Anything from
@@ -102,8 +102,6 @@ you can work seamlessly between your local repository and GitHub.
     The following instructions assume you want to learn how to interact with github via the git command-line utility,
     but contributors who are new to git may find it easier to use other tools instead such as
     `GitHub Desktop`_.
-
-.. Links
 
 .. _GitHub has instructions for setting up Git: https://help.github.com/set-up-git-redirect
 .. _templates: https://github.com/xCDAT/xcdat/issues/new/choose
@@ -217,7 +215,7 @@ Contributing to the code base
 .. contents::
    :local:
 
-Pull Request (PR)
+Pull request (PR)
 ~~~~~~~~~~~~~~~~~
 
 When you open a `pull request`_ on GitHub, there a template with a checklist available to use.
@@ -240,7 +238,7 @@ Here's a simple checklist for PRs:
 
 .. _code-formatting:
 
-Code Formatting
+Code formatting
 ~~~~~~~~~~~~~~~
 
 xCDAT uses several tools to ensure a consistent code format throughout the project:
@@ -267,7 +265,7 @@ hooks` section above for instructions.
 .. _mypy: http://mypy-lang.org/
 .. _type hints: https://docs.python.org/3/library/typing.html
 
-Testing With Continuous Integration
+Testing with continuous integration
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The xCDAT `build workflow`_ runs the test suite automatically via the `GitHub Actions`_,
@@ -307,10 +305,10 @@ the expected correct result::
         assert_identical(expected, actual)
 
 
-Developer Tips
+Developer tips
 --------------
 
-Helpful Commands
+Helpful commands
 ~~~~~~~~~~~~~~~~
 
 .. note::
