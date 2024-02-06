@@ -148,6 +148,9 @@ class BoundsAccessor:
         5. For the "T" axis, its coordinates must be composed of datetime-like
            objects (``np.datetime64`` or ``cftime``).
 
+           * This method general assumes data with time frequencies of annual,
+             monthly, daily, or sub-daily.
+
         Parameters
         ----------
         axes : List[str]
@@ -326,9 +329,13 @@ class BoundsAccessor:
     ) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
 
-        This method loops over the time axis coordinate variables and attempts
-        to add bounds for each of them if they don't exist. To add time bounds
-        for the time axis, its coordinates must be the following criteria:
+        This method general assumes data with time frequencies of annual,
+        monthly, daily, or sub-daily. It loops over the time axis coordinate
+        variables and attempts to add bounds for each of them if they don't
+        exist.
+
+        To add time bounds for the time axis, its coordinates must be the
+        following criteria:
 
         1. Coordinates are single dimensional, not multidimensional
         2. Coordinates are a length > 1 (not singleton)

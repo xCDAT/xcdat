@@ -187,6 +187,9 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+
+            If one time point spans across the time intervals that you are
+            averaging into, then weights are not properly assigned.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -224,6 +227,7 @@ class TemporalAccessor:
     ):
         """Returns a Dataset with average of a data variable by time group.
 
+        Data is grouped into the labeled time point for the averaging operation.
         Time bounds are used for generating weights to calculate weighted group
         averages (refer to the ``weighted`` parameter documentation below).
 
@@ -251,6 +255,9 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             calculated. This is the same as giving them a weight of 0.
+
+            If one time point spans across the time intervals that you are
+            averaging into, then weights are not properly assigned.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -370,6 +377,7 @@ class TemporalAccessor:
     ):
         """Returns a Dataset with the climatology of a data variable.
 
+        Data is grouped into the labeled time point for the averaging operation.
         Time bounds are used for generating weights to calculate weighted
         climatology (refer to the ``weighted`` parameter documentation below).
 
@@ -400,6 +408,9 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+
+            If one time point spans across the time intervals that you are
+            averaging into, then weights are not properly assigned.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -568,6 +579,9 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+
+            If one time point spans across the time intervals that you are
+            averaging into, then weights are not properly assigned.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
