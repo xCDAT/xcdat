@@ -188,8 +188,8 @@ class TemporalAccessor:
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
 
-            If one time point spans across the time intervals that you are
-            averaging into, then weights are not properly assigned.
+            Warning: If one time point spans across the time intervals that 
+            you are averaging into, then weights are not properly assigned.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -256,8 +256,8 @@ class TemporalAccessor:
             The weight of masked (missing) data is excluded when averages are
             calculated. This is the same as giving them a weight of 0.
 
-            If one time point spans across the time intervals that you are
-            averaging into, then weights are not properly assigned.
+            Warning: If one time point spans across the time intervals that 
+            you are averaging into, then weights are not properly assigned.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -409,8 +409,8 @@ class TemporalAccessor:
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
 
-            If one time point spans across the time intervals that you are
-            averaging into, then weights are not properly assigned.
+            Warning: If one time point spans across the time intervals that 
+            you are averaging into, then weights are not properly assigned.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -580,8 +580,8 @@ class TemporalAccessor:
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
 
-            If one time point spans across the time intervals that you are
-            averaging into, then weights are not properly assigned.
+            Warning: If one time point spans across the time intervals that 
+            you are averaging into, then weights are not properly assigned.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
