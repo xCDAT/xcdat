@@ -2,6 +2,7 @@
 Axis module for utilities related to axes, including functions to manipulate
 coordinates.
 """
+
 from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import numpy as np
@@ -44,7 +45,17 @@ VAR_NAME_MAP: Dict[CFAxisKey, List[str]] = {
     "X": ["longitude", "lon"],
     "Y": ["latitude", "lat"],
     "T": ["time"],
-    "Z": ["vertical", "height", "pressure", "lev", "plev"],
+    "Z": [
+        "vertical",
+        "height",
+        "pressure",
+        "lev",
+        "plev",
+        "depth",
+        "deptht",
+        "olevel",
+        "rho",
+    ],
 }
 
 
