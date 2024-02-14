@@ -197,7 +197,8 @@ class SpatialAccessor:
         ------
         Weights are generally computed as the difference between the bounds. If
         sub-selecting a region, the units must match the axis units (e.g.,
-        Pa/hPa or m/km).
+        Pa/hPa or m/km). The sub-selected region must be in numerical order
+        (e.g., (100, 1000) and not (1000, 100)).
         """
         ds = self._dataset.copy()
         dv = _get_data_var(ds, data_var)
