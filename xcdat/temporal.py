@@ -192,7 +192,6 @@ class TemporalAccessor:
             (e.g., a timepoint on 2020-06-01 with bounds that begin in May 2020
             and end in June 2020), the weights will not be assigned properly.
             See explanation in the Notes section below.
-
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -277,7 +276,6 @@ class TemporalAccessor:
             (e.g., a timepoint on 2020-06-01 with bounds that begin in May 2020
             and end in June 2020), the weights will not be assigned properly.
             See explanation in the Notes section below.
-
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
