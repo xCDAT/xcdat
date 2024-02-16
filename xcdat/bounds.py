@@ -146,10 +146,10 @@ class BoundsAccessor:
              ``"time_bnds"`` and ``ds.time_bnds`` is present in the dataset.
 
         5. For the "T" axis, its coordinates must be composed of datetime-like
-           objects (``np.datetime64`` or ``cftime``).
-
-           * This method general assumes data with time frequencies of annual,
-             monthly, daily, or sub-daily.
+           objects (``np.datetime64`` or ``cftime``). This method designed to
+           operate on time axes that have constant temporal resolution with
+           annual, monthly, daily, or sub-daily time frequencies. Alternate
+           frequencies (e.g., pentad) are not supported.
 
         Parameters
         ----------
