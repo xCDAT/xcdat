@@ -329,10 +329,11 @@ class BoundsAccessor:
     ) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
 
-        This method general assumes data with time frequencies of annual,
-        monthly, daily, or sub-daily. It loops over the time axis coordinate
-        variables and attempts to add bounds for each of them if they don't
-        exist.
+        This method designed to operate on time axes that have constant temporal
+        resolution with annual, monthly, daily, or sub-daily time frequencies.
+        Alternate frequencies (e.g., pentad) are not supported. It loops over
+        the time axis coordinate variables and attempts to add bounds for each
+        of them if they don't exist.
 
         To add time bounds for the time axis, its coordinates must be the
         following criteria:
