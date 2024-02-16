@@ -80,7 +80,6 @@ def open_dataset(
           of the coordinates. If desired, refer to
           :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
           granular configuration for how "T" bounds are generated.
-
     decode_times: bool, optional
         If True, attempt to decode times encoded in the standard NetCDF
         datetime format into cftime.datetime objects. Otherwise, leave them
@@ -95,11 +94,10 @@ def open_dataset(
         Either `(-180, 180)` or `(0, 360)`, by default None. Supported options
         include:
 
-          * None:  use the current orientation (if the longitude axis exists)
-          * (-180, 180): represents [-180, 180) in math notation
-          * (0, 360): represents [0, 360) in math notation
-
-    kwargs : Dict[str, Any]
+        * None:  use the current orientation (if the longitude axis exists)
+        * (-180, 180): represents [-180, 180) in math notation
+        * (0, 360): represents [0, 360) in math notation
+    **kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_dataset``. Refer to the
         [1]_ xarray docs for accepted keyword arguments.
 
@@ -155,25 +153,24 @@ def open_mfdataset(
         Paths to dataset files. Paths can be given as strings or as pathlib.Path
         objects. Supported options include:
 
-          * Directory path (e.g., ``"path/to/files"``), which is converted
-            to a string glob of `*.nc` files
-          * String glob (e.g., ``"path/to/files/*.nc"``), which is expanded
-            to a 1-dimensional list of file paths
-          * File path to dataset (e.g., ``"path/to/files/file1.nc"``)
-          * List of file paths (e.g., ``["path/to/files/file1.nc", ...]``).
-            If concatenation along more than one dimension is desired, then
-            ``paths`` must be a nested list-of-lists (see [2]_
-            ``xarray.combine_nested`` for details).
-          * File path to an XML file with a ``directory`` attribute (e.g.,
-            ``"path/to/files"``). If ``directory`` is set to a blank string
-            (""), then the current directory is substituted ("."). This option
-            is intended to support the CDAT CDML dialect of XML files, but it
-            can work with any XML file that has the ``directory`` attribute.
-            Refer to [4]_ for more information on CDML. NOTE: This feature is
-            deprecated in v0.6.0 and will be removed in the subsequent release.
-            CDAT (including cdms2/CDML) is in maintenance only mode and marked
-            for end-of-life by the end of 2023.
-
+        * Directory path (e.g., ``"path/to/files"``), which is converted
+          to a string glob of `*.nc` files
+        * String glob (e.g., ``"path/to/files/*.nc"``), which is expanded
+          to a 1-dimensional list of file paths
+        * File path to dataset (e.g., ``"path/to/files/file1.nc"``)
+        * List of file paths (e.g., ``["path/to/files/file1.nc", ...]``).
+          If concatenation along more than one dimension is desired, then
+          ``paths`` must be a nested list-of-lists (see [2]_
+          ``xarray.combine_nested`` for details).
+        * File path to an XML file with a ``directory`` attribute (e.g.,
+          ``"path/to/files"``). If ``directory`` is set to a blank string
+          (""), then the current directory is substituted ("."). This option
+          is intended to support the CDAT CDML dialect of XML files, but it
+          can work with any XML file that has the ``directory`` attribute.
+          Refer to [4]_ for more information on CDML. NOTE: This feature is
+          deprecated in v0.6.0 and will be removed in the subsequent release.
+          CDAT (including cdms2/CDML) is in maintenance only mode and marked
+          for end-of-life by the end of 2023.
     add_bounds: List[CFAxisKey] | None | bool
         List of CF axes to try to add bounds for (if missing), by default
         ["X", "Y"]. Set to None to not add any missing bounds. Please note that
@@ -185,7 +182,6 @@ def open_mfdataset(
           of the coordinates. If desired, refer to
           :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
           granular configuration for how "T" bounds are generated.
-
     data_var: Optional[str], optional
         The key of the data variable to keep in the Dataset, by default None.
     decode_times: bool, optional
@@ -201,10 +197,9 @@ def open_mfdataset(
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None. Supported options include:
 
-          * None:  use the current orientation (if the longitude axis exists)
-          * (-180, 180): represents [-180, 180) in math notation
-          * (0, 360): represents [0, 360) in math notation
-
+        * None:  use the current orientation (if the longitude axis exists)
+        * (-180, 180): represents [-180, 180) in math notation
+        * (0, 360): represents [0, 360) in math notation
     data_vars: {"minimal", "different", "all" or list of str}, optional
         These data variables will be concatenated together:
           * "minimal": Only data variables in which the dimension already
@@ -222,15 +217,14 @@ def open_mfdataset(
         data variables in a manner where only data variables in which the
         dimension already appears are included. For example, the time dimension
         will not be concatenated to the dimensions of non-time data variables
-        such as "lat_bnds" or "lon_bnds". `data_vars="minimal"` is required for
+        such as "lat_bnds" or "lon_bnds". ``data_vars="minimal"`` is required for
         some xCDAT functions, including spatial averaging where a reduction is
         performed using the lat/lon bounds.
-
     preprocess : Optional[Callable], optional
         If provided, call this function on each dataset prior to concatenation.
         You can find the file-name from which each dataset was loaded in
         ``ds.encoding["source"]``.
-    kwargs : Dict[str, Any]
+    **kwargs : Dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
         the [3]_ xarray docs for accepted keyword arguments.
 
@@ -587,7 +581,6 @@ def _postprocess_dataset(
         * If desired, use :py:func:`xarray.Dataset.bounds.add_time_bounds`
           if you require more granular configuration for how "T" bounds
           are generated
-
     lon_orient: Optional[Tuple[float, float]], optional
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None.
