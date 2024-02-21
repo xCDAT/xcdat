@@ -241,13 +241,11 @@ def swap_lon_axis(
     dataset : xr.Dataset
          The Dataset containing a longitude axis.
     to : Tuple[float, float]
-        The orientation to swap the Dataset's longitude axis to.
+        The orientation to swap the Dataset's longitude axis to. Supported
+        orientations include:
 
-        Supported orientations:
-
-          * (-180, 180): represents [-180, 180) in math notation
-          * (0, 360): represents [0, 360) in math notation
-
+        * (-180, 180): represents [-180, 180) in math notation
+        * (0, 360): represents [0, 360) in math notation
     sort_ascending : bool
         After swapping, sort in ascending order (True), or keep existing order
         (False).

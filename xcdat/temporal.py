@@ -175,7 +175,6 @@ class TemporalAccessor:
         ----------
         data_var: str
             The key of the data variable for calculating averages
-
         weighted : bool, optional
             Calculate averages using weights, by default True.
 
@@ -187,6 +186,12 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+
+            Note that weights are assigned by the labeled time point. If the
+            dataset includes timepoints that span across typical boundaries
+            (e.g., a timepoint on 2020-06-01 with bounds that begin in May 2020
+            and end in June 2020), the weights will not be assigned properly.
+            See explanation in the Notes section below.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -196,6 +201,20 @@ class TemporalAccessor:
         xr.Dataset
             Dataset with the average of the data variable and the time dimension
             removed.
+
+        Notes
+        -----
+        When using weighted averages, the weights are assigned based on the
+        timepoint value. For example, a time point of 2020-06-15 with bounds
+        (2020-06-01, 2020-06-30) has 30 days of weight assigned to June, 2020
+        (e.g., for an annual average calculation). This would be expected
+        behavior, but it's possible that data could span across typical temporal
+        boundaries. For example, a time point of 2020-06-01 with bounds
+        (2020-05-16, 2020-06-15) would have 30 days of weight, but this weight
+        would be assigned to June, 2020, which would be incorrect (15 days of
+        weight should be assigned to May and 15 days of weight should be
+        assigned to June). This issue could plausibly arise when using pentad
+        data.
 
         Examples
         --------
@@ -224,6 +243,7 @@ class TemporalAccessor:
     ):
         """Returns a Dataset with average of a data variable by time group.
 
+        Data is grouped into the labeled time point for the averaging operation.
         Time bounds are used for generating weights to calculate weighted group
         averages (refer to the ``weighted`` parameter documentation below).
 
@@ -239,7 +259,6 @@ class TemporalAccessor:
             * "month": groups by (year, month) for monthly averages.
             * "day": groups by (year, month, day) for daily averages.
             * "hour": groups by (year, month, day, hour) for hourly averages.
-
         weighted : bool, optional
             Calculate averages using weights, by default True.
 
@@ -251,6 +270,12 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             calculated. This is the same as giving them a weight of 0.
+
+            Note that weights are assigned by the labeled time point. If the
+            dataset includes timepoints that span across typical boundaries
+            (e.g., a timepoint on 2020-06-01 with bounds that begin in May 2020
+            and end in June 2020), the weights will not be assigned properly.
+            See explanation in the Notes section below.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -298,6 +323,20 @@ class TemporalAccessor:
         -------
         xr.Dataset
             Dataset with the average of a data variable by time group.
+
+        Notes
+        -----
+        When using weighted averages, the weights are assigned based on the
+        timepoint value. For example, a time point of 2020-06-15 with bounds
+        (2020-06-01, 2020-06-30) has 30 days of weight assigned to June, 2020
+        (e.g., for an annual average calculation). This would be expected
+        behavior, but it's possible that data could span across typical temporal
+        boundaries. For example, a time point of 2020-06-01 with bounds
+        (2020-05-16, 2020-06-15) would have 30 days of weight, but this weight
+        would be assigned to June, 2020, which would be incorrect (15 days of
+        weight should be assigned to May and 15 days of weight should be
+        assigned to June). This issue could plausibly arise when using pentad
+        data.
 
         Examples
         --------
@@ -370,6 +409,7 @@ class TemporalAccessor:
     ):
         """Returns a Dataset with the climatology of a data variable.
 
+        Data is grouped into the labeled time point for the averaging operation.
         Time bounds are used for generating weights to calculate weighted
         climatology (refer to the ``weighted`` parameter documentation below).
 
@@ -388,7 +428,6 @@ class TemporalAccessor:
               present) are dropped to avoid inconsistencies when calculating
               climatologies. Refer to [1]_ for more details on this
               implementation decision.
-
         weighted : bool, optional
             Calculate averages using weights, by default True.
 
@@ -400,6 +439,12 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+
+            Note that weights are assigned by the labeled time point. If the
+            dataset includes timepoints that span across typical boundaries
+            (e.g., a timepoint on 2020-06-01 with bounds that begin in May 2020
+            and end in June 2020), the weights will not be assigned properly.
+            See explanation in the Notes section below.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -457,6 +502,20 @@ class TemporalAccessor:
         References
         ----------
         .. [1] https://github.com/xCDAT/xcdat/discussions/332
+
+        Notes
+        -----
+        When using weighted averages, the weights are assigned based on the
+        timepoint value. For example, a time point of 2020-06-15 with bounds
+        (2020-06-01, 2020-06-30) has 30 days of weight assigned to June, 2020
+        (e.g., for an annual average calculation). This would be expected
+        behavior, but it's possible that data could span across typical temporal
+        boundaries. For example, a time point of 2020-06-01 with bounds
+        (2020-05-16, 2020-06-15) would have 30 days of weight, but this weight
+        would be assigned to June, 2020, which would be incorrect (15 days of
+        weight should be assigned to May and 15 days of weight should be
+        assigned to June). This issue could plausibly arise when using pentad
+        data.
 
         Examples
         --------
@@ -544,7 +603,6 @@ class TemporalAccessor:
         ----------
         data_var: str
             The key of the data variable for calculating departures.
-
         freq : Frequency
             The frequency of time to group by.
 
@@ -556,7 +614,6 @@ class TemporalAccessor:
               present) are dropped to avoid inconsistencies when calculating
               climatologies. Refer to [2]_ for more details on this
               implementation decision.
-
         weighted : bool, optional
             Calculate averages using weights, by default True.
 
@@ -568,6 +625,12 @@ class TemporalAccessor:
 
             The weight of masked (missing) data is excluded when averages are
             taken. This is the same as giving them a weight of 0.
+
+            Note that weights are assigned by the labeled time point. If the
+            dataset includes timepoints that span across typical boundaries
+            (e.g., a timepoint on 2020-06-01 with bounds that begin in May 2020
+            and end in June 2020), the weights will not be assigned properly.
+            See explanation in the Notes section below.
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
@@ -625,6 +688,18 @@ class TemporalAccessor:
 
         Notes
         -----
+        When using weighted averages, the weights are assigned based on the
+        timepoint value. For example, a time point of 2020-06-15 with bounds
+        (2020-06-01, 2020-06-30) has 30 days of weight assigned to June, 2020
+        (e.g., for an annual average calculation). This would be expected
+        behavior, but it's possible that data could span across typical temporal
+        boundaries. For example, a time point of 2020-06-01 with bounds
+        (2020-05-16, 2020-06-15) would have 30 days of weight, but this weight
+        would be assigned to June, 2020, which would be incorrect (15 days of
+        weight should be assigned to May and 15 days of weight should be
+        assigned to June). This issue could plausibly arise when using pentad
+        data.
+
         This method uses xarray's grouped arithmetic as a shortcut for mapping
         over all unique labels. Grouped arithmetic works by assigning a grouping
         label to each time coordinate of the observation data based on the

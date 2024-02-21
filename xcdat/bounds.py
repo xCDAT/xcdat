@@ -146,7 +146,10 @@ class BoundsAccessor:
              ``"time_bnds"`` and ``ds.time_bnds`` is present in the dataset.
 
         5. For the "T" axis, its coordinates must be composed of datetime-like
-           objects (``np.datetime64`` or ``cftime``).
+           objects (``np.datetime64`` or ``cftime``). This method designed to
+           operate on time axes that have constant temporal resolution with
+           annual, monthly, daily, or sub-daily time frequencies. Alternate
+           frequencies (e.g., pentad) are not supported.
 
         Parameters
         ----------
@@ -326,9 +329,14 @@ class BoundsAccessor:
     ) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
 
-        This method loops over the time axis coordinate variables and attempts
-        to add bounds for each of them if they don't exist. To add time bounds
-        for the time axis, its coordinates must be the following criteria:
+        This method designed to operate on time axes that have constant temporal
+        resolution with annual, monthly, daily, or sub-daily time frequencies.
+        Alternate frequencies (e.g., pentad) are not supported. It loops over
+        the time axis coordinate variables and attempts to add bounds for each
+        of them if they don't exist.
+
+        To add time bounds for the time axis, its coordinates must be the
+        following criteria:
 
         1. Coordinates are single dimensional, not multidimensional
         2. Coordinates are a length > 1 (not singleton)
