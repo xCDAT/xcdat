@@ -211,6 +211,15 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     """
     Map source to destination latitude.
 
+    Source cells are grouped by the contribution to each output cell.
+
+    Source cells have new boundaries calculated by finding minimum northern
+    and maximum southern boundary between each source cell and the destination
+    cell it contributes to.
+
+    The source cell weights are calculated by taking the difference of sin's
+    between these new boundary pairs.
+
     Parameters
     ----------
     src : np.ndarray
@@ -244,7 +253,7 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
         for x, y in enumerate(mapping)
     ]
 
-    # convert latitude to cell weight (difference of length from equator)
+    # convert latitude to cell weight (difference of height above/below equator)
     weights = [
         (np.sin(np.deg2rad(x)) - np.sin(np.deg2rad(y))).reshape((-1, 1))
         for x, y in bounds
@@ -256,6 +265,18 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
 def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     """
     Map source to destination longitude.
+
+    Source boundaries are aligned to the most western destination cell.
+
+    Source cells are grouped by the contribution to each output cell.
+
+    The source cell weights are calculated by find the difference of the
+    following min/max for each input cell. Minimum of eastern source bounds
+    and the eastern bounds of the destination cell it contributes to. Maximum
+    of western source bounds and the western bounds of the destination cell
+    it contributes to.
+
+    These weights are then shifted to align with the destination longitude.
 
     Parameters
     ----------
@@ -348,7 +369,7 @@ def _align_axis(
     dst_west: np.ndarray,
 ) -> Tuple[np.ndarray, np.ndarray, int]:
     """
-    Aligns a longitudinal source axis to the destination axis.
+    Aligns a source and destination longitude axis.
 
     Parameters
     ----------
