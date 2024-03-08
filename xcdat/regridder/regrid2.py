@@ -3,6 +3,7 @@ from typing import Any, List, Tuple
 import numpy as np
 import xarray as xr
 
+from xcdat.axis import get_dim_keys
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 
@@ -479,10 +480,7 @@ _vpertub = np.vectorize(_pertub)
 
 
 def _get_dimension(input_data_var, cf_axis_name):
-    name = input_data_var.cf.axes[cf_axis_name]
-
-    if isinstance(name, list):
-        name = name[0]
+    name = get_dim_keys(input_data_var, cf_axis_name)
 
     index = input_data_var.dims.index(name)
 
