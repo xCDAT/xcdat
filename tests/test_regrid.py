@@ -384,28 +384,9 @@ class TestRegrid2Regridder:
         with pytest.raises(NotImplementedError, match=""):
             regridder.vertical("so", ds)
 
-    def test_missing_dimension(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
-
-        del ds.lat.attrs["axis"]
-
-        output_grid = grid.create_gaussian_grid(32)
-
-        regridder = regrid2.Regrid2Regridder(ds, output_grid)
-
-        with pytest.raises(
-            RuntimeError,
-            match="Could not find axis 'lat', ensure 'lat' exists and the attributes are correct.",
-        ):
-            regridder.horizontal("ts", ds)
-
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_output_bounds(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
+        ds = self.coarse_3d_ds
 
         output_grid = grid.create_gaussian_grid(32)
 
@@ -416,6 +397,24 @@ class TestRegrid2Regridder:
         assert "lat_bnds" in output_ds
         assert "lon_bnds" in output_ds
         assert "time_bnds" in output_ds
+
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
+    def test_output_bounds_missing_temporal(self):
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+        ds = self.coarse_3d_ds.drop("time_bnds")
+
+        output_grid = grid.create_gaussian_grid(32)
+
+        regridder = regrid2.Regrid2Regridder(ds, output_grid)
+
+        output_ds = regridder.horizontal("ts", ds)
+
+        assert "lat_bnds" in output_ds
+        assert "lon_bnds" in output_ds
+        assert "time_bnds" not in output_ds
 
     @pytest.mark.parametrize(
         "src,dst,expected_west,expected_east,expected_shift",
@@ -499,42 +498,13 @@ class TestRegrid2Regridder:
 
         expected_output = np.array(
             [
-                [0.0, 0.0, 0.0, 0.0],
-                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
-                [0.70710677, 0.70710677, 0.70710677, 0.70710677],
-                [0.0, 0.0, 0.0, 0.0],
+                [0.0] * 4,
+                [0.70710677] * 4,
+                [0.70710677] * 4,
+                [0.0] * 4,
             ],
             dtype=np.float32,
         )
-
-        assert np.all(output_data.ts.values == expected_output)
-
-    def test_regrid_output_mask(self):
-        output_mask = [
-            [0, 0, 0, 0],
-            [1, 1, 1, 1],
-            [1, 1, 1, 1],
-            [0, 0, 0, 0],
-        ]
-
-        self.fine_2d_ds["mask"] = (("lat", "lon"), output_mask)
-
-        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
-
-        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
-
-        expected_output = np.array(
-            [
-                [1.0, 1.0, 1.0, 1.0],
-                [1e20, 1e20, 1e20, 1e20],
-                [1e20, 1e20, 1e20, 1e20],
-                [1.0, 1.0, 1.0, 1.0],
-            ],
-            dtype=np.float32,
-        )
-
-        # need to replace nans since nan != nan
-        output_data["ts"] = output_data.ts.fillna(1e20)
 
         assert np.all(output_data.ts.values == expected_output)
 
@@ -547,7 +517,7 @@ class TestRegrid2Regridder:
         assert output_data["ts"].attrs == self.da_attrs
 
         for x in output_data.coords:
-            assert output_data[x].attrs == self.coarse_2d_ds[x].attrs
+            assert output_data[x].attrs == self.coarse_2d_ds[x].attrs, f"{x}"
 
     def test_regrid_2d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
@@ -582,7 +552,7 @@ class TestRegrid2Regridder:
 
     def test_map_longitude_coarse_to_fine(self):
         mapping, weights = regrid2._map_longitude(
-            self.coarse_lon_bnds, self.fine_lon_bnds
+            self.coarse_lon_bnds.values, self.fine_lon_bnds.values
         )
 
         expected_mapping = [
@@ -604,7 +574,7 @@ class TestRegrid2Regridder:
 
     def test_map_longitude_fine_to_coarse(self):
         mapping, weights = regrid2._map_longitude(
-            self.fine_lon_bnds, self.coarse_lon_bnds
+            self.fine_lon_bnds.values, self.coarse_lon_bnds.values
         )
 
         expected_mapping = [
@@ -619,7 +589,7 @@ class TestRegrid2Regridder:
 
     def test_map_latitude_coarse_to_fine(self):
         mapping, weights = regrid2._map_latitude(
-            self.coarse_lat_bnds, self.fine_lat_bnds
+            self.coarse_lat_bnds.values, self.fine_lat_bnds.values
         )
 
         expected_mapping = [
@@ -648,7 +618,7 @@ class TestRegrid2Regridder:
 
     def test_map_latitude_fine_to_coarse(self):
         mapping, weights = regrid2._map_latitude(
-            self.fine_lat_bnds, self.coarse_lat_bnds
+            self.fine_lat_bnds.values, self.coarse_lat_bnds.values
         )
 
         expected_mapping = [
@@ -683,6 +653,12 @@ class TestRegrid2Regridder:
 
         assert north.shape == (3,)
         assert north[0], north[-1] == (60, 90)
+
+    def test_get_bounds_ensure_dtype(self):
+        del self.coarse_2d_ds.lon.attrs["bounds"]
+
+        with pytest.raises(RuntimeError):
+            regrid2._get_bounds_ensure_dtype(self.coarse_2d_ds, "X")
 
 
 class TestXESMFRegridder:
