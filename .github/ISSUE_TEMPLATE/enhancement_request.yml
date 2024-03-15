@@ -1,6 +1,6 @@
-name: Enhanacement Request
+name: Enhancement Request
 description: Suggest an enhancement for xCDAT
-title: "[Feature]: "
+title: "[Enhancement]: "
 labels: ["type: enhancement"]
 assignees: []
 body:
