@@ -247,7 +247,7 @@ Projects Using xCDAT
 xCDAT is actively being integrated as a core component of the `Program for Climate Model
 Diagnosis and Intercomparison (PCMDI) Metrics Package`_ and the `Energy Exascale Earth
 System Model Diagnostics (E3SM) Package`_. xCDAT is also included in the `E3SM Unified
-Anaconda Environment_` that is deployed on various U.S. Department of Energy
+Anaconda Environment`_ that is deployed on various U.S. Department of Energy
 supercomputers to run E3SM software tools.
 
 .. _Program for Climate Model Diagnosis and Intercomparison (PCMDI) Metrics Package: https://pcmdi.github.io/pcmdi_metrics/
