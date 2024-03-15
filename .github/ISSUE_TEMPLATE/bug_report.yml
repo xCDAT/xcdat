@@ -1,7 +1,7 @@
 name: Bug Report
 description: File a bug report to help us improve xCDAT
 title: "[Bug]: "
-labels: ["Type: Bug"]
+labels: ["type: bug"]
 assignees: []
 body:
     - type: textarea
