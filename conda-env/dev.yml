@@ -21,7 +21,7 @@ dependencies:
     # Optional - enables additional features.
     # =========================================
     - matplotlib-base >=3.7.0
-    - nc-time-axis=1.4.1
+    - nc-time-axis >=1.4.1
     # Documentation
     # ==================
     - sphinx
@@ -29,7 +29,6 @@ dependencies:
     - sphinx-book-theme
     - sphinx-copybutton
     - nbsphinx
-    - sphinx-design
     - pandoc
     - ipython # Required for nbsphinx syntax highlighting
     - gsw-xarray # Required for vertical regridding example
