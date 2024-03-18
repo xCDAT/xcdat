@@ -18,11 +18,16 @@
 # absolute, like shown here.
 #
 import os
+import pathlib
 import sys
 from pathlib import Path
 from typing import Dict
+from textwrap import dedent, indent
 
 import sphinx_autosummary_accessors
+import yaml
+from sphinx.application import Sphinx
+from sphinx.util import logging
 
 # A workaround that sets the "ESMFMKFILE" env variable for the Read The Docs
 # build to work. Read The Docs does not activate the conda environment which
@@ -33,6 +38,8 @@ if os.environ.get("READTHEDOCS") and "ESMFMKFILE" not in os.environ:
 
 sys.path.insert(0, os.path.abspath(".."))  # noqa: I001, I003
 import xcdat  # noqa: I001, E402
+
+LOGGER = logging.getLogger("conf")
 
 # -- General configuration ---------------------------------------------
 
@@ -50,6 +57,7 @@ extensions = [
     "sphinx_autosummary_accessors",
     "sphinx_copybutton",
     "nbsphinx",
+    "sphinx_design"
 ]
 
 # autosummary and autodoc configurations
@@ -160,7 +168,7 @@ html_theme_options = {
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
-
+html_css_files = ["style.css"]
 
 # -- Options for HTMLHelp output ---------------------------------------
 
@@ -223,6 +231,74 @@ def html_page_context(app, pagename, templatename, context, doctree):
     if "generated" in pagename:
         context["theme_use_edit_page_button"] = False
 
+def update_team(app: Sphinx):
+    """Update the team members list."""
 
-def setup(app):
+    LOGGER.info("Updating team members page...")
+
+    team = yaml.safe_load(pathlib.Path(app.srcdir, "team.yml").read_bytes())
+    items = []
+    for member in team:
+        item = f"""
+        .. grid-item-card::
+            :text-align: center
+            :link: https://github.com/{member['gh_login']}
+
+            .. image:: {member['avatar']}
+                :alt: {member['name']}
+            +++
+            {member['name']}
+        """
+        items.append(item)
+
+    items_md = indent(dedent("\n".join(items)), prefix="    ")
+
+    markdown = f"""
+.. grid:: 1 2 3 3
+    :gutter: 2
+
+    {items_md}
+    """
+
+    pathlib.Path(app.srcdir, "team-panel.txt").write_text(markdown)
+    LOGGER.info("Team members page updated.")
+
+
+def update_gallery(app: Sphinx):
+    """Update the gallery of examples notebooks."""
+
+    LOGGER.info("Updating gallery page...")
+
+    notebooks = yaml.safe_load(pathlib.Path(app.srcdir, "gallery.yml").read_bytes())
+
+    items = [
+        f"""
+         .. grid-item-card::
+            :text-align: center
+            :link: {item['path']}
+
+            .. image:: {item['thumbnail']}
+                :alt: {item['title']}
+            +++
+            {item['title']}
+            """
+        for item in notebooks
+    ]
+
+    items_md = indent(dedent("\n".join(items)), prefix="    ")
+    markdown = f"""
+.. grid:: 1 2 3 3
+    :gutter: 2
+
+    {items_md}
+    """
+
+    pathlib.Path(app.srcdir, "notebook-examples.txt").write_text(markdown)
+
+    LOGGER.info("Gallery page updated.")
+
+
+def setup(app: Sphinx):
     app.connect("html-page-context", html_page_context)
+    app.connect("builder-inited", update_team)
+    app.connect("builder-inited", update_gallery)
