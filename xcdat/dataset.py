@@ -154,15 +154,6 @@ def open_mfdataset(
           If concatenation along more than one dimension is desired, then
           ``paths`` must be a nested list-of-lists (see [2]_
           ``xarray.combine_nested`` for details).
-        * File path to an XML file with a ``directory`` attribute (e.g.,
-          ``"path/to/files"``). If ``directory`` is set to a blank string
-          (""), then the current directory is substituted ("."). This option
-          is intended to support the CDAT CDML dialect of XML files, but it
-          can work with any XML file that has the ``directory`` attribute.
-          Refer to [4]_ for more information on CDML. NOTE: This feature is
-          deprecated in v0.6.0 and will be removed in the subsequent release.
-          CDAT (including cdms2/CDML) is in maintenance only mode and marked
-          for end-of-life by the end of 2023.
     add_bounds: List[CFAxisKey] | None | bool
         List of CF axes to try to add bounds for (if missing), by default
         ["X", "Y"]. Set to None to not add any missing bounds. Please note that
@@ -480,10 +471,6 @@ def _postprocess_dataset(
     lon_orient: Optional[Tuple[float, float]] = None,
 ) -> xr.Dataset:
     """Post-processes a Dataset object.
-
-    .. deprecated:: v0.6.0
-        ``add_bounds`` boolean arguments (True/False) are being deprecated.
-        Please use either a list (e.g., ["X", "Y"]) to specify axes or ``None``.
 
     Parameters
     ----------
