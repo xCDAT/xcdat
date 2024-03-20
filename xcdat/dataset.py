@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import os
 import pathlib
-import warnings
 from datetime import datetime
 from functools import partial
 from io import BufferedIOBase
@@ -13,7 +12,6 @@ import numpy as np
 import xarray as xr
 from dateutil import parser
 from dateutil import relativedelta as rd
-from lxml import etree
 from xarray.backends.common import AbstractDataStore
 from xarray.coding.cftime_offsets import get_date_type
 from xarray.coding.times import convert_times, decode_cf_datetime
