@@ -1,8 +1,7 @@
 xCDAT Documentation
 ====================
 
-xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
-serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) library.
+xCDAT (Xarray Climate Data Analysis Tools) is an extension of `xarray`_ for climate data analysis on structured grids. It serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) library.
 
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
