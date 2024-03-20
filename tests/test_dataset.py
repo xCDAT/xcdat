@@ -5,7 +5,6 @@ import cftime
 import numpy as np
 import pytest
 import xarray as xr
-from lxml import etree
 
 from tests.fixtures import generate_dataset
 from xcdat._logger import _setup_custom_logger

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from typing import Any, List, Literal, Tuple
 
 import xarray as xr
