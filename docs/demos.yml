@@ -1,0 +1,11 @@
+- title: AMS 2023 Abstract
+  path: https://ams.confex.com/ams/103ANNUAL/meetingapp.cgi/Paper/412648
+  thumbnail: _static/thumbnails/ams-logo.jpg
+
+- title: LLNL Climate and Weather Seminar Series (01/25/2023) - A Gentle Introduction to xCDAT
+  path: demos/1-25-23-cwss-seminar/introduction-to-xcdat.ipynb
+  thumbnail: _static/thumbnails/llnl-logo.png
+
+- title: ESGF2 - A Gentle Introduction to xCDAT (video introduction)
+  path: https://youtu.be/sJpQ9vKDKa8?feature=shared
+  thumbnail: _static/thumbnails/esgf2-logo.png

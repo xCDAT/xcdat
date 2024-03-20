@@ -57,7 +57,7 @@ extensions = [
     "sphinx_autosummary_accessors",
     "sphinx_copybutton",
     "nbsphinx",
-    "sphinx_design"
+    "sphinx_design",
 ]
 
 # autosummary and autodoc configurations
@@ -231,6 +231,7 @@ def html_page_context(app, pagename, templatename, context, doctree):
     if "generated" in pagename:
         context["theme_use_edit_page_button"] = False
 
+
 def update_team(app: Sphinx):
     """Update the team members list."""
 
@@ -298,7 +299,42 @@ def update_gallery(app: Sphinx):
     LOGGER.info("Gallery page updated.")
 
 
+def update_demos(app: Sphinx):
+    """Update the demos page."""
+
+    LOGGER.info("Updating demos page...")
+
+    links = yaml.safe_load(pathlib.Path(app.srcdir, "demos.yml").read_bytes())
+
+    items = [
+        f"""
+         .. grid-item-card::
+            :text-align: center
+            :link: {item['path']}
+
+            .. image:: {item['thumbnail']}
+                :alt: {item['title']}
+            +++
+            {item['title']}
+            """
+        for item in links
+    ]
+
+    items_md = indent(dedent("\n".join(items)), prefix="    ")
+    markdown = f"""
+.. grid:: 1 2 3 3
+    :gutter: 2
+
+    {items_md}
+    """
+
+    pathlib.Path(app.srcdir, "demos.txt").write_text(markdown)
+
+    LOGGER.info("Demos page updated.")
+
+
 def setup(app: Sphinx):
     app.connect("html-page-context", html_page_context)
     app.connect("builder-inited", update_team)
     app.connect("builder-inited", update_gallery)
+    app.connect("builder-inited", update_demos)

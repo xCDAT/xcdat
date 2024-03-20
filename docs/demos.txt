@@ -1,0 +1,35 @@
+
+.. grid:: 1 2 3 3
+    :gutter: 2
+
+    
+    .. grid-item-card::
+       :text-align: center
+       :link: https://ams.confex.com/ams/103ANNUAL/meetingapp.cgi/Paper/412648
+
+       .. image:: _static/thumbnails/ams-logo.jpg
+           :alt: AMS 2023 Abstract
+       +++
+       AMS 2023 Abstract
+
+
+    .. grid-item-card::
+       :text-align: center
+       :link: demos/1-25-23-cwss-seminar/introduction-to-xcdat.ipynb
+
+       .. image:: _static/thumbnails/llnl-logo.png
+           :alt: LLNL Climate and Weather Seminar Series (01/25/2023) - A Gentle Introduction to xCDAT
+       +++
+       LLNL Climate and Weather Seminar Series (01/25/2023) - A Gentle Introduction to xCDAT
+
+
+    .. grid-item-card::
+       :text-align: center
+       :link: https://youtu.be/sJpQ9vKDKa8?feature=shared
+
+       .. image:: _static/thumbnails/esgf2-logo.png
+           :alt: ESGF2 - A Gentle Introduction to xCDAT (video introduction)
+       +++
+       ESGF2 - A Gentle Introduction to xCDAT (video introduction)
+
+    
