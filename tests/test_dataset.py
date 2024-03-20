@@ -76,9 +76,6 @@ class TestOpenDataset:
         ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path)
 
-        result = open_dataset(self.file_path, add_bounds=False)
-        assert result.identical(ds)
-
         result = open_dataset(self.file_path, add_bounds=None)
         assert result.identical(ds)
 
@@ -366,9 +363,6 @@ class TestOpenMfDataset:
     def test_skips_adding_bounds(self):
         ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=False)
         ds.to_netcdf(self.file_path1)
-
-        result = open_mfdataset(self.file_path1, add_bounds=False)
-        assert result.identical(ds)
 
         result = open_mfdataset(self.file_path1, add_bounds=None)
         assert result.identical(ds)

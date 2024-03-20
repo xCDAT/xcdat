@@ -37,7 +37,8 @@ class TestXGCMRegridder:
     def setup(self):
         self.ds = fixtures.generate_lev_dataset()
 
-        self.output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+        z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
+        self.output_grid = grid.create_grid(z=z)
 
     def test_multiple_z_axes(self):
         self.ds = self.ds.assign_coords({"ilev": self.ds.lev.copy().rename("ilev")})
@@ -919,8 +920,8 @@ class TestGrid:
 
     def test_global_mean_grid(self):
         source_grid = grid.create_grid(
-            lat=np.array([-80, -40, 0, 40, 80]),
-            lon=np.array([0, 45, 90, 180, 270, 360]),
+            x=np.array([0, 45, 90, 180, 270, 360]),
+            y=np.array([-80, -40, 0, 40, 80]),
         )
 
         mean_grid = grid.create_global_mean_grid(source_grid)
@@ -1001,7 +1002,8 @@ class TestGrid:
 
     def test_zonal_grid(self):
         source_grid = grid.create_grid(
-            lat=np.array([-80, -40, 0, 40, 80]), lon=np.array([-160, -80, 80, 160])
+            x=np.array([-160, -80, 80, 160]),
+            y=np.array([-80, -40, 0, 40, 80]),
         )
 
         zonal_grid = grid.create_zonal_grid(source_grid)
@@ -1126,7 +1128,9 @@ class TestAccessor:
         assert output_data.ts.shape == (15, 4, 4)
 
     def test_vertical(self):
-        output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+        z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
+
+        output_grid = grid.create_grid(z=z)
 
         output_data = self.vertical_ds.regridder.vertical(
             "so", output_grid, tool="xgcm", method="linear"
@@ -1142,7 +1146,8 @@ class TestAccessor:
         assert output_data.so.shape == (15, 4, 4, 4)
 
     def test_vertical_multiple_z_axes(self):
-        output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+        z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
+        output_grid = grid.create_grid(z=z)
 
         self.vertical_ds = self.vertical_ds.assign_coords(
             {"ilev": self.vertical_ds.lev.copy().rename("ilev")}
@@ -1243,22 +1248,6 @@ class TestAccessor:
             ValueError, match=r"Tool 'dummy' does not exist, valid choices"
         ):
             self.ac.vertical("ts", mock_data, tool="dummy", target_data=None)  # type: ignore
-
-    @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
-    def test_convenience_methods(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
-
-        out_grid = grid.create_gaussian_grid(32)
-
-        output_xesmf = ds.regridder.horizontal_xesmf("ts", out_grid, method="bilinear")
-
-        assert output_xesmf.ts.shape == (15, 32, 65)
-
-        output_regrid2 = ds.regridder.horizontal_regrid2("ts", out_grid)
-
-        assert output_regrid2.ts.shape == (15, 32, 65)
 
 
 class TestBase:

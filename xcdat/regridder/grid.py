@@ -1,11 +1,10 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
 
 from xcdat.axis import COORD_DEFAULT_ATTRS, VAR_NAME_MAP, CFAxisKey, get_dim_coords
 from xcdat.bounds import create_bounds
-from xcdat.regridder.base import CoordOptionalBnds
 
 # First 50 zeros for the bessel function
 # Taken from https://github.com/CDAT/cdms/blob/dd41a8dd3b5bac10a4bfdf6e56f6465e11efc51d/regrid2/Src/_regridmodule.c#L3390-L3402
@@ -434,35 +433,20 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
 
 
 def create_grid(
-    x: Optional[
-        Union[
-            xr.DataArray,
-            Tuple[xr.DataArray, Optional[xr.DataArray]],
-        ]
-    ] = None,
-    y: Optional[
-        Union[
-            xr.DataArray,
-            Tuple[xr.DataArray, Optional[xr.DataArray]],
-        ]
-    ] = None,
-    z: Optional[
-        Union[
-            xr.DataArray,
-            Tuple[xr.DataArray, Optional[xr.DataArray]],
-        ]
-    ] = None,
+    x: xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None = None,
+    y: xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None = None,
+    z: xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None = None,
     attrs: Optional[Dict[str, str]] = None,
 ) -> xr.Dataset:
     """Creates a grid dataset using the specified axes.
 
     Parameters
     ----------
-    x : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
+    x : xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None
         Data with optional bounds to use for the "X" axis, by default None.
-    y : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
+    y : xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None
         Data with optional bounds to use for the "Y" axis, by default None.
-    z : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
+    z : xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None
         Data with optional bounds to use for the "Z" axis, by default None.
     attrs : Optional[Dict[str, str]]
         Custom attributes to be added to the generated `xr.Dataset`.
