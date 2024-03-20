@@ -919,10 +919,14 @@ class TestGrid:
         assert uneven_grid.lon.shape == (67,)
 
     def test_global_mean_grid(self):
-        source_grid = grid.create_grid(
-            x=np.array([0, 45, 90, 180, 270, 360]),
-            y=np.array([-80, -40, 0, 40, 80]),
+        x = grid.create_axis(
+            "lon", np.array([0, 45, 90, 180, 270, 360]), generate_bounds=True
         )
+        y = grid.create_axis(
+            "lat", np.array([-80, -40, 0, 40, 80]), generate_bounds=True
+        )
+
+        source_grid = grid.create_grid(x=x, y=y)
 
         mean_grid = grid.create_global_mean_grid(source_grid)
 
@@ -1001,10 +1005,14 @@ class TestGrid:
             grid.create_global_mean_grid(source_grid_with_2_lons)
 
     def test_zonal_grid(self):
-        source_grid = grid.create_grid(
-            x=np.array([-160, -80, 80, 160]),
-            y=np.array([-80, -40, 0, 40, 80]),
+        x = grid.create_axis(
+            "lon", np.array([-160, -80, 80, 160]), generate_bounds=True
         )
+        y = grid.create_axis(
+            "lat", np.array([-80, -40, 0, 40, 80]), generate_bounds=True
+        )
+
+        source_grid = grid.create_grid(x=x, y=y)
 
         zonal_grid = grid.create_zonal_grid(source_grid)
 
