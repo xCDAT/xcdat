@@ -22,7 +22,7 @@ serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) libr
         :link: getting-started-guide/index
         :link-type: doc
 
-        New to *xCDAT*? Check out the getting started guides.
+        New to xCDAT? Check out the getting started guides.
 
     .. grid-item-card::  Examples
         :class-title: custom-title
@@ -31,7 +31,8 @@ serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) libr
         :link: gallery
         :link-type: doc
 
-        This gallery demonstrates how to use some of the features in ``xcdat``.
+        This gallery demonstrates how to use some of the features in xCDAT through
+        Jupyter Notebooks with real-world examples.
 
     .. grid-item-card::  API reference
         :img-top: _static/icons/wrench.svg
@@ -40,7 +41,7 @@ serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) libr
 
         The reference guide contains a detailed description of the xCDAT API.
         The reference describes how the methods work and which parameters can
-        be used. It assumes that you have an understanding of the key Xarray concepts.
+        be used. It assumes that you have an understanding of key Xarray concepts.
 
     .. grid-item-card::  Developer guide
         :img-top: _static/icons/book.svg
