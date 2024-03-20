@@ -509,6 +509,9 @@ def create_grid(
     >>> )
     >>> grid = create_grid(z=z)
     """
+    if np.all([item is None for item in (x, y, z)]):
+        raise ValueError("Must pass at least 1 axis to create a grid.")
+
     axes = {"x": x, "y": y, "z": z}
     ds = xr.Dataset(attrs={} if attrs is None else attrs.copy())
 
@@ -538,26 +541,6 @@ def create_grid(
         ds = ds.assign_coords({coords.name: coords})
 
     return ds
-
-
-def _prepare_coordinate(name: str, data: CoordOptionalBnds, **attrs: Any):
-    if isinstance(data, tuple):
-        coord, bnds = data[0], data[1]
-    else:
-        coord, bnds = data, None
-
-    # ensure we make a copy
-    coord = coord.copy()
-
-    if isinstance(coord, np.ndarray):
-        coord = xr.DataArray(
-            name=name,
-            data=coord,
-            dims=[name],
-            attrs=attrs,
-        )
-
-    return coord, bnds
 
 
 def create_axis(
