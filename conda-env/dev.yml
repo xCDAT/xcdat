@@ -29,6 +29,7 @@ dependencies:
     - sphinx-book-theme
     - sphinx-copybutton
     - nbsphinx
+    - sphinx-design
     - pandoc
     - ipython # Required for nbsphinx syntax highlighting
     - gsw-xarray # Required for vertical regridding example

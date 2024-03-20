@@ -19,9 +19,9 @@ Setting up your xCDAT environment
 Ensure ``conda`` is installed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Generally, the instructions from `getting started guide <getting-started.rst>`_ can also
-be followed for HPC machines. This guide covers installing Miniconda3 and creating
-a conda environment with the ``xcdat`` package.
+Generally, the installation instructions from the `Installation <../installation.rst>`_
+page can also be followed for HPC machines. This guide covers installing Miniconda3 and
+creating a conda environment with the ``xcdat`` package.
 
 Before installing Miniconda3, you should consult your HPC documentation to see if
 ``conda`` is already available; in some cases, ``python`` and ``conda`` may be
@@ -101,4 +101,4 @@ kernel. You should then be able to use your ``xcdat`` environment on Jupyter.
 
 |image0|
 
-.. |image0| image:: _static/jupyter-launcher-example.png
+.. |image0| image:: ../_static/jupyter-launcher-example.png

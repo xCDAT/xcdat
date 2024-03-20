@@ -1,9 +1,9 @@
 Gallery
 =======
 
-This gallery demonstrates how to use some of the features in ``xcdat``. Contributions are highly welcomed and appreciated.
-Please checkout the :doc:`contributing` guide.
+This gallery demonstrates how to use some of the features in ``xcdat``. Contributions are highly welcomed and appreciated. Please checkout the :doc:`contributing` guide.
 
+.. include:: notebook-examples.txt
 
 .. toctree::
     :maxdepth: 2
