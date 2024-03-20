@@ -46,17 +46,13 @@ Paths = Union[
 def open_dataset(
     path: str | os.PathLike[Any] | BufferedIOBase | AbstractDataStore,
     data_var: Optional[str] = None,
-    add_bounds: List[CFAxisKey] | None | bool = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
     """Wraps ``xarray.open_dataset()`` with post-processing options.
-
-    .. deprecated:: v0.6.0
-        ``add_bounds`` boolean arguments (True/False) are being deprecated.
-        Please use either a list (e.g., ["X", "Y"]) to specify axes or ``None``.
 
     Parameters
     ----------
@@ -133,7 +129,7 @@ def open_dataset(
 def open_mfdataset(
     paths: str | NestedSequence[str | os.PathLike],
     data_var: Optional[str] = None,
-    add_bounds: List[CFAxisKey] | None | Literal[False] = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -142,10 +138,6 @@ def open_mfdataset(
     **kwargs: Dict[str, Any],
 ) -> xr.Dataset:
     """Wraps ``xarray.open_mfdataset()`` with post-processing options.
-
-    .. deprecated:: v0.6.0
-        ``add_bounds`` boolean arguments (True/False) are being deprecated.
-        Please use either a list (e.g., ["X", "Y"]) to specify axes or ``None``.
 
     Parameters
     ----------
@@ -240,15 +232,6 @@ def open_mfdataset(
     in-memory copy you are manipulating in xarray is modified: the original file
     on disk is never touched.
 
-    The CDAT "Climate Data Markup Language" (CDML) is a deprecated dialect of
-    XML with a defined set of attributes. CDML is still used by current and
-    former users of CDAT. To enable CDML users to adopt xCDAT more easily in
-    their workflows, xCDAT can parse XML/CDML files for the ``directory``
-    to generate a glob or list of file paths. Refer to [4]_ for more information
-    on CDML. NOTE: This feature is deprecated in v0.6.0 and will be removed in
-    the subsequent release. CDAT (including cdms2/CDML) is in maintenance only
-    mode and marked for end-of-life by the end of 2023.
-
     References
     ----------
     .. [2] https://docs.xarray.dev/en/stable/generated/xarray.combine_nested.html
@@ -258,13 +241,6 @@ def open_mfdataset(
     if isinstance(paths, str) or isinstance(paths, pathlib.Path):
         if os.path.isdir(paths):
             paths = _parse_dir_for_nc_glob(paths)
-        elif _is_xml_filepath(paths):
-            warnings.warn(
-                "`open_mfdataset()` will no longer support CDML/XML paths after "
-                "v0.6.0 because CDAT is marked for end-of-life at the end of 2023.",
-                DeprecationWarning,
-            )
-            paths = _parse_xml_for_nc_glob(paths)
 
     preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
 
@@ -422,58 +398,6 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     return ds
 
 
-def _is_xml_filepath(paths: str | pathlib.Path) -> bool:
-    """Checks if the ``paths`` argument is a path to an XML file.
-
-    Parameters
-    ----------
-    paths : str | pathlib.Path
-        A string or pathlib.Path represnting a file path.
-
-    Returns
-    -------
-    bool
-    """
-    if isinstance(paths, str):
-        return paths.split(".")[-1] == "xml"
-    elif isinstance(paths, pathlib.Path):
-        return paths.parts[-1].endswith("xml")
-
-
-def _parse_xml_for_nc_glob(xml_path: str | pathlib.Path) -> str | List[str]:
-    """
-    Parses an XML file for the ``directory`` attr to return a string glob or
-    list of string file paths.
-
-    Parameters
-    ----------
-    xml_path : str | pathlib.Path
-        The XML file path.
-
-    Returns
-    -------
-    str | List[str]
-        A string glob of `*.nc` paths.
-
-    """
-    # `resolve_entities=False` and `no_network=True` guards against XXE attacks.
-    # Source: https://rules.sonarsource.com/python/RSPEC-2755
-    parser = etree.XMLParser(resolve_entities=False, no_network=True)
-    tree = etree.parse(xml_path, parser)
-    root = tree.getroot()
-
-    dir_attr = root.attrib.get("directory")
-    if dir_attr is None:
-        raise KeyError(
-            f"The XML file ({xml_path}) does not have a 'directory' attribute "
-            "that points to a directory of `.nc` dataset files."
-        )
-
-    glob_path = dir_attr + "/*.nc"
-
-    return glob_path
-
-
 def _parse_dir_for_nc_glob(dir_path: str | pathlib.Path) -> str:
     """Parses a directory for a glob of `*.nc` paths.
 
@@ -610,28 +534,6 @@ def _postprocess_dataset(
 
     if center_times:
         ds = center_times_func(dataset)
-
-    # TODO: Boolean (`True`/`False`) will be deprecated after v0.6.0.
-    if add_bounds is True:
-        add_bounds = ["X", "Y"]
-        warnings.warn(
-            (
-                "`add_bounds=True` will be deprecated after v0.6.0. Please use a list "
-                "of axis strings instead (e.g., `add_bounds=['X', 'Y']`)."
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
-    elif add_bounds is False:
-        add_bounds = None
-        warnings.warn(
-            (
-                "`add_bounds=False` will be deprecated after v0.6.0. Please use "
-                "`add_bounds=None` instead."
-            ),
-            DeprecationWarning,
-            stacklevel=2,
-        )
 
     if add_bounds is not None:
         ds = ds.bounds.add_missing_bounds(axes=add_bounds)
