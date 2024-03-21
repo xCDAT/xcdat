@@ -1,12 +1,12 @@
-import warnings
-from typing import Any, Dict, List, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import xarray as xr
 
 from xcdat.axis import COORD_DEFAULT_ATTRS, VAR_NAME_MAP, CFAxisKey, get_dim_coords
 from xcdat.bounds import create_bounds
-from xcdat.regridder.base import CoordOptionalBnds
 
 # First 50 zeros for the bessel function
 # Taken from https://github.com/CDAT/cdms/blob/dd41a8dd3b5bac10a4bfdf6e56f6465e11efc51d/regrid2/Src/_regridmodule.c#L3390-L3402
@@ -435,41 +435,24 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
 
 
 def create_grid(
-    x: Optional[
-        Union[
-            xr.DataArray,
-            Tuple[xr.DataArray, Optional[xr.DataArray]],
-        ]
-    ] = None,
-    y: Optional[
-        Union[
-            xr.DataArray,
-            Tuple[xr.DataArray, Optional[xr.DataArray]],
-        ]
-    ] = None,
-    z: Optional[
-        Union[
-            xr.DataArray,
-            Tuple[xr.DataArray, Optional[xr.DataArray]],
-        ]
-    ] = None,
+    x: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
+    y: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
+    z: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
     attrs: Optional[Dict[str, str]] = None,
-    **kwargs: CoordOptionalBnds,
 ) -> xr.Dataset:
     """Creates a grid dataset using the specified axes.
 
-    .. deprecated:: v0.6.0
-        ``**kwargs`` argument is being deprecated, please migrate to
-        ``x``, ``y``, or ``z`` arguments to create future grids.
-
     Parameters
     ----------
-    x : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
-        Data with optional bounds to use for the "X" axis, by default None.
-    y : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
-        Data with optional bounds to use for the "Y" axis, by default None.
-    z : Optional[Union[xr.DataArray, Tuple[xr.DataArray]]]
-        Data with optional bounds to use for the "Z" axis, by default None.
+    x : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None
+        An optional dataarray or tuple of a datarray with optional bounds to use
+        for the "X" axis, by default None.
+    y : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
+        An optional dataarray or tuple of a datarray with optional bounds to use
+        for the "Y" axis, by default None.
+    z : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None
+        An optional dataarray or tuple of a datarray with optional bounds to use
+        for the "Z" axis, by default None.
     attrs : Optional[Dict[str, str]]
         Custom attributes to be added to the generated `xr.Dataset`.
 
@@ -515,16 +498,8 @@ def create_grid(
     >>> )
     >>> grid = create_grid(z=z)
     """
-    if np.all([item is None for item in (x, y, z)]) and len(kwargs) == 0:
+    if np.all([item is None for item in (x, y, z)]):
         raise ValueError("Must pass at least 1 axis to create a grid.")
-    elif np.all([item is None for item in (x, y, z)]) and len(kwargs) > 0:
-        warnings.warn(
-            "**kwargs will be deprecated, see docstring and use 'x', 'y', or 'z' arguments",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-
-        return _deprecated_create_grid(**kwargs)
 
     axes = {"x": x, "y": y, "z": z}
     ds = xr.Dataset(attrs={} if attrs is None else attrs.copy())
@@ -555,66 +530,6 @@ def create_grid(
         ds = ds.assign_coords({coords.name: coords})
 
     return ds
-
-
-def _deprecated_create_grid(**kwargs: CoordOptionalBnds) -> xr.Dataset:
-    coords = {}
-    data_vars = {}
-
-    for name, data in kwargs.items():
-        if name in VAR_NAME_MAP["X"]:
-            coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["X"])
-        elif name in VAR_NAME_MAP["Y"]:
-            coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["Y"])
-        elif name in VAR_NAME_MAP["Z"]:
-            coord, bnds = _prepare_coordinate(name, data, **COORD_DEFAULT_ATTRS["Z"])
-        else:
-            raise ValueError(
-                f"Coordinate {name} is not valid, reference "
-                "`xcdat.axis.VAR_NAME_MAP` for valid options."
-            )
-
-        coords[name] = coord
-
-        if bnds is not None:
-            bnds = bnds.copy()
-
-            if isinstance(bnds, np.ndarray):
-                bnds = xr.DataArray(
-                    name=f"{name}_bnds",
-                    data=bnds.copy(),
-                    dims=[name, "bnds"],
-                )
-
-            data_vars[bnds.name] = bnds
-
-            coord.attrs["bounds"] = bnds.name
-
-    grid = xr.Dataset(data_vars, coords=coords)
-
-    grid = grid.bounds.add_missing_bounds(axes=["X", "Y"])
-
-    return grid
-
-
-def _prepare_coordinate(name: str, data: CoordOptionalBnds, **attrs: Any):
-    if isinstance(data, tuple):
-        coord, bnds = data[0], data[1]
-    else:
-        coord, bnds = data, None
-
-    # ensure we make a copy
-    coord = coord.copy()
-
-    if isinstance(coord, np.ndarray):
-        coord = xr.DataArray(
-            name=name,
-            data=coord,
-            dims=[name],
-            attrs=attrs,
-        )
-
-    return coord, bnds
 
 
 def create_axis(
