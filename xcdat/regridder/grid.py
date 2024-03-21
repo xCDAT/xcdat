@@ -435,21 +435,24 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
 
 
 def create_grid(
-    x: xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None = None,
-    y: xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None = None,
-    z: xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None = None,
+    x: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
+    y: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
+    z: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
     attrs: Optional[Dict[str, str]] = None,
 ) -> xr.Dataset:
     """Creates a grid dataset using the specified axes.
 
     Parameters
     ----------
-    x : xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None
-        Data with optional bounds to use for the "X" axis, by default None.
-    y : xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None
-        Data with optional bounds to use for the "Y" axis, by default None.
-    z : xr.DataArray | Tuple[xr.DataArray, Optional[xr.DataArray]] | None
-        Data with optional bounds to use for the "Z" axis, by default None.
+    x : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None
+        An optional dataarray or tuple of a datarray with optional bounds to use
+        for the "X" axis, by default None.
+    y : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
+        An optional dataarray or tuple of a datarray with optional bounds to use
+        for the "Y" axis, by default None.
+    z : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None
+        An optional dataarray or tuple of a datarray with optional bounds to use
+        for the "Z" axis, by default None.
     attrs : Optional[Dict[str, str]]
         Custom attributes to be added to the generated `xr.Dataset`.
 
