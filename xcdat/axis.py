@@ -45,17 +45,7 @@ VAR_NAME_MAP: Dict[CFAxisKey, List[str]] = {
     "X": ["longitude", "lon"],
     "Y": ["latitude", "lat"],
     "T": ["time"],
-    "Z": [
-        "vertical",
-        "height",
-        "pressure",
-        "lev",
-        "plev",
-        "depth",
-        "deptht",
-        "olevel",
-        "rho",
-    ],
+    "Z": ["vertical", "height", "pressure", "lev", "plev"],
 }
 
 
