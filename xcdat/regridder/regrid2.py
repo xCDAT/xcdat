@@ -78,6 +78,13 @@ class Regrid2Regridder(BaseRegridder):
             # Xarray defaults to masking with np.nan, CDAT masked with _FillValue or missing_value which defaults to 1e20
             input_data_var = input_data_var.where(src_mask != 0.0, masked_value)
 
+        nan_replace = input_data_var.encoding.get("_FillValue", None)
+
+        if nan_replace is None:
+            nan_replace = input_data_var.encoding.get("missing_value", 1e20)
+
+        input_data_var = input_data_var.fillna(nan_replace)
+
         output_data = _regrid(
             input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
         )
