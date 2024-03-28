@@ -2,7 +2,6 @@ from typing import Any, List, Tuple
 
 import numpy as np
 import xarray as xr
-from dask.array.core import Array
 
 from xcdat.axis import get_dim_keys
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
@@ -361,14 +360,14 @@ def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     return mapping, weights
 
 
-def _extract_bounds(bounds: np.ndarray | Array) -> Tuple[np.ndarray, np.ndarray]:
+def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """
     Extract lower and upper bounds from an axis.
 
     Parameters
     ----------
-    bounds : np.ndarray | dask.core.array.Array
-        A numpy array or dask array of bounds values.
+    bounds : np.ndarray
+        A numpy array of bounds values.
 
     Returns
     -------
@@ -381,15 +380,6 @@ def _extract_bounds(bounds: np.ndarray | Array) -> Tuple[np.ndarray, np.ndarray]
     else:
         lower = bounds[:, 1]
         upper = bounds[:, 0]
-
-    # Make sure to convert the bounds to numpy array beforehand.
-    # Otherwise the error `ValueError: cannot convert float NaN to integer`
-    # is raised when calculating cell weights with `_map_longitude` when
-    # calling `np.sin(np.deg2rad(x))`.
-    if isinstance(lower, Array):
-        lower = lower.compute()
-    if isinstance(upper, Array):
-        upper = upper.compute()
 
     return lower.astype(np.float32), upper.astype(np.float32)
 
