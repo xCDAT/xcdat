@@ -2,6 +2,7 @@ from typing import Any, List, Tuple
 
 import numpy as np
 import xarray as xr
+from dask.array.core import Array
 
 from xcdat.axis import get_dim_keys
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
@@ -113,7 +114,7 @@ def _regrid(
     lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
 
     # convert to pure numpy
-    input_data = input_data_var.astype(np.float32).data
+    input_data = input_data_var.astype(np.float32).values
 
     y_name, y_index = _get_dimension(input_data_var, "Y")
     x_name, x_index = _get_dimension(input_data_var, "X")
@@ -215,7 +216,9 @@ def _build_dataset(
     return output_ds
 
 
-def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
+def _map_latitude(
+    src: np.ndarray, dst: np.ndarray
+) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
     Map source to destination latitude.
 
@@ -237,7 +240,7 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
 
     Returns
     -------
-    Tuple[List, List]
+    Tuple[List[np.ndarray], List[np.ndarray]]
         A tuple of cell mappings and cell weights.
     """
     src_south, src_north = _extract_bounds(src)
@@ -262,12 +265,23 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     ]
 
     # convert latitude to cell weight (difference of height above/below equator)
-    weights = [
-        (np.sin(np.deg2rad(x)) - np.sin(np.deg2rad(y))).reshape((-1, 1))
-        for x, y in bounds
-    ]
+    weights = _get_latitude_weights(bounds)
 
     return mapping, weights
+
+
+def _get_latitude_weights(
+    bounds: List[Tuple[np.ndarray, np.ndarray]]
+) -> List[np.ndarray]:
+    weights = []
+
+    for x, y in bounds:
+        cell_weight = np.sin(np.deg2rad(x)) - np.sin(np.deg2rad(y))
+        cell_weight = cell_weight.reshape((-1, 1))
+
+        weights.append(cell_weight)
+
+    return weights
 
 
 def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
@@ -347,19 +361,19 @@ def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     return mapping, weights
 
 
-def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _extract_bounds(bounds: np.ndarray | Array) -> Tuple[np.ndarray, np.ndarray]:
     """
     Extract lower and upper bounds from an axis.
 
     Parameters
     ----------
-    bounds : np.ndarray
-     Dataset containing axis with bounds.
+    bounds : np.ndarray | dask.core.array.Array
+        A numpy array or dask array of bounds values.
 
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
-         A tuple containing the lower and upper bounds for the axis.
+        A tuple containing the lower and upper bounds for the axis.
     """
     if bounds[0, 0] < bounds[0, 1]:
         lower = bounds[:, 0]
@@ -367,6 +381,15 @@ def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     else:
         lower = bounds[:, 1]
         upper = bounds[:, 0]
+
+    # Make sure to convert the bounds to numpy array beforehand.
+    # Otherwise the error `ValueError: cannot convert float NaN to integer`
+    # is raised when calculating cell weights with `_map_longitude` when
+    # calling `np.sin(np.deg2rad(x))`.
+    if isinstance(lower, Array):
+        lower = lower.compute()
+    if isinstance(upper, Array):
+        upper = upper.compute()
 
     return lower.astype(np.float32), upper.astype(np.float32)
 
@@ -505,4 +528,4 @@ def _get_bounds_ensure_dtype(ds, axis):
     if bounds.dtype != np.float32:
         bounds = bounds.astype(np.float32)
 
-    return bounds.data
+    return bounds.values
