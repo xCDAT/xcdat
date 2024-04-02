@@ -97,11 +97,31 @@ Getting started with Git
 setting up your SSH key, and configuring git.  All these steps need to be completed before
 you can work seamlessly between your local repository and GitHub.
 
+Set up the Repo
+~~~~~~~~~~~~~~~
+
 .. note::
 
-    The following instructions assume you want to learn how to interact with github via the git command-line utility,
-    but contributors who are new to git may find it easier to use other tools instead such as
-    `GitHub Desktop`_.
+    The following instructions assume you want to learn how to interact with GitHub via
+    the git command-line utility, but contributors who are new to git may find it easier
+    to use other tools instead such as `GitHub Desktop`_.
+
+Once you have Git setup, you have two options for working with the ``xcdat`` repository:
+(1) Clone the main repo, (2) Fork the main repo and clone your fork.
+
+1. Clone the main repo
+
+   - If you are a regular xCDAT contributor and have direct write access to the main repo, you can
+     clone the main repo running ``git clone https://github.com/xCDAT/xcdat.git``.
+
+2. Fork the main repo and clone your fork
+
+   - If you are not a regular xCDAT contributor and don't have write access to the main
+     repo, you will need to fork the main repo then clone your fork.
+   - Head over to the `GitHub`_ repo page, click the fork button, and click
+     "Create a new fork" (shown below).
+   - .. image:: _static/github-fork-button.png
+   - Then clone your fork by running ``git clone https://github.com/<GITHUB-USERNAME>/xcdat.git``
 
 .. _GitHub has instructions for setting up Git: https://help.github.com/set-up-git-redirect
 .. _templates: https://github.com/xCDAT/xcdat/issues/new/choose
