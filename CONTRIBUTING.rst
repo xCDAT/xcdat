@@ -150,8 +150,7 @@ Creating a development environment
 Before starting any development, you'll need to create an isolated xCDAT
 development environment:
 
-- We recommend installing `Miniforge`_ to use ``mamba``. If you prefer, you can install
-  `Anaconda`_ or `Miniconda`_ to use ``conda`` instead
+- We recommend installing `Anaconda`_ or `Miniconda`_
 - Make sure your conda is up to date (``conda update conda``)
 - Make sure that you have forked and cloned the `repository`_. If you are in the xCDAT
   organization, forking is not needed since you will have direct read access to the repo
@@ -163,8 +162,8 @@ Now we are going through a two-step process:
 
     .. code-block:: bash
 
-       >>> mamba env create -f conda-env/dev.yml
-       >>> mamba activate xcdat_dev
+       >>> conda env create -f conda-env/dev.yml
+       >>> conda activate xcdat_dev
        >>>
        >>> make install # or python -m pip install .
 
@@ -248,7 +247,7 @@ Here's a simple checklist for PRs:
 - **Test your code**.
 
   - Write new tests if needed.
-  - Test the code using `Pytest`_. Running all tests (type ``make test`` or ``pytest`` in the root directory) takes a while, so feel free to only run the tests you think are needed based on your PR (example: ``pytest xarray/tests/test_dataarray.py``). CI will catch any failing tests.
+  - Test the code using `Pytest`_. Running all tests (type ``make test`` or ``pytest`` in the root directory) takes a while, so feel free to only run the tests you think are needed based on your PR (example: ``pytest tests/test_dataset.py``). CI will catch any failing tests.
 
 - **Properly format your code** and verify that it passes the formatting guidelines set by `Black`_ and `Flake8`_.
   You can use `pre-commit`_ to run these automatically on each commit.
@@ -335,7 +334,7 @@ Helpful commands
 
 .. note::
     * Run ``make help`` in the root of the project for a list of useful commands
-    * Run ``make install`` to install a local build of xCDAT into your mamba/conda environment
+    * Run ``make install`` to install a local build of xCDAT into your conda environment
     * Run ``make clean`` to delete all build, test, coverage and Python artifacts
 
 
