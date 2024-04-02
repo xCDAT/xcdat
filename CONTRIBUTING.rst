@@ -337,7 +337,6 @@ Helpful commands
     * Run ``make install`` to install a local build of xCDAT into your conda environment
     * Run ``make clean`` to delete all build, test, coverage and Python artifacts
 
-
 xCDAT and Visual Studio Code
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
