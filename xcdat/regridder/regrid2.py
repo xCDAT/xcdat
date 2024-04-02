@@ -106,7 +106,7 @@ def _regrid(
     lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
 
     # convert to pure numpy
-    input_data = input_data_var.astype(np.float32).data
+    input_data = input_data_var.astype(np.float32).values
 
     y_name, y_index = _get_dimension(input_data_var, "Y")
     x_name, x_index = _get_dimension(input_data_var, "X")
@@ -498,4 +498,4 @@ def _get_bounds_ensure_dtype(ds, axis):
     if bounds.dtype != np.float32:
         bounds = bounds.astype(np.float32)
 
-    return bounds.data
+    return bounds.values
