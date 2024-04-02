@@ -1,55 +1,5 @@
-.. raw:: html
-
-   <p align="center">
-      <img src="./docs/_static/xcdat-logo.png" alt="xCDAT logo" style="width:450px;"/>
-   </p>
-
-.. container::
-
-   .. raw:: html
-
-      <h3 align="center">
-
-   Xarray Climate Data Analysis Tools
-
-   +--------------------+------------------------------------------------------+
-   |                    | Badges                                               |
-   +====================+======================================================+
-   | Distribution       | |conda-forge| |platforms| |conda-downloads|          |
-   +--------------------+------------------------------------------------------+
-   | Citation           | |zenodo-doi|                                         |
-   +--------------------+------------------------------------------------------+
-   | DevOps             | |CI/CD Build Workflow| |codecov| |docs|              |
-   +--------------------+------------------------------------------------------+
-   | Quality Assurance  | |pre-commit| |black| |flake8| |mypy|                 |
-   +--------------------+------------------------------------------------------+
-
-   .. raw:: html
-
-      </h3>
-
-.. |conda-forge| image:: https://img.shields.io/conda/vn/conda-forge/xcdat.svg
-   :target: https://anaconda.org/conda-forge/xcdat
-.. |platforms| image:: https://img.shields.io/conda/pn/conda-forge/xcdat.svg
-   :target: https://anaconda.org/conda-forge/xcdat
-.. |conda-downloads| image:: https://anaconda.org/conda-forge/xcdat/badges/downloads.svg
-   :target: https://anaconda.org/conda-forge/xcdat
-.. |zenodo-doi| image:: https://zenodo.org/badge/354103918.svg
-   :target: https://zenodo.org/badge/latestdoi/354103918
-.. |CI/CD Build Workflow| image:: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
-   :target: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml
-.. |docs| image:: https://readthedocs.org/projects/xcdat/badge/?version=latest
-   :target: https://xcdat.readthedocs.io/en/latest/?badge=latest
-.. |codecov| image:: https://codecov.io/gh/xCDAT/xcdat/branch/main/graph/badge.svg?token=UYF6BAURTH
-   :target: https://codecov.io/gh/xCDAT/xcdat
-.. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
-   :target: https://github.com/pre-commit/pre-commit
-.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
-.. |flake8| image:: https://img.shields.io/badge/flake8-enabled-green
-   :target: https://github.com/PyCQA/flake8
-.. |mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
-   :target: http://mypy-lang.org/
+xCDAT: Xarray Climate Data Analysis Tools
+=========================================
 
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
 serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) library.
@@ -109,7 +59,7 @@ Please note that xCDAT has a `Code of Conduct`_. By participating in the xCDAT
 community, you agree to abide by its rules.
 
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
-.. _Code of Conduct: CODE-OF-CONDUCT.rst
+.. _Code of Conduct: code-of-conduct.rst
 .. _mailing list: https://groups.google.com/g/xcdat
 
 Contributing
@@ -215,21 +165,12 @@ Xarray and Xarray usage in climate science!
 - `Pangeo Forum <https://foundations.projectpythia.org/core/xarray.html>`_
 - `Project Pythia <https://foundations.projectpythia.org/core/xarray.html>`_
 
-Projects Using xCDAT
---------------------
-
-xCDAT is actively being integrated as a core component of the `Program for Climate Model
-Diagnosis and Intercomparison (PCMDI) Metrics Package`_ and the `Energy Exascale Earth
-System Model Diagnostics (E3SM) Package`_. xCDAT is also included in the `E3SM Unified
-Anaconda Environment`_ that is deployed on various U.S. Department of Energy
-supercomputers to run E3SM software tools.
-
-.. _Program for Climate Model Diagnosis and Intercomparison (PCMDI) Metrics Package: https://pcmdi.github.io/pcmdi_metrics/
-.. _Energy Exascale Earth System Model Diagnostics (E3SM) Package: https://e3sm-project.github.io/e3sm_diags/_build/html/main/index.html
-.. _E3SM Unified Anaconda Environment: https://e3sm.org/resources/tools/other-tools/e3sm-unified-environment/
-
 Acknowledgement
 ---------------
+
+Huge thank you to all of the xCDAT `contributors`_!
+
+.. _contributors: https://github.com/xCDAT/xcdat/graphs/contributors
 
 xCDAT is jointly developed by scientists and developers from the Energy Exascale
 Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and
@@ -249,15 +190,6 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 .. _BER: https://science.osti.gov/ber
 .. _Department of Energy: https://www.energy.gov/
 .. _Office of Science: https://science.osti.gov/
-
-Contributors
-------------
-
-Thank you to all of our contributors!
-
-.. image:: https://contrib.rocks/image?repo=xCDAT/xcdat
-  :alt: xCDAT contributors
-  :target: https://github.com/xCDAT/xcdat/graphs/contributors
 
 License
 -------

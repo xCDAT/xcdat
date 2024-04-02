@@ -1,25 +1,25 @@
 name-template: "v$RESOLVED_VERSION"
 tag-template: "v$RESOLVED_VERSION"
 autolabeler:
-    - label: "Type: Enhancement"
+    - label: "type: enhancement"
       branch: '/feature\/.+/'
-    - label: "Type: Bug"
+    - label: "type: bug"
       branch: '/(bug)?fix\/.+/'
       title: "/fix/i"
-    - label: "Type: Documentation"
+    - label: "type: docs"
       files: "*.rst"
       branch: '/docs{0,1}\/.+/'
-    - label: "Type: DevOps"
+    - label: "type: devops"
       branch: '/devops\/.+/'
 categories:
-    - title: "Features"
-      labels: "Type: Enhancement"
+    - title: "Enhancements"
+      labels: "type: enhancement"
     - title: "Bug Fixes"
-      labels: "Type: Bug"
+      labels: "type: bug"
     - title: "Documentation"
-      label: "Type: Documentation"
+      label: "type: docs"
     - title: "DevOps"
-      label: "Type: DevOps"
+      label: "type: devops"
 change-template: "- $TITLE by @$AUTHOR in $URL"
 change-title-escapes: '\<*_&' # You can add # and @ to disable mentions, and add ` to disable code blocks.
 exclude-labels:

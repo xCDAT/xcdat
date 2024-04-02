@@ -116,3 +116,8 @@ conda-build/
 
 # Ad-hoc QA
 qa/
+
+# Sphinx generated .txt files
+notebook-examples.txt
+team-panel.txt
+demos.txt

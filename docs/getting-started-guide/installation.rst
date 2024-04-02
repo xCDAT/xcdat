@@ -1,8 +1,8 @@
 .. highlight:: shell
 
-===============
-Getting Started
-===============
+=============
+Installation
+=============
 
 Prerequisites
 -------------
@@ -39,7 +39,7 @@ Prerequisites
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
 .. _Miniforge: https://github.com/conda-forge/miniforge
 
-Installation
+Instructions
 ------------
 
 1. Create a Mamba environment from scratch with ``xcdat`` (`mamba create`_)
