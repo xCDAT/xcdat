@@ -77,13 +77,13 @@ class Regrid2Regridder(BaseRegridder):
         if nan_replace is None:
             nan_replace = input_data_var.encoding.get("missing_value", 1e20)
 
-        input_data_var = input_data_var.fillna(nan_replace)
+        # exclude alternative of NaN values if there are any
+        input_data_var = input_data_var.where(input_data_var != nan_replace)    
 
+        # horizontal regrid
         output_data = _regrid(
             input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
         )
-
-        output_data[output_data == nan_replace] = np.nan
 
         output_ds = _build_dataset(
             ds,
