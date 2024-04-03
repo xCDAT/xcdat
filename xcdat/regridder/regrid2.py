@@ -68,15 +68,9 @@ class Regrid2Regridder(BaseRegridder):
 
         src_mask = self._input_grid.get("mask", None)
 
-        # apply source mask to input data
+        # apply mask to input data
         if src_mask is not None:
-            masked_value = self._input_grid.attrs.get("_FillValue", None)
-
-            if masked_value is None:
-                masked_value = self._input_grid.attrs.get("missing_value", 0.0)
-
-            # Xarray defaults to masking with np.nan, CDAT masked with _FillValue or missing_value which defaults to 1e20
-            input_data_var = input_data_var.where(src_mask != 0.0, masked_value)
+            input_data_var = input_data_var.where(src_mask==0.0)
 
         nan_replace = input_data_var.encoding.get("_FillValue", None)
 
