@@ -83,6 +83,8 @@ class Regrid2Regridder(BaseRegridder):
             input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
         )
 
+        output_data[output_data==nan_replace] = np.nan
+
         output_ds = _build_dataset(
             ds,
             data_var,
