@@ -70,7 +70,7 @@ class Regrid2Regridder(BaseRegridder):
 
         # apply mask to input data
         if src_mask is not None:
-            input_data_var = input_data_var.where(src_mask==0.0)
+            input_data_var = input_data_var.where(src_mask == 0.0)
 
         nan_replace = input_data_var.encoding.get("_FillValue", None)
 
@@ -83,7 +83,7 @@ class Regrid2Regridder(BaseRegridder):
             input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
         )
 
-        output_data[output_data==nan_replace] = np.nan
+        output_data[output_data == nan_replace] = np.nan
 
         output_ds = _build_dataset(
             ds,
