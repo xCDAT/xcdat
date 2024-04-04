@@ -80,7 +80,7 @@ class Regrid2Regridder(BaseRegridder):
             nan_replace = input_data_var.encoding.get("missing_value", 1e20)
 
         # exclude alternative of NaN values if there are any
-        input_data_var = input_data_var.where(input_data_var != nan_replace)    
+        input_data_var = input_data_var.where(input_data_var != nan_replace)
 
         # horizontal regrid
         output_data = _regrid(
