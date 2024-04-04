@@ -67,7 +67,6 @@ TIME_GROUPS: Dict[Mode, Dict[Frequency, Tuple[DateTimeComponent, ...]]] = {
 SeasonConfigInput = TypedDict(
     "SeasonConfigInput",
     {
-        "drop_incomplete_djf": bool,
         "drop_incomplete_seasons": bool,
         "dec_mode": Literal["DJF", "JFD"],
         "custom_seasons": Optional[List[List[str]]],
@@ -78,7 +77,6 @@ SeasonConfigInput = TypedDict(
 SeasonConfigAttr = TypedDict(
     "SeasonConfigAttr",
     {
-        "drop_incomplete_djf": bool,
         "drop_incomplete_seasons": bool,
         "dec_mode": Literal["DJF", "JFD"],
         "custom_seasons": Optional[Dict[str, List[str]]],
@@ -319,7 +317,7 @@ class TemporalAccessor:
 
             * "custom_seasons" ([List[List[str]]], by default None)
                 List of sublists containing month strings, with each sublist
-                representing a custom season. This config overrides the `decod
+                representing a custom season.
 
                 * Month strings must be in the three letter format (e.g., 'Jan')
                 * Each month must be included once in a custom season
@@ -504,7 +502,7 @@ class TemporalAccessor:
 
             * "custom_seasons" ([List[List[str]]], by default None)
                 List of sublists containing month strings, with each sublist
-                representing a custom season. This config overrides the `decod
+                representing a custom season.
 
                 * Month strings must be in the three letter format (e.g., 'Jan')
                 * Each month must be included once in a custom season
@@ -971,7 +969,9 @@ class TemporalAccessor:
 
         # "season" frequency specific configuration attributes.
         for key in season_config.keys():
-            if key not in DEFAULT_SEASON_CONFIG.keys():
+            # TODO: Deprecate `drop_incomplete_djf`.
+            valid_keys = list(DEFAULT_SEASON_CONFIG.keys()) + ["drop_incomplete_djf"]
+            if key not in valid_keys:
                 raise KeyError(
                     f"'{key}' is not a supported season config. Supported "
                     f"configs include: {DEFAULT_SEASON_CONFIG.keys()}."
@@ -989,7 +989,7 @@ class TemporalAccessor:
                 "deprecated. Please use 'drop_incomplete_seasons' instead.",
                 DeprecationWarning,
             )
-            self._season_config["drop_incomplete_seasons"] = drop_incomplete_djf
+            self._season_config["drop_incomplete_seasons"] = drop_incomplete_djf  # type: ignore
         else:
             self._season_config["drop_incomplete_seasons"] = season_config.get(
                 "drop_incomplete_seasons", False
@@ -1089,7 +1089,7 @@ class TemporalAccessor:
             # "NDJFM", we should subset the dataset for time coordinates
             # belonging to those months.
             months = self._season_config["custom_seasons"].values()  # type: ignore
-            months = list(chain.from_iterable(months.values()))  # type: ignore
+            months = list(chain.from_iterable(months))
 
             if len(months) != 12:
                 ds = self._subset_coords_for_custom_seasons(ds, months)
@@ -1133,12 +1133,14 @@ class TemporalAccessor:
             The dataset with time coordinate subsetted to months used in
             custom seasons.
         """
-        months_ints = sorted([MONTH_STR_TO_INT[month] for month in months])
+        month_ints = sorted([MONTH_STR_TO_INT[month] for month in months])
 
         coords_by_month = ds.time.groupby(f"{self.dim}.month").groups
-        months_idxs = {k: coords_by_month[k] for k in months_ints}
-        months_idxs = sorted(list(chain.from_iterable(months_idxs.values())))  # type: ignore
-        ds_new = ds.isel({f"{self.dim}": months_idxs})
+        month_to_time_idx = {
+            k: coords_by_month[k] for k in month_ints if k in coords_by_month
+        }
+        month_to_time_idx = sorted(list(chain.from_iterable(month_to_time_idx.values())))  # type: ignore
+        ds_new = ds.isel({f"{self.dim}": month_to_time_idx})
 
         return ds_new
 
