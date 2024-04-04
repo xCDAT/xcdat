@@ -112,7 +112,11 @@ def _regrid(
     dst_lat_bnds: np.ndarray,
     dst_lon_bnds: np.ndarray,
     src_mask: Optional[np.ndarray],
+    omitted=None,
 ) -> np.ndarray:
+    if omitted is None:
+        omitted = np.nan
+
     lat_mapping, lat_weights = _map_latitude(src_lat_bnds, dst_lat_bnds)
     lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
 
@@ -185,7 +189,7 @@ def _regrid(
                 )
 
             if cell_weight <= 0.0:
-                output_data[output_seg_index] = 1e20
+                output_data[output_seg_index] = omitted
 
     output_data_shape = [y_length, x_length] + other_sizes
 
