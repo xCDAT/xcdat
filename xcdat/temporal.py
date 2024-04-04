@@ -1,5 +1,6 @@
 """Module containing temporal functions."""
 
+import warnings
 from datetime import datetime
 from itertools import chain
 from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
@@ -66,6 +67,7 @@ TIME_GROUPS: Dict[Mode, Dict[Frequency, Tuple[DateTimeComponent, ...]]] = {
 SeasonConfigInput = TypedDict(
     "SeasonConfigInput",
     {
+        "drop_incomplete_djf": bool,
         "drop_incomplete_seasons": bool,
         "dec_mode": Literal["DJF", "JFD"],
         "custom_seasons": Optional[List[List[str]]],
@@ -76,6 +78,7 @@ SeasonConfigInput = TypedDict(
 SeasonConfigAttr = TypedDict(
     "SeasonConfigAttr",
     {
+        "drop_incomplete_djf": bool,
         "drop_incomplete_seasons": bool,
         "dec_mode": Literal["DJF", "JFD"],
         "custom_seasons": Optional[Dict[str, List[str]]],
@@ -249,6 +252,11 @@ class TemporalAccessor:
         Time bounds are used for generating weights to calculate weighted group
         averages (refer to the ``weighted`` parameter documentation below).
 
+        .. deprecated:: v0.7.0
+            The ``season_config`` dictionary argument ``"drop_incomplete_djf"``
+            is being deprecated. Please use ``"drop_incomplete_seasons"``
+            instead.
+
         Parameters
         ----------
         data_var: str
@@ -419,6 +427,11 @@ class TemporalAccessor:
         Data is grouped into the labeled time point for the averaging operation.
         Time bounds are used for generating weights to calculate weighted
         climatology (refer to the ``weighted`` parameter documentation below).
+
+        .. deprecated:: v0.7.0
+            The ``season_config`` dictionary argument ``"drop_incomplete_djf"``
+            is being deprecated. Please use ``"drop_incomplete_seasons"``
+            instead.
 
         Parameters
         ----------
@@ -610,6 +623,11 @@ class TemporalAccessor:
 
         Time bounds are used for generating weights to calculate weighted
         climatology (refer to the ``weighted`` parameter documentation below).
+
+        .. deprecated:: v0.7.0
+            The ``season_config`` dictionary argument ``"drop_incomplete_djf"``
+            is being deprecated. Please use ``"drop_incomplete_seasons"``
+            instead.
 
         Parameters
         ----------
@@ -962,9 +980,20 @@ class TemporalAccessor:
         dec_mode = season_config.get("dec_mode", "DJF")
 
         self._season_config: SeasonConfigAttr = {}
-        self._season_config["drop_incomplete_seasons"] = season_config.get(
-            "drop_incomplete_seasons", False
-        )
+
+        # TODO: Deprecate `drop_incomplete_djf`.
+        drop_incomplete_djf = season_config.get("drop_incomplete_djf", None)
+        if drop_incomplete_djf is not None:
+            warnings.warn(
+                "The `season_config` argument 'drop_incomplete_djf' is being "
+                "deprecated. Please use 'drop_incomplete_seasons' instead.",
+                DeprecationWarning,
+            )
+            self._season_config["drop_incomplete_seasons"] = drop_incomplete_djf
+        else:
+            self._season_config["drop_incomplete_seasons"] = season_config.get(
+                "drop_incomplete_seasons", False
+            )
 
         if custom_seasons is None:
             if dec_mode not in ("DJF", "JFD"):
