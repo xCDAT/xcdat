@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import xarray as xr
@@ -66,11 +66,13 @@ class Regrid2Regridder(BaseRegridder):
         dst_lat_bnds = _get_bounds_ensure_dtype(self._output_grid, "Y")
         dst_lon_bnds = _get_bounds_ensure_dtype(self._output_grid, "X")
 
-        src_mask = self._input_grid.get("mask", None)
+        src_mask_da = self._input_grid.get("mask", None)
 
-        # apply mask to input data
-        if src_mask is not None:
-            input_data_var = input_data_var.where(src_mask == 0.0)
+        # DataArray to np.ndarray, handle error when None
+        try:
+            src_mask = src_mask_da.values  # type: ignore
+        except AttributeError:
+            src_mask = None
 
         nan_replace = input_data_var.encoding.get("_FillValue", None)
 
@@ -80,7 +82,12 @@ class Regrid2Regridder(BaseRegridder):
         input_data_var = input_data_var.fillna(nan_replace)
 
         output_data = _regrid(
-            input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
+            input_data_var,
+            src_lat_bnds,
+            src_lon_bnds,
+            dst_lat_bnds,
+            dst_lon_bnds,
+            src_mask,
         )
 
         output_data[output_data == nan_replace] = np.nan
@@ -104,6 +111,7 @@ def _regrid(
     src_lon_bnds: np.ndarray,
     dst_lat_bnds: np.ndarray,
     dst_lon_bnds: np.ndarray,
+    src_mask: Optional[np.ndarray],
 ) -> np.ndarray:
     lat_mapping, lat_weights = _map_latitude(src_lat_bnds, dst_lat_bnds)
     lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
@@ -116,6 +124,11 @@ def _regrid(
 
     y_length = len(lat_mapping)
     x_length = len(lon_mapping)
+
+    if src_mask is None:
+        input_data_shape = input_data.shape
+
+        src_mask = np.ones((input_data_shape[y_index], input_data_shape[x_index]))
 
     other_dims = {
         x: y for x, y in input_data_var.sizes.items() if x not in (y_name, x_name)
@@ -130,13 +143,20 @@ def _regrid(
 
     # TODO: need to optimize further, investigate using ufuncs and dask arrays
     # TODO: how common is lon by lat data? may need to reshape
+    # import pdb; pdb.set_trace()
     for y in range(y_length):
         y_seg = np.take(input_data, lat_mapping[y], axis=y_index)
+        y_mask_seg = np.take(src_mask, lat_mapping[y], axis=0)
 
         for x in range(x_length):
             x_seg = np.take(y_seg, lon_mapping[x], axis=x_index, mode="wrap")
+            x_mask_seg = np.take(y_mask_seg, lon_mapping[x], axis=1, mode="wrap")
 
-            cell_weight = np.dot(lat_weights[y], lon_weights[x])
+            cell_weights = np.multiply(
+                np.dot(lat_weights[y], lon_weights[x]), x_mask_seg
+            )
+
+            cell_weight = np.sum(cell_weights)
 
             output_seg_index = y * x_length + x
 
@@ -147,22 +167,25 @@ def _regrid(
             if is_2d:
                 output_data[output_seg_index] = np.divide(
                     np.sum(
-                        np.multiply(x_seg, cell_weight),
+                        np.multiply(x_seg, cell_weights),
                         axis=(y_index, x_index),
                     ),
-                    np.sum(cell_weight),
+                    cell_weight,
                 )
             else:
                 output_seg = output_data[output_seg_index]
 
                 np.divide(
                     np.sum(
-                        np.multiply(x_seg, cell_weight),
+                        np.multiply(x_seg, cell_weights),
                         axis=(y_index, x_index),
                     ),
-                    np.sum(cell_weight),
+                    cell_weight,
                     out=output_seg,
                 )
+
+            if cell_weight <= 0.0:
+                output_data[output_seg_index] = 1e20
 
     output_data_shape = [y_length, x_length] + other_sizes
 

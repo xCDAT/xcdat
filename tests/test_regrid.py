@@ -496,12 +496,15 @@ class TestRegrid2Regridder:
 
         output_data = regridder.horizontal("ts", self.coarse_2d_ds)
 
+        # replace nan with 1e20 as np.nan != np.nan
+        output_data = output_data.fillna(1e20)
+
         expected_output = np.array(
             [
-                [0.0] * 4,
-                [0.70710677] * 4,
-                [0.70710677] * 4,
-                [0.0] * 4,
+                [1e20] * 4,
+                [1.0] * 4,
+                [1.0] * 4,
+                [1e20] * 4,
             ],
             dtype=np.float32,
         )
