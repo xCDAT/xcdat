@@ -1,4 +1,5 @@
 import logging
+import warnings
 
 import cftime
 import numpy as np
@@ -620,7 +621,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_averages_with_DJF_and_drop_incomplete_seasons(self):
         ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=True)
@@ -872,7 +873,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_custom_seasonal_averages_with_seasons_spanning_calendar_years(
         self,
@@ -1151,7 +1152,7 @@ class TestClimatology:
             ds.temporal.climatology(
                 "ts",
                 "season",
-                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+                season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
                 reference_period=("01-01-2000", "01-01-2000"),
             )
 
@@ -1159,7 +1160,7 @@ class TestClimatology:
             ds.temporal.climatology(
                 "ts",
                 "season",
-                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+                season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
                 reference_period=("01-01-2000"),
             )
 
@@ -1169,7 +1170,7 @@ class TestClimatology:
         result = ds.temporal.climatology(
             "ts",
             "season",
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
             reference_period=("2000-01-01", "2000-06-01"),
         )
 
@@ -1201,7 +1202,7 @@ class TestClimatology:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
+                "drop_incomplete_seasons": "True",
             },
         )
 
@@ -1215,6 +1216,70 @@ class TestClimatology:
             "season",
             season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
         )
+
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(1, 1, 1),
+                    cftime.DatetimeGregorian(1, 4, 1),
+                    cftime.DatetimeGregorian(1, 7, 1),
+                    cftime.DatetimeGregorian(1, 10, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                        cftime.DatetimeGregorian(1, 10, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.ones((4, 4, 4)),
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "True",
+                "dec_mode": "DJF",
+            },
+        )
+
+        xr.testing.assert_identical(result, expected)
+
+    def test_raises_deprecation_warning_with_drop_incomplete_djf_season_config(self):
+        # NOTE: This will test will also cover the other public APIs that
+        # have drop_incomplete_djf as a season_config arg.
+        ds = self.ds.copy()
+
+        with warnings.catch_warnings(record=True) as w:
+            result = ds.temporal.climatology(
+                "ts",
+                "season",
+                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            )
+
+            assert len(w) == 1
+            assert issubclass(w[0].category, DeprecationWarning)
+            assert str(w[0].message) == (
+                "The `season_config` argument 'drop_incomplete_djf' is being deprecated. "
+                "Please use 'drop_incomplete_seasons' instead."
+            )
 
         expected = ds.copy()
         expected = expected.drop_dims("time")
@@ -1468,7 +1533,7 @@ class TestClimatology:
 
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.ones((4, 4, 4)),
+            data=np.ones((1, 4, 4)),
             coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
             dims=["time", "lat", "lon"],
             attrs={
@@ -1481,7 +1546,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_monthly_climatology(self):
         result = self.ds.temporal.climatology("ts", "month")
@@ -1902,7 +1967,7 @@ class TestDepartures:
             ds.temporal.departures(
                 "ts",
                 "season",
-                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+                season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
                 reference_period=("01-01-2000", "01-01-2000"),
             )
 
@@ -1910,7 +1975,7 @@ class TestDepartures:
             ds.temporal.departures(
                 "ts",
                 "season",
-                season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+                season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
                 reference_period=("01-01-2000"),
             )
 
@@ -1921,7 +1986,7 @@ class TestDepartures:
             "ts",
             "season",
             weighted=True,
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": False},
             reference_period=("2000-01-01", "2000-06-01"),
         )
 
@@ -1929,13 +1994,14 @@ class TestDepartures:
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.array([[[0.0]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+            data=np.array([[[0.0]], [[0.0]], [[np.nan]], [[np.nan]], [[0.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
                 "time": xr.DataArray(
                     data=np.array(
                         [
+                            cftime.DatetimeGregorian(2000, 1, 1),
                             cftime.DatetimeGregorian(2000, 4, 1),
                             cftime.DatetimeGregorian(2000, 7, 1),
                             cftime.DatetimeGregorian(2000, 10, 1),
@@ -1959,7 +2025,7 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_djf": "True",
+                "drop_incomplete_seasons": "False",
             },
         )
 
@@ -1974,7 +2040,7 @@ class TestDepartures:
             "ts",
             "month",
             weighted=True,
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
             reference_period=("2000-01-01", "2000-06-01"),
         )
 
@@ -2057,20 +2123,21 @@ class TestDepartures:
             "ts",
             "season",
             weighted=True,
-            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": False},
         )
 
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
+            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
                 "time": xr.DataArray(
                     data=np.array(
                         [
+                            cftime.DatetimeGregorian(2000, 1, 1),
                             cftime.DatetimeGregorian(2000, 4, 1),
                             cftime.DatetimeGregorian(2000, 7, 1),
                             cftime.DatetimeGregorian(2000, 10, 1),
@@ -2094,7 +2161,7 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_seasons": "True",
+                "drop_incomplete_seasons": "False",
             },
         )
 
@@ -2108,20 +2175,21 @@ class TestDepartures:
             "season",
             weighted=True,
             keep_weights=True,
-            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": False},
         )
 
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
+            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
                 "time": xr.DataArray(
                     data=np.array(
                         [
+                            cftime.DatetimeGregorian(2000, 1, 1),
                             cftime.DatetimeGregorian(2000, 4, 1),
                             cftime.DatetimeGregorian(2000, 7, 1),
                             cftime.DatetimeGregorian(2000, 10, 1),
@@ -2145,16 +2213,17 @@ class TestDepartures:
                 "freq": "season",
                 "weighted": "True",
                 "dec_mode": "DJF",
-                "drop_incomplete_seasons": "True",
+                "drop_incomplete_seasons": "False",
             },
         )
         expected["time_wts"] = xr.DataArray(
             name="ts",
-            data=np.array([1.0, 1.0, 1.0, 1.0]),
+            data=np.array([0.52542373, 1.0, 1.0, 1.0, 0.47457627]),
             coords={
                 "time_original": xr.DataArray(
                     data=np.array(
                         [
+                            "2000-01-16T12:00:00.000000000",
                             "2000-03-16T12:00:00.000000000",
                             "2000-06-16T00:00:00.000000000",
                             "2000-09-16T00:00:00.000000000",
@@ -2174,7 +2243,7 @@ class TestDepartures:
             dims=["time_original"],
         )
 
-        xr.testing.assert_identical(result, expected)
+        xr.testing.assert_allclose(result, expected)
 
     def test_unweighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
@@ -2183,20 +2252,21 @@ class TestDepartures:
             "ts",
             "season",
             weighted=False,
-            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": False},
         )
 
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
+            data=np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
                 "time": xr.DataArray(
                     data=np.array(
                         [
+                            cftime.DatetimeGregorian(2000, 1, 1),
                             cftime.DatetimeGregorian(2000, 4, 1),
                             cftime.DatetimeGregorian(2000, 7, 1),
                             cftime.DatetimeGregorian(2000, 10, 1),
@@ -2219,7 +2289,7 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "False",
-                "drop_incomplete_seasons": "True",
+                "drop_incomplete_seasons": "False",
                 "dec_mode": "DJF",
             },
         )
