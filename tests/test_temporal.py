@@ -210,6 +210,7 @@ class TestAverage:
         )
 
         xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
 
         # Test unweighted averages
         result = ds.temporal.average("ts", weighted=False)
@@ -227,6 +228,7 @@ class TestAverage:
             },
         )
         xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
 
     def test_averages_for_daily_time_series(self):
         ds = xr.Dataset(
@@ -818,6 +820,68 @@ class TestGroupAverage:
         )
 
         xr.testing.assert_identical(result, expected)
+
+    def test_weighted_seasonal_averages_with_custom_seasons_and_all_complete_seasons(
+        self,
+    ):
+        ds = self.ds.copy()
+        ds["time"].values[:] = np.array(
+            [
+                "2000-01-16T12:00:00.000000000",
+                "2000-02-15T12:00:00.000000000",
+                "2000-03-16T12:00:00.000000000",
+                "2000-06-16T00:00:00.000000000",
+                "2000-09-16T00:00:00.000000000",
+            ],
+            dtype="datetime64[ns]",
+        )
+
+        result = ds.temporal.group_average(
+            "ts",
+            "season",
+            season_config={
+                "custom_seasons": [["Jan", "Mar", "Jun"], ["Feb", "Sep"]],
+                "drop_incomplete_seasons": True,
+            },
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[1.34065934]], [[1.47457627]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 3, 1),
+                            cftime.DatetimeGregorian(2000, 9, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "True",
+                "custom_seasons": ["JanMarJun", "FebSep"],
+            },
+        )
+
+        xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
 
     def test_weighted_custom_seasonal_averages_drops_incomplete_seasons(self):
         ds = self.ds.copy()
@@ -2244,6 +2308,7 @@ class TestDepartures:
         )
 
         xr.testing.assert_allclose(result, expected)
+        assert result.ts.attrs == expected.ts.attrs
 
     def test_unweighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
