@@ -147,7 +147,6 @@ def _regrid(
 
     # TODO: need to optimize further, investigate using ufuncs and dask arrays
     # TODO: how common is lon by lat data? may need to reshape
-    # import pdb; pdb.set_trace()
     for y in range(y_length):
         y_seg = np.take(input_data, lat_mapping[y], axis=y_index)
         y_mask_seg = np.take(src_mask, lat_mapping[y], axis=0)
