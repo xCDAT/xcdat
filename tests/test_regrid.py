@@ -496,11 +496,36 @@ class TestRegrid2Regridder:
 
         output_data = regridder.horizontal("ts", self.coarse_2d_ds)
 
+        # np.nan != np.nan, replace with 1e20
+        output_data = output_data.fillna(1e20)
+
+        expected_output = np.array(
+            [
+                [1e20] * 4,
+                [1.0] * 4,
+                [1.0] * 4,
+                [1e20] * 4,
+            ],
+            dtype=np.float32,
+        )
+
+        assert np.all(output_data.ts.values == expected_output)
+
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
+    def test_regrid_input_mask_unmapped_to_nan(self):
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, unmapped_to_nan=False
+        )
+
+        self.coarse_2d_ds["mask"] = (("lat", "lon"), [[0, 0], [1, 1], [0, 0]])
+
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
+
         expected_output = np.array(
             [
                 [0.0] * 4,
-                [0.70710677] * 4,
-                [0.70710677] * 4,
+                [1.0] * 4,
+                [1.0] * 4,
                 [0.0] * 4,
             ],
             dtype=np.float32,
@@ -690,7 +715,7 @@ class TestXESMFRegridder:
         assert "time_bnds" in output
 
     @pytest.mark.parametrize(
-        "name,value,attr_name",
+        "name,value,_",
         [
             ("periodic", True, "_periodic"),
             ("extrap_method", "inverse_dist", "_extrap_method"),
@@ -700,14 +725,15 @@ class TestXESMFRegridder:
             ("ignore_degenerate", False, "_ignore_degenerate"),
         ],
     )
-    def test_flags(self, name, value, attr_name):
+    def test_flags(self, name, value, _):
         ds = self.ds.copy()
 
         options = {name: value}
 
         regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear", **options)
 
-        assert getattr(regridder, attr_name) == value
+        assert name in regridder._extra_options
+        assert regridder._extra_options[name] == value
 
     def test_no_variable(self):
         ds = self.ds.copy()
