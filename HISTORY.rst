@@ -2,6 +2,60 @@
 History
 =======
 
+v0.7.0 (10 April 2024)
+----------------------
+
+This minor release includes enhancements to the performance of the
+Regrid2 API and fixes Regrid2 to align the behavior of how missing
+values are handled with CDAT. There are various bug fixes, documentation
+updates, and feature deprecations listed below.
+
+Enhancements
+~~~~~~~~~~~~
+
+-  Improving regrid2 performance by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/533
+-  Update Regrid2 missing and fill value behaviors to align with CDAT
+   and add ``unmapped_to_nan`` arg for output data by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/613
+
+Bug Fixes
+~~~~~~~~~
+
+-  Fix Regrid2 to convert bounds as Dask Arrays to NumPy Arrays for
+   compatibility with NumPy based code by `Tom Vo`_ and `Jiwoo Lee`_ in
+   https://github.com/xCDAT/xcdat/pull/634
+-  Fix climo notebook missing T bounds and add notebook env setup in all
+   example notebooks by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/623
+-  Update unweighted temporal averages to not require bounds by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/579
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Update documentation styling for easier navigation by `Tom Vo`_
+   in https://github.com/xCDAT/xcdat/pull/624
+-  Add list of projects using xCDAT by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/617
+-  Fix ESMFMKFILE env variable not set in RTD build by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/577
+
+Deprecations
+~~~~~~~~~~~~
+
+-  Remove deprecated features and APIs by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/628, including:
+
+   -  ``horizontal_xesmf()`` and ``horizontal_regrid2()``
+   -  ``**kwargs`` from ``create_grid()``
+   -  ``add_bounds`` accepting boolean arg in ``open_dataset()`` and
+      ``open_mfdataset()``
+   -  Remove CDML/XML support from ``open_dataset()`` and
+      ``open_mfdataset()`` since CDAT is EOL since Dec/2023
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.6.1...0.7.0
+
 v0.6.1 (29 November 2023)
 -------------------------
 
