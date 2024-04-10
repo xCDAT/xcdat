@@ -496,7 +496,7 @@ class TestRegrid2Regridder:
 
         output_data = regridder.horizontal("ts", self.coarse_2d_ds)
 
-        # replace nan with 1e20 as np.nan != np.nan
+        # np.nan != np.nan, replace with 1e20
         output_data = output_data.fillna(1e20)
 
         expected_output = np.array(
@@ -505,6 +505,28 @@ class TestRegrid2Regridder:
                 [1.0] * 4,
                 [1.0] * 4,
                 [1e20] * 4,
+            ],
+            dtype=np.float32,
+        )
+
+        assert np.all(output_data.ts.values == expected_output)
+
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
+    def test_regrid_input_mask_unmapped_to_nan(self):
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, unmapped_to_nan=False
+        )
+
+        self.coarse_2d_ds["mask"] = (("lat", "lon"), [[0, 0], [1, 1], [0, 0]])
+
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
+
+        expected_output = np.array(
+            [
+                [0.0] * 4,
+                [1.0] * 4,
+                [1.0] * 4,
+                [0.0] * 4,
             ],
             dtype=np.float32,
         )
