@@ -8,7 +8,13 @@ from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 
 class Regrid2Regridder(BaseRegridder):
-    def __init__(self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Any):
+    def __init__(
+        self,
+        input_grid: xr.Dataset,
+        output_grid: xr.Dataset,
+        unmapped_to_nan=True,
+        **options: Any,
+    ):
         """
         Pure python implementation of the regrid2 horizontal regridder from
         CDMS2's regrid2 module.
@@ -46,6 +52,8 @@ class Regrid2Regridder(BaseRegridder):
         >>> output_data = ds.regridder.horizontal("ts", output_grid)
         """
         super().__init__(input_grid, output_grid, **options)
+
+        self._unmapped_to_nan = unmapped_to_nan
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Placeholder for base class."""
@@ -90,6 +98,7 @@ class Regrid2Regridder(BaseRegridder):
             dst_lat_bnds,
             dst_lon_bnds,
             src_mask,
+            unmapped_to_nan=self._unmapped_to_nan,
         )
 
         output_ds = _build_dataset(
@@ -113,6 +122,7 @@ def _regrid(
     dst_lon_bnds: np.ndarray,
     src_mask: Optional[np.ndarray],
     omitted=None,
+    unmapped_to_nan=True,
 ) -> np.ndarray:
     if omitted is None:
         omitted = np.nan
@@ -142,6 +152,7 @@ def _regrid(
     data_shape = [y_length * x_length] + other_sizes
     # output data is always float32 in original code
     output_data = np.zeros(data_shape, dtype=np.float32)
+    output_mask = np.ones(data_shape, dtype=np.float32)
 
     is_2d = input_data_var.ndim <= 2
 
@@ -162,6 +173,9 @@ def _regrid(
             cell_weight = np.sum(cell_weights)
 
             output_seg_index = y * x_length + x
+
+            if cell_weight == 0.0:
+                output_mask[output_seg_index] = 0.0
 
             # using the `out` argument is more performant, places data directly into
             # array memory rather than allocating a new variable. wasn't working for
@@ -189,6 +203,10 @@ def _regrid(
 
             if cell_weight <= 0.0:
                 output_data[output_seg_index] = omitted
+
+    # default for unmapped is nan due to division by zero, use output mask to repalce
+    if not unmapped_to_nan:
+        output_data[output_mask == 0.0] = 0.0
 
     output_data_shape = [y_length, x_length] + other_sizes
 
