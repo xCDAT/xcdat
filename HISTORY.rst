@@ -13,39 +13,39 @@ updates, and feature deprecations listed below.
 Enhancements
 ~~~~~~~~~~~~
 
--  Improving regrid2 performance by @jasonb5 in
+-  Improving regrid2 performance by `Jason Boutte`_ in
    https://github.com/xCDAT/xcdat/pull/533
 -  Update Regrid2 missing and fill value behaviors to align with CDAT
-   and add ``unmapped_to_nan`` arg for output data by @jasonb5 in
+   and add ``unmapped_to_nan`` arg for output data by `Jason Boutte`_ in
    https://github.com/xCDAT/xcdat/pull/613
 
 Bug Fixes
 ~~~~~~~~~
 
 -  Fix Regrid2 to convert bounds as Dask Arrays to NumPy Arrays for
-   compatibility with NumPy based code by @tomvothecoder and @lee1043 in
+   compatibility with NumPy based code by `Tom Vo`_ and `Jiwoo Lee`_ in
    https://github.com/xCDAT/xcdat/pull/634
 -  Fix climo notebook missing T bounds and add notebook env setup in all
-   example notebooks by @tomvothecoder in
+   example notebooks by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/623
 -  Update unweighted temporal averages to not require bounds by
-   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/579
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/579
 
 Documentation
 ~~~~~~~~~~~~~
 
--  Update documentation styling for easier navigation by @tomvothecoder
+-  Update documentation styling for easier navigation by `Tom Vo`_
    in https://github.com/xCDAT/xcdat/pull/624
--  Add list of projects using xCDAT by @tomvothecoder in
+-  Add list of projects using xCDAT by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/617
 -
--  Fix ESMFMKFILE env variable not set in RTD build by @tomvothecoder in
+-  Fix ESMFMKFILE env variable not set in RTD build by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/577
 
 Deprecations
 ~~~~~~~~~~~~
 
--  Remove deprecated features and APIs by @tomvothecoder in
+-  Remove deprecated features and APIs by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/628, including:
 
    -  ``horizontal_xesmf()`` and ``horizontal_regrid2()``
