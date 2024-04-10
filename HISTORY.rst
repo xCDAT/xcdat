@@ -38,7 +38,6 @@ Documentation
    in https://github.com/xCDAT/xcdat/pull/624
 -  Add list of projects using xCDAT by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/617
--
 -  Fix ESMFMKFILE env variable not set in RTD build by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/577
 
