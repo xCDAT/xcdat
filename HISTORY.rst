@@ -2,6 +2,61 @@
 History
 =======
 
+v0.7.0 (10 April 2024)
+----------------------
+
+This minor release includes enhancements to the performance of the
+Regrid2 API and fixes Regrid2 to align the behavior of how missing
+values are handled with CDAT. There are various bug fixes, documentation
+updates, and feature deprecations listed below.
+
+Enhancements
+~~~~~~~~~~~~
+
+-  Improving regrid2 performance by @jasonb5 in
+   https://github.com/xCDAT/xcdat/pull/533
+-  Update Regrid2 missing and fill value behaviors to align with CDAT
+   and add ``unmapped_to_nan`` arg for output data by @jasonb5 in
+   https://github.com/xCDAT/xcdat/pull/613
+
+Bug Fixes
+~~~~~~~~~
+
+-  Fix Regrid2 to convert bounds as Dask Arrays to NumPy Arrays for
+   compatibility with NumPy based code by @tomvothecoder and @lee1043 in
+   https://github.com/xCDAT/xcdat/pull/634
+-  Fix climo notebook missing T bounds and add notebook env setup in all
+   example notebooks by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/623
+-  Update unweighted temporal averages to not require bounds by
+   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/579
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Update documentation styling for easier navigation by @tomvothecoder
+   in https://github.com/xCDAT/xcdat/pull/624
+-  Add list of projects using xCDAT by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/617
+-
+-  Fix ESMFMKFILE env variable not set in RTD build by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/577
+
+Deprecations
+~~~~~~~~~~~~
+
+-  Remove deprecated features and APIs by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/628, including:
+
+   -  ``horizontal_xesmf()`` and ``horizontal_regrid2()``
+   -  ``**kwargs`` from ``create_grid()``
+   -  ``add_bounds`` accepting boolean arg in ``open_dataset()`` and
+      ``open_mfdataset()``
+   -  Remove CDML/XML support from ``open_dataset()`` and
+      ``open_mfdataset()`` since CDAT is EOL since Dec/2023
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.6.1...0.7.0
+
 v0.6.1 (29 November 2023)
 -------------------------
 
