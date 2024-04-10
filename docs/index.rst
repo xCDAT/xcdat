@@ -21,33 +21,20 @@ xCDAT (Xarray Climate Data Analysis Tools) is an extension of `xarray`_ for clim
         :link: getting-started-guide/index
         :link-type: doc
 
-        New to xCDAT? Check out the getting started guides.
-
     .. grid-item-card::  Examples
         :img-top: _static/icons/plot.svg
         :link: gallery
         :link-type: doc
-
-        This gallery demonstrates how to use some of the features in xCDAT through
-        Jupyter Notebooks with real-world examples.
 
     .. grid-item-card::  API reference
         :img-top: _static/icons/wrench.svg
         :link: api
         :link-type: doc
 
-        The reference guide contains a detailed description of the xCDAT API.
-        The reference describes how the methods work and which parameters can
-        be used. It assumes that you have an understanding of key Xarray concepts.
-
     .. grid-item-card::  Developer guide
         :img-top: _static/icons/book.svg
         :link: contributing
         :link-type: doc
-
-        Saw a typo in the documentation? Want to improve existing functionalities?
-        The contributing guidelines will guide you through the process of improving
-        xCDAT.
 
 
 .. toctree::

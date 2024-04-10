@@ -1,20 +1,20 @@
-- title: A Gentle Introduction to xCDAT (Xarray Climate Data Analysis Tools)
+- title: Introduction to xCDAT
   path: examples/introduction-to-xcdat.ipynb
   thumbnail: _static/xcdat-logo.png
 
-- title: General Dataset Utilities
+- title: xCDAT Utilities
   path: examples/general-utilities.ipynb
   thumbnail: _static/dataset-diagram.webp
 
-- title: Calculate Geospatial Weighted Averages from Monthly Time Series
+- title: Spatial Averaging
   path: examples/spatial-average.ipynb
   thumbnail: _static/thumbnails/spatial-avg.png
 
-- title: Calculate Time Averages from Time Series Data
+- title: Temporal Averaging
   path: examples/temporal-average.ipynb
   thumbnail: _static/thumbnails/temporal-average.png
 
-- title: Calculate Climatology and Departures from Time Series Data
+- title: Climatology and Departures
   path: examples/climatology-and-departures.ipynb
   thumbnail: _static/thumbnails/climatology-and-departures.png
 
