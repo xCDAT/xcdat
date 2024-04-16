@@ -77,7 +77,6 @@ Instructions
 .. _mamba create: https://mamba.readthedocs.io/en/latest/user_guide/mamba.html#quickstart
 .. _mamba install: https://mamba.readthedocs.io/en/latest/user_guide/mamba.html#quickstart
 
-
 Updating
 --------
 
@@ -95,8 +94,6 @@ To update to a specific version of ``xcdat``:
 
    >>> mamba activate <ENV_NAME>
    >>> mamba update xcdat=<MAJOR.MINOR.PATCH>
-
-
 
 Jupyter Users set `ESMFMKFILE` env variable
 -------------------------------------------
