@@ -182,7 +182,7 @@ Things We Are Striving For
 * Support for parallelism using `dask`_ where it is both possible and makes sense
 
 .. _Metadata Interpretation: https://xcdat.readthedocs.io/en/stable/faqs.html#metadata-interpretation
-.. _xESMF: https://pangeo-xesmf.readthedocs.io/en/latest/
+.. _xESMF: https://xesmf.readthedocs.io/en/latest/
 .. _regrid2: https://cdms.readthedocs.io/en/latest/regrid2.html
 .. _xgcm: https://xgcm.readthedocs.io/en/latest/index.html
 .. _dask: https://dask.org/

@@ -77,7 +77,6 @@ Instructions
 .. _mamba create: https://mamba.readthedocs.io/en/latest/user_guide/mamba.html#quickstart
 .. _mamba install: https://mamba.readthedocs.io/en/latest/user_guide/mamba.html#quickstart
 
-
 Updating
 --------
 
@@ -95,3 +94,24 @@ To update to a specific version of ``xcdat``:
 
    >>> mamba activate <ENV_NAME>
    >>> mamba update xcdat=<MAJOR.MINOR.PATCH>
+
+Jupyter Users set ``ESMFMKFILE`` env variable
+---------------------------------------------
+
+If you are a Jupyter user, the ``ESMFMKFILE`` environment variable will need to be set
+either directly on the machine or through your Jupyter Notebook.
+
+This env variable is normally set when calling ``conda activate`` with the conda
+environment that has ``xesmf``. However, Jupyter does not run ``conda activate`` when using
+the Python kernel associated with the environment so ``ESMFMKFILE`` is not set, resulting 
+in ``ImportError: The ESMFMKFILE environment variable is not available.`` (related `GitHub
+Issue <https://github.com/xCDAT/xcdat/issues/574>`_).
+
+To set the ``ESMFMKFILE`` in a Jupyter Notebook add:
+
+.. code-block:: python
+
+   >>> import os
+   >>> os.environ['ESMFMKFILE'] = 'conda-envs/xcdat/lib/esmf.mk'
+   >>>
+   >>> import xcdat
