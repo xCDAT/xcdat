@@ -107,7 +107,7 @@ the Python kernel associated with the environment so ``ESMFMKFILE`` is not set, 
 in ``ImportError: The ESMFMKFILE environment variable is not available.`` (related `GitHub
 Issue <https://github.com/xCDAT/xcdat/issues/574>`_).
 
-To set the ``EMSFMKFILE`` in a Jupyter Notebook add:
+To set the ``ESMFMKFILE`` in a Jupyter Notebook add:
 
 .. code-block:: python
 
