@@ -105,7 +105,7 @@ This env variable is normally set when calling ``conda activate`` with the conda
 environment that has ``xesmf``. However, Jupyter does not run ``conda activate`` when using
 the Python kernel associated with the environment so ``ESMFMKFILE`` is not set, resulting 
 in ``ImportError: The ESMFMKFILE environment variable is not available.`` (related `GitHub
-Issue <https://github.com/xCDAT/xcdat/issues/574>`_.
+Issue <https://github.com/xCDAT/xcdat/issues/574>`_).
 
 To set the ``EMSFMKFILE`` in a Jupyter Notebook add:
 
