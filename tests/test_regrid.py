@@ -1,7 +1,6 @@
 import datetime
 import re
 import sys
-import warnings
 from unittest import mock
 
 import numpy as np
@@ -38,7 +37,8 @@ class TestXGCMRegridder:
     def setup(self):
         self.ds = fixtures.generate_lev_dataset()
 
-        self.output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+        z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
+        self.output_grid = grid.create_grid(z=z)
 
     def test_multiple_z_axes(self):
         self.ds = self.ds.assign_coords({"ilev": self.ds.lev.copy().rename("ilev")})
@@ -496,11 +496,36 @@ class TestRegrid2Regridder:
 
         output_data = regridder.horizontal("ts", self.coarse_2d_ds)
 
+        # np.nan != np.nan, replace with 1e20
+        output_data = output_data.fillna(1e20)
+
+        expected_output = np.array(
+            [
+                [1e20] * 4,
+                [1.0] * 4,
+                [1.0] * 4,
+                [1e20] * 4,
+            ],
+            dtype=np.float32,
+        )
+
+        assert np.all(output_data.ts.values == expected_output)
+
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
+    def test_regrid_input_mask_unmapped_to_nan(self):
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, unmapped_to_nan=False
+        )
+
+        self.coarse_2d_ds["mask"] = (("lat", "lon"), [[0, 0], [1, 1], [0, 0]])
+
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
+
         expected_output = np.array(
             [
                 [0.0] * 4,
-                [0.70710677] * 4,
-                [0.70710677] * 4,
+                [1.0] * 4,
+                [1.0] * 4,
                 [0.0] * 4,
             ],
             dtype=np.float32,
@@ -690,7 +715,7 @@ class TestXESMFRegridder:
         assert "time_bnds" in output
 
     @pytest.mark.parametrize(
-        "name,value,attr_name",
+        "name,value,_",
         [
             ("periodic", True, "_periodic"),
             ("extrap_method", "inverse_dist", "_extrap_method"),
@@ -700,14 +725,15 @@ class TestXESMFRegridder:
             ("ignore_degenerate", False, "_ignore_degenerate"),
         ],
     )
-    def test_flags(self, name, value, attr_name):
+    def test_flags(self, name, value, _):
         ds = self.ds.copy()
 
         options = {name: value}
 
         regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear", **options)
 
-        assert getattr(regridder, attr_name) == value
+        assert name in regridder._extra_options
+        assert regridder._extra_options[name] == value
 
     def test_no_variable(self):
         ds = self.ds.copy()
@@ -891,73 +917,6 @@ class TestGrid:
         ):
             grid.create_grid(x=(self.lon, self.lon_bnds, self.lat))  # type: ignore[arg-type]
 
-    def test_deprecated_unexpected_coordinate(self):
-        lev = np.linspace(1000, 1, 2)
-
-        with pytest.raises(
-            ValueError,
-            match="Coordinate mass is not valid, reference `xcdat.axis.VAR_NAME_MAP` for valid options.",
-        ):
-            grid.create_grid(lev=lev, mass=np.linspace(10, 20, 2))
-
-    def test_deprecated_create_grid_lev(self):
-        lev = np.linspace(1000, 1, 2)
-        lev_bnds = np.array([[1499.5, 500.5], [500.5, -498.5]])
-
-        with warnings.catch_warnings(record=True) as w:
-            new_grid = grid.create_grid(lev=(lev, lev_bnds))
-
-            assert len(w) == 1
-            assert issubclass(w[0].category, DeprecationWarning)
-            assert (
-                str(w[0].message)
-                == "**kwargs will be deprecated, see docstring and use 'x', 'y', or 'z' arguments"
-            )
-
-        assert np.array_equal(new_grid.lev, lev)
-        assert np.array_equal(new_grid.lev_bnds, lev_bnds)
-
-    def test_deprecated_create_grid(self):
-        lat = np.array([-45, 0, 45])
-        lon = np.array([30, 60, 90, 120, 150])
-        lat_bnds = np.array([[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
-        lon_bnds = np.array([[15, 45], [45, 75], [75, 105], [105, 135], [135, 165]])
-
-        new_grid = grid.create_grid(lat=lat, lon=lon)
-
-        assert np.array_equal(new_grid.lat, lat)
-        assert np.array_equal(new_grid.lat_bnds, lat_bnds)
-        assert new_grid.lat.units == "degrees_north"
-        assert np.array_equal(new_grid.lon, lon)
-        assert np.array_equal(new_grid.lon_bnds, lon_bnds)
-        assert new_grid.lon.units == "degrees_east"
-
-        da_lat = xr.DataArray(
-            name="lat",
-            data=lat,
-            dims=["lat"],
-            attrs={"units": "degrees_north", "axis": "Y"},
-        )
-        da_lon = xr.DataArray(
-            name="lon",
-            data=lon,
-            dims=["lon"],
-            attrs={"units": "degrees_east", "axis": "X"},
-        )
-        da_lat_bnds = xr.DataArray(name="lat_bnds", data=lat_bnds, dims=["lat", "bnds"])
-        da_lon_bnds = xr.DataArray(name="lon_bnds", data=lon_bnds, dims=["lon", "bnds"])
-
-        new_grid = grid.create_grid(
-            lat=(da_lat, da_lat_bnds), lon=(da_lon, da_lon_bnds)
-        )
-
-        assert np.array_equal(new_grid.lat, lat)
-        assert np.array_equal(new_grid.lat_bnds, lat_bnds)
-        assert new_grid.lat.units == "degrees_north"
-        assert np.array_equal(new_grid.lon, lon)
-        assert np.array_equal(new_grid.lon_bnds, lon_bnds)
-        assert new_grid.lon.units == "degrees_east"
-
     def test_uniform_grid(self):
         new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)
 
@@ -986,10 +945,14 @@ class TestGrid:
         assert uneven_grid.lon.shape == (67,)
 
     def test_global_mean_grid(self):
-        source_grid = grid.create_grid(
-            lat=np.array([-80, -40, 0, 40, 80]),
-            lon=np.array([0, 45, 90, 180, 270, 360]),
+        x = grid.create_axis(
+            "lon", np.array([0, 45, 90, 180, 270, 360]), generate_bounds=True
         )
+        y = grid.create_axis(
+            "lat", np.array([-80, -40, 0, 40, 80]), generate_bounds=True
+        )
+
+        source_grid = grid.create_grid(x=x, y=y)
 
         mean_grid = grid.create_global_mean_grid(source_grid)
 
@@ -1068,9 +1031,14 @@ class TestGrid:
             grid.create_global_mean_grid(source_grid_with_2_lons)
 
     def test_zonal_grid(self):
-        source_grid = grid.create_grid(
-            lat=np.array([-80, -40, 0, 40, 80]), lon=np.array([-160, -80, 80, 160])
+        x = grid.create_axis(
+            "lon", np.array([-160, -80, 80, 160]), generate_bounds=True
         )
+        y = grid.create_axis(
+            "lat", np.array([-80, -40, 0, 40, 80]), generate_bounds=True
+        )
+
+        source_grid = grid.create_grid(x=x, y=y)
 
         zonal_grid = grid.create_zonal_grid(source_grid)
 
@@ -1194,7 +1162,9 @@ class TestAccessor:
         assert output_data.ts.shape == (15, 4, 4)
 
     def test_vertical(self):
-        output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+        z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
+
+        output_grid = grid.create_grid(z=z)
 
         output_data = self.vertical_ds.regridder.vertical(
             "so", output_grid, tool="xgcm", method="linear"
@@ -1210,7 +1180,8 @@ class TestAccessor:
         assert output_data.so.shape == (15, 4, 4, 4)
 
     def test_vertical_multiple_z_axes(self):
-        output_grid = grid.create_grid(lev=np.linspace(10000, 2000, 2))
+        z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
+        output_grid = grid.create_grid(z=z)
 
         self.vertical_ds = self.vertical_ds.assign_coords(
             {"ilev": self.vertical_ds.lev.copy().rename("ilev")}
@@ -1311,22 +1282,6 @@ class TestAccessor:
             ValueError, match=r"Tool 'dummy' does not exist, valid choices"
         ):
             self.ac.vertical("ts", mock_data, tool="dummy", target_data=None)  # type: ignore
-
-    @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
-    def test_convenience_methods(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
-        )
-
-        out_grid = grid.create_gaussian_grid(32)
-
-        output_xesmf = ds.regridder.horizontal_xesmf("ts", out_grid, method="bilinear")
-
-        assert output_xesmf.ts.shape == (15, 32, 65)
-
-        output_regrid2 = ds.regridder.horizontal_regrid2("ts", out_grid)
-
-        assert output_regrid2.ts.shape == (15, 32, 65)
 
 
 class TestBase:

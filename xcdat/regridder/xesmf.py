@@ -28,6 +28,7 @@ class XESMFRegridder(BaseRegridder):
         extrap_dist_exponent: Optional[float] = None,
         extrap_num_src_pnts: Optional[int] = None,
         ignore_degenerate: bool = True,
+        unmapped_to_nan: bool = True,
         **options: Any,
     ):
         """Extension of ``xESMF`` regridder.
@@ -74,6 +75,8 @@ class XESMFRegridder(BaseRegridder):
 
             This only applies to "conservative" and "conservative_normed"
             regridding methods.
+        unmapped_to_nan : bool
+            Sets values of unmapped points to `np.nan` instead of 0 (ESMF default).
         **options : Any
             Additional arguments passed to the underlying ``xesmf.XESMFRegridder``
             constructor.
@@ -126,11 +129,17 @@ class XESMFRegridder(BaseRegridder):
             )
 
         self._method = method
-        self._periodic = periodic
-        self._extrap_method = extrap_method
-        self._extrap_dist_exponent = extrap_dist_exponent
-        self._extrap_num_src_pnts = extrap_num_src_pnts
-        self._ignore_degenerate = ignore_degenerate
+
+        # Re-pack xesmf arguments, broken out for validation/documentation
+        options.update(
+            periodic=periodic,
+            extrap_method=extrap_method,
+            extrap_dist_exponent=extrap_dist_exponent,
+            extrap_num_src_pnts=extrap_num_src_pnts,
+            ignore_degenerate=ignore_degenerate,
+            unmapped_to_nan=unmapped_to_nan,
+        )
+
         self._extra_options = options
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
@@ -150,11 +159,6 @@ class XESMFRegridder(BaseRegridder):
             self._input_grid,
             self._output_grid,
             method=self._method,
-            periodic=self._periodic,
-            extrap_method=self._extrap_method,
-            extrap_dist_exponent=self._extrap_dist_exponent,
-            extrap_num_src_pnts=self._extrap_num_src_pnts,
-            ignore_degenerate=self._ignore_degenerate,
             **self._extra_options,
         )
 
