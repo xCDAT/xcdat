@@ -28,4 +28,4 @@
 
 - title: Parallel Computing with Dask
   path: examples/parallel-computing-with-dask.ipynb
-  thumbnail: _static/thumbnails/dask-logo.svg
+  thumbnail: _static/thumbnails/dask-logo.png
