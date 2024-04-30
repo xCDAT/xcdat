@@ -7,17 +7,15 @@ Metadata Interpretation
 
 What types of datasets does ``xcdat`` primarily focus on?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``xcdat`` supports datasets with structured grids that follow the `CF convention`_, but
-will also strive to support datasets with common non-CF compliant metadata (e.g., time
-units in "months since ..." or "years since ...").
+``xcdat`` supports datasets with structured grids that follow the `CF convention`_.
 
 .. _CF convention: http://cfconventions.org/
 
-What structured grids does ``xcdat`` support?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+What structured grids are supported by  ``xcdat``?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 xCDAT aims to be a generalizable package that is compatible with structured grids that
-are **CF-compliant** (e.g., CMIP6). xCDAT’s horizontal regridder supports grids that are
-supported by Regrid2 and xESMF  (curvilinear and rectilinear).
+are **CF-compliant** (e.g., CMIP6). xCDAT's spatial averager currently supports
+rectilinear grids, and the horizontal regridder curvilinear and rectilinear grids.
 
 How does ``xcdat`` interpret dataset metadata?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -25,6 +23,9 @@ How does ``xcdat`` interpret dataset metadata?
 ``xcdat`` methods and functions usually accept an ``axis`` argument (e.g.,
 ``ds.temporal.average("ts")``). This argument is internally mapped to ``cf_xarray``
 mapping tables that interpret the CF attributes.
+
+xCDAT also includes its own "fall-back" mapping table that maps axes to their commonly accepted names
+(e.g., "X" maps to "longitude" and "lon").
 
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 
@@ -60,17 +61,30 @@ Handling Bounds
 
 How are bounds generated in xCDAT?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-xCDAT generates bounds by using coordinate points as the midpoint between their lower
-and upper bounds.
+For the X, Y, and Z axes, xCDAT generates bounds by using coordinate points as the
+midpoint between their lower and upper bounds.
+
+For the T axis, xCDAT can generate bounds either by 1) time frequency (default method)
+or 2) midpoints.
+
+   1. time frequency: create time bounds as the start and end of each timestep's period
+      using either the inferred or specified time frequency.
+   2. midpoint: create time bounds using time coordinates as the midpoint between their
+      upper and lower bounds.
+
+For more information, visit the documentation for these APIs:
+- https://xcdat.readthedocs.io/en/stable/generated/xarray.Dataset.bounds.add_missing_bounds.html
+- https://xcdat.readthedocs.io/en/stable/generated/xarray.Dataset.bounds.add_time_bounds.html
+- https://xcdat.readthedocs.io/en/stable/generated/xarray.Dataset.bounds.add_bounds.html
 
 Does xCDAT support generating bounds for multiple axis coordinate systems in the same dataset?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 *For example, there are two sets of coordinates called “lat” and “latitude” in the dataset.*
 
 Yes, xCDAT can generate bounds for axis coordinates if they are  “dimension coordinates”
-(`coordinate variables`_ in CF terminology) and have the required CF metadata.
-“Non-dimension coordinates” (`auxiliary coordinate variables`_ in CF terminology) are
-ignored.
+and have the required CF metadata. Dimension coordinates are also considered "index"
+coordinates in Xarray and `coordinate variables`_ in CF terminology. “Non-dimension coordinates”
+(`auxiliary coordinate variables`_ in CF terminology) are ignored.
 
 Visit Xarray’s documentation page on `Coordinates`_ for more info on “dimension
 coordinates” vs. “non-dimension coordinates”.
@@ -90,8 +104,8 @@ The units attribute must be in the CF compliant format
 
 Supported CF compliant units include ``day``, ``hour``, ``minute``, ``second``,
 which is inherited from ``xarray`` and ``cftime``. Supported non-CF compliant units
-include ``year`` and ``month``, which ``xcdat`` is able to parse. Note, the plural form of
-these units are accepted.
+include ``year`` and ``month``, which ``xcdat`` is able to parse. Note, the plural form
+of these units are accepted.
 
 References:
 
@@ -137,16 +151,19 @@ References:
 
 * https://github.com/pydata/xarray/issues/789
 * https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
+* https://discourse.pangeo.io/t/pandas-dtypes-now-free-from-nanosecond-limitation/3106
 
-Data Wrangling
---------------
 
-``xcdat`` aims to implement generalized functionality. This means that functionality
-intended to handle data quality issues is out of scope, especially for limited cases.
+xCDAT Does Not Support Model-Specific Data Wrangling
+----------------------------------------------------
+
+``xcdat`` aims to implement generalized functionality. This means that data wrangling
+functionality intended to handle data quality issues is out of scope.
 
 If data quality issues are present, ``xarray`` and ``xcdat`` might not be able to open
-the datasets. Examples of data quality issues include conflicting floating point values
-between files or non-CF compliant attributes that are not common.
+the datasets. For example, there might be cases where conflicting floating point values
+exist between files of a multi-file dataset, or the dataset contains non-CF compliant
+attributes that cannot be interpreted correctly by xCDAT.
 
 A few workarounds include:
 
@@ -228,7 +245,8 @@ For more information on these options, visit the `xarray.open_mfdataset`_ docume
 
 Regridding
 ----------
-``xcdat`` extends and provides a uniform interface to `xESMF`_ and `xgcm`_. In addition, ``xcdat`` provides a port of the ``CDAT`` `regrid2 package`_.
+``xcdat`` extends and provides a uniform interface to `xESMF`_ and `xgcm`_. In addition,
+``xcdat`` provides a port of the ``CDAT`` `regrid2 package`_.
 
 Structured rectilinear and curvilinear grids are supported.
 
@@ -238,7 +256,8 @@ Structured rectilinear and curvilinear grids are supported.
 
 How can I retrieve the grid from a dataset?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :py:func:`xcdat.regridder.accessor.RegridderAccessor.grid` property is provided to extract the grid information from a dataset.
+The :py:func:`xcdat.regridder.accessor.RegridderAccessor.grid` property is provided to
+extract the grid information from a dataset.
 
 .. code-block:: python
 
@@ -247,7 +266,8 @@ The :py:func:`xcdat.regridder.accessor.RegridderAccessor.grid` property is provi
 
 How do I perform horizontal regridding?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :py:func:`xcdat.regridder.accessor.RegridderAccessor.horizontal` method provides access to the `xESMF`_ and `Regrid2`_ packages.
+The :py:func:`xcdat.regridder.accessor.RegridderAccessor.horizontal` method provides
+access to the `xESMF`_ and `Regrid2`_ packages.
 
 The arguments for each regridder can be found:
 
@@ -262,7 +282,8 @@ An example of `horizontal`_ regridding can be found in the `gallery`_.
 
 How do I perform vertical regridding?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-The :py:func:`xcdat.regridder.accessor.RegridderAccessor.vertical` method provides access to the `xgcm`_ package.
+The :py:func:`xcdat.regridder.accessor.RegridderAccessor.vertical` method provides
+access to the `xgcm`_ package.
 
 The arguments for each regridder can be found:
 
