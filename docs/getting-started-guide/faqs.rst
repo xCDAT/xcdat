@@ -15,7 +15,7 @@ What structured grids are supported by  ``xcdat``?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 xCDAT aims to be a generalizable package that is compatible with structured grids that
 are **CF-compliant** (e.g., CMIP6). xCDAT's spatial averager currently supports
-rectilinear grids, and the horizontal regridder curvilinear and rectilinear grids.
+rectilinear grids, and the horizontal regridder supports curvilinear and rectilinear grids.
 
 How does ``xcdat`` interpret dataset metadata?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
