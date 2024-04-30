@@ -25,7 +25,7 @@ How does ``xcdat`` interpret dataset metadata?
 mapping tables that interpret the CF attributes.
 
 xCDAT also includes its own "fall-back" mapping table that maps axes to their commonly accepted names
-(e.g., "X" maps to "longitude" and "lon").
+(e.g., X axis maps to "longitude" and "lon").
 
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 
