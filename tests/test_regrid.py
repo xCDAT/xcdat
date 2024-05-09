@@ -372,6 +372,30 @@ class TestRegrid2Regridder:
             }
         )
 
+    # source ordering is time, height, lat, lon
+    @pytest.mark.parametrize(
+        "ordering",
+        [
+            ("time", "lat", "height", "lon"),
+            ("lat", "lon", "height", "time"),
+            ("lat", "height", "time", "lon"),
+            # no change in ordering
+            ("time", "height", "lat", "lon"),
+        ],
+    )
+    def test_ordering(self, ordering):
+        ds = self.coarse_4d_ds
+
+        output_grid = grid.create_gaussian_grid(4)
+
+        ds["ts"] = ds.ts.transpose(*ordering)
+
+        regridder = regrid2.Regrid2Regridder(ds, output_grid)
+
+        output_ds = regridder.horizontal("ts", ds)
+
+        assert ds.ts.dims == output_ds.ts.dims
+
     def test_vertical_placeholder(self):
         ds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
