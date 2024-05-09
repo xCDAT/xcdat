@@ -1,4 +1,4 @@
-from typing import Any, List, Tuple
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import xarray as xr
@@ -8,7 +8,13 @@ from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 
 class Regrid2Regridder(BaseRegridder):
-    def __init__(self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Any):
+    def __init__(
+        self,
+        input_grid: xr.Dataset,
+        output_grid: xr.Dataset,
+        unmapped_to_nan=True,
+        **options: Any,
+    ):
         """
         Pure python implementation of the regrid2 horizontal regridder from
         CDMS2's regrid2 module.
@@ -47,6 +53,8 @@ class Regrid2Regridder(BaseRegridder):
         """
         super().__init__(input_grid, output_grid, **options)
 
+        self._unmapped_to_nan = unmapped_to_nan
+
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Placeholder for base class."""
         raise NotImplementedError()
@@ -66,20 +74,31 @@ class Regrid2Regridder(BaseRegridder):
         dst_lat_bnds = _get_bounds_ensure_dtype(self._output_grid, "Y")
         dst_lon_bnds = _get_bounds_ensure_dtype(self._output_grid, "X")
 
-        src_mask = self._input_grid.get("mask", None)
+        src_mask_da = self._input_grid.get("mask", None)
 
-        # apply source mask to input data
-        if src_mask is not None:
-            masked_value = self._input_grid.attrs.get("_FillValue", None)
+        # DataArray to np.ndarray, handle error when None
+        try:
+            src_mask = src_mask_da.values  # type: ignore
+        except AttributeError:
+            src_mask = None
 
-            if masked_value is None:
-                masked_value = self._input_grid.attrs.get("missing_value", 0.0)
+        nan_replace = input_data_var.encoding.get("_FillValue", None)
 
-            # Xarray defaults to masking with np.nan, CDAT masked with _FillValue or missing_value which defaults to 1e20
-            input_data_var = input_data_var.where(src_mask != 0.0, masked_value)
+        if nan_replace is None:
+            nan_replace = input_data_var.encoding.get("missing_value", 1e20)
 
+        # exclude alternative of NaN values if there are any
+        input_data_var = input_data_var.where(input_data_var != nan_replace)
+
+        # horizontal regrid
         output_data = _regrid(
-            input_data_var, src_lat_bnds, src_lon_bnds, dst_lat_bnds, dst_lon_bnds
+            input_data_var,
+            src_lat_bnds,
+            src_lon_bnds,
+            dst_lat_bnds,
+            dst_lon_bnds,
+            src_mask,
+            unmapped_to_nan=self._unmapped_to_nan,
         )
 
         output_ds = _build_dataset(
@@ -101,7 +120,13 @@ def _regrid(
     src_lon_bnds: np.ndarray,
     dst_lat_bnds: np.ndarray,
     dst_lon_bnds: np.ndarray,
+    src_mask: Optional[np.ndarray],
+    omitted=None,
+    unmapped_to_nan=True,
 ) -> np.ndarray:
+    if omitted is None:
+        omitted = np.nan
+
     lat_mapping, lat_weights = _map_latitude(src_lat_bnds, dst_lat_bnds)
     lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
 
@@ -114,6 +139,11 @@ def _regrid(
     y_length = len(lat_mapping)
     x_length = len(lon_mapping)
 
+    if src_mask is None:
+        input_data_shape = input_data.shape
+
+        src_mask = np.ones((input_data_shape[y_index], input_data_shape[x_index]))
+
     other_dims = {
         x: y for x, y in input_data_var.sizes.items() if x not in (y_name, x_name)
     }
@@ -123,6 +153,7 @@ def _regrid(
 
     # output data is always float32 in original code
     output_data = np.zeros(data_shape, dtype=np.float32)
+    output_mask = np.ones(data_shape, dtype=np.float32)
 
     is_2d = input_data_var.ndim <= 2
 
@@ -130,13 +161,22 @@ def _regrid(
     # TODO: how common is lon by lat data? may need to reshape
     for y in range(y_length):
         y_seg = np.take(input_data, lat_mapping[y], axis=y_index)
+        y_mask_seg = np.take(src_mask, lat_mapping[y], axis=0)
 
         for x in range(x_length):
             x_seg = np.take(y_seg, lon_mapping[x], axis=x_index, mode="wrap")
+            x_mask_seg = np.take(y_mask_seg, lon_mapping[x], axis=1, mode="wrap")
 
-            cell_weight = np.dot(lat_weights[y], lon_weights[x])
+            cell_weights = np.multiply(
+                np.dot(lat_weights[y], lon_weights[x]), x_mask_seg
+            )
+
+            cell_weight = np.sum(cell_weights)
 
             output_seg_index = y * x_length + x
+
+            if cell_weight == 0.0:
+                output_mask[output_seg_index] = 0.0
 
             # using the `out` argument is more performant, places data directly into
             # array memory rather than allocating a new variable. wasn't working for
@@ -145,22 +185,29 @@ def _regrid(
             if is_2d:
                 output_data[output_seg_index] = np.divide(
                     np.sum(
-                        np.multiply(x_seg, cell_weight),
+                        np.multiply(x_seg, cell_weights),
                         axis=(y_index, x_index),
                     ),
-                    np.sum(cell_weight),
+                    cell_weight,
                 )
             else:
                 output_seg = output_data[output_seg_index]
 
                 np.divide(
                     np.sum(
-                        np.multiply(x_seg, cell_weight),
+                        np.multiply(x_seg, cell_weights),
                         axis=(y_index, x_index),
                     ),
-                    np.sum(cell_weight),
+                    cell_weight,
                     out=output_seg,
                 )
+
+            if cell_weight <= 0.0:
+                output_data[output_seg_index] = omitted
+
+    # default for unmapped is nan due to division by zero, use output mask to repalce
+    if not unmapped_to_nan:
+        output_data[output_mask == 0.0] = 0.0
 
     output_data_shape = [y_length, x_length] + other_sizes
 
@@ -213,7 +260,9 @@ def _build_dataset(
     return output_ds
 
 
-def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
+def _map_latitude(
+    src: np.ndarray, dst: np.ndarray
+) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     """
     Map source to destination latitude.
 
@@ -235,7 +284,7 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
 
     Returns
     -------
-    Tuple[List, List]
+    Tuple[List[np.ndarray], List[np.ndarray]]
         A tuple of cell mappings and cell weights.
     """
     src_south, src_north = _extract_bounds(src)
@@ -260,12 +309,23 @@ def _map_latitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     ]
 
     # convert latitude to cell weight (difference of height above/below equator)
-    weights = [
-        (np.sin(np.deg2rad(x)) - np.sin(np.deg2rad(y))).reshape((-1, 1))
-        for x, y in bounds
-    ]
+    weights = _get_latitude_weights(bounds)
 
     return mapping, weights
+
+
+def _get_latitude_weights(
+    bounds: List[Tuple[np.ndarray, np.ndarray]]
+) -> List[np.ndarray]:
+    weights = []
+
+    for x, y in bounds:
+        cell_weight = np.sin(np.deg2rad(x)) - np.sin(np.deg2rad(y))
+        cell_weight = cell_weight.reshape((-1, 1))
+
+        weights.append(cell_weight)
+
+    return weights
 
 
 def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
@@ -352,12 +412,12 @@ def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     Parameters
     ----------
     bounds : np.ndarray
-     Dataset containing axis with bounds.
+        A numpy array of bounds values.
 
     Returns
     -------
     Tuple[np.ndarray, np.ndarray]
-         A tuple containing the lower and upper bounds for the axis.
+        A tuple containing the lower and upper bounds for the axis.
     """
     if bounds[0, 0] < bounds[0, 1]:
         lower = bounds[:, 0]

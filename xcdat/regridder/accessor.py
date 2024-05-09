@@ -135,7 +135,7 @@ class RegridderAccessor:
 
         Supported tools, methods and grids:
 
-        - xESMF (https://pangeo-xesmf.readthedocs.io/en/latest/)
+        - xESMF (https://xesmf.readthedocs.io/en/latest/)
            - Methods: Bilinear, Conservative, Conservative Normed, Patch, Nearest s2d, or Nearest d2s.
            - Grids: Rectilinear, or Curvilinear.
            - Find options at :py:func:`xcdat.regridder.xesmf.XESMFRegridder`
