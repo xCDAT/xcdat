@@ -150,6 +150,7 @@ def _regrid(
     other_sizes = list(other_dims.values())
 
     data_shape = [y_length * x_length] + other_sizes
+
     # output data is always float32 in original code
     output_data = np.zeros(data_shape, dtype=np.float32)
     output_mask = np.ones(data_shape, dtype=np.float32)
@@ -212,7 +213,11 @@ def _regrid(
 
     output_data = output_data.reshape(output_data_shape)
 
-    output_order = [x + 2 for x in range(input_data_var.ndim - 2)] + [0, 1]
+    # temp dimensional ordering
+    temp_dims = [y_name, x_name] + list(other_dims.keys())
+
+    # map temp ordering to input ordering
+    output_order = [temp_dims.index(x) for x in input_data_var.dims]
 
     output_data = output_data.transpose(output_order)
 
