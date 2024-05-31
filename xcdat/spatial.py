@@ -73,6 +73,7 @@ class SpatialAccessor:
         keep_weights: bool = False,
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
+        skipna = None,
     ) -> xr.Dataset:
         """
         Calculates the spatial average for a rectilinear grid over an optionally
@@ -193,7 +194,7 @@ class SpatialAccessor:
             self._weights = weights
 
         self._validate_weights(dv, axis)
-        ds[dv.name] = self._averager(dv, axis)
+        ds[dv.name] = self._averager(dv, axis, skipna=skipna)
 
         if keep_weights:
             ds[self._weights.name] = self._weights
@@ -698,7 +699,7 @@ class SpatialAccessor:
                     f"and the data variable {dim_sizes} are misaligned."
                 )
 
-    def _averager(self, data_var: xr.DataArray, axis: List[SpatialAxis]):
+    def _averager(self, data_var: xr.DataArray, axis: List[SpatialAxis], skipna=None):
         """Perform a weighted average of a data variable.
 
         This method assumes all specified keys in ``axis`` exists in the data
@@ -734,6 +735,6 @@ class SpatialAccessor:
             dim.append(get_dim_keys(data_var, key))
 
         with xr.set_options(keep_attrs=True):
-            weighted_mean = data_var.cf.weighted(weights).mean(dim=dim)
+            weighted_mean = data_var.cf.weighted(weights).mean(dim=dim, skipna=skipna)
 
         return weighted_mean
