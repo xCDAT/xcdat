@@ -1177,7 +1177,9 @@ class TemporalAccessor:
 
         return dv
 
-    def _group_average(self, ds: xr.Dataset, data_var: str, skipna=None) -> xr.DataArray:
+    def _group_average(
+        self, ds: xr.Dataset, data_var: str, skipna=None
+    ) -> xr.DataArray:
         """Averages a data variable by time group.
 
         Parameters
@@ -1216,7 +1218,9 @@ class TemporalAccessor:
             # WA = sum(data*weights) / sum(weights). The denominator must be
             # included to take into account zero weight for missing data.
             with xr.set_options(keep_attrs=True):
-                dv = self._group_data(dv).sum(skipna=skipna) / self._group_data(weights).sum(skipna=skipna)
+                dv = self._group_data(dv).sum(skipna=skipna) / self._group_data(
+                    weights
+                ).sum(skipna=skipna)
 
             # Restore the data variable's name.
             dv.name = data_var
