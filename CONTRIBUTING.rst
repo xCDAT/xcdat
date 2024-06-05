@@ -107,18 +107,18 @@ Set up the Repo
     to use other tools instead such as `GitHub Desktop`_.
 
 Once you have Git setup, you have two options for working with the ``xcdat`` repository:
-(1) Clone the main repo, (2) Fork the main repo and clone your fork.
+(1) Clone the main repository, (2) Fork the main repository and clone your fork.
 
-1. Clone the main repo
+1. Clone the main repository
 
-   - If you are a regular xCDAT contributor and have direct write access to the main repo, you can
-     clone the main repo running ``git clone https://github.com/xCDAT/xcdat.git``.
+   - If you are a regular xCDAT contributor and have direct write access to the main repository, you can
+     clone the main repository running ``git clone https://github.com/xCDAT/xcdat.git``.
 
-2. Fork the main repo and clone your fork
+2. Fork the main repository and clone your fork
 
    - If you are not a regular xCDAT contributor and don't have write access to the main
-     repo, you will need to fork the main repo then clone your fork.
-   - Head over to the `GitHub`_ repo page, click the fork button, and click
+     repository, you will need to fork the main repository then clone your fork.
+   - Head over to the `GitHub`_ repository page, click the fork button, and click
      "Create a new fork" (shown below).
    - .. image:: _static/github-fork-button.png
    - Then clone your fork by running ``git clone https://github.com/<GITHUB-USERNAME>/xcdat.git``
@@ -153,7 +153,7 @@ development environment:
 - We recommend installing `Anaconda`_ or `Miniconda`_
 - Make sure your conda is up to date (``conda update conda``)
 - Make sure that you have forked and cloned the `repository`_. If you are in the xCDAT
-  organization, forking is not needed since you will have direct read access to the repo
+  organization, forking is not needed since you will have direct read access to the repository
 - ``cd`` to the ``xcdat`` source directory
 
 Now we are going through a two-step process:
@@ -178,8 +178,8 @@ Now we are going through a two-step process:
       >>> xcdat.__version__
       '0.6.1'
 
-    This will create the new environment, and not touch any of your existing environments,
-    nor any existing Python installation.
+  This will create the new environment, and not touch any of your existing environments,
+  nor any existing Python installation.
 
 To view your environments:
 
