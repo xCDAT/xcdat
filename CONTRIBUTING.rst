@@ -156,7 +156,8 @@ development environment:
   organization, forking is not needed since you will have direct read access to the repository
 - ``cd`` to the ``xcdat`` source directory
 
-Now we are going through a two-step process:
+Now we are going through a two-step process. This will create the new environment, and
+not touch any of your existing environments, nor any existing Python installation.
 
 1. Install the build dependencies
 
@@ -178,8 +179,6 @@ Now we are going through a two-step process:
       >>> xcdat.__version__
       '0.6.1'
 
-  This will create the new environment, and not touch any of your existing environments,
-  nor any existing Python installation.
 
 To view your environments:
 
