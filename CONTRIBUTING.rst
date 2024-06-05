@@ -159,7 +159,7 @@ development environment:
 Now we are going through a two-step process. This will create the new environment, and
 not touch any of your existing environments, nor any existing Python installation.
 
-1. Install the build dependencies
+1. Install the build dependencies and install the local build of ``xcdat``.
 
     .. code-block:: bash
 
@@ -168,9 +168,7 @@ not touch any of your existing environments, nor any existing Python installatio
        >>>
        >>> make install # or python -m pip install .
 
-2. Build and install ``xcdat``
-
-    At this point you should be able to import ``xcdat`` from your locally built version:
+2. At this point you should be able to import ``xcdat`` from your locally built version:
 
     .. code-block:: bash
 
