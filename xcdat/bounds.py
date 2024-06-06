@@ -603,10 +603,12 @@ class BoundsAccessor:
         elif freq == "hour":
             # Determine the daily frequency for generating time  bounds.
             if daily_subfreq is None:
-                # `cftime` objects only support arithmetic using `timedelta` objects, so
-                # the values of  `diffs` must be casted from `dtype="timedelta64[ns]"`
-                # to `timedelta` objects.
-                diff = pd.to_timedelta(time.values[1] - time.values[0])
+                diff = time.values[1] - time.values[0]
+                if isinstance(diff, np.timedelta64):
+                    diff = pd.to_timedelta(diff)
+                    # `cftime` objects only support arithmetic using `timedelta` objects, so
+                    # the values of  `diffs` must be casted from `dtype="timedelta64[ns]"`
+                    # to `timedelta` objects.
                 hrs = diff.seconds / 3600
                 daily_subfreq = int(24 / hrs)  # type: ignore
 
