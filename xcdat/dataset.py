@@ -225,7 +225,6 @@ def open_mfdataset(
     ----------
     .. [2] https://docs.xarray.dev/en/stable/generated/xarray.combine_nested.html
     .. [3] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
-    .. [4] https://cdms.readthedocs.io/en/latest/manual/cdms_6.html
     """
     if isinstance(paths, str) or isinstance(paths, pathlib.Path):
         if os.path.isdir(paths):

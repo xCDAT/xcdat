@@ -7,64 +7,83 @@ Installation
 Prerequisites
 -------------
 
-1. Familiarity with ``xarray``, since this package is an extension of it
+1. Familiarity with ``xarray``
 
-   - We highly recommend visiting the `xarray tutorial`_ and `xarray documentation`_
-     pages if you aren't familiar with ``xarray``.
+   We highly recommend visiting the `xarray tutorial`_ and `xarray documentation`_
+   pages if you aren't familiar with ``xarray``.
 
-2. xCDAT is distributed through the `conda-forge`_ channel of Anaconda. We recommend
-   using Mamba (via `Miniforge`_), a drop-in replacement of Conda that is faster and more
-   reliable than Conda. Miniforge ships with ``conda-forge`` set as the prioritized channel.
-   Mamba also uses the same commands and configurations as Conda, and you can swap
-   commands between both tools.
+2. xCDAT is distributed through conda, which is available through Anaconda and Miniconda.
 
-   Follow these steps to install Miniforge (Mac OS & Linux):
+   We recommend following the `Quick command line install`_ steps in the Anaconda docs
+   to install Miniconda. Those steps are also provided below for convenience.
 
    .. code-block:: bash
 
-      curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
-      bash Miniforge3-$(uname)-$(uname -m).sh
+      >>> # Linux
+      >>> mkdir -p ~/miniconda3
+      >>> curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh -o ~/miniconda3/miniconda.sh
+      >>> bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+      >>> rm -rf ~/miniconda3/miniconda.sh
 
-   Then follow the instructions for installation. We recommend you type ``yes`` in
-   response to ``"Do you wish the installer to initialize Miniforge by running conda init?"``
-   to add ``conda`` and ``mamba`` to your path. Note that this will modify your shell
-   profile (e.g., ``~/.bashrc``).
+   .. code-block:: bash
 
-   *Note: After installation completes you may need to type ``bash`` to
-   restart your shell (if you use bash). Alternatively, you can log out and
-   log back in.*
+      >>> # MacOS
+      >>> mkdir -p ~/miniconda3
+      >>> wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
+      >>> bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
+      >>> rm -rf ~/miniconda3/miniconda.sh
+
+   Then follow the instructions for installation. To have conda added to
+   your path you will need to type ``yes`` in response to ``"Do you wish the
+   installer to initialize Miniconda3 by running conda init?"`` (we recommend
+   that you do this). Note that this will modify your shell profile (e.g.,
+   ``~/.bashrc``) to add ``conda`` to your path.
+
+   .. note::
+      After installation completes you may need to type ``bash`` to
+      restart your shell (if you use bash). Alternatively, you can log out and
+      log back in.
+
+3. Add the ``conda-forge`` channel.
+
+   xCDAT is hosted on the `conda-forge`_ channel, which is the standard channel for
+   most scientific Python packages.
+
+   .. code-block:: bash
+
+      >>> conda config --add channels conda-forge
+      >>> conda config --set channel_priority strict
 
 .. _xarray tutorial: https://tutorial.xarray.dev/intro.html
 .. _xarray documentation: https://docs.xarray.dev/en/stable/getting-started-guide/index.html
+.. _Quick command line install: https://docs.anaconda.com/free/miniconda/#quick-command-line-install
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
-.. _Miniforge: https://github.com/conda-forge/miniforge
 
 Instructions
 ------------
 
-1. Create a Mamba environment from scratch with ``xcdat`` (`mamba create`_)
+1. Create a Conda environment from scratch with ``xcdat`` (`conda create`_)
 
-   We recommend using the Mamba environment creation procedure to install ``xcdat``.
-   The advantage with following this approach is that Mamba will attempt to resolve
-   dependencies (e.g. ``python >= 3.8``) for compatibility.
+   We recommend using the Conda environment creation procedure to install ``xcdat``.
+   The advantage with following this approach is that Conda will attempt to resolve
+   dependencies (e.g. ``python >= 3.9``) for compatibility.
 
-   To create an ``xcdat`` Mamba environment,
-   run:
+   To create an ``xcdat`` Conda environment, run:
 
    .. code-block:: bash
 
-       >>> mamba create -n <ENV_NAME> -c conda-forge xcdat
-       >>> mamba activate <ENV_NAME>
+       >>> conda create -n <ENV_NAME> -c conda-forge xcdat
+       >>> conda activate <ENV_NAME>
 
-2. Install ``xcdat`` in an existing Mamba environment (`mamba install`_)
+2. Install ``xcdat`` in an existing Conda environment (`conda install`_)
 
-   You can also install ``xcdat`` in an existing Mamba environment, granted that Mamba
+   You can also install ``xcdat`` in an existing Conda environment, granted that Conda
    is able to resolve the compatible dependencies.
 
    .. code-block:: bash
 
-       >>> mamba activate <ENV_NAME>
-       >>> mamba install -c conda-forge xcdat
+       >>> conda activate <ENV_NAME>
+       >>> conda install -c conda-forge xcdat
 
 3. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
    either in step 1 or step 2 above:
@@ -72,10 +91,11 @@ Instructions
    - ``jupyterlab``: a web-based interactive development environment for notebooks,
      code, and data. This package also includes ``ipykernel``.
    - ``matplotlib``: a library for creating visualizations in Python.
+   - ``nc-time-axis`` is an optional dependency required for ``matplotlib`` to plot ``cftime`` coordinates
    - ``cartopy``: an add-on package for ``matplotlib`` and specialized for geospatial data processing.
 
-.. _mamba create: https://mamba.readthedocs.io/en/latest/user_guide/mamba.html#quickstart
-.. _mamba install: https://mamba.readthedocs.io/en/latest/user_guide/mamba.html#quickstart
+.. _conda create: https://docs.conda.io/projects/conda/en/latest/commands/create.html
+.. _conda install: https://docs.conda.io/projects/conda/en/latest/commands/install.html
 
 Updating
 --------
@@ -85,15 +105,16 @@ latest stable version of ``xcdat`` for the latest features and bug fixes.
 
 .. code-block:: bash
 
-   >>> mamba activate <ENV_NAME>
-   >>> mamba update xcdat
+   >>> conda activate <ENV_NAME>
+   >>> conda update xcdat
 
 To update to a specific version of ``xcdat``:
 
 .. code-block:: bash
 
-   >>> mamba activate <ENV_NAME>
-   >>> mamba update xcdat=<MAJOR.MINOR.PATCH>
+   >>> conda activate <ENV_NAME>
+   >>> conda update xcdat=<MAJOR.MINOR.PATCH>
+   >>> # Example: conda update xcdat=0.6.1
 
 Jupyter Users set ``ESMFMKFILE`` env variable
 ---------------------------------------------
