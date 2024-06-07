@@ -19,7 +19,7 @@ analysis operations such as loading, averaging, and regridding data on structure
 the core CDAT library, while others leverage powerful libraries in the xarray ecosystem
 (e.g., `xESMF`_, `xgcm`_) to deliver robust APIs. xCDAT has the ability to operate
 generally across model and observational datasets that follow the `CF Metadata Convention`_
-by interpreting CF Metadata through the `_cf_xarray` package.
+by interpreting CF Metadata through the `cf_xarray`_ package.
 
 The xCDAT core team's mission is to provide a maintainable and extensible package
 that serves the needs of the climate community in the long-term. We are excited
