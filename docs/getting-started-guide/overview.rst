@@ -1,6 +1,3 @@
-xCDAT: Xarray Climate Data Analysis Tools
-=========================================
-
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
 serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) library.
 
@@ -16,18 +13,18 @@ Project Motivation
 ------------------
 
 The goal of xCDAT is to provide generalizable features and utilities for simple and
-robust analysis of climate data. xCDAT's design philosophy is focused on reducing the
-overhead required to accomplish certain tasks in xarray. xCDAT aims to be compatible
-with structured grids that are `CF-compliant`_ (e.g., CMIP6). Some key xCDAT features
-are inspired by or ported from the core CDAT library, while others leverage powerful
-libraries in the xarray ecosystem (e.g., `xESMF`_, `xgcm`_, `cf_xarray`_) to deliver
-robust APIs.
+robust analysis of climate data. xCDAT’s scope focuses on routine climate research
+analysis operations such as loading, averaging, and regridding data on structured grids
+(e.g., rectilinear, curvilinear). Some key xCDAT features are inspired by or ported from
+the core CDAT library, while others leverage powerful libraries in the xarray ecosystem
+(e.g., `xESMF`_, `xgcm`_) to deliver robust APIs. xCDAT has the ability to operate
+generally across model and observational datasets that follow the `CF Metadata Convention`_
+by interpreting CF Metadata through the `_cf_xarray` package.
 
 The xCDAT core team's mission is to provide a maintainable and extensible package
 that serves the needs of the climate community in the long-term. We are excited
 to be working on this project and hope to have you onboard!
 
-.. _CF-compliant: https://cfconventions.org/
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
@@ -59,7 +56,7 @@ Please note that xCDAT has a `Code of Conduct`_. By participating in the xCDAT
 community, you agree to abide by its rules.
 
 .. _GitHub Discussions: https://github.com/xCDAT/xcdat/discussions
-.. _Code of Conduct: code-of-conduct.rst
+.. _Code of Conduct: CODE-OF-CONDUCT.rst
 .. _mailing list: https://groups.google.com/g/xcdat
 
 Contributing
@@ -119,7 +116,7 @@ Things We Are Striving For
   since ...")
 
   * xCDAT leverages `cf_xarray`_ to interpret CF attributes on ``xarray`` objects
-  * Refer to `CF Convention`_ for more information on CF attributes
+  * Refer to `CF Metadata Convention`_ for more information on CF attributes
 
 * Robust handling of dimensions and their coordinates and coordinate bounds
 
@@ -137,7 +134,7 @@ Things We Are Striving For
 .. _xgcm: https://xgcm.readthedocs.io/en/latest/index.html
 .. _dask: https://dask.org/
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
-.. _CF convention: http://cfconventions.org/
+.. _CF Metadata Convention: http://cfconventions.org/
 
 Releases
 --------
@@ -165,12 +162,21 @@ Xarray and Xarray usage in climate science!
 - `Pangeo Forum <https://foundations.projectpythia.org/core/xarray.html>`_
 - `Project Pythia <https://foundations.projectpythia.org/core/xarray.html>`_
 
+Projects Using xCDAT
+--------------------
+
+xCDAT is actively being integrated as a core component of the `Program for Climate Model
+Diagnosis and Intercomparison (PCMDI) Metrics Package`_ and the `Energy Exascale Earth
+System Model Diagnostics (E3SM) Package`_. xCDAT is also included in the `E3SM Unified
+Anaconda Environment`_ that is deployed on various U.S. Department of Energy
+supercomputers to run E3SM software tools.
+
+.. _Program for Climate Model Diagnosis and Intercomparison (PCMDI) Metrics Package: https://pcmdi.github.io/pcmdi_metrics/
+.. _Energy Exascale Earth System Model Diagnostics (E3SM) Package: https://e3sm-project.github.io/e3sm_diags/_build/html/main/index.html
+.. _E3SM Unified Anaconda Environment: https://e3sm.org/resources/tools/other-tools/e3sm-unified-environment/
+
 Acknowledgement
 ---------------
-
-Huge thank you to all of the xCDAT `contributors`_!
-
-.. _contributors: https://github.com/xCDAT/xcdat/graphs/contributors
 
 xCDAT is jointly developed by scientists and developers from the Energy Exascale
 Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and
@@ -190,6 +196,15 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 .. _BER: https://science.osti.gov/ber
 .. _Department of Energy: https://www.energy.gov/
 .. _Office of Science: https://science.osti.gov/
+
+Contributors
+------------
+
+Thank you to all of our contributors!
+
+.. image:: https://contrib.rocks/image?repo=xCDAT/xcdat
+  :alt: xCDAT contributors
+  :target: https://github.com/xCDAT/xcdat/graphs/contributors
 
 License
 -------
