@@ -1,3 +1,6 @@
+xCDAT: Xarray Climate Data Analysis Tools
+=========================================
+
 xCDAT is an extension of `xarray`_ for climate data analysis on structured grids. It
 serves as a modern successor to the Community Data Analysis Tools (`CDAT`_) library.
 
