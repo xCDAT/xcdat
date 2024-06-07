@@ -24,8 +24,8 @@ How does ``xcdat`` interpret dataset metadata?
 ``ds.temporal.average("ts")``). This argument is internally mapped to ``cf_xarray``
 mapping tables that interpret the CF attributes.
 
-xCDAT also includes its own "fall-back" mapping table that maps axes to their commonly accepted names
-(e.g., X axis maps to "longitude" and "lon").
+xCDAT also includes its own "fall-back" mapping table that maps axes to their commonly 
+accepted names. Refer to `this section <https://github.com/xCDAT/xcdat/blob/main/xcdat/axis.py#L41-L49>`_ of code for the mapping table.
 
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
 
@@ -84,7 +84,8 @@ Does xCDAT support generating bounds for multiple axis coordinate systems in the
 Yes, xCDAT can generate bounds for axis coordinates if they are  “dimension coordinates”
 and have the required CF metadata. Dimension coordinates are also considered "index"
 coordinates in Xarray and `coordinate variables`_ in CF terminology. “Non-dimension coordinates”
-(`auxiliary coordinate variables`_ in CF terminology) are ignored.
+(`auxiliary coordinate variables`_ in CF terminology) are ignored because they aren't used
+as indexes and aren't mapped to the axes (dimensions) of variables.
 
 Visit Xarray’s documentation page on `Coordinates`_ for more info on “dimension
 coordinates” vs. “non-dimension coordinates”.
@@ -158,7 +159,7 @@ xCDAT Does Not Support Model-Specific Data Wrangling
 ----------------------------------------------------
 
 ``xcdat`` aims to implement generalized functionality. This means that data wrangling
-functionality intended to handle data quality issues is out of scope.
+functionality to handle model-specific data quality issues is out of scope.
 
 If data quality issues are present, ``xarray`` and ``xcdat`` might not be able to open
 the datasets. For example, there might be cases where conflicting floating point values
