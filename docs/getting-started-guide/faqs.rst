@@ -7,9 +7,9 @@ Metadata Interpretation
 
 What types of datasets does ``xcdat`` primarily focus on?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-``xcdat`` supports datasets with structured grids that follow the `CF convention`_.
+``xcdat`` supports datasets with structured grids that follow the `CF Metadata Convention`_.
 
-.. _CF convention: http://cfconventions.org/
+.. _CF Metadata Convention: http://cfconventions.org/
 
 What structured grids are supported by  ``xcdat``?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -115,7 +115,7 @@ References:
 What type of calendars are supported?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-``xcdat`` supports that same CF convention calendars as ``xarray`` (based on
+``xcdat`` supports that same CF Metadata Convention calendars as ``xarray`` (based on
 ``cftime`` and ``netCDF4-python`` package).
 
 Supported calendars include:
