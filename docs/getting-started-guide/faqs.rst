@@ -67,12 +67,13 @@ midpoint between their lower and upper bounds.
 For the T axis, xCDAT can generate bounds either by 1) time frequency (default method)
 or 2) midpoints.
 
-   1. time frequency: create time bounds as the start and end of each timestep's period
-      using either the inferred or specified time frequency.
-   2. midpoint: create time bounds using time coordinates as the midpoint between their
-      upper and lower bounds.
+  1. time frequency: create time bounds as the start and end of each timestep's period
+     using either the inferred or specified time frequency.
+  2. midpoint: create time bounds using time coordinates as the midpoint between their
+     upper and lower bounds.
 
 For more information, visit the documentation for these APIs:
+
 - https://xcdat.readthedocs.io/en/stable/generated/xarray.Dataset.bounds.add_missing_bounds.html
 - https://xcdat.readthedocs.io/en/stable/generated/xarray.Dataset.bounds.add_time_bounds.html
 - https://xcdat.readthedocs.io/en/stable/generated/xarray.Dataset.bounds.add_bounds.html
@@ -146,7 +147,8 @@ datetimes for non-standard calendars or for dates before year 1678 or after year
 
 ``xcdat`` opted to decode time coordinates exclusively with ``cftime`` because it
 has no timestamp range limitations, simplifies implementation, and the output object
-type is deterministic.
+type is deterministic. Another benefit with this approach is that ``xcdat`` has its own
+algorithm for lazily decoding ``cftime`` objects, which improves up-front I/O performance.
 
 References:
 
