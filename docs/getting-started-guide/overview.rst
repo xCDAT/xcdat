@@ -165,6 +165,19 @@ Xarray and Xarray usage in climate science!
 - `Pangeo Forum <https://foundations.projectpythia.org/core/xarray.html>`_
 - `Project Pythia <https://foundations.projectpythia.org/core/xarray.html>`_
 
+Projects Using xCDAT
+--------------------
+
+xCDAT is actively being integrated as a core component of the `Program for Climate Model
+Diagnosis and Intercomparison (PCMDI) Metrics Package`_ and the `Energy Exascale Earth
+System Model Diagnostics (E3SM) Package`_. xCDAT is also included in the `E3SM Unified
+Anaconda Environment`_ that is deployed on various U.S. Department of Energy
+supercomputers to run E3SM software tools.
+
+.. _Program for Climate Model Diagnosis and Intercomparison (PCMDI) Metrics Package: https://pcmdi.github.io/pcmdi_metrics/
+.. _Energy Exascale Earth System Model Diagnostics (E3SM) Package: https://e3sm-project.github.io/e3sm_diags/_build/html/main/index.html
+.. _E3SM Unified Anaconda Environment: https://e3sm.org/resources/tools/other-tools/e3sm-unified-environment/
+
 Acknowledgement
 ---------------
 
