@@ -826,6 +826,21 @@ class TestAddTimeBounds:
         assert monthly_bounds.identical(ds_monthly_with_bnds)
         assert yearly_bounds.identical(ds_yearly_with_bnds)
 
+    def test_add_bounds_for_hourly_time_coords_as_datetime_bojects(self):
+        # get reference datasets
+        ds_hrly_with_bnds = generate_dataset_by_frequency("hour", "datetime")
+
+        # drop bounds for testing
+        ds_hrly_wo_bnds = ds_hrly_with_bnds.drop_vars("time_bnds")
+
+        # test adding bounds
+        hourly_bounds = ds_hrly_wo_bnds.bounds.add_time_bounds(
+            method="freq", freq="hour"
+        )
+
+        # ensure identical
+        assert hourly_bounds.identical(ds_hrly_with_bnds)
+
     def test_add_monthly_bounds_for_end_of_month_set_to_true(self):
         ds_with_bnds = self.ds_with_bnds.copy()
 
