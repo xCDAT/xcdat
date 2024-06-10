@@ -181,10 +181,6 @@ supercomputers to run E3SM software tools.
 Acknowledgement
 ---------------
 
-Huge thank you to all of the xCDAT `contributors`_!
-
-.. _contributors: https://github.com/xCDAT/xcdat/graphs/contributors
-
 xCDAT is jointly developed by scientists and developers from the Energy Exascale
 Earth System Model (`E3SM`_) Project and Program for Climate Model Diagnosis and
 Intercomparison (`PCMDI`_). The work is performed for the E3SM project, which is
@@ -203,6 +199,16 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 .. _BER: https://science.osti.gov/ber
 .. _Department of Energy: https://www.energy.gov/
 .. _Office of Science: https://science.osti.gov/
+
+Contributors
+------------
+
+Thank you to all of our contributors!
+
+.. image:: https://contrib.rocks/image?repo=xCDAT/xcdat
+  :alt: xCDAT contributors
+  :target: https://github.com/xCDAT/xcdat/graphs/contributors
+
 
 License
 -------
