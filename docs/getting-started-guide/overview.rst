@@ -203,11 +203,9 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 Contributors
 ------------
 
-Thank you to all of our contributors!
+Thank you to all of our `contributors`_!
 
-.. image:: https://contrib.rocks/image?repo=xCDAT/xcdat
-  :alt: xCDAT contributors
-  :target: https://github.com/xCDAT/xcdat/graphs/contributors
+.. _contributors: https://github.com/xCDAT/xcdat/graphs/contributors
 
 License
 -------
