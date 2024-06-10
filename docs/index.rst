@@ -17,22 +17,22 @@ xCDAT (Xarray Climate Data Analysis Tools) is an extension of `xarray`_ for clim
     :gutter: 2
 
     .. grid-item-card:: Getting started
-        :img-top: _static/icons/play.svg
+        :img-top: _static/icons/play.png
         :link: getting-started-guide/index
         :link-type: doc
 
     .. grid-item-card::  Examples
-        :img-top: _static/icons/plot.svg
+        :img-top: _static/icons/plot.png
         :link: gallery
         :link-type: doc
 
     .. grid-item-card::  API reference
-        :img-top: _static/icons/wrench.svg
+        :img-top: _static/icons/wrench.png
         :link: api
         :link-type: doc
 
     .. grid-item-card::  Developer guide
-        :img-top: _static/icons/book.svg
+        :img-top: _static/icons/book.png
         :link: contributing
         :link-type: doc
 

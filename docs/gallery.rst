@@ -16,3 +16,4 @@ This gallery demonstrates how to use some of the features in ``xcdat``. Contribu
     examples/climatology-and-departures.ipynb
     examples/regridding-horizontal.ipynb
     examples/regridding-vertical.ipynb
+    examples/parallel-computing-with-dask.ipynb

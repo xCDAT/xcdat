@@ -2,8 +2,8 @@ xCDAT on Jupyter and HPC Machines
 =================================
 
 xCDAT should be compatible with most high performance computing (HPC) platforms.
-In general, xCDAT is available on Anaconda via the ``conda-forge`` channel.
-xCDAT follows the same convention as other conda-based packages by being installable via
+xCDAT is available on Anaconda via the ``conda-forge`` channel. xCDAT follows the same
+convention as other conda-based packages by being installable via
 `conda <https://www.anaconda.com/products/distribution>`_. The conda installation
 instructions in this guide are based on the instructions provided by
 `NERSC <https://docs.nersc.gov/development/languages/python/nersc-python/>`_.
@@ -41,32 +41,23 @@ with ``xesmf`` (a recommended dependency):
 
 ::
 
-   conda create -n <ENV_NAME> -c conda-forge xcdat xesmf
+   conda create -n <ENV_NAME> -c conda-forge xcdat
    conda activate <ENV_NAME>
 
-Note that ``xesmf`` is an optional dependency, which is required for using ``xesmf``
-based horizontal regridding APIs in ``xcdat``. ``xesmf`` is not currently supported
-on `osx-arm64`_ or `windows`_ because ``esmpy`` is not yet available on these
-platforms. Windows users can try `WSL2`_ as a workaround.
-
-.. _windows: https://github.com/conda-forge/esmf-feedstock/issues/64
-.. _osx-arm64: https://github.com/conda-forge/esmf-feedstock/issues/74
-.. _WSL2: https://docs.microsoft.com/en-us/windows/wsl/install
-
 You may also want to use ``xcdat`` with some additional packages. For example, you can
-install ``xcdat`` with ``matplotlib``, ``ipython``, and ``ipykernel`` (see the next
-section for more about ``ipykernel``):
+install ``xcdat`` with ``matplotlib``, ``cartopy``, ``ipython``, and ``ipykernel`` (see
+the next section for more about ``ipykernel``):
 
 ::
 
-   conda create -n <ENV_NAME> -c conda-forge xcdat xesmf matplotlib ipython ipykernel
+   conda create -n <ENV_NAME> -c conda-forge xcdat xesmf matplotlib cartopy ipython ipykernel
    conda activate <ENV_NAME>
 
 The advantage with following this approach is that conda will attempt to resolve
-dependencies (e.g., python >= 3.8) for compatibility.
+dependencies for compatibility (e.g., python >= 3.9).
 
-If you prefer, you can also add packages later with ``conda install`` (granted that
-conda is able to resolve the compatible dependencies).
+If you prefer, you can also add packages later with ``conda install``, granted that
+conda is able to resolve the compatible dependencies.
 
 Adding an ``xcdat`` kernel for use with Jupyter
 -----------------------------------------------

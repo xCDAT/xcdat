@@ -92,6 +92,22 @@ time_hourly = xr.DataArray(
         "standard_name": "time",
     },
 )
+time_hourly_dt = xr.DataArray(
+    data=np.array(
+        [
+            "2000-01-01T00:00:00.000000000",
+            "2000-01-01T01:00:00.000000000",
+            "2000-01-01T02:00:00.000000000",
+        ],
+        dtype="datetime64[ns]",
+    ),
+    dims=["time"],
+    attrs={
+        "axis": "T",
+        "long_name": "time",
+        "standard_name": "time",
+    },
+)
 time_subhourly = xr.DataArray(
     data=np.array(
         [
@@ -183,6 +199,30 @@ time_bnds_hourly = xr.DataArray(
             ],
         ],
         dtype=object,
+    ),
+    dims=["time", "bnds"],
+    attrs={
+        "xcdat_bounds": "True",
+    },
+)
+time_bnds_hourly_dt = xr.DataArray(
+    name="time_bnds",
+    data=np.array(
+        [
+            [
+                "2000-01-01T00:00:00.000000000",
+                "2000-01-01T01:00:00.000000000",
+            ],
+            [
+                "2000-01-01T01:00:00.000000000",
+                "2000-01-01T02:00:00.000000000",
+            ],
+            [
+                "2000-01-01T02:00:00.000000000",
+                "2000-01-01T03:00:00.000000000",
+            ],
+        ],
+        dtype="datetime64[ns]",
     ),
     dims=["time", "bnds"],
     attrs={
@@ -495,7 +535,8 @@ def generate_dataset(
 
 
 def generate_dataset_by_frequency(
-    freq: Literal["subhour", "hour", "day", "month", "year"] = "month"
+    freq: Literal["subhour", "hour", "day", "month", "year"] = "month",
+    obj_type: Literal["cftime", "datetime"] = "cftime",
 ) -> xr.Dataset:
     """Generates a dataset for a given temporal frequency.
 
@@ -523,8 +564,15 @@ def generate_dataset_by_frequency(
         time = time_daily.copy()
         time_bnds = time_bnds_daily.copy()
     elif freq == "hour":
-        time = time_hourly.copy()
-        time_bnds = time_bnds_hourly.copy()
+        # Test cftime and datetime. datetime subtraction results in
+        # dtype=timedelta64[ns] objects, which need to be converted to Pandas
+        # TimeDelta objects to use the `.seconds` time component.
+        if obj_type == "cftime":
+            time = time_hourly.copy()
+            time_bnds = time_bnds_hourly.copy()
+        else:
+            time = time_hourly_dt.copy()
+            time_bnds = time_bnds_hourly_dt.copy()
     elif freq == "subhour":
         time = time_subhourly.copy()
         time_bnds = time_bnds_subhourly.copy()

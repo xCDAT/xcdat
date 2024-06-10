@@ -66,18 +66,18 @@ Project Motivation
 ------------------
 
 The goal of xCDAT is to provide generalizable features and utilities for simple and
-robust analysis of climate data. xCDAT's design philosophy is focused on reducing the
-overhead required to accomplish certain tasks in xarray. xCDAT aims to be compatible
-with structured grids that are `CF-compliant`_ (e.g., CMIP6). Some key xCDAT features
-are inspired by or ported from the core CDAT library, while others leverage powerful
-libraries in the xarray ecosystem (e.g., `xESMF`_, `xgcm`_, `cf_xarray`_) to deliver
-robust APIs.
+robust analysis of climate data. xCDAT’s scope focuses on routine climate research
+analysis operations such as loading, averaging, and regridding data on structured grids
+(e.g., rectilinear, curvilinear). Some key xCDAT features are inspired by or ported from
+the core CDAT library, while others leverage powerful libraries in the xarray ecosystem
+(e.g., `xESMF`_, `xgcm`_) to deliver robust APIs. xCDAT has the ability to operate
+generally across model and observational datasets that follow the `CF Metadata Convention`_
+by interpreting CF Metadata through the `cf_xarray`_ package.
 
 The xCDAT core team's mission is to provide a maintainable and extensible package
 that serves the needs of the climate community in the long-term. We are excited
 to be working on this project and hope to have you onboard!
 
-.. _CF-compliant: https://cfconventions.org/
 .. _xarray: https://github.com/pydata/xarray
 .. _CDAT: https://github.com/CDAT/cdat
 
@@ -169,7 +169,7 @@ Things We Are Striving For
   since ...")
 
   * xCDAT leverages `cf_xarray`_ to interpret CF attributes on ``xarray`` objects
-  * Refer to `CF Convention`_ for more information on CF attributes
+  * Refer to `CF Metadata Convention`_ for more information on CF attributes
 
 * Robust handling of dimensions and their coordinates and coordinate bounds
 
@@ -187,7 +187,7 @@ Things We Are Striving For
 .. _xgcm: https://xgcm.readthedocs.io/en/latest/index.html
 .. _dask: https://dask.org/
 .. _cf_xarray: https://cf-xarray.readthedocs.io/en/latest/index.html
-.. _CF convention: http://cfconventions.org/
+.. _CF Metadata Convention: http://cfconventions.org/
 
 Releases
 --------
