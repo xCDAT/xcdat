@@ -3,7 +3,7 @@ import pytest
 import xarray as xr
 
 from tests import requires_dask
-from tests.fixtures import generate_dataset
+from tests.fixtures import generate_dataset, generate_lev_dataset
 from xcdat.spatial import SpatialAccessor
 
 
@@ -44,6 +44,35 @@ class TestAverage:
     def test_raises_error_if_data_var_not_in_dataset(self):
         with pytest.raises(KeyError):
             self.ds.spatial.average("not_a_data_var", axis=["Y", "incorrect_axis"])
+
+    def test_vertical_average_with_weights(self):
+        # check that vertical averaging returns the correct answer
+        # get dataset with vertical levels
+        ds = generate_lev_dataset()
+        # subset to one column for testing (and shake up data)
+        ds = ds.isel(time=[0], lat=[0], lon=[0]).squeeze()
+        so = ds["so"]
+        so[:] = np.array([1, 2, 3, 4])
+        ds["so"] = so
+        result = ds.spatial.average(
+            "so", lev_bounds=(4000, 10000), axis=["Z"], keep_weights=True
+        )
+        # specify expected result
+        expected = xr.DataArray(
+            data=np.array(1.8), coords={"time": ds.time, "lat": ds.lat, "lon": ds.lon}
+        )
+        # compare
+        xr.testing.assert_allclose(result["so"], expected)
+
+        # check that vertical averaging returns the correct weights
+        expected = xr.DataArray(
+            data=np.array([2000, 2000, 1000, 0.0]),
+            coords={"time": ds.time, "lev": ds.lev, "lat": ds.lat, "lon": ds.lon},
+            dims=["lev"],
+            attrs={"xcdat_bounds": True},
+        )
+
+        xr.testing.assert_allclose(result["lev_wts"], expected)
 
     def test_raises_error_if_axis_list_contains_unsupported_axis(self):
         with pytest.raises(ValueError):
@@ -312,6 +341,23 @@ class TestGetWeights:
         # Check raises error when there are > 1 bounds for the dataset.
         with pytest.raises(TypeError):
             ds.spatial.get_weights(axis=["Y", "X"])
+
+    def test_vertical_weighting(self):
+        # get dataset with vertical coordinate
+        ds = generate_lev_dataset()
+        # call _get_vertical_weights
+        result = ds.spatial._get_vertical_weights(
+            domain_bounds=ds.lev_bnds, region_bounds=np.array([4000, 10000])
+        )
+        # specify expected result
+        expected = xr.DataArray(
+            data=np.array([2000, 2000, 1000, 0.0]),
+            coords={"lev": ds.lev},
+            dims=["lev"],
+            attrs={"units": "m", "positive": "down", "axis": "Z", "bounds": "lev_bnds"},
+        )
+        # compare
+        xr.testing.assert_allclose(result, expected)
 
     def test_data_var_weights_for_region_in_lat_and_lon_domains(self):
         ds = self.ds.copy()
