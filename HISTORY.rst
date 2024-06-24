@@ -2,6 +2,43 @@
 History
 =======
 
+v0.7.1 (24 June 2024)
+----------------------
+
+This patch release fixes a bug in the Regrid2 API where a static order of dimensions are
+incorrectly expected. It updates ``add_missing_bounds()`` to convert ``np.timedelta64``
+values to ``pandas.Timedelta`` objects to support with Xarray's datetime component
+accessor.
+
+This release also includes numerous updates to the documentation, including adding
+a general guide to parallel computing with Dask notebook. It also ensures all existing
+notebooks and documentation are up to date with the latest and relevant information.
+
+Bug Fixes
+~~~~~~~~~
+
+- Fixes regrid2 mapping output to input ordering by `Jason Boutte`_
+  in https://github.com/xCDAT/xcdat/pull/653
+- Update ``add_missing_bounds()`` to convert ``np.timedelta64`` to ``pd.Timedelta``
+  to support Xarray's datetime component accessor `_Jiwoo Lee`
+  in https://github.com/xCDAT/xcdat/pull/660
+
+Documentation
+~~~~~~~~~~~~~
+
+- Add JOSS paper by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/567
+- Add Parallel Computing with Dask Jupyter Notebook by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/489
+- Update regridding notebook for v0.7.0 by `Jill Chengzhu Zhang`_ in https://github.com/xCDAT/xcdat/pull/646
+- Update FAQs, HPC guide, and Gentle Introduction by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/650
+- Simplify the contributing guide by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/593
+- Update notebook env setup instructions with kernel by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/652
+- Add instructions for setting `ESMFMKFILE` and update links to xESMF docs by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/643
+- Temporal average notebooks maintanance by `Jiwoo Lee`_ in https://github.com/xCDAT/xcdat/pull/633
+- Review of spatial averaging and general dataset utilities by `Stephen Po-Chedley`_ in https://github.com/xCDAT/xcdat/pull/644
+
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.0...0.7.1
+
 v0.7.0 (10 April 2024)
 ----------------------
 
