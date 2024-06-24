@@ -27,7 +27,7 @@ authors:
 affiliations:
     - name: Lawrence Livermore National Lab, Livermore, USA
       index: 1
-date: 24 Jun 2024
+date: 24 June 2024
 bibliography: paper.bib
 ---
 
