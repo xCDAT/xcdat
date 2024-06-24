@@ -159,7 +159,7 @@ class TemporalAccessor:
         data_var: str,
         weighted: bool = True,
         keep_weights: bool = False,
-        skipna: Union[bool, None] = None,
+        skipna: bool | None = None,
     ):
         """
         Returns a Dataset with the average of a data variable and the time
@@ -201,7 +201,7 @@ class TemporalAccessor:
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
-        skipna : bool or None, optional
+        skipna : bool | None, optional
             If True, skip missing values (as marked by NaN). By default, only
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
@@ -256,6 +256,7 @@ class TemporalAccessor:
         weighted: bool = True,
         keep_weights: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        skipna: bool | None = None,
     ):
         """Returns a Dataset with average of a data variable by time group.
 
@@ -334,6 +335,11 @@ class TemporalAccessor:
                 >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -412,6 +418,7 @@ class TemporalAccessor:
             weighted=weighted,
             keep_weights=keep_weights,
             season_config=season_config,
+            skipna=skipna,
         )
 
     def climatology(
@@ -422,6 +429,7 @@ class TemporalAccessor:
         keep_weights: bool = False,
         reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        skipna: bool | None = None,
     ):
         """Returns a Dataset with the climatology of a data variable.
 
@@ -509,6 +517,11 @@ class TemporalAccessor:
                 >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -592,6 +605,7 @@ class TemporalAccessor:
             keep_weights,
             reference_period,
             season_config,
+            skipna,
         )
 
     def departures(
@@ -602,6 +616,7 @@ class TemporalAccessor:
         keep_weights: bool = False,
         reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        skipna: bool | None = None,
     ) -> xr.Dataset:
         """
         Returns a Dataset with the climatological departures (anomalies) for a
@@ -696,6 +711,11 @@ class TemporalAccessor:
                 >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -776,11 +796,7 @@ class TemporalAccessor:
         inferred_freq = _infer_freq(ds[self.dim])
         if inferred_freq != freq:
             ds_obs = ds_obs.temporal.group_average(
-                data_var,
-                freq,
-                weighted,
-                keep_weights,
-                season_config,
+                data_var, freq, weighted, keep_weights, season_config, skipna
             )
 
         ds_climo = ds.temporal.climatology(
@@ -790,6 +806,7 @@ class TemporalAccessor:
             keep_weights,
             reference_period,
             season_config,
+            skipna,
         )
 
         # 4. Group the averaged data variable values by the time `freq`.
@@ -840,7 +857,7 @@ class TemporalAccessor:
         keep_weights: bool = False,
         reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
-        skipna: Union[bool, None] = None,
+        skipna: bool | None = None,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
         ds = self._dataset.copy()
@@ -1164,7 +1181,7 @@ class TemporalAccessor:
         return ds
 
     def _average(
-        self, ds: xr.Dataset, data_var: str, skipna: Union[bool, None] = None
+        self, ds: xr.Dataset, data_var: str, skipna: bool | None = None
     ) -> xr.DataArray:
         """Averages a data variable with the time dimension removed.
 
@@ -1174,7 +1191,7 @@ class TemporalAccessor:
             The dataset.
         data_var : str
             The key of the data variable.
-        skipna : bool or None, optional
+        skipna : bool | None, optional
             If True, skip missing values (as marked by NaN). By default, only
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
@@ -1201,7 +1218,7 @@ class TemporalAccessor:
         return dv
 
     def _group_average(
-        self, ds: xr.Dataset, data_var: str, skipna: Union[bool, None] = None
+        self, ds: xr.Dataset, data_var: str, skipna: bool | None = None
     ) -> xr.DataArray:
         """Averages a data variable by time group.
 
@@ -1211,7 +1228,7 @@ class TemporalAccessor:
             The dataset.
         data_var : str
             The key of the data variable.
-        skipna : bool or None, optional
+        skipna : bool | None, optional
             If True, skip missing values (as marked by NaN). By default, only
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
