@@ -35,7 +35,7 @@ Documentation
 - Temporal average notebooks maintanance by `Jiwoo Lee`_ in https://github.com/xCDAT/xcdat/pull/633
 - Review of spatial averaging and general dataset utilities by `Stephen Po-Chedley`_ in https://github.com/xCDAT/xcdat/pull/644
 
-**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.0...0.7.1
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.0...v0.7.1
 
 v0.7.0 (10 April 2024)
 ----------------------
@@ -89,7 +89,7 @@ Deprecations
    -  Remove CDML/XML support from ``open_dataset()`` and
       ``open_mfdataset()`` since CDAT is EOL since Dec/2023
 
-**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.6.1...0.7.0
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.6.1...v0.7.0
 
 v0.6.1 (29 November 2023)
 -------------------------
