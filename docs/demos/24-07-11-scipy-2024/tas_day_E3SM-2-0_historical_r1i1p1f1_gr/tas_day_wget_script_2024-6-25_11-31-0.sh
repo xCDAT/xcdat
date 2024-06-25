@@ -1054,6 +1054,6 @@ download
 dedup_cache_
 
 mkdir -p docs/demos/24-07-11-scipy-2024/tas_day_E3SM-2-0_historical_r1i1p1f1_gr
-mv ta*.nc docs/demos/24-07-11-scipy-2024/tas_day_E3SM-2-0_historical_r1i1p1f1_gr
+mv tas*.nc docs/demos/24-07-11-scipy-2024/tas_day_E3SM-2-0_historical_r1i1p1f1_gr
 
 echo "done"
