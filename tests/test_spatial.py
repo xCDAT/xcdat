@@ -15,13 +15,13 @@ class TestSpatialAccessor:
         )
 
     def test__init__(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
         obj = SpatialAccessor(ds)
 
         assert obj._dataset.identical(ds)
 
     def test_decorator_call(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
         obj = ds.spatial
 
         assert obj._dataset.identical(ds)
@@ -50,7 +50,7 @@ class TestAverage:
             self.ds.spatial.average("ts", axis=["Y", "incorrect_axis"])
 
     def test_raises_error_if_lat_axis_coords_cant_be_found(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         # Update CF metadata to invalid values so cf_xarray can't interpret them.
         del ds.lat.attrs["axis"]
@@ -64,7 +64,7 @@ class TestAverage:
             ds.spatial.average("ts", axis=["X", "Y"])
 
     def test_raises_error_if_lon_axis_coords_cant_be_found(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         # Update CF metadata to invalid values so cf_xarray can't interpret them.
         del ds.lon.attrs["axis"]
@@ -141,13 +141,13 @@ class TestAverage:
             self.ds.spatial.average("ts", axis=["X", "Y"], weights=weights)
 
     def test_spatial_average_for_lat_region_and_keep_weights(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         result = ds.spatial.average(
             "ts", axis=["Y"], lat_bounds=(-5.0, 5), keep_weights=True
         )
 
-        expected = self.ds.copy()
+        expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array(
                 [[2.25, 2.25, 2.25, 2.25], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
@@ -164,12 +164,12 @@ class TestAverage:
         xr.testing.assert_allclose(result, expected)
 
     def test_spatial_average_for_lat_region(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         # Specifying axis as a str instead of list of str.
         result = ds.spatial.average("ts", axis=["Y"], lat_bounds=(-5.0, 5))
 
-        expected = self.ds.copy()
+        expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array(
                 [[2.25, 2.25, 2.25, 2.25], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
@@ -205,7 +205,7 @@ class TestAverage:
     def test_spatial_average_for_domain_wrapping_p_meridian_non_cf_conventions(
         self,
     ):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         # get spatial average for original dataset
         ref = ds.spatial.average("ts").ts
@@ -222,14 +222,14 @@ class TestAverage:
 
     @requires_dask
     def test_spatial_average_for_lat_region_and_keep_weights_with_dask(self):
-        ds = self.ds.copy().chunk(2)
+        ds = self.ds.copy(deep=True).chunk(2)
 
         # Specifying axis as a str instead of list of str.
         result = ds.spatial.average(
             "ts", axis=["Y"], lat_bounds=(-5.0, 5), keep_weights=True
         )
 
-        expected = self.ds.copy()
+        expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array(
                 [[2.25, 2.25, 2.25, 2.25], [1.0, 1.0, 1.0, 1.0], [1.0, 1.0, 1.0, 1.0]]
@@ -246,7 +246,7 @@ class TestAverage:
         xr.testing.assert_allclose(result, expected)
 
     def test_spatial_average_for_lat_and_lon_region_and_keep_weights(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
         result = ds.spatial.average(
             "ts",
             axis=["X", "Y"],
@@ -255,7 +255,7 @@ class TestAverage:
             keep_weights=True,
         )
 
-        expected = self.ds.copy()
+        expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, 1.0, 1.0]),
             coords={"time": expected.time},
@@ -277,7 +277,7 @@ class TestAverage:
         xr.testing.assert_allclose(result, expected)
 
     def test_spatial_average_for_lat_and_lon_region_with_custom_weights(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         weights = xr.DataArray(
             data=np.array([[1, 2, 3, 4], [2, 4, 6, 8], [3, 6, 9, 12], [4, 8, 12, 16]]),
@@ -292,7 +292,7 @@ class TestAverage:
             data_var="ts",
         )
 
-        expected = self.ds.copy()
+        expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, 1.0, 1.0]),
             coords={"time": expected.time},
@@ -300,6 +300,179 @@ class TestAverage:
         )
 
         assert result.identical(expected)
+
+
+class TestAveragerMinWeight:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.ds = generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+
+        # Limit to just 3 data points to simplify testing.
+        self.ds = self.ds.isel(time=slice(None, 3))
+
+        # Change the value of the first element so that it is easier to identify
+        # changes in the output.
+        self.ds["ts"].data[0] = np.full((4, 4), 2.25)
+
+    def test_raises_error_if_min_weight_is_negative(self):
+        with pytest.raises(ValueError):
+            self.ds.spatial.average("ts", axis=["X", "Y"], min_weight=-0.1)
+
+    def test_raises_error_if_min_weight_is_greater_than_one(self):
+        with pytest.raises(ValueError):
+            self.ds.spatial.average("ts", axis=["X", "Y"], min_weight=1.1)
+
+    def test_spatial_average_with_min_weight_zero(self):
+        ds = self.ds.copy(deep=True)
+
+        # Insert NaN values into the dataset (no minimum required to compute value).
+        ds["ts"][0, :, 2] = np.nan
+
+        # min_weight=0.0 means no minimum weight threshold required to compute value
+        result = ds.spatial.average(
+            "ts",
+            axis=["X", "Y"],
+            min_weight=0.0,
+        )
+
+        expected = self.ds.copy(deep=True)
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, 1.0, 1.0]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_spatial_average_with_min_weight_none_equivalent_to_zero(self):
+        ds = self.ds.copy(deep=True)
+
+        # Insert NaN values into the dataset.
+        ds["ts"][0, :, 2] = np.nan
+
+        # min_weight=None means no minimum weight threshold required to compute value
+        result = ds.spatial.average(
+            "ts",
+            axis=["X", "Y"],
+            min_weight=None,
+        )
+
+        expected = self.ds.copy(deep=True)
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, 1.0, 1.0]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_spatial_average_with_min_weight_half(self):
+        ds = self.ds.copy(deep=True)
+
+        # Insert NaN values into the dataset > 50% at second time point.
+        ds["ts"][1, :, :] = np.nan
+
+        # At least 50% of the weights must be non-NaN to compute value.
+        result = ds.spatial.average(
+            "ts",
+            axis=["X", "Y"],
+            min_weight=0.5,
+        )
+
+        # The second grouping window will by NaN because the minimum weight
+        # threshold is not met (>50%).
+        expected = self.ds.copy(deep=True)
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, np.nan, 1.0]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_spatial_average_with_min_weight_one(self):
+        ds = self.ds.copy(deep=True)
+
+        # Insert a single NaN value at the last time point.
+        ds["ts"][2, 0, 0] = np.nan
+
+        # 100% of the weights must be non-NaN to compute value.
+        result = ds.spatial.average(
+            "ts",
+            axis=["X", "Y"],
+            min_weight=1.0,
+        )
+
+        # The last grouping window will by NaN because the minimum weight
+        # threshold is not met (1 value is NaN out of 4).
+        expected = self.ds.copy(deep=True)
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, 1.0, np.nan]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_spatial_average_with_min_weight_edge_case_zero_weights(self):
+        ds = self.ds.copy(deep=True)
+
+        # Set all weights to zero.
+        weights = xr.DataArray(
+            data=np.zeros((4, 4)),
+            coords={"lat": ds.lat, "lon": ds.lon},
+            dims=["lat", "lon"],
+        )
+
+        result = ds.spatial.average(
+            "ts",
+            axis=["X", "Y"],
+            weights=weights,
+            min_weight=0.5,
+        )
+
+        # With all weights set to zero, the results for all grouping windows
+        # should be NaN because the minimum weight threshold is not met (>50%).
+        expected = self.ds.copy(deep=True)
+        expected["ts"] = xr.DataArray(
+            data=np.array([np.nan, np.nan, np.nan]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_spatial_average_with_min_weight_edge_case_partial_nan_weights(self):
+        ds = self.ds.copy(deep=True)
+
+        # Insert NaN values into the weights.
+        weights = xr.DataArray(
+            data=np.array(
+                [[1, np.nan, 1, 1], [1, 1, np.nan, 1], [1, 1, 1, np.nan], [1, 1, 1, 1]]
+            ),
+            coords={"lat": ds.lat, "lon": ds.lon},
+            dims=["lat", "lon"],
+        )
+
+        result = ds.spatial.average(
+            "ts",
+            axis=["X", "Y"],
+            weights=weights,
+            min_weight=0.5,
+        )
+
+        # With partial NaN weights, the averages are still computed because
+        # at least 50% of the weights are non-NaN for each grouping window.
+        expected = self.ds.copy(deep=True)
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, 1.0, 1.0]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        xr.testing.assert_allclose(result, expected)
 
 
 class TestGetWeights:
@@ -322,7 +495,7 @@ class TestGetWeights:
             self.ds.spatial._get_longitude_weights(domain_bounds, region_bounds=None)
 
     def test_raises_error_if_dataset_has_multiple_bounds_variables_for_an_axis(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         # Create a second "Y" axis dimension and associated bounds
         ds["lat2"] = ds.lat.copy()
@@ -336,7 +509,7 @@ class TestGetWeights:
             ds.spatial.get_weights(axis=["Y", "X"])
 
     def test_data_var_weights_for_region_in_lat_and_lon_domains(self):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         result = ds.spatial.get_weights(
             axis=["Y", "X"], lat_bounds=(-5, 5), lon_bounds=(-170, -120), data_var="ts"
@@ -416,7 +589,7 @@ class TestGetWeights:
     def test_dataset_weights_for_region_in_lon_domain_with_region_spanning_p_meridian(
         self,
     ):
-        ds = self.ds.copy()
+        ds = self.ds.copy(deep=True)
 
         result = ds.spatial._get_longitude_weights(
             domain_bounds=ds.lon_bnds,
