@@ -36,6 +36,8 @@
    :target: https://anaconda.org/conda-forge/xcdat
 .. |zenodo-doi| image:: https://zenodo.org/badge/354103918.svg
    :target: https://zenodo.org/badge/latestdoi/354103918
+.. image:: https://joss.theoj.org/papers/10.21105/joss.06426/status.svg
+   :target: https://doi.org/10.21105/joss.06426
 .. |CI/CD Build Workflow| image:: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
    :target: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml
 .. |docs| image:: https://readthedocs.org/projects/xcdat/badge/?version=latest
