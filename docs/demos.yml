@@ -15,5 +15,5 @@
   thumbnail: _static/thumbnails/scipy-logo.png
 
 - title: SciPy 2024 (Presentation Notebook, 07/11/24)
-  path: demos/24-07-24-scipy-2024/scipy-2024.ipynb
+  path: demos/24-07-11-scipy-2024/scipy-2024.ipynb
   thumbnail: _static/thumbnails/scipy-logo.png
