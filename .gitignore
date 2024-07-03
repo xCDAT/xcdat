@@ -3,6 +3,8 @@ __pycache__/
 *.py[cod]
 *$py.class
 
+.DS_Store
+
 # C extensions
 *.so
 
@@ -119,3 +121,6 @@ qa/
 
 # Custom Sphinx generated .txt files.
 docs/*.txt
+
+# ESGF wget script status files.
+*.sh.status
