@@ -73,6 +73,7 @@ class SpatialAccessor:
         keep_weights: bool = False,
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
+        required_weight: Optional[float] = 0.0,
     ) -> xr.Dataset:
         """
         Calculates the spatial average for a rectilinear grid over an optionally
@@ -122,6 +123,9 @@ class SpatialAccessor:
             ignored if ``weights`` are supplied. The lower bound can be larger
             than the upper bound (e.g., across the prime meridian, dateline), by
             default None.
+        required_weight : optional, float
+            Fraction of data coverage (i..e, weight) needed to return a
+            spatial average value. Value must range from 0 to 1.
 
         Returns
         -------
@@ -193,7 +197,7 @@ class SpatialAccessor:
             self._weights = weights
 
         self._validate_weights(dv, axis)
-        ds[dv.name] = self._averager(dv, axis)
+        ds[dv.name] = self._averager(dv, axis, required_weight=required_weight)
 
         if keep_weights:
             ds[self._weights.name] = self._weights
@@ -698,7 +702,12 @@ class SpatialAccessor:
                     f"and the data variable {dim_sizes} are misaligned."
                 )
 
-    def _averager(self, data_var: xr.DataArray, axis: List[SpatialAxis]):
+    def _averager(
+        self,
+        data_var: xr.DataArray,
+        axis: List[SpatialAxis],
+        required_weight: Optional[float] = 0.0,
+    ):
         """Perform a weighted average of a data variable.
 
         This method assumes all specified keys in ``axis`` exists in the data
@@ -716,6 +725,9 @@ class SpatialAccessor:
             Data variable inside a Dataset.
         axis : List[SpatialAxis]
             List of axis dimensions to average over.
+        required_weight : optional, float
+            Fraction of data coverage (i..e, weight) needed to return a
+            spatial average value. Value must range from 0 to 1.
 
         Returns
         -------
@@ -729,11 +741,47 @@ class SpatialAccessor:
         """
         weights = self._weights.fillna(0)
 
+        # ensure required weight is between 0 and 1
+        if required_weight is None:
+            required_weight = 0.0
+
+        if required_weight < 0.0:
+            raise ValueError(
+                "required_weight argment is less than zero. "
+                "required_weight must be between 0 and 1."
+            )
+
+        if required_weight > 1.0:
+            raise ValueError(
+                "required_weight argment is greater than zero. "
+                "required_weight must be between 0 and 1."
+            )
+
+        # need weights to match data_var dimensionality
+        if required_weight > 0.0:
+            weights, data_var = xr.broadcast(weights, data_var)
+
+        # get averaging dimensions
         dim = []
         for key in axis:
             dim.append(get_dim_keys(data_var, key))
 
+        # compute weighed mean
         with xr.set_options(keep_attrs=True):
             weighted_mean = data_var.cf.weighted(weights).mean(dim=dim)
+
+        # if weight thresholds applied, calculate fraction of data availability
+        # replace values that do not meet minimum weight with nan
+        if required_weight > 0.0:
+            # sum all weights (assuming no missing values exist)
+            weight_sum_all = weights.sum(dim=dim)  # type: ignore
+            # zero out cells with missing values in data_var
+            weights = xr.where(~np.isnan(data_var), weights, 0)
+            # sum all weights (including zero for missing values)
+            weight_sum_masked = weights.sum(dim=dim)  # type: ignore
+            # get fraction of weight available
+            frac = weight_sum_masked / weight_sum_all
+            # nan out values that don't meet specified weight threshold
+            weighted_mean = xr.where(frac >= required_weight, weighted_mean, np.nan)
 
         return weighted_mean
