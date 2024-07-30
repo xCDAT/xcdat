@@ -2,13 +2,21 @@
   path: https://ams.confex.com/ams/103ANNUAL/meetingapp.cgi/Paper/412648
   thumbnail: _static/thumbnails/ams-logo.jpg
 
-- title: LLNL Climate and Weather Seminar Series (01/25/2023) - A Gentle Introduction to xCDAT
+- title: LLNL Climate and Weather Seminar Series (01/25/23) - A Gentle Introduction to xCDAT
   path: demos/1-25-23-cwss-seminar/introduction-to-xcdat.ipynb
   thumbnail: _static/thumbnails/llnl-logo.png
 
-- title: ESGF2 - A Gentle Introduction to xCDAT (Video Introduction, 03/23/24)
+- title: ESGF2 - A Gentle Introduction to xCDAT (Video Introduction, 03/23/23)
   path: https://youtu.be/sJpQ9vKDKa8?feature=shared
   thumbnail: _static/thumbnails/esgf2-logo.png
+
+- title: Journal of Open Source Software Paper (06/29/24)
+  path: https://joss.theoj.org/papers/10.21105/joss.06426
+  thumbnail: _static/thumbnails/joss-logo.jpg
+
+- title: DOE EESM Research Highlight (06/29/24)
+  path: https://climatemodeling.science.energy.gov/research-highlights/xcdat-python-package-simple-and-robust-analysis-climate-data
+  thumbnail: _static/thumbnails/doe-logo.jpg
 
 - title: SciPy 2024 (Abstract, 07/11/24)
   path: https://cfp.scipy.org/2024/talk/VRACYW/
@@ -17,3 +25,7 @@
 - title: SciPy 2024 (Presentation Notebook, 07/11/24)
   path: demos/24-07-11-scipy-2024/scipy-2024.ipynb
   thumbnail: _static/thumbnails/scipy-logo.png
+
+- title: DOE EESM PI Meeting 2024 Presentation (08/08/24)
+  path: https://climatemodeling.science.energy.gov/presentations/xcdat-xarray-climate-data-analysis-tools-python-package-simple-and-robust-analysis
+  thumbnail: _static/thumbnails/doe-logo.jpg
