@@ -19,6 +19,7 @@ from xcdat import bounds  # noqa: F401
 from xcdat._logger import _setup_custom_logger
 from xcdat.axis import get_dim_coords
 from xcdat.dataset import _get_data_var
+from xcdat.utils import _get_masked_weights, _validate_min_weight
 
 logger = _setup_custom_logger(__name__)
 
@@ -266,6 +267,7 @@ class TemporalAccessor:
         keep_weights: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
+        min_weight: float | None = None,
     ):
         """Returns a Dataset with average of a data variable by time group.
 
@@ -367,6 +369,10 @@ class TemporalAccessor:
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
+        min_weight : float | None, optional
+            Fraction of data coverage (i..e, weight) needed to return a
+            temporal average value. Value must range from 0 to 1, by default
+            None (equivalent to ``min_weight=0.0``).
 
         Returns
         -------
@@ -446,6 +452,7 @@ class TemporalAccessor:
             keep_weights=keep_weights,
             season_config=season_config,
             skipna=skipna,
+            min_weight=min_weight,
         )
 
     def climatology(
@@ -899,10 +906,13 @@ class TemporalAccessor:
         reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
+        min_weight: float | None = None,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
         ds = self._dataset.copy()
-        self._set_arg_attrs(mode, freq, weighted, reference_period, season_config)
+        self._set_arg_attrs(
+            mode, freq, weighted, reference_period, season_config, min_weight
+        )
 
         # Preprocess the dataset based on method argument values.
         ds = self._preprocess_dataset(ds)
@@ -983,6 +993,7 @@ class TemporalAccessor:
         weighted: bool,
         reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        min_weight: float | None = None,
     ):
         """Validates method arguments and sets them as object attributes.
 
@@ -998,6 +1009,10 @@ class TemporalAccessor:
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa, by default DEFAULT_SEASON_CONFIG.
+        min_weight : float | None, optional
+            Fraction of data coverage (i..e, weight) needed to return a
+            temporal average value. Value must range from 0 to 1, by default
+            None (equivalent to ``min_weight=0.0``).
 
         Raises
         ------
@@ -1025,6 +1040,7 @@ class TemporalAccessor:
         self._mode = mode
         self._freq = freq
         self._weighted = weighted
+        self._min_weight = _validate_min_weight(min_weight)
 
         self._reference_period = None
         if reference_period is not None:
@@ -1541,53 +1557,108 @@ class TemporalAccessor:
         """
         dv = _get_data_var(ds, data_var)
 
-        # Label the time coordinates for grouping weights and the data variable
-        # values.
+        # Label the time coordinates with groups for grouping data and weights.
         self._labeled_time = self._label_time_coords(dv[self.dim])
         dv = dv.assign_coords({self.dim: self._labeled_time})
 
         if self._weighted:
-            self._weights = self._get_weights(ds, data_var)
-
-            # Weight the data variable.
-            dv *= self._weights
-
-            # Ensure missing data (`np.nan`) receives no weight (zero). To
-            # achieve this, first broadcast the one-dimensional (temporal
-            # dimension) shape of the `weights` DataArray to the
-            # multi-dimensional shape of its corresponding data variable.
-            weights = self._weights
-            if dv.chunks:
-                # For Dask-backed data variables, chunk the weights along the
-                # time dimension before broadcasting to avoid eager evaluation
-                # of the masking step.
-                weights = weights.chunk({self.dim: dv.chunksizes[self.dim]})
-            weights, _ = xr.broadcast(self._weights, dv)
-            weights = xr.where(dv.copy().isnull(), 0.0, weights)
-
-            # Perform weighted average using the formula
-            # WA = sum(data*weights) / sum(weights). The denominator must be
-            # included to take into account zero weight for missing data.
-            with xr.set_options(keep_attrs=True):
-                dv = self._group_data(dv).sum(skipna=skipna) / self._group_data(
-                    weights
-                ).sum(skipna=skipna)
-
-            # Restore the data variable's name.
-            dv.name = data_var
+            dv_avg = self._weighted_group_average(ds, dv, skipna)
         else:
-            dv = self._group_data(dv).mean(skipna=skipna)
+            dv_avg = self._group_data(dv).mean(skipna=skipna)
 
-        # After grouping and aggregating, the grouped time dimension's
-        # attributes are removed. Xarray's `keep_attrs=True` option only keeps
-        # attributes for data variables and not their coordinates, so the
-        # coordinate attributes have to be restored manually.
-        dv[self.dim].attrs = self._labeled_time.attrs
-        dv[self.dim].encoding = self._labeled_time.encoding
+        # After grouping and aggregating, xarray removes attributes from the
+        # grouped time coordinate. The `keep_attrs=True` option only preserves
+        # attributes for data variables, not coordinates. Therefore, we manually
+        # restore the time coordinate's attributes below.
+        dv_avg[self.dim].attrs = self._labeled_time.attrs
+        dv_avg[self.dim].encoding = self._labeled_time.encoding
 
-        dv = self._add_operation_attrs(dv)
+        dv_avg = self._add_operation_attrs(dv_avg)
 
-        return dv
+        return dv_avg
+
+    def _weighted_group_average(
+        self,
+        ds: xr.Dataset,
+        dv: xr.DataArray,
+        skipna: bool | None,
+    ) -> xr.DataArray:
+        """Compute the weighted group average of a data variable.
+
+        This method applies weights to the data variable, groups the weighted data,
+        and computes the average by dividing the sum of weighted data by the sum of
+        weights for non-missing data. It handles missing values according to the
+        `skipna` parameter and ensures that weights for missing data are excluded
+        from the denominator. Optionally, results are masked where the sum of weights
+        falls below a minimum threshold.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            The input xarray Dataset containing the data variable and any coordinate information.
+        dv : xr.DataArray
+            The data variable to be averaged.
+        skipna : bool or None
+            If True, skip NaN values when computing sums. If False, propagate NaNs.
+            If None, the default behavior of xarray's sum is used.
+
+        Returns
+        -------
+        xr.DataArray
+            The weighted group average of the data variable, with the same name as `dv`.
+            Values are set to NaN where the sum of weights is below the minimum threshold.
+
+        Notes
+        -----
+        - Weights are masked to zero where data is missing.
+        - For Dask-backed data, weights are chunked to avoid eager evaluation.
+        - The minimum weight threshold is controlled by `self._min_weight`.
+        """
+        # Keep the original weights for other operations and make a copy
+        # to avoid modifying the original weights.
+        self._weights = self._get_weights(ds, dv.name)
+        weights = self._weights.copy()
+
+        # For Dask-backed data variables, chunk the weights along the
+        # time dimension before broadcasting to avoid eager evaluation
+        # of the masking step.
+        if dv.chunks:
+            weights = weights.chunk({self.dim: dv.chunksizes[self.dim]})
+
+        # Apply the weights to data.
+        dv_weighted = dv * weights
+
+        # Group and sum weighted data, skippiing NaNs if specified.
+        dv_group_sum = self._group_data(dv_weighted).sum(skipna=skipna)
+
+        # Mask weights where data is missing (set to zero).
+        masked_weights = _get_masked_weights(dv, self._weights)
+
+        # Group and sum masked weights.
+        masked_weights_group_sum = self._group_data(masked_weights).sum(skipna=skipna)
+
+        # Compute weighted average using the formula:
+        # WA = sum(data * weights) / sum(weights for non-missing data)
+        # The denominator ensures that only weights for non-missing data
+        # are included, so missing data (with zero weight) does not
+        # affect the result.
+        dv_avg = dv_group_sum / masked_weights_group_sum
+
+        # Restore the data variables name which gets lost with groupby
+        # arithmetic.
+        dv_avg.name = dv.name
+
+        # Set averaged data to NaN where masked weights are below the
+        # minimum threshold.
+        if self._min_weight > 0.0:
+            dv_avg = xr.where(
+                masked_weights_group_sum >= self._min_weight,
+                dv_avg,
+                np.nan,
+                keep_attrs=True,
+            )
+
+        return dv_avg
 
     def _get_weights(self, ds: xr.Dataset, data_var: str) -> xr.DataArray:
         """Calculates weights for a data variable using time bounds.
