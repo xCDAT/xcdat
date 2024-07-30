@@ -250,7 +250,7 @@ class TemporalAccessor:
         Time bounds are used for generating weights to calculate weighted group
         averages (refer to the ``weighted`` parameter documentation below).
 
-        .. deprecated:: v0.7.0
+        .. deprecated:: v0.8.0
             The ``season_config`` dictionary argument ``"drop_incomplete_djf"``
             is being deprecated. Please use ``"drop_incomplete_seasons"``
             instead.
@@ -1182,7 +1182,14 @@ class TemporalAccessor:
         # Get the incomplete seasons and drop the time coordinates that are in
         # those incomplete seasons.
         indexes_to_drop = df[df["expected_months"] != df["actual_months"]].index
-        if len(indexes_to_drop) > 0:
+
+        if len(indexes_to_drop) == len(time_coords):
+            raise RuntimeError(
+                "No time coordinates remain with `drop_incomplete_seasons=True`. "
+                "Check the dataset has at least one complete season and/or "
+                "specify `drop_incomplete_seasons=False` instead."
+            )
+        elif len(indexes_to_drop) > 0:
             # The dataset needs to be split into a dataset with and a dataset
             # without the time dimension because the xarray `.where()` method
             # concatenates the time dimension to non-time dimension data vars,
