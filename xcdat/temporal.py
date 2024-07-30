@@ -426,7 +426,7 @@ class TemporalAccessor:
         Time bounds are used for generating weights to calculate weighted
         climatology (refer to the ``weighted`` parameter documentation below).
 
-        .. deprecated:: v0.7.0
+        .. deprecated:: v0.8.0
             The ``season_config`` dictionary argument ``"drop_incomplete_djf"``
             is being deprecated. Please use ``"drop_incomplete_seasons"``
             instead.
@@ -622,7 +622,7 @@ class TemporalAccessor:
         Time bounds are used for generating weights to calculate weighted
         climatology (refer to the ``weighted`` parameter documentation below).
 
-        .. deprecated:: v0.7.0
+        .. deprecated:: v0.8.0
             The ``season_config`` dictionary argument ``"drop_incomplete_djf"``
             is being deprecated. Please use ``"drop_incomplete_seasons"``
             instead.
