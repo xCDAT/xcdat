@@ -762,6 +762,21 @@ class TestGroupAverage:
                 season_config={"custom_seasons": custom_seasons},
             )
 
+    def test_raises_error_with_dataset_that_has_no_complete_seasons(self):
+        ds = self.ds.copy()
+        ds = ds.isel(time=slice(0, 1))
+        custom_seasons = [["Dec", "Jan"]]
+
+        with pytest.raises(RuntimeError):
+            ds.temporal.group_average(
+                "ts",
+                "season",
+                season_config={
+                    "custom_seasons": custom_seasons,
+                    "drop_incomplete_seasons": True,
+                },
+            )
+
     def test_weighted_custom_seasonal_averages(self):
         ds = self.ds.copy()
 
