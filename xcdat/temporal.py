@@ -1135,11 +1135,13 @@ class TemporalAccessor:
         """
         month_ints = sorted([MONTH_STR_TO_INT[month] for month in months])
 
-        coords_by_month = ds.time.groupby(f"{self.dim}.month").groups
+        coords_by_month = ds[self.dim].groupby(f"{self.dim}.month").groups
         month_to_time_idx = {
             k: coords_by_month[k] for k in month_ints if k in coords_by_month
         }
-        month_to_time_idx = sorted(list(chain.from_iterable(month_to_time_idx.values())))  # type: ignore
+        month_to_time_idx = sorted(
+            list(chain.from_iterable(month_to_time_idx.values()))
+        )  # type: ignore
         ds_new = ds.isel({f"{self.dim}": month_to_time_idx})
 
         return ds_new
@@ -1224,7 +1226,9 @@ class TemporalAccessor:
         -------
         xr.Dataset
         """
-        ds = ds.sel(**{self.dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))})
+        ds = ds.sel(  # type: ignore
+            **{self.dim: ~((ds[self.dim].dt.month == 2) & (ds[self.dim].dt.day == 29))}
+        )
         return ds
 
     def _average(self, ds: xr.Dataset, data_var: str) -> xr.DataArray:
