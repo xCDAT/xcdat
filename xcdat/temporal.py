@@ -1160,7 +1160,7 @@ class TemporalAccessor:
         """
         month_ints = sorted([MONTH_STR_TO_INT[month] for month in months])
 
-        coords_by_month = ds.time.groupby(f"{self.dim}.month").groups
+        coords_by_month = ds[self.dim].groupby(f"{self.dim}.month").groups
         month_to_time_idx = {
             k: coords_by_month[k] for k in month_ints if k in coords_by_month
         }
@@ -1250,7 +1250,7 @@ class TemporalAccessor:
         xr.Dataset
         """
         ds = ds.sel(  # type: ignore
-            **{self.dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))}
+            **{self.dim: ~((ds[self.dim].dt.month == 2) & (ds[self.dim].dt.day == 29))}
         )
         return ds
 
