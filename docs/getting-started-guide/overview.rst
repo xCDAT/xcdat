@@ -203,9 +203,9 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 .. raw:: html
 
    <p align="center">
-      <img style="display: inline-block; width:200px" src="./_static/e3sm-logo.jpg" alt="E3SM logo"/>
-      <img style="display: inline-block; width:200px" src="./_static/pcmdi-logo.png" alt="PCMDI logo"/>
-      <img style="display: inline-block; width:200px" src="./_static/seats-logo.png" alt="SEATS logo"/>
+      <img style="display: inline-block; width:200px" src="../_static/e3sm-logo.jpg" alt="E3SM logo"/>
+      <img style="display: inline-block; width:200px" src="../_static/pcmdi-logo.png" alt="PCMDI logo"/>
+      <img style="display: inline-block; width:200px" src="../_static/seats-logo.png" alt="SEATS logo"/>
    </p>
 
 Contributors
