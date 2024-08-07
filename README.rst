@@ -252,6 +252,14 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 .. _Department of Energy: https://www.energy.gov/
 .. _Office of Science: https://science.osti.gov/
 
+.. raw:: html
+
+   <p align="center">
+      <img src="./docs/_static/e3sm-logo.png" alt="E3SM logo" style="width:450px;"/>
+      <img src="./docs/_static/pcmdi-logo.png" alt="PCMDI logo" style="width:450px;"/>
+      <img src="./docs/_static/seats-logo.png" alt="SEATS logo" style="width:450px;"/>
+   </p>
+
 Contributors
 ------------
 
