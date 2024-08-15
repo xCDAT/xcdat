@@ -17,7 +17,7 @@
    +====================+======================================================+
    | Distribution       | |conda-forge| |platforms| |conda-downloads|          |
    +--------------------+------------------------------------------------------+
-   | Citation           | |zenodo-doi|                                         |
+   | Citation           | |zenodo-doi| |joss|                                  |
    +--------------------+------------------------------------------------------+
    | DevOps             | |CI/CD Build Workflow| |codecov| |docs|              |
    +--------------------+------------------------------------------------------+
@@ -36,6 +36,8 @@
    :target: https://anaconda.org/conda-forge/xcdat
 .. |zenodo-doi| image:: https://zenodo.org/badge/354103918.svg
    :target: https://zenodo.org/badge/latestdoi/354103918
+.. |joss| image:: https://joss.theoj.org/papers/10.21105/joss.06426/status.svg
+   :target: https://doi.org/10.21105/joss.06426
 .. |CI/CD Build Workflow| image:: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml/badge.svg
    :target: https://github.com/xCDAT/xcdat/actions/workflows/build_workflow.yml
 .. |docs| image:: https://readthedocs.org/projects/xcdat/badge/?version=latest
@@ -249,6 +251,14 @@ Environmental Research (`BER`_) within the `Department of Energy`_'s `Office of 
 .. _BER: https://science.osti.gov/ber
 .. _Department of Energy: https://www.energy.gov/
 .. _Office of Science: https://science.osti.gov/
+
+.. raw:: html
+
+   <p align="center">
+      <img style="display: inline-block; width:200px" src="./docs/_static/e3sm-logo.jpg" alt="E3SM logo"/>
+      <img style="display: inline-block; width:200px" src="./docs/_static/pcmdi-logo.png" alt="PCMDI logo"/>
+      <img style="display: inline-block; width:200px" src="./docs/_static/seats-logo.png" alt="SEATS logo"/>
+   </p>
 
 Contributors
 ------------

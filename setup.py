@@ -35,6 +35,6 @@ setup(
     test_suite="tests",
     tests_require=test_requires,
     url="https://github.com/xCDAT/xcdat",
-    version="0.7.0",
+    version="0.7.1",
     zip_safe=False,
 )
