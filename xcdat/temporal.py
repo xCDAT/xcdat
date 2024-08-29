@@ -786,15 +786,7 @@ class TemporalAccessor:
 
         # 5. Align time dimension names using the labeled time dimension name.
         # ----------------------------------------------------------------------
-        # The climatology's time dimension is renamed to the labeled time
-        # dimension in step #4 above (e.g., "time" -> "season"). xarray requires
-        # dimension names to be aligned to perform grouped arithmetic, which we
-        # use for calculating departures in step #5. Otherwise, this error is
-        # raised: "`ValueError: incompatible dimensions for a grouped binary
-        # operation: the group variable '<FREQ ARG>' is not a dimension on the
-        # other argument`".
         dv_climo = ds_climo[data_var]
-        dv_climo = dv_climo.rename({self.dim: self._labeled_time.name})
 
         # 6. Calculate the departures for the data variable.
         # ----------------------------------------------------------------------
@@ -802,12 +794,11 @@ class TemporalAccessor:
         with xr.set_options(keep_attrs=True):
             dv_departs = dv_obs_grouped - dv_climo
             dv_departs = self._add_operation_attrs(dv_departs)
-            ds_obs[data_var] = dv_departs
 
-            # The original time dimension name is restored after grouped
-            # arithmetic, so the labeled time dimension name is no longer needed
-            # and therefore dropped.
-            ds_obs = ds_obs.drop_vars(str(self._labeled_time.name))
+            # The original time dimension is dropped from the dataset to
+            # accomodate the new time dimension and its associated coordinates.
+            ds_obs = ds_obs.drop_dims(str(self.dim))
+            ds_obs[data_var] = dv_departs
 
         if weighted and keep_weights:
             self._weights = ds_climo.time_wts
@@ -1196,6 +1187,7 @@ class TemporalAccessor:
         # Label the time coordinates for grouping weights and the data variable
         # values.
         self._labeled_time = self._label_time_coords(dv[self.dim])
+        dv = dv.assign_coords({self.dim: self._labeled_time})
 
         if self._weighted:
             time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
@@ -1221,14 +1213,6 @@ class TemporalAccessor:
             dv.name = data_var
         else:
             dv = self._group_data(dv).mean()
-
-        # After grouping and aggregating the data variable values, the
-        # original time dimension is replaced with the grouped time dimension.
-        # For example, grouping on "year_season" replaces the time dimension
-        # with "year_season". This dimension needs to be renamed back to
-        # the original time dimension name before the data variable is added
-        # back to the dataset so that the original name is preserved.
-        dv = dv.rename({self._labeled_time.name: self.dim})
 
         # After grouping and aggregating, the grouped time dimension's
         # attributes are removed. Xarray's `keep_attrs=True` option only keeps
@@ -1321,7 +1305,7 @@ class TemporalAccessor:
         if self._mode == "average":
             dv_gb = dv.groupby(f"{self.dim}.{self._freq}")
         else:
-            dv.coords[self._labeled_time.name] = self._labeled_time
+            dv = dv.assign_coords({self.dim: self._labeled_time})
             dv_gb = dv.groupby(self._labeled_time.name)
 
         return dv_gb
@@ -1374,9 +1358,9 @@ class TemporalAccessor:
         dt_objects = self._convert_df_to_dt(df_dt_components)
 
         time_grouped = xr.DataArray(
-            name="_".join(df_dt_components.columns),
+            name=self.dim,
             data=dt_objects,
-            coords={self.dim: time_coords[self.dim]},
+            coords={self.dim: dt_objects},
             dims=[self.dim],
             attrs=time_coords[self.dim].attrs,
         )

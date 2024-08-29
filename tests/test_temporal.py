@@ -1810,7 +1810,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_monthly_departures_relative_to_climatology_reference_period_with_same_output_freq(
         self,
