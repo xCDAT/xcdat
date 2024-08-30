@@ -121,7 +121,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
         # Test unweighted averages
         result = ds.temporal.average("ts", weighted=False)
@@ -139,7 +139,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_averages_for_monthly_time_series(self):
         # Set up dataset
@@ -293,7 +293,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
         # Test unweighted averages
         result = ds.temporal.average("ts", weighted=False)
@@ -310,7 +310,7 @@ class TestAverage:
                 "weighted": "False",
             },
         )
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_averages_for_hourly_time_series(self):
         ds = xr.Dataset(
@@ -378,7 +378,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
         # Test unweighted averages
         result = ds.temporal.average("ts", weighted=False)
@@ -396,7 +396,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
 
 class TestGroupAverage:
@@ -619,7 +619,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_averages_with_DJF_without_dropping_incomplete_seasons(
         self,
@@ -670,7 +670,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_averages_with_JFD(self):
         ds = self.ds.copy()
@@ -729,7 +729,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_custom_seasonal_averages(self):
         ds = self.ds.copy()
@@ -787,7 +787,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_raises_error_with_incorrect_custom_seasons_argument(self):
         # Test raises error with non-3 letter strings
@@ -873,7 +873,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_monthly_averages_with_masked_data(self):
         ds = self.ds.copy()
@@ -924,7 +924,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_daily_averages(self):
         ds = self.ds.copy()
@@ -967,7 +967,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_hourly_averages(self):
         ds = self.ds.copy()
@@ -1011,7 +1011,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
 
 class TestClimatology:
@@ -1105,7 +1105,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_climatology_with_DJF(self):
         ds = self.ds.copy()
@@ -1159,7 +1159,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     @requires_dask
     def test_chunked_weighted_seasonal_climatology_with_DJF(self):
@@ -1214,7 +1214,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_climatology_with_JFD(self):
         ds = self.ds.copy()
@@ -1265,7 +1265,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_custom_seasonal_climatology(self):
         ds = self.ds.copy()
@@ -1328,7 +1328,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_monthly_climatology(self):
         result = self.ds.temporal.climatology("ts", "month")
@@ -1391,7 +1391,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_unweighted_monthly_climatology(self):
         result = self.ds.temporal.climatology("ts", "month", weighted=False)
@@ -1453,7 +1453,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_daily_climatology(self):
         result = self.ds.temporal.climatology("ts", "day", weighted=True)
@@ -1515,7 +1515,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_daily_climatology_drops_leap_days_with_matching_calendar(self):
         time = xr.DataArray(
@@ -1606,7 +1606,7 @@ class TestClimatology:
                 },
             )
 
-            assert result.identical(expected)
+            xr.testing.assert_identical(result, expected)
 
     def test_unweighted_daily_climatology(self):
         result = self.ds.temporal.climatology("ts", "day", weighted=False)
@@ -1668,7 +1668,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
 
 class TestDepartures:
@@ -1895,7 +1895,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
@@ -1945,7 +1945,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_departures_with_DJF_and_keep_weights(self):
         ds = self.ds.copy()
@@ -2021,7 +2021,7 @@ class TestDepartures:
             dims=["time_original"],
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_unweighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
@@ -2071,7 +2071,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_unweighted_seasonal_departures_with_JFD(self):
         ds = self.ds.copy()
@@ -2121,7 +2121,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_daily_departures_drops_leap_days_with_matching_calendar(self):
         time = xr.DataArray(
@@ -2214,7 +2214,7 @@ class TestDepartures:
                 },
             )
 
-            assert result.identical(expected)
+            xr.testing.assert_identical(result, expected)
 
 
 class Test_GetWeights:

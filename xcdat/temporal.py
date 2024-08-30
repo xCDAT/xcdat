@@ -747,16 +747,16 @@ class TemporalAccessor:
         # calling the group average or climatology APIs in step #3.
         ds = self._preprocess_dataset(ds)
 
-        # 3. Calculate the grouped average and climatology of the data variable.
+        # 3. Get the observational data variable.
         # ----------------------------------------------------------------------
-        # The climatology and grouped average APIs are called on the copied
-        # dataset to create separate instances of the `TemporalAccessor` class.
-        # This is done to avoid overriding the attributes of the current
-        # instance of `TemporalAccessor` (set in step #1 above).
+        # NOTE: The xCDAT APIs are called on copies of the original dataset to
+        # create separate instances of the `TemporalAccessor` class. This is
+        # done to avoid overriding the attributes of the current instance of
+        # `TemporalAccessor`, which is set by step #1.
+        ds_obs = ds.copy()
 
         # Group averaging is only required if the dataset's frequency (input)
         # differs from the `freq` arg (output).
-        ds_obs = ds.copy()
         inferred_freq = _infer_freq(ds[self.dim])
         if inferred_freq != freq:
             ds_obs = ds_obs.temporal.group_average(
@@ -767,7 +767,10 @@ class TemporalAccessor:
                 season_config,
             )
 
-        ds_climo = ds.temporal.climatology(
+        # 4. Calculate the climatology of the data variable.
+        # ----------------------------------------------------------------------
+        ds_climo = ds.copy()
+        ds_climo = ds_climo.temporal.climatology(
             data_var,
             freq,
             weighted,
@@ -776,35 +779,11 @@ class TemporalAccessor:
             season_config,
         )
 
-        # 4. Group the averaged data variable values by the time `freq`.
+        # 5. Calculate the departures for the data variable.
         # ----------------------------------------------------------------------
-        # This step allows us to perform xarray's grouped arithmetic to
-        # calculate departures.
-        dv_obs = ds_obs[data_var].copy()
-        self._labeled_time = self._label_time_coords(dv_obs[self.dim])
-        dv_obs_grouped = self._group_data(dv_obs)
+        ds_departs = self._calculate_departures(ds_obs, ds_climo, data_var)
 
-        # 5. Align time dimension names using the labeled time dimension name.
-        # ----------------------------------------------------------------------
-        dv_climo = ds_climo[data_var]
-
-        # 6. Calculate the departures for the data variable.
-        # ----------------------------------------------------------------------
-        # departures = observation - climatology
-        with xr.set_options(keep_attrs=True):
-            dv_departs = dv_obs_grouped - dv_climo
-            dv_departs = self._add_operation_attrs(dv_departs)
-
-            # The original time dimension is dropped from the dataset to
-            # accomodate the new time dimension and its associated coordinates.
-            ds_obs = ds_obs.drop_dims(str(self.dim))
-            ds_obs[data_var] = dv_departs
-
-        if weighted and keep_weights:
-            self._weights = ds_climo.time_wts
-            ds_obs = self._keep_weights(ds_obs)
-
-        return ds_obs
+        return ds_departs
 
     def _averager(
         self,
@@ -1306,7 +1285,7 @@ class TemporalAccessor:
             dv_gb = dv.groupby(f"{self.dim}.{self._freq}")
         else:
             dv = dv.assign_coords({self.dim: self._labeled_time})
-            dv_gb = dv.groupby(self._labeled_time.name)
+            dv_gb = dv.groupby(self.dim)
 
         return dv_gb
 
@@ -1653,6 +1632,10 @@ class TemporalAccessor:
     def _keep_weights(self, ds: xr.Dataset) -> xr.Dataset:
         """Keep the weights in the dataset.
 
+        The labeled time coordinates for the weights are replaced with the
+        original time coordinates and the dimension name is appended with
+        "_original".
+
         Parameters
         ----------
         ds : xr.Dataset
@@ -1663,16 +1646,11 @@ class TemporalAccessor:
         xr.Dataset
             The dataset with the weights used for averaging.
         """
-        # Append "_original" to the name of the weights` time coordinates to
-        # avoid conflict with the grouped time coordinates in the Dataset (can
-        # have a different shape).
         if self._mode in ["group_average", "climatology"]:
-            self._weights = self._weights.rename({self.dim: f"{self.dim}_original"})
-            # Only keep the original time coordinates, not the ones labeled
-            # by group.
-            self._weights = self._weights.drop_vars(self._labeled_time.name)
+            weights = self._weights.assign_coords({self.dim: self._dataset[self.dim]})
+            weights = weights.rename({self.dim: f"{self.dim}_original"})
 
-        ds[self._weights.name] = self._weights
+        ds[weights.name] = weights
 
         return ds
 
@@ -1716,6 +1694,60 @@ class TemporalAccessor:
                 data_var.attrs["custom_seasons"] = list(custom_seasons.keys())
 
         return data_var
+
+    def _calculate_departures(
+        self,
+        ds_obs: xr.Dataset,
+        ds_climo: xr.Dataset,
+        data_var: str,
+    ) -> xr.Dataset:
+        """Calculate the departures for a data variable.
+
+        How this methods works:
+
+            1. Label the observational data variable's time coordinates by their
+               appropriate time group. For example, the first two time
+               coordinates 2000-01-01 and 2000-02-01 are replaced with the
+               "01-01-01" and "01-02-01" monthly groups.
+            2. Calculate departures by subtracting the climatology from the
+               labeled observational data using Xarray's grouped arithmetic with
+               automatic broadcasting (departures = obs - climo).
+            3. Restore the original time coordinates to the departures variable
+               to preserve the "year" of the time coordinates. For example,
+               the first two time coordinates 01-01-01 and 01-02-01 are reverted
+               back to 2000-01-01 and 2000-02-01.
+
+        Parameters
+        ----------
+        ds_obs : xr.Dataset
+            The observational dataset.
+        dv_climo : xr.Dataset
+            The climatology dataset.
+        data_var : str
+            The key of the data variable for calculating departures.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset containing the departures for a data variable.
+        """
+        ds_departs = ds_obs.copy()
+
+        dv_obs = ds_obs[data_var].copy()
+        self._labeled_time = self._label_time_coords(dv_obs[self.dim])
+        dv_obs_grouped = self._group_data(dv_obs)
+
+        dv_climo = ds_climo[data_var].copy()
+
+        with xr.set_options(keep_attrs=True):
+            dv_departs = dv_obs_grouped - dv_climo
+
+        dv_departs = self._add_operation_attrs(dv_departs)
+
+        dv_departs = dv_departs.assign_coords({self.dim: ds_obs[self.dim]})
+        ds_departs[data_var] = dv_departs
+
+        return ds_departs
 
 
 def _infer_freq(time_coords: xr.DataArray) -> Frequency:
