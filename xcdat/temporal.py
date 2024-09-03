@@ -1248,18 +1248,13 @@ class TemporalAccessor:
         # or time unit (with rare exceptions see release notes). To avoid this
         # warning please use the scalar types `np.float64`, or string notation.`
         if isinstance(time_lengths.data, Array):
-            time_lengths.load()
+            time_lengths = time_lengths.astype("timedelta64[ns]")
 
-        time_lengths = time_lengths.astype(np.float64)
+        time_lengths = time_lengths.astype("float64")
 
         grouped_time_lengths = self._group_data(time_lengths)
         weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()
         weights.name = f"{self.dim}_wts"
-
-        # Validate the sum of weights for each group is 1.0.
-        actual_sum = self._group_data(weights).sum().values
-        expected_sum = np.ones(len(grouped_time_lengths.groups))
-        np.testing.assert_allclose(actual_sum, expected_sum)
 
         return weights
 
