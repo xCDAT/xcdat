@@ -1250,7 +1250,7 @@ class TemporalAccessor:
         if isinstance(time_lengths.data, Array):
             time_lengths = time_lengths.astype("timedelta64[ns]")
 
-        time_lengths = time_lengths.astype("float64")
+        time_lengths = time_lengths.astype(np.float64)
 
         grouped_time_lengths = self._group_data(time_lengths)
         weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()
