@@ -783,6 +783,10 @@ class TemporalAccessor:
         # ----------------------------------------------------------------------
         ds_departs = self._calculate_departures(ds_obs, ds_climo, data_var)
 
+        if keep_weights:
+            self._weights = ds_climo[f"{self.dim}_wts"]
+            ds_departs = self._keep_weights(ds_departs)
+
         return ds_departs
 
     def _averager(
@@ -1644,6 +1648,8 @@ class TemporalAccessor:
         if self._mode in ["group_average", "climatology"]:
             weights = self._weights.assign_coords({self.dim: self._dataset[self.dim]})
             weights = weights.rename({self.dim: f"{self.dim}_original"})
+        else:
+            weights = self._weights
 
         ds[weights.name] = weights
 
