@@ -1221,9 +1221,6 @@ class TemporalAccessor:
         divided by the total sum of the time lengths in its group to get its
         corresponding weight.
 
-        The sum of the weights for each group is validated to ensure it equals
-        1.0.
-
         Parameters
         ----------
         time_bounds : xr.DataArray

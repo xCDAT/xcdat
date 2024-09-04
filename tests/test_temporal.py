@@ -2217,6 +2217,26 @@ class TestDepartures:
             xr.testing.assert_identical(result, expected)
 
 
+def _check_each_weight_group_adds_up_to_1(ds: xr.Dataset, weights: xr.DataArray):
+    """Check that the sum of the weights in each group adds up to 1.0 (or 100%).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset with the temporal accessor class attached.
+    weights : xr.DataArray
+        The weights to check, produced by the `_get_weights` method.
+    """
+    time_lengths = ds.time_bnds[:, 1] - ds.time_bnds[:, 0]
+    time_lengths = time_lengths.astype(np.float64)
+
+    grouped_time_lengths = ds.temporal._group_data(time_lengths)
+
+    actual_sum = ds.temporal._group_data(weights).sum().values
+    expected_sum = np.ones(len(grouped_time_lengths.groups))
+    np.testing.assert_allclose(actual_sum, expected_sum)
+
+
 class Test_GetWeights:
     class TestWeightsForAverageMode:
         @pytest.fixture(autouse=True)
@@ -2289,6 +2309,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_monthly_averages(self):
             ds = self.ds.copy()
 
@@ -2351,6 +2373,8 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
     class TestWeightsForGroupAverageMode:
         @pytest.fixture(autouse=True)
@@ -2423,6 +2447,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_monthly_averages(self):
             ds = self.ds.copy()
 
@@ -2468,6 +2494,8 @@ class Test_GetWeights:
             result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.ones(15)
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
         def test_weights_for_seasonal_averages_with_DJF_and_drop_incomplete_seasons(
             self,
@@ -2631,6 +2659,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected, equal_nan=True)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_seasonal_averages_with_JFD(self):
             ds = self.ds.copy()
 
@@ -2701,6 +2731,8 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
         def test_custom_season_time_series_weights(self):
             ds = self.ds.copy()
@@ -2779,6 +2811,8 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
         def test_weights_for_daily_averages(self):
             ds = self.ds.copy()
@@ -2872,6 +2906,8 @@ class Test_GetWeights:
             result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.ones(15)
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
     class TestWeightsForClimatologyMode:
         @pytest.fixture(autouse=True)
@@ -3035,6 +3071,8 @@ class Test_GetWeights:
 
             assert np.allclose(result, expected, equal_nan=True)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_seasonal_climatology_with_JFD(self):
             ds = self.ds.copy()
 
@@ -3101,6 +3139,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected, equal_nan=True)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_annual_climatology(self):
             ds = self.ds.copy()
 
@@ -3165,6 +3205,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_daily_climatology(self):
             ds = self.ds.copy()
 
@@ -3226,6 +3268,8 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
 
 class Test_Averager:
