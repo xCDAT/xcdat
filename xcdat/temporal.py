@@ -783,7 +783,7 @@ class TemporalAccessor:
         # ----------------------------------------------------------------------
         ds_departs = self._calculate_departures(ds_obs, ds_climo, data_var)
 
-        if keep_weights:
+        if weighted and keep_weights:
             self._weights = ds_climo[f"{self.dim}_wts"]
             ds_departs = self._keep_weights(ds_departs)
 
