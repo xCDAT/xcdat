@@ -1741,7 +1741,6 @@ class TemporalAccessor:
             dv_departs = dv_obs_grouped - dv_climo
 
         dv_departs = self._add_operation_attrs(dv_departs)
-
         dv_departs = dv_departs.assign_coords({self.dim: ds_obs[self.dim]})
         ds_departs[data_var] = dv_departs
 
