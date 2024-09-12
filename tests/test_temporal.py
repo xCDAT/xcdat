@@ -121,7 +121,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
         # Test unweighted averages
         result = ds.temporal.average("ts", weighted=False)
@@ -139,7 +139,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_averages_for_monthly_time_series(self):
         # Set up dataset
@@ -293,7 +293,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
         # Test unweighted averages
         result = ds.temporal.average("ts", weighted=False)
@@ -310,7 +310,7 @@ class TestAverage:
                 "weighted": "False",
             },
         )
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_averages_for_hourly_time_series(self):
         ds = xr.Dataset(
@@ -378,7 +378,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
         # Test unweighted averages
         result = ds.temporal.average("ts", weighted=False)
@@ -396,7 +396,7 @@ class TestAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
 
 class TestGroupAverage:
@@ -670,7 +670,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_averages_with_DJF_without_dropping_incomplete_seasons(
         self,
@@ -721,7 +721,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_averages_with_JFD(self):
         ds = self.ds.copy()
@@ -780,7 +780,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_custom_seasonal_averages(self):
         ds = self.ds.copy()
@@ -838,7 +838,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_raises_error_with_incorrect_custom_seasons_argument(self):
         # Test raises error with non-3 letter strings
@@ -924,7 +924,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_monthly_averages_with_masked_data(self):
         ds = self.ds.copy()
@@ -975,7 +975,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_daily_averages(self):
         ds = self.ds.copy()
@@ -1018,7 +1018,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_hourly_averages(self):
         ds = self.ds.copy()
@@ -1062,7 +1062,7 @@ class TestGroupAverage:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
 
 class TestClimatology:
@@ -1156,7 +1156,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_climatology_with_DJF(self):
         ds = self.ds.copy()
@@ -1210,7 +1210,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_climatology_with_DJF_and_skipna(self):
         ds = self.ds.copy(deep=True)
@@ -1327,7 +1327,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_climatology_with_JFD(self):
         ds = self.ds.copy()
@@ -1378,7 +1378,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_custom_seasonal_climatology(self):
         ds = self.ds.copy()
@@ -1441,7 +1441,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_monthly_climatology(self):
         result = self.ds.temporal.climatology("ts", "month")
@@ -1504,7 +1504,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_unweighted_monthly_climatology(self):
         result = self.ds.temporal.climatology("ts", "month", weighted=False)
@@ -1566,7 +1566,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_daily_climatology(self):
         result = self.ds.temporal.climatology("ts", "day", weighted=True)
@@ -1628,7 +1628,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_daily_climatology_drops_leap_days_with_matching_calendar(self):
         time = xr.DataArray(
@@ -1719,7 +1719,7 @@ class TestClimatology:
                 },
             )
 
-            assert result.identical(expected)
+            xr.testing.assert_identical(result, expected)
 
     def test_unweighted_daily_climatology(self):
         result = self.ds.temporal.climatology("ts", "day", weighted=False)
@@ -1781,7 +1781,7 @@ class TestClimatology:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
 
 class TestDepartures:
@@ -1923,7 +1923,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_monthly_departures_relative_to_climatology_reference_period_with_same_output_freq(
         self,
@@ -2008,7 +2008,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
@@ -2058,7 +2058,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_seasonal_departures_with_DJF_and_skipna(self):
         ds = self.ds.copy(deep=True)
@@ -2190,7 +2190,7 @@ class TestDepartures:
             dims=["time_original"],
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_unweighted_seasonal_departures_with_DJF(self):
         ds = self.ds.copy()
@@ -2240,7 +2240,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_unweighted_seasonal_departures_with_JFD(self):
         ds = self.ds.copy()
@@ -2290,7 +2290,7 @@ class TestDepartures:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_weighted_daily_departures_drops_leap_days_with_matching_calendar(self):
         time = xr.DataArray(
@@ -2383,7 +2383,27 @@ class TestDepartures:
                 },
             )
 
-            assert result.identical(expected)
+            xr.testing.assert_identical(result, expected)
+
+
+def _check_each_weight_group_adds_up_to_1(ds: xr.Dataset, weights: xr.DataArray):
+    """Check that the sum of the weights in each group adds up to 1.0 (or 100%).
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The dataset with the temporal accessor class attached.
+    weights : xr.DataArray
+        The weights to check, produced by the `_get_weights` method.
+    """
+    time_lengths = ds.time_bnds[:, 1] - ds.time_bnds[:, 0]
+    time_lengths = time_lengths.astype(np.float64)
+
+    grouped_time_lengths = ds.temporal._group_data(time_lengths)
+
+    actual_sum = ds.temporal._group_data(weights).sum().values
+    expected_sum = np.ones(len(grouped_time_lengths.groups))
+    np.testing.assert_allclose(actual_sum, expected_sum)
 
 
 class Test_GetWeights:
@@ -2458,6 +2478,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_monthly_averages(self):
             ds = self.ds.copy()
 
@@ -2520,6 +2542,8 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
     class TestWeightsForGroupAverageMode:
         @pytest.fixture(autouse=True)
@@ -2592,6 +2616,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_monthly_averages(self):
             ds = self.ds.copy()
 
@@ -2637,6 +2663,8 @@ class Test_GetWeights:
             result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.ones(15)
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
         def test_weights_for_seasonal_averages_with_DJF_and_drop_incomplete_seasons(
             self,
@@ -2800,6 +2828,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected, equal_nan=True)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_seasonal_averages_with_JFD(self):
             ds = self.ds.copy()
 
@@ -2870,6 +2900,8 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
         def test_custom_season_time_series_weights(self):
             ds = self.ds.copy()
@@ -2948,6 +2980,8 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
         def test_weights_for_daily_averages(self):
             ds = self.ds.copy()
@@ -3041,6 +3075,8 @@ class Test_GetWeights:
             result = ds.temporal._get_weights(ds.time_bnds)
             expected = np.ones(15)
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
     class TestWeightsForClimatologyMode:
         @pytest.fixture(autouse=True)
@@ -3204,6 +3240,8 @@ class Test_GetWeights:
 
             assert np.allclose(result, expected, equal_nan=True)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_seasonal_climatology_with_JFD(self):
             ds = self.ds.copy()
 
@@ -3270,6 +3308,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected, equal_nan=True)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_annual_climatology(self):
             ds = self.ds.copy()
 
@@ -3334,6 +3374,8 @@ class Test_GetWeights:
             )
             assert np.allclose(result, expected)
 
+            _check_each_weight_group_adds_up_to_1(ds, result)
+
         def test_weights_for_daily_climatology(self):
             ds = self.ds.copy()
 
@@ -3395,6 +3437,8 @@ class Test_GetWeights:
                 ]
             )
             assert np.allclose(result, expected)
+
+            _check_each_weight_group_adds_up_to_1(ds, result)
 
 
 class Test_Averager:

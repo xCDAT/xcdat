@@ -14,16 +14,17 @@ test_requires = ["pytest>=3"]
 
 setup(
     author="xCDAT developers",
-    python_requires=">=3.8",
+    python_requires=">=3.9",
     classifiers=[
-        "Development Status :: 3 - Alpha",
+        "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
         "License :: OSI Approved :: Apache-2.0 License",
         "Natural Language :: English",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: 3.10",
+        "Programming Language :: Python :: 3.11",
+        "Programming Language :: Python :: 3.12",
     ],
     description="Xarray Climate Data Analysis Tools",
     license="Apache-2.0",
