@@ -1085,9 +1085,9 @@ class TemporalAccessor:
             ds[self.dim].dt.year.values[-1],
         )
         incomplete_seasons = (
-            f"{start_year:04d}-01",
-            f"{start_year:04d}-02",
-            f"{end_year:04d}-12",
+            f"{int(start_year):04d}-01",
+            f"{int(start_year):04d}-02",
+            f"{int(end_year):04d}-12",
         )
 
         for year_month in incomplete_seasons:
