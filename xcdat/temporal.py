@@ -815,7 +815,7 @@ class TemporalAccessor:
         # it becomes obsolete after the data variable is averaged. When the
         # averaged data variable is added to the dataset, the new time dimension
         # and its associated coordinates are also added.
-        ds = ds.drop_dims(self.dim)  # type: ignore
+        ds = ds.drop_dims(self.dim)
         ds[dv_avg.name] = dv_avg
 
         if keep_weights:
@@ -847,7 +847,7 @@ class TemporalAccessor:
         dv = _get_data_var(self._dataset, data_var)
 
         self.data_var = data_var
-        self.dim = get_dim_coords(dv, "T").name
+        self.dim = str(get_dim_coords(dv, "T").name)
 
         if not _contains_datetime_like_objects(dv[self.dim]):
             first_time_coord = dv[self.dim].values[0]
@@ -1084,7 +1084,11 @@ class TemporalAccessor:
             ds[self.dim].dt.year.values[0],
             ds[self.dim].dt.year.values[-1],
         )
-        incomplete_seasons = (f"{start_year}-01", f"{start_year}-02", f"{end_year}-12")
+        incomplete_seasons = (
+            f"{int(start_year):04d}-01",
+            f"{int(start_year):04d}-02",
+            f"{int(end_year):04d}-12",
+        )
 
         for year_month in incomplete_seasons:
             try:
@@ -1115,9 +1119,7 @@ class TemporalAccessor:
         -------
         xr.Dataset
         """
-        ds = ds.sel(  # type: ignore
-            **{self.dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))}
-        )
+        ds = ds.sel(**{self.dim: ~((ds.time.dt.month == 2) & (ds.time.dt.day == 29))})
         return ds
 
     def _average(self, ds: xr.Dataset, data_var: str) -> xr.DataArray:
@@ -1142,9 +1144,9 @@ class TemporalAccessor:
                 time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
                 self._weights = self._get_weights(time_bounds)
 
-                dv = dv.weighted(self._weights).mean(dim=self.dim)  # type: ignore
+                dv = dv.weighted(self._weights).mean(dim=self.dim)
             else:
-                dv = dv.mean(dim=self.dim)  # type: ignore
+                dv = dv.mean(dim=self.dim)
 
         dv = self._add_operation_attrs(dv)
 
