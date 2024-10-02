@@ -26,10 +26,6 @@
             "editor.defaultFormatter": "charliermarsh.ruff"
         },
         "ruff.importStrategy": "fromEnvironment",
-        // Code Formatting and Linting
-        // ---------------------------
-        "flake8.args": ["--config=setup.cfg"],
-        "flake8.importStrategy": "fromEnvironment",
         // Type checking
         // ---------------------------
         "mypy-type-checker.args": ["--config=pyproject.toml"],
