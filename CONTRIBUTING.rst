@@ -246,7 +246,7 @@ Here's a simple checklist for PRs:
   - Write new tests if needed.
   - Test the code using `Pytest`_. Running all tests (type ``make test`` or ``pytest`` in the root directory) takes a while, so feel free to only run the tests you think are needed based on your PR (example: ``pytest tests/test_dataset.py``). CI will catch any failing tests.
 
-- **Properly format your code** and verify that it passes the formatting guidelines set by `Black`_ and `Flake8`_.
+- **Properly format your code** and verify that it passes the formatting guidelines set by `Ruff`_.
   You can use `pre-commit`_ to run these automatically on each commit.
 
   - Run ``pre-commit run --all-files`` in the root directory. This may modify some files. Confirm and commit any formatting changes.
@@ -261,10 +261,8 @@ Code formatting
 
 xCDAT uses several tools to ensure a consistent code format throughout the project:
 
-- `Black`_ for standardized code formatting
-- `Flake8`_ for code linting
-- `isort`_ for standardized order of imports
-- `mypy`_ for static type checking on `type hints`_
+- `Ruff`_ for standardized code formatting, linting, and ordering of imports.
+- `MyPy`_ for static type checking on `type hints`_
 
 We highly recommend that you setup `pre-commit hooks`_ to automatically run all the
 above tools every time you make a git commit. Check out the :ref:`install pre-commit
@@ -277,10 +275,8 @@ hooks` section above for instructions.
 .. _pre-commit: https://pre-commit.com/
 .. _pre-commit hooks: https://pre-commit.com/
 .. _Pytest: http://doc.pytest.org/en/latest/
-.. _Black: https://black.readthedocs.io/en/stable/
-.. _Flake8: https://flake8.pycqa.org/en/latest/
-.. _isort: https://pycqa.github.io/isort/
-.. _mypy: http://mypy-lang.org/
+.. _Ruff: https://docs.astral.sh/ruff/
+.. _MyPy: http://MyPy-lang.org/
 .. _type hints: https://docs.python.org/3/library/typing.html
 
 Testing with continuous integration
