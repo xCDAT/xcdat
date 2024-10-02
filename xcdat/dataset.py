@@ -1,4 +1,5 @@
 """Dataset module for functions related to an xarray.Dataset."""
+
 from __future__ import annotations
 
 import os
@@ -63,7 +64,7 @@ def open_dataset(
     data_var: Optional[str], optional
         The key of the non-bounds data variable to keep in the Dataset,
         alongside any existing bounds data variables, by default None.
-    add_bounds: List[CFAxisKey] | None | bool
+    add_bounds: List[CFAxisKey] | None
         List of CF axes to try to add bounds for (if missing), by default
         ["X", "Y"]. Set to None to not add any missing bounds. Please note that
         bounds are required for many xCDAT features.
@@ -152,7 +153,7 @@ def open_mfdataset(
           If concatenation along more than one dimension is desired, then
           ``paths`` must be a nested list-of-lists (see [2]_
           ``xarray.combine_nested`` for details).
-    add_bounds: List[CFAxisKey] | None | bool
+    add_bounds: List[CFAxisKey] | None
         List of CF axes to try to add bounds for (if missing), by default
         ["X", "Y"]. Set to None to not add any missing bounds. Please note that
         bounds are required for many xCDAT features.
@@ -464,7 +465,7 @@ def _postprocess_dataset(
     dataset: xr.Dataset,
     data_var: Optional[str] = None,
     center_times: bool = False,
-    add_bounds: List[CFAxisKey] | None | bool = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
     lon_orient: Optional[Tuple[float, float]] = None,
 ) -> xr.Dataset:
     """Post-processes a Dataset object.
@@ -479,7 +480,7 @@ def _postprocess_dataset(
         If True, center time coordinates using the midpoint between its upper
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
-    add_bounds: List[CFAxisKey] | None | bool
+    add_bounds: List[CFAxisKey] | None
         List of CF axes to try to add bounds for (if missing), default
         ["X", "Y"]. Set to None to not add any missing bounds.
 
