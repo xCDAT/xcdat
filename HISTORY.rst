@@ -2,6 +2,54 @@
 History
 =======
 
+v0.7.2 (02 October 2024)
+------------------------
+
+This patch release introduces significant performance improvements to
+the temporal grouping averaging APIs (``group_average``,
+``climatology``, and ``departures``) and adds support for piControl and
+other simulations that have time coordinates starting at year 1 (e.g.,
+“0001-01-01”) when dropping incomplete seasons.
+
+Enhancements
+~~~~~~~~~~~~
+
+-  [Refactor] Improve the performance of temporal group averaging by
+   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/689
+
+Bug Fixes
+~~~~~~~~~
+
+-  Update temporal.py to properly handle piControl and other simulations
+   that start at year 1 when dropping incomplete seasons by @lee1043 in
+   https://github.com/xCDAT/xcdat/pull/696
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Add project logos to README and project overview page on docs by
+   @tomvothecoder in https://github.com/xCDAT/xcdat/pull/686
+-  Add links to JOSS and DOE EESM content by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/682
+-  Add SciPy 2024 talk material by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/658,
+   https://github.com/xCDAT/xcdat/pull/678,
+   https://github.com/xCDAT/xcdat/pull/679,
+   https://github.com/xCDAT/xcdat/pull/680
+-  Add JOSS badge to README by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/674
+
+DevOps
+~~~~~~
+
+-  Update ``setup.py`` classifiers by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/691
+-  Update build workflow by @tomvothecoder in
+   https://github.com/xCDAT/xcdat/pull/698
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.1
+
+
 v0.7.1 (24 June 2024)
 ----------------------
 
