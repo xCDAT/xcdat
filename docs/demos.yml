@@ -26,6 +26,10 @@
   path: demos/24-07-11-scipy-2024/scipy-2024.ipynb
   thumbnail: _static/thumbnails/scipy-logo.png
 
+- title: SciPy 2024 (Recorded Talk, 07/11/24)
+  path: https://www.youtube.com/watch?v=hcUnb_IztSs
+  thumbnail: _static/thumbnails/scipy-logo.png
+
 - title: DOE EESM PI Meeting 2024 Presentation (08/08/24)
   path: https://climatemodeling.science.energy.gov/presentations/xcdat-xarray-climate-data-analysis-tools-python-package-simple-and-robust-analysis
   thumbnail: _static/thumbnails/doe-logo.jpg
