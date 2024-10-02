@@ -156,7 +156,7 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        axes : List[str] | Tuple[str]
+        axes : List[CFAxesKey] | Tuple[CFAxisKey, ...]
             List of CF axes that function should operate on, by default
             ("X", "Y", "T"). Options include "X", "Y", "T", or "Z".
 
