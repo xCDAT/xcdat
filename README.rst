@@ -21,7 +21,7 @@
    +--------------------+------------------------------------------------------+
    | DevOps             | |CI/CD Build Workflow| |codecov| |docs|              |
    +--------------------+------------------------------------------------------+
-   | Quality Assurance  | |pre-commit| |black| |flake8| |mypy|                 |
+   | Quality Assurance  | |pre-commit| |ruff|                                  |
    +--------------------+------------------------------------------------------+
 
    .. raw:: html
@@ -46,10 +46,8 @@
    :target: https://codecov.io/gh/xCDAT/xcdat
 .. |pre-commit| image:: https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white
    :target: https://github.com/pre-commit/pre-commit
-.. |black| image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
-.. |flake8| image:: https://img.shields.io/badge/flake8-enabled-green
-   :target: https://github.com/PyCQA/flake8
+.. |ruff| image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json
+   :target: https://github.com/astral-sh/ruff
 .. |mypy| image:: http://www.mypy-lang.org/static/mypy_badge.svg
    :target: http://mypy-lang.org/
 
