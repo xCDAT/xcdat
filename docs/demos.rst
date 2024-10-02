@@ -16,4 +16,5 @@ This page includes relevant xCDAT presentations, demos, and papers.
     DOE EESM Research Highlight <https://climatemodeling.science.energy.gov/research-highlights/xcdat-python-package-simple-and-robust-analysis-climate-data>
     SciPy 2024 (Abstract) <https://cfp.scipy.org/2024/talk/VRACYW/>
     SciPy 2024 (Presentation Notebook) <demos/24-07-11-scipy-2024/scipy-2024.ipynb>
+    SciPy 2024 (Recorded Talk) <https://www.youtube.com/watch?v=hcUnb_IztSs>
     DOE EESM PI Meeting Presentation <https://climatemodeling.science.energy.gov/presentations/xcdat-xarray-climate-data-analysis-tools-python-package-simple-and-robust-analysis>
