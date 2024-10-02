@@ -111,7 +111,7 @@ def _has_module(modname: str) -> bool:  # pragma: no cover
 
 
 def _if_multidim_dask_array_then_load(
-    obj: Union[xr.DataArray, xr.Dataset]
+    obj: Union[xr.DataArray, xr.Dataset],
 ) -> Optional[Union[xr.DataArray, xr.Dataset]]:
     """
     If the underlying array for an xr.DataArray or xr.Dataset is a
