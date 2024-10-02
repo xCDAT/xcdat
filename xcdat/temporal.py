@@ -1,4 +1,5 @@
 """Module containing temporal functions."""
+
 from datetime import datetime
 from itertools import chain
 from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
@@ -959,12 +960,12 @@ class TemporalAccessor:
         try:
             datetime.strptime(reference_period[0], "%Y-%m-%d")
             datetime.strptime(reference_period[1], "%Y-%m-%d")
-        except (IndexError, ValueError):
+        except (IndexError, ValueError) as e:
             raise ValueError(
                 "Reference periods must be a tuple of strings with the format "
                 "'yyyy-mm-dd'. For example, reference_period=('1850-01-01', "
                 "'1899-12-31')."
-            )
+            ) from e
 
     def _form_seasons(self, custom_seasons: List[List[str]]) -> Dict[str, List[str]]:
         """Forms custom seasons from a nested list of months.

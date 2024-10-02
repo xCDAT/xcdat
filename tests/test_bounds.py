@@ -847,7 +847,7 @@ class TestAddTimeBounds:
         # Get time axis and create new axis with time set to first day of month.
         time = ds_with_bnds.time
         new_time = []
-        for i, t in enumerate(time.values):
+        for _, t in enumerate(time.values):
             y = t.year
             m = t.month
             nt = cftime.DatetimeGregorian(y, m, 1, 0)

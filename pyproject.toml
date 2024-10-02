@@ -1,4 +1,4 @@
-[tool.ruff.lint]
+[tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
   ".bzr",
@@ -30,6 +30,7 @@ exclude = [
   "venv",
 ]
 
+[tool.ruff.lint]
 # E4 - whitespace
 # E7 - multiple-statements
 # E9 - trailing-whitespace
@@ -38,7 +39,7 @@ exclude = [
 # W - Enable pycodestyle
 # C901 - complex-structure
 # D - Enable flake8-docstrings
-select = ["E4", "E7", "E9", "F", "B", "W", "D", "C901"]
+select = ["E4", "E7", "E9", "F", "B", "W", "C901"]
 
 # E501 - line-too-long
 ignore = ["E501"]

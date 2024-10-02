@@ -22,9 +22,8 @@ from xarray.core.variable import as_variable
 
 from xcdat import bounds as bounds_accessor  # noqa: F401
 from xcdat._logger import _setup_custom_logger
-from xcdat.axis import CFAxisKey, _get_all_coord_keys
+from xcdat.axis import CFAxisKey, _get_all_coord_keys, swap_lon_axis
 from xcdat.axis import center_times as center_times_func
-from xcdat.axis import swap_lon_axis
 
 logger = _setup_custom_logger(__name__)
 
@@ -45,7 +44,7 @@ Paths = Union[
 def open_dataset(
     path: str | os.PathLike[Any] | BufferedIOBase | AbstractDataStore,
     data_var: Optional[str] = None,
-    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -53,64 +52,68 @@ def open_dataset(
 ) -> xr.Dataset:
     """Wraps ``xarray.open_dataset()`` with post-processing options.
 
-    Parameters
-    ----------
-    path : str, Path, file-like or DataStore
-        Strings and Path objects are interpreted as a path to a netCDF file
-        or an OpenDAP URL and opened with python-netCDF4, unless the filename
-        ends with .gz, in which case the file is gunzipped and opened with
-        scipy.io.netcdf (only netCDF3 supported). Byte-strings or file-like
-        objects are opened by scipy.io.netcdf (netCDF3) or h5py (netCDF4/HDF).
-    data_var: Optional[str], optional
-        The key of the non-bounds data variable to keep in the Dataset,
-        alongside any existing bounds data variables, by default None.
-    add_bounds: List[CFAxisKey] | None
-        List of CF axes to try to add bounds for (if missing), by default
-        ["X", "Y"]. Set to None to not add any missing bounds. Please note that
-        bounds are required for many xCDAT features.
+        Parameters
+        ----------
+        path : str, Path, file-like or DataStore
+            Strings and Path objects are interpreted as a path to a netCDF file
+            or an OpenDAP URL and opened with python-netCDF4, unless the filename
+            ends with .gz, in which case the file is gunzipped and opened with
+            scipy.io.netcdf (only netCDF3 supported). Byte-strings or file-like
+            objects are opened by scipy.io.netcdf (netCDF3) or h5py (netCDF4/HDF).
+        data_var: Optional[str], optional
+            The key of the non-bounds data variable to keep in the Dataset,
+            alongside any existing bounds data variables, by default None.
+    <<<<<<< HEAD
+        add_bounds: List[CFAxisKey] | None
+    =======
+        add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None
+    >>>>>>> 2401905 (Fix ruff linting errors)
+            List of CF axes to try to add bounds for (if missing), by default
+            ("X", "Y"). Set to None to not add any missing bounds. Please note that
+            bounds are required for many xCDAT features.
 
-        * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
-        * Supported CF axes include "X", "Y", "Z", and "T"
-        * By default, missing "T" bounds are generated using the time frequency
-          of the coordinates. If desired, refer to
-          :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
-          granular configuration for how "T" bounds are generated.
-    decode_times: bool, optional
-        If True, attempt to decode times encoded in the standard NetCDF
-        datetime format into cftime.datetime objects. Otherwise, leave them
-        encoded as numbers. This keyword may not be supported by all the
-        backends, by default True.
-    center_times: bool, optional
-        If True, attempt to center time coordinates using the midpoint between
-        its upper and lower bounds. Otherwise, use the provided time
-        coordinates, by default False.
-    lon_orient: Optional[Tuple[float, float]], optional
-        The orientation to use for the Dataset's longitude axis (if it exists).
-        Either `(-180, 180)` or `(0, 360)`, by default None. Supported options
-        include:
+            * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
+            * Supported CF axes include "X", "Y", "Z", and "T"
+            * By default, missing "T" bounds are generated using the time frequency
+              of the coordinates. If desired, refer to
+              :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
+              granular configuration for how "T" bounds are generated.
+        decode_times: bool, optional
+            If True, attempt to decode times encoded in the standard NetCDF
+            datetime format into cftime.datetime objects. Otherwise, leave them
+            encoded as numbers. This keyword may not be supported by all the
+            backends, by default True.
+        center_times: bool, optional
+            If True, attempt to center time coordinates using the midpoint between
+            its upper and lower bounds. Otherwise, use the provided time
+            coordinates, by default False.
+        lon_orient: Optional[Tuple[float, float]], optional
+            The orientation to use for the Dataset's longitude axis (if it exists).
+            Either `(-180, 180)` or `(0, 360)`, by default None. Supported options
+            include:
 
-        * None:  use the current orientation (if the longitude axis exists)
-        * (-180, 180): represents [-180, 180) in math notation
-        * (0, 360): represents [0, 360) in math notation
-    **kwargs : Dict[str, Any]
-        Additional arguments passed on to ``xarray.open_dataset``. Refer to the
-        [1]_ xarray docs for accepted keyword arguments.
+            * None:  use the current orientation (if the longitude axis exists)
+            * (-180, 180): represents [-180, 180) in math notation
+            * (0, 360): represents [0, 360) in math notation
+        **kwargs : Dict[str, Any]
+            Additional arguments passed on to ``xarray.open_dataset``. Refer to the
+            [1]_ xarray docs for accepted keyword arguments.
 
-    Returns
-    -------
-    xr.Dataset
-        Dataset after applying operations.
+        Returns
+        -------
+        xr.Dataset
+            Dataset after applying operations.
 
-    Notes
-    -----
-    ``xarray.open_dataset`` opens the file with read-only access. When you
-    modify values of a Dataset, even one linked to files on disk, only the
-    in-memory copy you are manipulating in xarray is modified: the original file
-    on disk is never touched.
+        Notes
+        -----
+        ``xarray.open_dataset`` opens the file with read-only access. When you
+        modify values of a Dataset, even one linked to files on disk, only the
+        in-memory copy you are manipulating in xarray is modified: the original file
+        on disk is never touched.
 
-    References
-    ----------
-    .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
+        References
+        ----------
+        .. [1] https://xarray.pydata.org/en/stable/generated/xarray.open_dataset.html
     """
     ds = xr.open_dataset(path, decode_times=False, **kwargs)  # type: ignore
 
@@ -128,7 +131,7 @@ def open_dataset(
 def open_mfdataset(
     paths: str | NestedSequence[str | os.PathLike],
     data_var: Optional[str] = None,
-    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -138,94 +141,98 @@ def open_mfdataset(
 ) -> xr.Dataset:
     """Wraps ``xarray.open_mfdataset()`` with post-processing options.
 
-    Parameters
-    ----------
-    paths : str | NestedSequence[str | os.PathLike]
-        Paths to dataset files. Paths can be given as strings or as pathlib.Path
-        objects. Supported options include:
+        Parameters
+        ----------
+        paths : str | NestedSequence[str | os.PathLike]
+            Paths to dataset files. Paths can be given as strings or as pathlib.Path
+            objects. Supported options include:
 
-        * Directory path (e.g., ``"path/to/files"``), which is converted
-          to a string glob of `*.nc` files
-        * String glob (e.g., ``"path/to/files/*.nc"``), which is expanded
-          to a 1-dimensional list of file paths
-        * File path to dataset (e.g., ``"path/to/files/file1.nc"``)
-        * List of file paths (e.g., ``["path/to/files/file1.nc", ...]``).
-          If concatenation along more than one dimension is desired, then
-          ``paths`` must be a nested list-of-lists (see [2]_
-          ``xarray.combine_nested`` for details).
-    add_bounds: List[CFAxisKey] | None
-        List of CF axes to try to add bounds for (if missing), by default
-        ["X", "Y"]. Set to None to not add any missing bounds. Please note that
-        bounds are required for many xCDAT features.
+            * Directory path (e.g., ``"path/to/files"``), which is converted
+              to a string glob of `*.nc` files
+            * String glob (e.g., ``"path/to/files/*.nc"``), which is expanded
+              to a 1-dimensional list of file paths
+            * File path to dataset (e.g., ``"path/to/files/file1.nc"``)
+            * List of file paths (e.g., ``["path/to/files/file1.nc", ...]``).
+              If concatenation along more than one dimension is desired, then
+              ``paths`` must be a nested list-of-lists (see [2]_
+              ``xarray.combine_nested`` for details).
+    <<<<<<< HEAD
+        add_bounds: List[CFAxisKey] | None
+    =======
+        add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None
+    >>>>>>> 2401905 (Fix ruff linting errors)
+            List of CF axes to try to add bounds for (if missing), by default
+            ("X", "Y"). Set to None to not add any missing bounds. Please note that
+            bounds are required for many xCDAT features.
 
-        * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
-        * Supported CF axes include "X", "Y", "Z", and "T"
-        * By default, missing "T" bounds are generated using the time frequency
-          of the coordinates. If desired, refer to
-          :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
-          granular configuration for how "T" bounds are generated.
-    data_var: Optional[str], optional
-        The key of the data variable to keep in the Dataset, by default None.
-    decode_times: bool, optional
-        If True, attempt to decode times encoded in the standard NetCDF
-        datetime format into cftime.datetime objects. Otherwise, leave them
-        encoded as numbers. This keyword may not be supported by all the
-        backends, by default True.
-    center_times: bool, optional
-        If True, attempt to center time coordinates using the midpoint between
-        its upper and lower bounds. Otherwise, use the provided time
-        coordinates, by default False.
-    lon_orient: Optional[Tuple[float, float]], optional
-        The orientation to use for the Dataset's longitude axis (if it exists),
-        by default None. Supported options include:
+            * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
+            * Supported CF axes include "X", "Y", "Z", and "T"
+            * By default, missing "T" bounds are generated using the time frequency
+              of the coordinates. If desired, refer to
+              :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
+              granular configuration for how "T" bounds are generated.
+        data_var: Optional[str], optional
+            The key of the data variable to keep in the Dataset, by default None.
+        decode_times: bool, optional
+            If True, attempt to decode times encoded in the standard NetCDF
+            datetime format into cftime.datetime objects. Otherwise, leave them
+            encoded as numbers. This keyword may not be supported by all the
+            backends, by default True.
+        center_times: bool, optional
+            If True, attempt to center time coordinates using the midpoint between
+            its upper and lower bounds. Otherwise, use the provided time
+            coordinates, by default False.
+        lon_orient: Optional[Tuple[float, float]], optional
+            The orientation to use for the Dataset's longitude axis (if it exists),
+            by default None. Supported options include:
 
-        * None:  use the current orientation (if the longitude axis exists)
-        * (-180, 180): represents [-180, 180) in math notation
-        * (0, 360): represents [0, 360) in math notation
-    data_vars: {"minimal", "different", "all" or list of str}, optional
-        These data variables will be concatenated together:
-          * "minimal": Only data variables in which the dimension already
-            appears are included, the default value.
-          * "different": Data variables which are not equal (ignoring
-            attributes) across all datasets are also concatenated (as well as
-            all for which dimension already appears). Beware: this option may
-            load the data payload of data variables into memory if they are not
-            already loaded.
-          * "all": All data variables will be concatenated.
-          * list of str: The listed data variables will be concatenated, in
-            addition to the "minimal" data variables.
+            * None:  use the current orientation (if the longitude axis exists)
+            * (-180, 180): represents [-180, 180) in math notation
+            * (0, 360): represents [0, 360) in math notation
+        data_vars: {"minimal", "different", "all" or list of str}, optional
+            These data variables will be concatenated together:
+              * "minimal": Only data variables in which the dimension already
+                appears are included, the default value.
+              * "different": Data variables which are not equal (ignoring
+                attributes) across all datasets are also concatenated (as well as
+                all for which dimension already appears). Beware: this option may
+                load the data payload of data variables into memory if they are not
+                already loaded.
+              * "all": All data variables will be concatenated.
+              * list of str: The listed data variables will be concatenated, in
+                addition to the "minimal" data variables.
 
-        The ``data_vars`` kwarg defaults to ``"minimal"``, which concatenates
-        data variables in a manner where only data variables in which the
-        dimension already appears are included. For example, the time dimension
-        will not be concatenated to the dimensions of non-time data variables
-        such as "lat_bnds" or "lon_bnds". ``data_vars="minimal"`` is required for
-        some xCDAT functions, including spatial averaging where a reduction is
-        performed using the lat/lon bounds.
-    preprocess : Optional[Callable], optional
-        If provided, call this function on each dataset prior to concatenation.
-        You can find the file-name from which each dataset was loaded in
-        ``ds.encoding["source"]``.
-    **kwargs : Dict[str, Any]
-        Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
-        the [3]_ xarray docs for accepted keyword arguments.
+            The ``data_vars`` kwarg defaults to ``"minimal"``, which concatenates
+            data variables in a manner where only data variables in which the
+            dimension already appears are included. For example, the time dimension
+            will not be concatenated to the dimensions of non-time data variables
+            such as "lat_bnds" or "lon_bnds". ``data_vars="minimal"`` is required for
+            some xCDAT functions, including spatial averaging where a reduction is
+            performed using the lat/lon bounds.
+        preprocess : Optional[Callable], optional
+            If provided, call this function on each dataset prior to concatenation.
+            You can find the file-name from which each dataset was loaded in
+            ``ds.encoding["source"]``.
+        **kwargs : Dict[str, Any]
+            Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
+            the [3]_ xarray docs for accepted keyword arguments.
 
-    Returns
-    -------
-    xr.Dataset
-        The Dataset.
+        Returns
+        -------
+        xr.Dataset
+            The Dataset.
 
-    Notes
-    -----
-    ``xarray.open_mfdataset`` opens the file with read-only access. When you
-    modify values of a Dataset, even one linked to files on disk, only the
-    in-memory copy you are manipulating in xarray is modified: the original file
-    on disk is never touched.
+        Notes
+        -----
+        ``xarray.open_mfdataset`` opens the file with read-only access. When you
+        modify values of a Dataset, even one linked to files on disk, only the
+        in-memory copy you are manipulating in xarray is modified: the original file
+        on disk is never touched.
 
-    References
-    ----------
-    .. [2] https://docs.xarray.dev/en/stable/generated/xarray.combine_nested.html
-    .. [3] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
+        References
+        ----------
+        .. [2] https://docs.xarray.dev/en/stable/generated/xarray.combine_nested.html
+        .. [3] https://xarray.pydata.org/en/stable/generated/xarray.open_mfdataset.html
     """
     if isinstance(paths, str) or isinstance(paths, pathlib.Path):
         if os.path.isdir(paths):
@@ -465,7 +472,7 @@ def _postprocess_dataset(
     dataset: xr.Dataset,
     data_var: Optional[str] = None,
     center_times: bool = False,
-    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
     lon_orient: Optional[Tuple[float, float]] = None,
 ) -> xr.Dataset:
     """Post-processes a Dataset object.
@@ -480,9 +487,9 @@ def _postprocess_dataset(
         If True, center time coordinates using the midpoint between its upper
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
-    add_bounds: List[CFAxisKey] | None
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None
         List of CF axes to try to add bounds for (if missing), default
-        ["X", "Y"]. Set to None to not add any missing bounds.
+        ("X", "Y"). Set to None to not add any missing bounds.
 
         * This parameter simply calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
         * Supported CF axes include "X", "Y", "Z", and "T"

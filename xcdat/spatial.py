@@ -1,4 +1,5 @@
 """Module containing geospatial averaging functions."""
+
 from functools import reduce
 from typing import (
     Callable,
@@ -68,7 +69,7 @@ class SpatialAccessor:
     def average(
         self,
         data_var: str,
-        axis: List[SpatialAxis] = ["X", "Y"],
+        axis: List[SpatialAxis] | Tuple[SpatialAxis, ...] = ("X", "Y"),
         weights: Union[Literal["generate"], xr.DataArray] = "generate",
         keep_weights: bool = False,
         lat_bounds: Optional[RegionAxisBounds] = None,
@@ -100,7 +101,7 @@ class SpatialAccessor:
             The name of the data variable inside the dataset to spatially
             average.
         axis : List[SpatialAxis]
-            List of axis dimensions to average over, by default ["X", "Y"].
+            List of axis dimensions to average over, by default ("X", "Y").
             Valid axis keys include "X" and "Y".
         weights : {"generate", xr.DataArray}, optional
             If "generate", then weights are generated. Otherwise, pass a
@@ -202,7 +203,7 @@ class SpatialAccessor:
 
     def get_weights(
         self,
-        axis: List[SpatialAxis],
+        axis: List[SpatialAxis] | Tuple[SpatialAxis, ...],
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
         data_var: Optional[str] = None,
@@ -222,7 +223,7 @@ class SpatialAccessor:
 
         Parameters
         ----------
-        axis : List[SpatialAxis]
+        axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
             List of axis dimensions to average over.
         lat_bounds : Optional[RegionAxisBounds]
             Tuple of latitude boundaries for regional selection, by default
@@ -291,13 +292,13 @@ class SpatialAccessor:
 
         return weights
 
-    def _validate_axis_arg(self, axis: List[SpatialAxis]):
+    def _validate_axis_arg(self, axis: List[SpatialAxis] | Tuple[SpatialAxis, ...]):
         """
         Validates that the ``axis`` dimension(s) exists in the dataset.
 
         Parameters
         ----------
-        axis : List[SpatialAxis]
+        axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
             List of axis dimensions to average over.
 
         Raises
@@ -431,9 +432,7 @@ class SpatialAccessor:
             d_bounds = _align_lon_bounds_to_360(d_bounds, p_meridian_index)
 
         if region_bounds is not None:
-            r_bounds: np.ndarray = self._swap_lon_axis(
-                region_bounds, to=360
-            )  # type:ignore
+            r_bounds: np.ndarray = self._swap_lon_axis(region_bounds, to=360)  # type:ignore
 
             is_region_circular = r_bounds[1] - r_bounds[0] == 0
             if is_region_circular:
@@ -650,7 +649,9 @@ class SpatialAccessor:
 
         return region_weights
 
-    def _validate_weights(self, data_var: xr.DataArray, axis: List[SpatialAxis]):
+    def _validate_weights(
+        self, data_var: xr.DataArray, axis: List[SpatialAxis] | Tuple[SpatialAxis, ...]
+    ):
         """Validates the ``weights`` arg based on a set of criteria.
 
         This methods checks for the dimensional alignment between the
@@ -662,7 +663,7 @@ class SpatialAccessor:
         ----------
         data_var : xr.DataArray
             The data variable used for validation with user supplied weights.
-        axis : List[SpatialAxis]
+        axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
             List of axes dimension(s) average over.
         weights : xr.DataArray
             A DataArray containing the region area weights for averaging.
@@ -698,7 +699,9 @@ class SpatialAccessor:
                     f"and the data variable {dim_sizes} are misaligned."
                 )
 
-    def _averager(self, data_var: xr.DataArray, axis: List[SpatialAxis]):
+    def _averager(
+        self, data_var: xr.DataArray, axis: List[SpatialAxis] | Tuple[SpatialAxis, ...]
+    ):
         """Perform a weighted average of a data variable.
 
         This method assumes all specified keys in ``axis`` exists in the data
@@ -714,7 +717,7 @@ class SpatialAccessor:
         ----------
         data_var : xr.DataArray
             Data variable inside a Dataset.
-        axis : List[SpatialAxis]
+        axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
             List of axis dimensions to average over.
 
         Returns

@@ -1,8 +1,9 @@
 """Bounds module for functions related to coordinate bounds."""
+
 import collections
 import datetime
 import warnings
-from typing import Dict, List, Literal, Optional, Union
+from typing import Dict, List, Literal, Optional, Tuple, Union
 
 import cf_xarray as cfxr  # noqa: F401
 import cftime
@@ -124,7 +125,7 @@ class BoundsAccessor:
         )
 
     def add_missing_bounds(  # noqa: C901
-        self, axes: List[CFAxisKey] = ["X", "Y", "T"]
+        self, axes: List[CFAxisKey] | Tuple[CFAxisKey, ...] = ("X", "Y", "T")
     ) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
@@ -153,9 +154,9 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        axes : List[str]
+        axes : List[str] | Tuple[str]
             List of CF axes that function should operate on, by default
-            ["X", "Y", "T"]. Options include "X", "Y", "T", or "Z".
+            ("X", "Y", "T"). Options include "X", "Y", "T", or "Z".
 
         Returns
         -------
@@ -614,7 +615,11 @@ class BoundsAccessor:
                 hrs = diff.seconds / 3600
                 daily_subfreq = int(24 / hrs)  # type: ignore
 
-            time_bnds = self._create_daily_time_bounds(timesteps, obj_type, freq=daily_subfreq)  # type: ignore
+            time_bnds = self._create_daily_time_bounds(
+                timesteps,
+                obj_type,
+                freq=daily_subfreq,  # type: ignore
+            )
 
         # Create the bounds data array
         da_time_bnds = xr.DataArray(
