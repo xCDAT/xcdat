@@ -148,8 +148,10 @@ class XGCMRegridder(BaseRegridder):
         """See documentation in :py:func:`xcdat.regridder.xgcm.XGCMRegridder`"""
         try:
             output_coord_z = get_dim_coords(self._output_grid, "Z")
-        except KeyError:
-            raise RuntimeError("Could not determine 'Z' coordinate in output dataset")
+        except KeyError as e:
+            raise RuntimeError(
+                "Could not determine 'Z' coordinate in output dataset"
+            ) from e
 
         if self._grid_positions is None:
             grid_coords = self._get_grid_positions()
@@ -165,11 +167,11 @@ class XGCMRegridder(BaseRegridder):
             target_data = ds[self._target_data]
         except ValueError:
             target_data = self._target_data
-        except KeyError:
+        except KeyError as e:
             if self._target_data is not None and isinstance(self._target_data, str):
                 raise RuntimeError(
                     f"Could not find target variable {self._target_data!r} in dataset"
-                )
+                ) from e
 
             target_data = None
 
@@ -216,8 +218,8 @@ class XGCMRegridder(BaseRegridder):
 
         try:
             coord_z = get_dim_coords(self._input_grid, "Z")
-        except KeyError:
-            raise RuntimeError("Could not determine `Z` coordinate in dataset.")
+        except KeyError as e:
+            raise RuntimeError("Could not determine `Z` coordinate in dataset.") from e
 
         if isinstance(coord_z, xr.Dataset):
             coords = ", ".join(sorted(list(coord_z.coords.keys())))  # type: ignore[arg-type]
@@ -231,8 +233,8 @@ class XGCMRegridder(BaseRegridder):
 
         try:
             bounds_z = self._input_grid.bounds.get_bounds("Z")
-        except KeyError:
-            raise RuntimeError("Could not determine `Z` bounds in dataset.")
+        except KeyError as e:
+            raise RuntimeError("Could not determine `Z` bounds in dataset.") from e
 
         # handle simple point positions based on point and bounds
         if (coord_z[0] > bounds_z[0][0] and coord_z[0] < bounds_z[0][1]) or (

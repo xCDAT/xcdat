@@ -1,4 +1,5 @@
 """Logger module for setting up a logger."""
+
 import logging
 import logging.handlers
 

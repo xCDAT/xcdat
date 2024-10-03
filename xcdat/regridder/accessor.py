@@ -198,7 +198,7 @@ class RegridderAccessor:
         except KeyError as e:
             raise ValueError(
                 f"Tool {e!s} does not exist, valid choices {list(HORIZONTAL_REGRID_TOOLS)}"
-            )
+            ) from e
 
         input_grid = _get_input_grid(self._ds, data_var, ["X", "Y"])
         regridder = regrid_tool(input_grid, output_grid, **options)
@@ -269,7 +269,7 @@ class RegridderAccessor:
             raise ValueError(
                 f"Tool {e!s} does not exist, valid choices "
                 f"{list(VERTICAL_REGRID_TOOLS)}"
-            )
+            ) from e
         input_grid = _get_input_grid(
             self._ds,
             data_var,

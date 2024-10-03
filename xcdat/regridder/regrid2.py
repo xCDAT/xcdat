@@ -315,7 +315,7 @@ def _map_latitude(
 
 
 def _get_latitude_weights(
-    bounds: List[Tuple[np.ndarray, np.ndarray]]
+    bounds: List[Tuple[np.ndarray, np.ndarray]],
 ) -> List[np.ndarray]:
     weights = []
 
@@ -555,8 +555,8 @@ def _get_dimension(input_data_var, cf_axis_name):
 def _get_bounds_ensure_dtype(ds, axis):
     try:
         name = ds.cf.bounds[axis][0]
-    except (KeyError, IndexError):
-        raise RuntimeError(f"Could not determine {axis!r} bounds")
+    except (KeyError, IndexError) as e:
+        raise RuntimeError(f"Could not determine {axis!r} bounds") from e
     else:
         bounds = ds[name]
 

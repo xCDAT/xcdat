@@ -1,34 +1,55 @@
-[tool.black]
-line-length = 88
-target-version = ['py36']
-include = '\.pyi?$'
-exclude = '''
-(
-  /(
-      \.eggs
-    | \.git
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.idea
-    | venv
-    | _build
-    | buck-out
-    | build
-    | dist
-    | docs
-    | config
-  )/
-)
-'''
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+  ".bzr",
+  ".direnv",
+  ".eggs",
+  ".git",
+  ".git-rewrite",
+  ".hg",
+  ".ipynb_checkpoints",
+  ".mypy_cache",
+  ".nox",
+  ".pants.d",
+  ".pyenv",
+  ".pytest_cache",
+  ".pytype",
+  ".ruff_cache",
+  ".svn",
+  ".tox",
+  ".venv",
+  ".vscode",
+  "__pypackages__",
+  "_build",
+  "buck-out",
+  "build",
+  "dist",
+  "docs",
+  "node_modules",
+  "site-packages",
+  "venv",
+]
 
-[tool.isort]
-# Docs: https://pycqa.github.io/isort/docs/configuration/options.html#example-pyprojecttoml_4
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-use_parentheses = true
-line_length = 88
+[tool.ruff.lint]
+# E4 - whitespace
+# E7 - multiple-statements
+# E9 - trailing-whitespace
+# F - Enable Pyflakes
+# B - Enable flake8-bugbear
+# W - Enable pycodestyle
+# C901 - complex-structure
+# D - Enable flake8-docstrings
+select = ["E4", "E7", "E9", "F", "B", "W", "C901"]
+
+# E501 - line-too-long
+ignore = ["E501"]
+
+[tool.ruff.lint.mccabe]
+# Flag errors (`C901`) whenever the complexity level exceeds 5.
+max-complexity = 10
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
 
 [tool.pytest.ini_options]
 # Docs: https://docs.pytest.org/en/7.2.x/reference/customize.html#configuration

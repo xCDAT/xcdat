@@ -22,9 +22,8 @@ from xarray.core.variable import as_variable
 
 from xcdat import bounds as bounds_accessor  # noqa: F401
 from xcdat._logger import _setup_custom_logger
-from xcdat.axis import CFAxisKey, _get_all_coord_keys
+from xcdat.axis import CFAxisKey, _get_all_coord_keys, swap_lon_axis
 from xcdat.axis import center_times as center_times_func
-from xcdat.axis import swap_lon_axis
 
 logger = _setup_custom_logger(__name__)
 
@@ -45,7 +44,7 @@ Paths = Union[
 def open_dataset(
     path: str | os.PathLike[Any] | BufferedIOBase | AbstractDataStore,
     data_var: Optional[str] = None,
-    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -64,9 +63,9 @@ def open_dataset(
     data_var: Optional[str], optional
         The key of the non-bounds data variable to keep in the Dataset,
         alongside any existing bounds data variables, by default None.
-    add_bounds: List[CFAxisKey] | None
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None
         List of CF axes to try to add bounds for (if missing), by default
-        ["X", "Y"]. Set to None to not add any missing bounds. Please note that
+        ("X", "Y"). Set to None to not add any missing bounds. Please note that
         bounds are required for many xCDAT features.
 
         * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
@@ -128,7 +127,7 @@ def open_dataset(
 def open_mfdataset(
     paths: str | NestedSequence[str | os.PathLike],
     data_var: Optional[str] = None,
-    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
     decode_times: bool = True,
     center_times: bool = False,
     lon_orient: Optional[Tuple[float, float]] = None,
@@ -153,9 +152,9 @@ def open_mfdataset(
           If concatenation along more than one dimension is desired, then
           ``paths`` must be a nested list-of-lists (see [2]_
           ``xarray.combine_nested`` for details).
-    add_bounds: List[CFAxisKey] | None
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None
         List of CF axes to try to add bounds for (if missing), by default
-        ["X", "Y"]. Set to None to not add any missing bounds. Please note that
+        ("X", "Y"). Set to None to not add any missing bounds. Please note that
         bounds are required for many xCDAT features.
 
         * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
@@ -465,7 +464,7 @@ def _postprocess_dataset(
     dataset: xr.Dataset,
     data_var: Optional[str] = None,
     center_times: bool = False,
-    add_bounds: List[CFAxisKey] | None = ["X", "Y"],
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
     lon_orient: Optional[Tuple[float, float]] = None,
 ) -> xr.Dataset:
     """Post-processes a Dataset object.
@@ -480,9 +479,9 @@ def _postprocess_dataset(
         If True, center time coordinates using the midpoint between its upper
         and lower bounds. Otherwise, use the provided time coordinates, by
         default False.
-    add_bounds: List[CFAxisKey] | None
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None
         List of CF axes to try to add bounds for (if missing), default
-        ["X", "Y"]. Set to None to not add any missing bounds.
+        ("X", "Y"). Set to None to not add any missing bounds.
 
         * This parameter simply calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
         * Supported CF axes include "X", "Y", "Z", and "T"

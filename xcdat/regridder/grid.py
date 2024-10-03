@@ -431,7 +431,10 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     # Ignore `Argument 1 to "create_grid" has incompatible type
     # "Union[Dataset, DataArray]"; expected "Union[ndarray[Any, Any], DataArray]"
     # mypy(error)` because this arg is validated to be a DataArray beforehand.
-    return create_grid(x=create_axis("lon", out_lon_data, bounds=lon_bnds), y=create_axis("lat", lat, bounds=lat_bnds))  # type: ignore
+    return create_grid(
+        x=create_axis("lon", out_lon_data, bounds=lon_bnds),
+        y=create_axis("lat", lat, bounds=lat_bnds),  # type: ignore
+    )
 
 
 def create_grid(

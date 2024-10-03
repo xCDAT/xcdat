@@ -60,8 +60,12 @@ clean-test: ## remove test and coverage artifacts
 pre-commit:  # run pre-commit quality assurance checks
 	pre-commit run --all-files
 
-lint: ## check style with flake8
-	flake8 xcdat tests
+lint: ## check style ruff
+	ruff check --select I --fix
+	ruff check --fix
+
+format: ## format code using ruff
+	ruff format
 
 test: ## run tests quickly with the default Python and produces code coverage report
 	pytest

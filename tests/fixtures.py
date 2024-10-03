@@ -1,4 +1,5 @@
 """This module stores reusable test fixtures."""
+
 from typing import Literal
 
 import cftime

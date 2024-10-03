@@ -204,7 +204,12 @@ class TestXGCMRegridder:
         xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear", target_data=None)
 
         with pytest.raises(ValueError, match="'dummy' is invalid, possible choices"):
-            xgcm.XGCMRegridder(self.ds, self.output_grid, method="dummy", target_data=None)  # type: ignore
+            xgcm.XGCMRegridder(
+                self.ds,
+                self.output_grid,
+                method="dummy",  # type: ignore
+                target_data=None,
+            )
 
     def test_missing_input_z_coord(self):
         ds = fixtures.generate_dataset(
@@ -663,7 +668,7 @@ class TestRegrid2Regridder:
             np.testing.assert_allclose(x, y)
 
         for x2, y2 in zip(weights, expected_weigths):
-            np.testing.assert_allclose(x, y)
+            np.testing.assert_allclose(x2, y2)
 
     def test_map_latitude_fine_to_coarse(self):
         mapping, weights = regrid2._map_latitude(
@@ -1254,7 +1259,7 @@ class TestAccessor:
             ValueError,
             match=r".*lon\d?.*lon\d?.*",
         ):
-            ds_multi.regridder.grid
+            ds_multi.regridder.grid  # noqa: B018
 
     def test_grid_raises_error_when_dataset_has_multiple_dims_for_an_axis(self):
         ds_bounds = fixtures.generate_dataset(
@@ -1265,7 +1270,7 @@ class TestAccessor:
         )
 
         with pytest.raises(ValueError):
-            ds_bounds.regridder.grid
+            ds_bounds.regridder.grid  # noqa: B018
 
     @mock.patch("xcdat.regridder.accessor._get_input_grid")
     def test_horizontal_tool_check(self, _get_input_grid):
