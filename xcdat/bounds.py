@@ -502,8 +502,6 @@ class BoundsAccessor:
     def _get_bounds_from_attr(
         self, obj: xr.DataArray | xr.Dataset, axis: CFAxisKey
     ) -> List[str]:
-        # Check if the object is a data variable or a coordinate variable.
-        # If it is a data variable, derive the axis coordinate variable.
         bounds_keys = []
         coords = get_dim_coords(obj, axis)
 
