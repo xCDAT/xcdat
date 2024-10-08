@@ -84,13 +84,13 @@ Classes
 .. autosummary::
    :toctree: generated/
 
-    xcdat.bounds.BoundsAccessor
-    xcdat.spatial.SpatialAccessor
-    xcdat.temporal.TemporalAccessor
-    xcdat.regridder.accessor.RegridderAccessor
-    xcdat.regridder.regrid2.Regrid2Regridder
-    xcdat.regridder.xesmf.XESMFRegridder
-    xcdat.regridder.xgcm.XGCMRegridder
+    bounds.BoundsAccessor
+    spatial.SpatialAccessor
+    temporal.TemporalAccessor
+    regridder.accessor.RegridderAccessor
+    regridder.regrid2.Regrid2Regridder
+    regridder.xesmf.XESMFRegridder
+    regridder.xgcm.XGCMRegridder
 
 .. currentmodule:: xarray
 
