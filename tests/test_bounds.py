@@ -287,6 +287,27 @@ class TestGetBounds:
 
         assert result.identical(expected)
 
+    def test_returns_single_dataset_axis_bounds_as_a_dataarray_object_for_non_cf_axis(
+        self,
+    ):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={"bounds": "lat_bnds"},
+                )
+            },
+            data_vars={
+                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"])
+            },
+        )
+
+        result = ds.bounds.get_bounds("Y")
+        expected = ds.lat_bnds
+
+        assert result.identical(expected)
+
     def test_returns_multiple_dataset_axis_bounds_as_a_dataset_object(self):
         ds = xr.Dataset(
             coords={
@@ -313,6 +334,40 @@ class TestGetBounds:
                 "var": xr.DataArray(data=np.ones(3), dims=["lat"]),
                 "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"]),
                 "lat2_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat2", "bnds"]),
+            },
+        )
+
+        result = ds.bounds.get_bounds("Y")
+        expected = ds.drop_vars("var")
+
+        assert result.identical(expected)
+
+    def test_returns_multiple_dataset_axis_bounds_as_a_dataset_object_for_non_cf_axis(
+        self,
+    ):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(
+                    data=np.ones(3),
+                    dims="lat",
+                    attrs={
+                        "bounds": "lat_bnds",
+                    },
+                ),
+                "latitude": xr.DataArray(
+                    data=np.ones(3),
+                    dims="latitude",
+                    attrs={
+                        "bounds": "latitude_bnds",
+                    },
+                ),
+            },
+            data_vars={
+                "var": xr.DataArray(data=np.ones(3), dims=["lat"]),
+                "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"]),
+                "latitude_bnds": xr.DataArray(
+                    data=np.ones((3, 3)), dims=["latitude", "bnds"]
+                ),
             },
         )
 

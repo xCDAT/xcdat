@@ -27,6 +27,7 @@ Below is a list of top-level API functions that are available in ``xcdat``.
     compare_datasets
     get_dim_coords
     get_dim_keys
+    create_bounds
     create_axis
     create_gaussian_grid
     create_global_mean_grid
@@ -83,13 +84,13 @@ Classes
 .. autosummary::
    :toctree: generated/
 
-    xcdat.bounds.BoundsAccessor
-    xcdat.spatial.SpatialAccessor
-    xcdat.temporal.TemporalAccessor
-    xcdat.regridder.accessor.RegridderAccessor
-    xcdat.regridder.regrid2.Regrid2Regridder
-    xcdat.regridder.xesmf.XESMFRegridder
-    xcdat.regridder.xgcm.XGCMRegridder
+    bounds.BoundsAccessor
+    spatial.SpatialAccessor
+    temporal.TemporalAccessor
+    regridder.accessor.RegridderAccessor
+    regridder.regrid2.Regrid2Regridder
+    regridder.xesmf.XESMFRegridder
+    regridder.xgcm.XGCMRegridder
 
 .. currentmodule:: xarray
 

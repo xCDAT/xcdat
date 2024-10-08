@@ -236,18 +236,7 @@ class BoundsAccessor:
         else:
             # Get the obj in the Dataset using the key.
             obj = _get_data_var(self._dataset, key=var_key)
-
-            # Check if the object is a data variable or a coordinate variable.
-            # If it is a data variable, derive the axis coordinate variable.
-            if obj.name in list(self._dataset.data_vars):
-                coord = get_dim_coords(obj, axis)
-            elif obj.name in list(self._dataset.coords):
-                coord = obj
-
-            try:
-                bounds_keys = [coord.attrs["bounds"]]
-            except KeyError:
-                bounds_keys = []
+            bounds_keys = self._get_bounds_from_attr(obj, axis)
 
         if len(bounds_keys) == 0:
             raise KeyError(
@@ -505,7 +494,52 @@ class BoundsAccessor:
         except KeyError:
             pass
 
+        keys_from_attr = self._get_bounds_from_attr(self._dataset, axis)
+        keys = keys + keys_from_attr
+
         return list(set(keys))
+
+    def _get_bounds_from_attr(
+        self, obj: xr.DataArray | xr.Dataset, axis: CFAxisKey
+    ) -> List[str]:
+        """Retrieve bounds attribute keys from the given xarray object.
+
+        This method extracts the "bounds" attribute keys from the coordinates
+        of the specified axis in the provided xarray DataArray or Dataset.
+
+        Parameters:
+        -----------
+        obj : xr.DataArray | xr.Dataset
+            The xarray object from which to retrieve the bounds attribute keys.
+        axis : CFAxisKey
+            The CF axis key ("X", "Y", "T", or "Z").
+
+        Returns:
+        --------
+        List[str]
+            A list of bounds attribute keys found in the coordinates of the
+            specified axis. Otherwise, an empty list is returned.
+        """
+        coords_obj = get_dim_coords(obj, axis)
+        bounds_keys: List[str] = []
+
+        if isinstance(coords_obj, xr.DataArray):
+            bounds_keys = self._extract_bounds_key(coords_obj, bounds_keys)
+        elif isinstance(coords_obj, xr.Dataset):
+            for coord in coords_obj.coords.values():
+                bounds_keys = self._extract_bounds_key(coord, bounds_keys)
+
+        return bounds_keys
+
+    def _extract_bounds_key(
+        self, coords_obj: xr.DataArray, bounds_keys: List[str]
+    ) -> List[str]:
+        bnds_key = coords_obj.attrs.get("bounds")
+
+        if bnds_key is not None:
+            bounds_keys.append(bnds_key)
+
+        return bounds_keys
 
     def _create_time_bounds(  # noqa: C901
         self,
