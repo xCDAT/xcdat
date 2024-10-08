@@ -345,6 +345,7 @@ class TestGetBounds:
     def test_returns_multiple_dataset_axis_bounds_as_a_dataset_object_for_non_cf_axis(
         self,
     ):
+        # Can only map to "lat" dim name
         ds = xr.Dataset(
             coords={
                 "lat": xr.DataArray(
@@ -354,18 +355,20 @@ class TestGetBounds:
                         "bounds": "lat_bnds",
                     },
                 ),
-                "lat2": xr.DataArray(
+                "latitude": xr.DataArray(
                     data=np.ones(3),
-                    dims="lat2",
+                    dims="latitude",
                     attrs={
-                        "bounds": "lat2_bnds",
+                        "bounds": "latitude_bnds",
                     },
                 ),
             },
             data_vars={
                 "var": xr.DataArray(data=np.ones(3), dims=["lat"]),
                 "lat_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat", "bnds"]),
-                "lat2_bnds": xr.DataArray(data=np.ones((3, 3)), dims=["lat2", "bnds"]),
+                "latitude_bnds": xr.DataArray(
+                    data=np.ones((3, 3)), dims=["latitude", "bnds"]
+                ),
             },
         )
 
