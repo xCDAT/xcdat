@@ -345,7 +345,6 @@ class TestGetBounds:
     def test_returns_multiple_dataset_axis_bounds_as_a_dataset_object_for_non_cf_axis(
         self,
     ):
-        # Can only map to "lat" dim name
         ds = xr.Dataset(
             coords={
                 "lat": xr.DataArray(
