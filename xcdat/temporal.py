@@ -67,6 +67,8 @@ TIME_GROUPS: Dict[Mode, Dict[Frequency, Tuple[DateTimeComponent, ...]]] = {
 SeasonConfigInput = TypedDict(
     "SeasonConfigInput",
     {
+        # TODO: Deprecate incomplete_djf.
+        "drop_incomplete_djf": bool,
         "drop_incomplete_seasons": bool,
         "dec_mode": Literal["DJF", "JFD"],
         "custom_seasons": Optional[List[List[str]]],
@@ -77,6 +79,8 @@ SeasonConfigInput = TypedDict(
 SeasonConfigAttr = TypedDict(
     "SeasonConfigAttr",
     {
+        # TODO: Deprecate incomplete_djf.
+        "drop_incomplete_djf": bool,
         "drop_incomplete_seasons": bool,
         "dec_mode": Literal["DJF", "JFD"],
         "custom_seasons": Optional[Dict[str, List[str]]],
@@ -85,6 +89,8 @@ SeasonConfigAttr = TypedDict(
 )
 
 DEFAULT_SEASON_CONFIG: SeasonConfigInput = {
+    # TODO: Deprecate incomplete_djf.
+    "drop_incomplete_djf": False,
     "drop_incomplete_seasons": False,
     "dec_mode": "DJF",
     "custom_seasons": None,
@@ -287,23 +293,32 @@ class TemporalAccessor:
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
-        season_config: SeasonConfigInput, optional
+        season_config : SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
 
             * "drop_incomplete_seasons" (bool, by default False)
                 Seasons are considered incomplete if they do not have all of
-                the required months to form the season. For example, if we have
+                the required months to form the season. This argument supersedes
+                "drop_incomplete_djf". For example, if we have
                 the time coordinates ["2000-11-16", "2000-12-16", "2001-01-16",
                 "2001-02-16"] and we want to group seasons by "ND" ("Nov",
                 "Dec") and "JFM" ("Jan", "Feb", "Mar").
 
                 * ["2000-11-16", "2000-12-16"] is considered a complete "ND"
-                  season since both "Nov" and "Dec" are present.
+                    season since both "Nov" and "Dec" are present.
                 * ["2001-01-16", "2001-02-16"] is considered an incomplete "JFM"
-                  season because it only has "Jan" and "Feb". Therefore, these
-                  time coordinates are dropped.
+                    season because it only has "Jan" and "Feb". Therefore, these
+                    time coordinates are dropped.
+
+            * "drop_incomplete_djf" (bool, by default False)
+                If the "dec_mode" is "DJF", this flag drops (True) or keeps
+                (False) time coordinates that fall under incomplete DJF seasons
+                Incomplete DJF seasons include the start year Jan/Feb and the
+                end year Dec. This argument is superceded by
+                "drop_incomplete_seasons" and will be deprecated in a future
+                release.
 
             * "dec_mode" (Literal["DJF", "JFD"], by default "DJF")
                 The mode for the season that includes December in the list of
@@ -472,23 +487,32 @@ class TemporalAccessor:
             'yyyy-mm-dd'. For example, ``('1850-01-01', '1899-12-31')``. If no
             value is provided, the climatological reference period will be the
             full period covered by the dataset.
-        season_config: SeasonConfigInput, optional
+        season_config : SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
 
             * "drop_incomplete_seasons" (bool, by default False)
                 Seasons are considered incomplete if they do not have all of
-                the required months to form the season. For example, if we have
+                the required months to form the season. This argument supersedes
+                "drop_incomplete_djf". For example, if we have
                 the time coordinates ["2000-11-16", "2000-12-16", "2001-01-16",
                 "2001-02-16"] and we want to group seasons by "ND" ("Nov",
                 "Dec") and "JFM" ("Jan", "Feb", "Mar").
 
                 * ["2000-11-16", "2000-12-16"] is considered a complete "ND"
-                  season since both "Nov" and "Dec" are present.
+                    season since both "Nov" and "Dec" are present.
                 * ["2001-01-16", "2001-02-16"] is considered an incomplete "JFM"
-                  season because it only has "Jan" and "Feb". Therefore, these
-                  time coordinates are dropped.
+                    season because it only has "Jan" and "Feb". Therefore, these
+                    time coordinates are dropped.
+
+            * "drop_incomplete_djf" (bool, by default False)
+                If the "dec_mode" is "DJF", this flag drops (True) or keeps
+                (False) time coordinates that fall under incomplete DJF seasons
+                Incomplete DJF seasons include the start year Jan/Feb and the
+                end year Dec. This argument is superceded by
+                "drop_incomplete_seasons" and will be deprecated in a future
+                release.
 
             * "dec_mode" (Literal["DJF", "JFD"], by default "DJF")
                 The mode for the season that includes December in the list of
@@ -669,7 +693,7 @@ class TemporalAccessor:
             ``('1850-01-01', '1899-12-31')``. If no value is provided, the
             climatological reference period will be the full period covered by
             the dataset.
-        season_config: SeasonConfigInput, optional
+        season_config : SeasonConfigInput, optional
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa.
@@ -678,16 +702,25 @@ class TemporalAccessor:
 
             * "drop_incomplete_seasons" (bool, by default False)
                 Seasons are considered incomplete if they do not have all of
-                the required months to form the season. For example, if we have
+                the required months to form the season. This argument supersedes
+                "drop_incomplete_djf". For example, if we have
                 the time coordinates ["2000-11-16", "2000-12-16", "2001-01-16",
                 "2001-02-16"] and we want to group seasons by "ND" ("Nov",
                 "Dec") and "JFM" ("Jan", "Feb", "Mar").
 
                 * ["2000-11-16", "2000-12-16"] is considered a complete "ND"
-                  season since both "Nov" and "Dec" are present.
+                    season since both "Nov" and "Dec" are present.
                 * ["2001-01-16", "2001-02-16"] is considered an incomplete "JFM"
-                  season because it only has "Jan" and "Feb". Therefore, these
-                  time coordinates are dropped.
+                    season because it only has "Jan" and "Feb". Therefore, these
+                    time coordinates are dropped.
+
+            * "drop_incomplete_djf" (bool, by default False)
+                If the "dec_mode" is "DJF", this flag drops (True) or keeps
+                (False) time coordinates that fall under incomplete DJF seasons
+                Incomplete DJF seasons include the start year Jan/Feb and the
+                end year Dec. This argument is superceded by
+                "drop_incomplete_seasons" and will be deprecated in a future
+                release.
 
             Configs for predefined seasons:
 
@@ -967,44 +1000,46 @@ class TemporalAccessor:
             self._is_valid_reference_period(reference_period)
             self._reference_period = reference_period
 
-        # "season" frequency specific configuration attributes.
+        self._set_season_config_attr(season_config)
+
+    def _set_season_config_attr(self, season_config: SeasonConfigInput):
         for key in season_config.keys():
-            # TODO: Deprecate `drop_incomplete_djf`.
-            valid_keys = list(DEFAULT_SEASON_CONFIG.keys()) + ["drop_incomplete_djf"]
-            if key not in valid_keys:
+            if key not in DEFAULT_SEASON_CONFIG:
                 raise KeyError(
                     f"'{key}' is not a supported season config. Supported "
                     f"configs include: {DEFAULT_SEASON_CONFIG.keys()}."
                 )
-        custom_seasons = season_config.get("custom_seasons", None)
-        dec_mode = season_config.get("dec_mode", "DJF")
 
         self._season_config: SeasonConfigAttr = {}
+        self._season_config["drop_incomplete_seasons"] = season_config.get(
+            "drop_incomplete_seasons", False
+        )
 
-        # TODO: Deprecate `drop_incomplete_djf`.
-        drop_incomplete_djf = season_config.get("drop_incomplete_djf", None)
-        if drop_incomplete_djf is not None:
-            warnings.warn(
-                "The `season_config` argument 'drop_incomplete_djf' is being "
-                "deprecated. Please use 'drop_incomplete_seasons' instead.",
-                DeprecationWarning,
-            )
-            self._season_config["drop_incomplete_seasons"] = drop_incomplete_djf  # type: ignore
+        custom_seasons = season_config.get("custom_seasons", None)
+        if custom_seasons is not None:
+            self._season_config["custom_seasons"] = self._form_seasons(custom_seasons)
         else:
-            self._season_config["drop_incomplete_seasons"] = season_config.get(
-                "drop_incomplete_seasons", False
-            )
-
-        if custom_seasons is None:
+            dec_mode = season_config.get("dec_mode", "DJF")
             if dec_mode not in ("DJF", "JFD"):
                 raise ValueError(
                     "Incorrect 'dec_mode' key value for `season_config`. "
                     "Supported modes include 'DJF' or 'JFD'."
                 )
+
             self._season_config["dec_mode"] = dec_mode
 
-        else:
-            self._season_config["custom_seasons"] = self._form_seasons(custom_seasons)
+            # TODO: Deprecate incomplete_djf.
+            drop_incomplete_djf = season_config.get("drop_incomplete_djf", False)
+            if drop_incomplete_djf is not False:
+                warnings.warn(
+                    "The `season_config` argument 'drop_incomplete_djf' is being "
+                    "deprecated. Please use 'drop_incomplete_seasons' instead.",
+                    DeprecationWarning,
+                    stacklevel=2,
+                )
+
+            if dec_mode == "DJF":
+                self._season_config["drop_incomplete_djf"] = drop_incomplete_djf
 
     def _is_valid_reference_period(self, reference_period: Tuple[str, str]):
         try:
@@ -1095,17 +1130,27 @@ class TemporalAccessor:
                 ds = self._subset_coords_for_custom_seasons(ds, months)
 
         if (
-            self._freq == "season"
-            and self._season_config["drop_incomplete_seasons"] is True
-        ):
-            ds = self._drop_incomplete_seasons(ds)
-
-        if (
             self._freq == "day"
             and self._mode in ["climatology", "departures"]
             and self.calendar in ["gregorian", "proleptic_gregorian", "standard"]
         ):
             ds = self._drop_leap_days(ds)
+
+        if (
+            self._freq == "season"
+            and self._season_config["drop_incomplete_seasons"] is True
+        ):
+            ds = self._drop_incomplete_seasons(ds)
+
+        # TODO: Deprecate incomplete_djf. Only run this is drop_incomplete_seasons
+        # is False and drop_incomplete_djf is True.
+        if (
+            self._freq == "season"
+            and self._season_config.get("dec_mode") == "DJF"
+            and self._season_config.get("drop_incomplete_djf") is True
+            and self._season_config.get("drop_incomplete_seasons") is False
+        ):
+            ds = self._drop_incomplete_djf(ds)
 
         if self._mode == "climatology" and self._reference_period is not None:
             ds = ds.sel(
@@ -1140,11 +1185,58 @@ class TemporalAccessor:
             k: coords_by_month[k] for k in month_ints if k in coords_by_month
         }
         month_to_time_idx = sorted(
-            list(chain.from_iterable(month_to_time_idx.values()))
-        )  # type: ignore
+            list(chain.from_iterable(month_to_time_idx.values()))  # type: ignore
+        )
         ds_new = ds.isel({f"{self.dim}": month_to_time_idx})
 
         return ds_new
+
+    def _drop_incomplete_djf(self, dataset: xr.Dataset) -> xr.Dataset:
+        """Drops incomplete DJF seasons within a continuous time series.
+
+        This method assumes that the time series is continuous and removes the
+        leading and trailing incomplete seasons (e.g., the first January and
+        February of a time series that are not complete, because the December of
+        the previous year is missing). This method does not account for or
+        remove missing time steps anywhere else.
+
+        Parameters
+        ----------
+        dataset : xr.Dataset
+            The dataset with some possibly incomplete DJF seasons.
+        Returns
+        -------
+        xr.Dataset
+            The dataset with only complete DJF seasons.
+        """
+        # Separate the dataset into two datasets, one with and one without
+        # the time dimension. This is necessary because the xarray .where()
+        # method concatenates the time dimension to non-time dimension data
+        # vars, which is not a desired behavior.
+        ds = dataset.copy()
+        ds_time = ds.get([v for v in ds.data_vars if self.dim in ds[v].dims])  # type: ignore
+        ds_no_time = ds.get([v for v in ds.data_vars if self.dim not in ds[v].dims])  # type: ignore
+
+        start_year, end_year = (
+            ds[self.dim].dt.year.values[0],
+            ds[self.dim].dt.year.values[-1],
+        )
+        incomplete_seasons = (
+            f"{int(start_year):04d}-01",
+            f"{int(start_year):04d}-02",
+            f"{int(end_year):04d}-12",
+        )
+
+        for year_month in incomplete_seasons:
+            try:
+                coord_pt = ds.loc[dict(time=year_month)][self.dim][0]
+                ds_time = ds_time.where(ds_time[self.dim] != coord_pt, drop=True)
+            except (KeyError, IndexError):
+                continue
+
+        ds_final = xr.merge((ds_time, ds_no_time))
+
+        return ds_final
 
     def _drop_incomplete_seasons(self, ds: xr.Dataset) -> xr.Dataset:
         """Drops incomplete seasons within a continuous time series.
@@ -1196,6 +1288,9 @@ class TemporalAccessor:
             # without the time dimension because the xarray `.where()` method
             # concatenates the time dimension to non-time dimension data vars,
             # which is an undesired behavior.
+            # FIXME: Figure out if this code block is still necessary
+            # https://github.com/pydata/xarray/issues/1234
+            # https://github.com/pydata/xarray/issues/8796#issuecomment-1974878267
             ds_no_time = ds.get([v for v in ds.data_vars if self.dim not in ds[v].dims])  # type: ignore
             ds_time = ds.get([v for v in ds.data_vars if self.dim in ds[v].dims])  # type: ignore
 
@@ -1226,7 +1321,7 @@ class TemporalAccessor:
         -------
         xr.Dataset
         """
-        ds = ds.sel(  # type: ignore
+        ds = ds.sel(
             **{self.dim: ~((ds[self.dim].dt.month == 2) & (ds[self.dim].dt.day == 29))}
         )
         return ds
@@ -1865,9 +1960,15 @@ class TemporalAccessor:
         )
 
         if self._freq == "season":
-            data_var.attrs["drop_incomplete_seasons"] = str(
-                self._season_config["drop_incomplete_seasons"]
-            )
+            drop_incomplete_seasons = self._season_config["drop_incomplete_seasons"]
+            drop_incomplete_djf = self._season_config.get("drop_incomplete_djf", False)
+
+            # TODO: Deprecate drop_incomplete_djf. This attr is only set if the
+            # user does not set drop_incomplete_seasons.
+            if drop_incomplete_seasons is False and drop_incomplete_djf is not False:
+                data_var.attrs["drop_incomplete_djf"] = str(drop_incomplete_djf)
+            else:
+                data_var.attrs["drop_incomplete_seasons"] = str(drop_incomplete_seasons)
 
             custom_seasons = self._season_config.get("custom_seasons")
             if custom_seasons is not None:
