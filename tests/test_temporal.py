@@ -673,6 +673,56 @@ class TestGroupAverage:
 
         xr.testing.assert_identical(result, expected)
 
+    def test_weighted_seasonal_averages_with_DJF_and_drop_incomplete_djf(self):
+        ds = self.ds.copy()
+
+        result = ds.temporal.group_average(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_djf": True},
+        )
+        expected = ds.copy()
+        # Drop the incomplete DJF seasons
+        expected = expected.isel(time=slice(2, -1))
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[1]], [[1]], [[1]], [[2.0]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "season",
+                "weighted": "True",
+                "dec_mode": "DJF",
+                "drop_incomplete_djf": "True",
+            },
+        )
+
+        xr.testing.assert_identical(result, expected)
+
     def test_weighted_seasonal_averages_with_JFD(self):
         ds = self.ds.copy()
 
@@ -1398,7 +1448,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
-                "drop_incomplete_seasons": "True",
+                "drop_incomplete_djf": "True",
                 "dec_mode": "DJF",
             },
         )
