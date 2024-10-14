@@ -1030,15 +1030,15 @@ class TemporalAccessor:
 
             # TODO: Deprecate incomplete_djf.
             drop_incomplete_djf = season_config.get("drop_incomplete_djf", False)
-            if drop_incomplete_djf is not False:
-                warnings.warn(
-                    "The `season_config` argument 'drop_incomplete_djf' is being "
-                    "deprecated. Please use 'drop_incomplete_seasons' instead.",
-                    DeprecationWarning,
-                    stacklevel=2,
-                )
-
             if dec_mode == "DJF":
+                if drop_incomplete_djf is not False:
+                    warnings.warn(
+                        "The `season_config` argument 'drop_incomplete_djf' is being "
+                        "deprecated. Please use 'drop_incomplete_seasons' instead.",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+
                 self._season_config["drop_incomplete_djf"] = drop_incomplete_djf
 
     def _is_valid_reference_period(self, reference_period: Tuple[str, str]):
