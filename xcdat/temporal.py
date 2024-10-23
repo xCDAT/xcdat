@@ -1286,9 +1286,8 @@ class TemporalAccessor:
         elif len(indexes_to_drop) > 0:
             # The dataset needs to be split into a dataset with and a dataset
             # without the time dimension because the xarray `.where()` method
-            # concatenates the time dimension to non-time dimension data vars,
-            # which is an undesired behavior.
-            # FIXME: Figure out if this code block is still necessary
+            # adds the time dimension to non-time dimension data vars when
+            # broadcasting, which is a behavior we do not desire.
             # https://github.com/pydata/xarray/issues/1234
             # https://github.com/pydata/xarray/issues/8796#issuecomment-1974878267
             ds_no_time = ds.get([v for v in ds.data_vars if self.dim not in ds[v].dims])  # type: ignore
