@@ -7,19 +7,19 @@ dependencies:
     # Base - required for building the package.
     # =========================================
     - python >=3.9
-    - cf_xarray >=0.7.3
+    - cf_xarray >=0.9.1
     - cftime
     - dask
     - netcdf4
-    - numpy >=1.23.0,<2.0
+    - numpy >=2.0.0,<=3.0.0
     - pandas
     - python-dateutil
-    - xarray >=2022.02.0
-    - xesmf >=0.7.0
+    - xarray >=2024.03.0
+    - xesmf >=0.8.7
     - xgcm
     # Optional - enables additional features.
     # =========================================
-    - matplotlib-base >=3.7.0
+    - matplotlib-base >=3.8.4
     - nc-time-axis >=1.4.1
     # Documentation
     # ==================
