@@ -20,7 +20,6 @@ tag_template = "v{new_version}"
 # For each file to patch, add a [[file]] config
 # section containing the path of the file, relative to the
 # tbump.toml location.
-
 [[file]]
 src = "xcdat/__init__.py"
 
