@@ -1,6 +1,8 @@
 """Module containing temporal functions."""
 
+from __future__ import annotations
 import warnings
+
 from datetime import datetime
 from itertools import chain
 from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
@@ -1510,9 +1512,9 @@ class TemporalAccessor:
                 time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
                 self._weights = self._get_weights(time_bounds)
 
-                dv = dv.weighted(self._weights).mean(dim=self.dim, skipna=skipna)  # type: ignore
+                dv = dv.weighted(self._weights).mean(dim=self.dim, skipna=skipna)
             else:
-                dv = dv.mean(dim=self.dim, skipna=skipna)  # type: ignore
+                dv = dv.mean(dim=self.dim, skipna=skipna)
 
         dv = self._add_operation_attrs(dv)
 
