@@ -22,13 +22,39 @@ classifiers = [
   "Programming Language :: Python :: 3.12",
 ]
 keywords = ["xcdat"]
-dependencies = []
+dependencies = [
+  "cf_xarray >=0.9.1",
+  "cftime",
+  "dask",
+  "netcdf4",
+  "numpy >=2.0.0,<3.0.0",
+  "pandas",
+  "python-dateutil",
+  "xarray >=2024.03.0",
+  "xesmf >=0.8.7",
+  "xgcm",
+]
 
 [project.optional-dependencies]
-test = ["pytest>=3"]
+test = ["pytest", "pytest-cov"]
+docs = [
+  "sphinx",
+  "sphinx-autosummary-accessors",
+  "sphinx-book-theme",
+  "sphinx-copybutton",
+  "nbsphinx",
+  "sphinx-design",
+  "pandoc",
+  "ipython",
+  "gsw-xarray",
+]
+dev = ["types-python-dateutil", "pre-commit", "ruff", "mypy"]
 
 [tool.setuptools.packages.find]
 include = ["xcdat", "xcdat.*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "xcdat.version.__version__" }
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
