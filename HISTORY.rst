@@ -2,6 +2,35 @@
 History
 =======
 
+v0.7.3 (06 November 2024)
+------------------------
+
+This patch release updates the NumPy constraint to ``numpy >=2.0.0,<3.0.0`` to ensure
+compatibility with NumPy 2.0 (which introduces breaking changes). It also fixes a bug
+in the ``get_bounds()`` method where bounds could not be found on supported non-CF axes
+(e.g., "latitude", "longitude", etc.) even with the ``"bounds"`` attribute set on the
+axes.
+
+Bug Fixes
+~~~~~~~~~
+- Update ``get_bounds()`` to support mappable non-CF axes using
+   ``"bounds"`` attr by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/708
+
+Documentation
+~~~~~~~~~~~~~
+- Add link to SciPy talk in docs by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/704
+
+DevOps
+~~~~~~~~~~~~
+- Adopt ``ruff`` as the central tool for linting, formatting, and import
+   sorting by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/702
+- Update numpy constraint to ``>=2.0.0,<3.0.0`` by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/711,
+   https://github.com/xCDAT/xcdat/pull/712
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.2...v0.7.3
+
+
 v0.7.2 (02 October 2024)
 ------------------------
 
