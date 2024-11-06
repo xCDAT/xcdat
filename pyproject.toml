@@ -1,3 +1,35 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xcdat"
+version = "0.7.3"
+description = "Xarray Climate Data Analysis Tools"
+readme = "README.rst"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "xCDAT developers" }]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache-2.0 License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+keywords = ["xcdat"]
+dependencies = []
+
+[project.optional-dependencies]
+test = ["pytest>=3"]
+
+[tool.setuptools.packages.find]
+include = ["xcdat", "xcdat.*"]
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
