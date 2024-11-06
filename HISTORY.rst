@@ -3,7 +3,7 @@ History
 =======
 
 v0.7.3 (06 November 2024)
-------------------------
+-------------------------
 
 This patch release updates the NumPy constraint to ``numpy >=2.0.0,<3.0.0`` to ensure
 compatibility with NumPy 2.0 (which introduces breaking changes). It also fixes a bug
