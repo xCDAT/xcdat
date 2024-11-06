@@ -2,7 +2,7 @@
 github_url = "https://github.com/xCDAT/xcdat"
 
 [version]
-current = "0.7.2"
+current = "0.7.3"
 
 # Example of a semver regexp.
 # Make sure this matches current_version before
@@ -20,8 +20,6 @@ tag_template = "v{new_version}"
 # For each file to patch, add a [[file]] config
 # section containing the path of the file, relative to the
 # tbump.toml location.
-[[file]]
-src = "setup.py"
 [[file]]
 src = "xcdat/__init__.py"
 

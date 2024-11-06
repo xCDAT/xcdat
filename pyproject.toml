@@ -1,3 +1,65 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "xcdat"
+dynamic = ["version"]
+description = "Xarray Climate Data Analysis Tools"
+readme = "README.rst"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "xCDAT developers" }]
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache-2.0 License",
+  "Natural Language :: English",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+]
+keywords = ["xcdat"]
+dependencies = [
+  "cf_xarray >=0.9.1",
+  "cftime",
+  "dask",
+  "netcdf4",
+  "numpy >=2.0.0,<3.0.0",
+  "pandas",
+  "python-dateutil",
+  "xarray >=2024.03.0",
+  "xesmf >=0.8.7",
+  "xgcm",
+]
+
+[project.urls]
+Documentation = "https://xcdat.readthedocs.io/en/latest/getting-started-guide/overview.html"
+"Issue Tracker" = "https://github.com/xCDAT/xcdat/issues"
+
+[project.optional-dependencies]
+test = ["pytest", "pytest-cov"]
+docs = [
+  "sphinx",
+  "sphinx-autosummary-accessors",
+  "sphinx-book-theme",
+  "sphinx-copybutton",
+  "nbsphinx",
+  "sphinx-design",
+  "pandoc",
+  "ipython",
+  "gsw-xarray",
+]
+dev = ["types-python-dateutil", "pre-commit", "ruff", "mypy"]
+
+[tool.setuptools.packages.find]
+include = ["xcdat", "xcdat.*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "xcdat.__version__" }
+
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
 exclude = [
