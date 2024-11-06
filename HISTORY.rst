@@ -13,18 +13,21 @@ axes.
 
 Bug Fixes
 ~~~~~~~~~
-- Update ``get_bounds()`` to support mappable non-CF axes using
-   ``"bounds"`` attr by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/708
+
+-  Update ``get_bounds()`` to support mappable non-CF axes using ``"bounds"`` attr by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/708
 
 Documentation
 ~~~~~~~~~~~~~
-- Add link to SciPy talk in docs by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/704
+
+-  Add link to SciPy talk in docs by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/704
 
 DevOps
 ~~~~~~~~~~~~
-- Adopt ``ruff`` as the central tool for linting, formatting, and import
+
+-  Adopt ``ruff`` as the central tool for linting, formatting, and import
    sorting by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/702
-- Update numpy constraint to ``>=2.0.0,<3.0.0`` by `Tom Vo`_ in
+-  Update numpy constraint to ``>=2.0.0,<3.0.0`` by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/711,
    https://github.com/xCDAT/xcdat/pull/712
 
@@ -94,10 +97,10 @@ notebooks and documentation are up to date with the latest and relevant informat
 Bug Fixes
 ~~~~~~~~~
 
-- Fixes regrid2 mapping output to input ordering by `Jason Boutte`_
-  in https://github.com/xCDAT/xcdat/pull/653
-- Update ``add_missing_bounds()`` to convert ``np.timedelta64`` to ``pd.Timedelta``
-  to support Xarray's datetime component accessor `_Jiwoo Lee` in https://github.com/xCDAT/xcdat/pull/660
+-  Fixes regrid2 mapping output to input ordering by `Jason Boutte`_
+   in https://github.com/xCDAT/xcdat/pull/653
+-  Update ``add_missing_bounds()`` to convert ``np.timedelta64`` to ``pd.Timedelta``
+   to support Xarray's datetime component accessor `_Jiwoo Lee` in https://github.com/xCDAT/xcdat/pull/660
 
 Documentation
 ~~~~~~~~~~~~~
