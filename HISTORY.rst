@@ -27,11 +27,11 @@ DevOps
 
 -  Adopt ``ruff`` as the central tool for linting, formatting, and import
    sorting by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/702
--  Update numpy constraint to ``>=2.0.0,<3.0.0`` by `Tom Vo`_ in
+-  Update numpy constraint to ``>=2.0.0,<3.0.0`` by `Tom Vo`_ and `Xylar Asay-Davis`_ in
    https://github.com/xCDAT/xcdat/pull/711,
    https://github.com/xCDAT/xcdat/pull/712
 -  Replace ``setup.py`` with ``pyproject.toml`` for modern Python packaging by
-   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/712
+   `Tom Vo`_ and `Xylar Asay-Davis`_ in https://github.com/xCDAT/xcdat/pull/712
 
 **Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.2...v0.7.3
 
@@ -839,3 +839,4 @@ DevOps
 .. _Jill Chengzhu Zhang: https://github.com/chengzhuzhang
 .. _Paul Durack: https://github.com/durack1
 .. _Ana Ordonez: https://github.com/acordonez
+.. _Xylar Asay-Davis: https://github.com/xylar
