@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "xcdat"
-version = "0.7.3"
+dynamic = ["version"]
 description = "Xarray Climate Data Analysis Tools"
 readme = "README.rst"
 requires-python = ">=3.9"
@@ -35,6 +35,10 @@ dependencies = [
   "xgcm",
 ]
 
+[project.urls]
+Documentation = "https://xcdat.readthedocs.io/en/latest/getting-started-guide/overview.html"
+"Issue Tracker" = "https://github.com/xCDAT/xcdat/issues"
+
 [project.optional-dependencies]
 test = ["pytest", "pytest-cov"]
 docs = [
@@ -54,7 +58,7 @@ dev = ["types-python-dateutil", "pre-commit", "ruff", "mypy"]
 include = ["xcdat", "xcdat.*"]
 
 [tool.setuptools.dynamic]
-version = { attr = "xcdat.version.__version__" }
+version = { attr = "xcdat.__version__" }
 
 [tool.ruff]
 # Exclude a variety of commonly ignored directories.
