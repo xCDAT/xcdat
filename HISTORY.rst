@@ -30,6 +30,8 @@ DevOps
 -  Update numpy constraint to ``>=2.0.0,<3.0.0`` by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/711,
    https://github.com/xCDAT/xcdat/pull/712
+-  Replace ``setup.py`` with ``pyproject.toml`` for modern Python packaging by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/712
 
 **Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.2...v0.7.3
 
