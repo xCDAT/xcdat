@@ -335,7 +335,6 @@ class TemporalAccessor:
                 representing a custom season.
 
                 * Month strings must be in the three letter format (e.g., 'Jan')
-                * Each month must be included once in a custom season
                 * Order of the months in each custom season does not matter
                 * Custom seasons can vary in length
 
@@ -529,7 +528,6 @@ class TemporalAccessor:
                 representing a custom season.
 
                 * Month strings must be in the three letter format (e.g., 'Jan')
-                * Each month must be included once in a custom season
                 * Order of the months in each custom season does not matter
                 * Custom seasons can vary in length
 
@@ -739,7 +737,6 @@ class TemporalAccessor:
                 representing a custom season.
 
                 * Month strings must be in the three letter format (e.g., 'Jan')
-                * Each month must be included once in a custom season
                 * Order of the months in each custom season does not matter
                 * Custom seasons can vary in length
 
@@ -1381,6 +1378,11 @@ class TemporalAccessor:
         pd.DataFrame
             A DataFrame of seasonal datetime components with only complete
             seasons.
+
+        Notes
+        -----
+        TODO: Refactor this method to use pure Xarray/NumPy operations, rather
+        than Pandas.
         """
         # Transform the time coords into a DataFrame of seasonal datetime
         # components based on the grouping mode.
