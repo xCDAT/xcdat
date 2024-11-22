@@ -17,7 +17,7 @@ from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
 from xcdat._logger import _setup_custom_logger
-from xcdat.axis import get_dim_coords
+from xcdat.axis import center_times, get_dim_coords
 from xcdat.dataset import _get_data_var
 
 logger = _setup_custom_logger(__name__)
@@ -884,6 +884,10 @@ class TemporalAccessor:
         # and its associated coordinates are also added.
         ds = ds.drop_dims(self.dim)
         ds[dv_avg.name] = dv_avg
+
+        if self._mode == "group_average":
+            ds = ds.bounds.add_missing_bounds(axes="T")
+            ds = center_times(ds)
 
         if keep_weights:
             ds = self._keep_weights(ds)
@@ -1884,6 +1888,8 @@ class TemporalAccessor:
         """
         df_new = df.copy()
 
+        # TODO: This is where the result should be in the middle, not the
+        # beginning.
         dt_components_defaults = {"year": 1, "month": 1, "day": 1, "hour": 0}
         for component, default_val in dt_components_defaults.items():
             if component not in df_new.columns:
