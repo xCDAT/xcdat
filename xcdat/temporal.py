@@ -1888,8 +1888,6 @@ class TemporalAccessor:
         """
         df_new = df.copy()
 
-        # TODO: This is where the result should be in the middle, not the
-        # beginning.
         dt_components_defaults = {"year": 1, "month": 1, "day": 1, "hour": 0}
         for component, default_val in dt_components_defaults.items():
             if component not in df_new.columns:
