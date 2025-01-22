@@ -249,7 +249,7 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     """Decodes CF and non-CF time coordinates and time bounds using ``cftime``.
 
     By default, ``xarray`` only supports decoding time with CF compliant units
-    [5]_. This function enables also decoding time with non-CF compliant units.
+    [5]_. This function enables also decoding time with non-CF compliant units.x
     It skips decoding time coordinates that have already been decoded as
     ``"datetime64[ns]"`` or ``cftime.datetime``.
 
@@ -652,7 +652,7 @@ def _get_cftime_coords(offsets: np.ndarray, units: str, calendar: str) -> np.nda
 
     # Convert offsets to `np.float64` to avoid "TypeError: unsupported type
     # for timedelta days component: numpy.int64".
-    flat_offsets = flat_offsets.astype("float")
+    flat_offsets = flat_offsets.astype("float")  # type: ignore
 
     # We don't need to do calendar arithmetic here because the units and
     # offsets are in "months" or "years", which means leap days should not
