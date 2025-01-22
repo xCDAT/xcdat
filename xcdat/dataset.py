@@ -249,7 +249,7 @@ def decode_time(dataset: xr.Dataset) -> xr.Dataset:
     """Decodes CF and non-CF time coordinates and time bounds using ``cftime``.
 
     By default, ``xarray`` only supports decoding time with CF compliant units
-    [5]_. This function enables also decoding time with non-CF compliant units.x
+    [5]_. This function enables also decoding time with non-CF compliant units.
     It skips decoding time coordinates that have already been decoded as
     ``"datetime64[ns]"`` or ``cftime.datetime``.
 
