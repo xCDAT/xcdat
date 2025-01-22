@@ -433,7 +433,7 @@ class TestRegrid2Regridder:
             decode_times=True, cf_compliant=False, has_bounds=True
         )
 
-        ds = self.coarse_3d_ds.drop("time_bnds")
+        ds = self.coarse_3d_ds.drop_vars("time_bnds")
 
         output_grid = grid.create_gaussian_grid(32)
 
@@ -517,7 +517,7 @@ class TestRegrid2Regridder:
         with pytest.raises(KeyError):
             regridder.horizontal("unknown", self.coarse_2d_ds)
 
-    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_regrid_input_mask(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
 
@@ -540,7 +540,7 @@ class TestRegrid2Regridder:
 
         assert np.all(output_data.ts.values == expected_output)
 
-    @pytest.mark.filterwarnings("ignore:.*invalid value.*true_divide.*:RuntimeWarning")
+    @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_regrid_input_mask_unmapped_to_nan(self):
         regridder = regrid2.Regrid2Regridder(
             self.coarse_2d_ds, self.fine_2d_ds, unmapped_to_nan=False
