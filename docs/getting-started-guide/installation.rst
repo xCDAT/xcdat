@@ -12,7 +12,7 @@ Prerequisites
    We highly recommend visiting the `xarray tutorial`_ and `xarray documentation`_
    pages if you aren't familiar with ``xarray``.
 
-2. xCDAT is distributed through conda, which is available through Anaconda and Miniforge.
+2. xCDAT is distributed on the Conda platform, which is available through Anaconda and Miniforge.
 
    We recommend following the `Quick command line install`_ steps in the Miniforge docs
    to install Miniforge. Those steps are also provided below for Unix-like platforms
@@ -20,6 +20,14 @@ Prerequisites
 
    .. code-block:: bash
 
+      >>> # macOS
+      >>> curl -L -O "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+      >>> bash Miniforge3-$(uname)-$(uname -m).sh
+      >>> rm -rf Miniforge3-$(uname)-$(uname -m).sh
+
+   .. code-block:: bash
+
+      >>> # Linux
       >>> wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
       >>> bash Miniforge3-$(uname)-$(uname -m).sh
       >>> rm -rf Miniforge3-$(uname)-$(uname -m).sh
@@ -38,8 +46,8 @@ Prerequisites
 3. Add the ``conda-forge`` channel.
 
    xCDAT is hosted on the `conda-forge`_ channel, which is the standard channel for
-   most scientific Python packages. Miniforge is pre-configured to use `conda-forge`
-   by default. Otherwise, you can add the channel manually by running:
+   most scientific Python packages. By default, Miniforge is pre-configured to use 
+   `conda-forge`. You can also add the channel manually by running:
 
    .. code-block:: bash
 
