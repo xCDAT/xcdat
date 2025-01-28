@@ -12,30 +12,21 @@ Prerequisites
    We highly recommend visiting the `xarray tutorial`_ and `xarray documentation`_
    pages if you aren't familiar with ``xarray``.
 
-2. xCDAT is distributed through conda, which is available through Anaconda and Miniconda.
+2. xCDAT is distributed through conda, which is available through Anaconda and Miniforge.
 
-   We recommend following the `Quick command line install`_ steps in the Anaconda docs
-   to install Miniconda. Those steps are also provided below for convenience.
-
-   .. code-block:: bash
-
-      >>> # Linux
-      >>> mkdir -p ~/miniconda3
-      >>> curl https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-arm64.sh -o ~/miniconda3/miniconda.sh
-      >>> bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-      >>> rm -rf ~/miniconda3/miniconda.sh
+   We recommend following the `Quick command line install`_ steps in the Miniforge docs
+   to install Miniforge. Those steps are also provided below for Unix-like platforms
+   (macOS & Linux).
 
    .. code-block:: bash
 
-      >>> # MacOS
-      >>> mkdir -p ~/miniconda3
-      >>> wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda3/miniconda.sh
-      >>> bash ~/miniconda3/miniconda.sh -b -u -p ~/miniconda3
-      >>> rm -rf ~/miniconda3/miniconda.sh
+      >>> wget "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-$(uname)-$(uname -m).sh"
+      >>> bash Miniforge3-$(uname)-$(uname -m).sh
+      >>> rm -rf Miniforge3-$(uname)-$(uname -m).sh
 
    Then follow the instructions for installation. To have conda added to
    your path you will need to type ``yes`` in response to ``"Do you wish the
-   installer to initialize Miniconda3 by running conda init?"`` (we recommend
+   installer to initialize Miniforge3 by running conda init?"`` (we recommend
    that you do this). Note that this will modify your shell profile (e.g.,
    ``~/.bashrc``) to add ``conda`` to your path.
 
@@ -47,7 +38,8 @@ Prerequisites
 3. Add the ``conda-forge`` channel.
 
    xCDAT is hosted on the `conda-forge`_ channel, which is the standard channel for
-   most scientific Python packages.
+   most scientific Python packages. Miniforge is pre-configured to use `conda-forge`
+   by default. Otherwise, you can add the channel manually by running:
 
    .. code-block:: bash
 
@@ -56,7 +48,7 @@ Prerequisites
 
 .. _xarray tutorial: https://tutorial.xarray.dev/intro.html
 .. _xarray documentation: https://docs.xarray.dev/en/stable/getting-started-guide/index.html
-.. _Quick command line install: https://docs.anaconda.com/free/miniconda/#quick-command-line-install
+.. _Quick command line install: https://github.com/conda-forge/miniforge?tab=readme-ov-file#install
 .. _conda-forge: https://anaconda.org/conda-forge/xcdat
 
 Instructions
@@ -66,7 +58,7 @@ Instructions
 
    We recommend using the Conda environment creation procedure to install ``xcdat``.
    The advantage with following this approach is that Conda will attempt to resolve
-   dependencies (e.g. ``python >= 3.9``) for compatibility.
+   dependencies for compatibility.
 
    To create an ``xcdat`` Conda environment, run:
 
