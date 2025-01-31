@@ -2,16 +2,6 @@ exclude: "docs|node_modules|migrations|.git|.tox"
 default_stages: [commit]
 fail_fast: true
 
-ci:
-    autofix_commit_msg: |
-        [pre-commit.ci] auto fixes from pre-commit.com hooks
-
-        for more information, see https://pre-commit.ci
-    autofix_prs: true
-    autoupdate_branch: ""
-    autoupdate_commit_msg: "[pre-commit.ci] pre-commit autoupdate"
-    autoupdate_schedule: monthly
-
 # To update pre-commit hooks, run `pre-commit autoupdate` in the terminal.
 # Then update the versions in `conda-env/dev.yml`.
 repos:
