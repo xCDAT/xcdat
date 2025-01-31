@@ -24,4 +24,3 @@ dependencies:
     # ==================
     - pytest
     - pytest-cov
-prefix: /opt/miniconda3/envs/xcdat_ci

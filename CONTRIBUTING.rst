@@ -150,7 +150,7 @@ Creating a development environment
 Before starting any development, you'll need to create an isolated xCDAT
 development environment:
 
-- We recommend installing `Anaconda`_ or `Miniconda`_
+- We recommend installing `Anaconda`_ or `Miniforge3`_
 - Make sure your conda is up to date (``conda update conda``)
 - Make sure that you have forked and cloned the `repository`_. If you are in the xCDAT
   organization, forking is not needed since you will have direct read access to the repository
@@ -192,9 +192,8 @@ To return to your root environment:
 
 See the full `conda docs here`_.
 
-.. _Miniforge: https://github.com/conda-forge/miniforge
 .. _Anaconda: https://www.anaconda.com/download
-.. _Miniconda: https://docs.conda.io/projects/miniconda/en/latest/
+.. _Miniforge3: https://github.com/conda-forge/miniforge
 .. _repository: https://github.com/xCDAT/xcdat
 .. _conda docs here: http://conda.pydata.org/docs
 

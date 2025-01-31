@@ -47,4 +47,3 @@ dependencies:
     # ==================
     - jupyterlab
     - tbump
-prefix: /opt/miniconda3/envs/xcdat_dev
