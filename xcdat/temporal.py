@@ -1,8 +1,8 @@
 """Module containing temporal functions."""
 
 from __future__ import annotations
-import warnings
 
+import warnings
 from datetime import datetime
 from itertools import chain
 from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
