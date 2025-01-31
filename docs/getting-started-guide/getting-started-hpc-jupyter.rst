@@ -20,10 +20,10 @@ Ensure ``conda`` is installed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Generally, the installation instructions from the `Installation <../installation.rst>`_
-page can also be followed for HPC machines. This guide covers installing Miniconda3 and
+page can also be followed for HPC machines. This guide covers installing Miniforge3 and
 creating a conda environment with the ``xcdat`` package.
 
-Before installing Miniconda3, you should consult your HPC documentation to see if
+Before installing Miniforge3, you should consult your HPC documentation to see if
 ``conda`` is already available; in some cases, ``python`` and ``conda`` may be
 pre-installed on an HPC machine. You can check to see whether they are available by
 entering ``which conda`` and/or ``which python`` in the command line (which will

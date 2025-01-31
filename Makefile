@@ -31,7 +31,7 @@ help:
 
 # Clean local repository
 # ----------------------
-clean: clean-build clean-pyc clean-test ## remove all build, test, coverage and Python artifacts
+clean: clean-build clean-docs clean-pyc clean-test ## remove all build, docs, test, coverage and Python artifacts
 
 clean-build: ## remove build artifacts
 	rm -fr build/
@@ -55,6 +55,10 @@ clean-test: ## remove test and coverage artifacts
 	rm -fr .pytest_cache
 	rm -rf .mypy_cache
 
+clean-docs:
+	rm -rf docs/_build
+	rm -rf docs/generated
+
 # Quality Assurance
 # ----------------------
 pre-commit:  # run pre-commit quality assurance checks
@@ -74,6 +78,7 @@ test: ## run tests quickly with the default Python and produces code coverage re
 # Documentation
 # ----------------------
 docs: ## generate Sphinx HTML documentation, including API docs
+	rm -rf docs/_build
 	rm -rf docs/generated
 	cd docs && make html
 	$(MAKE) -C docs clean
