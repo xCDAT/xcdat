@@ -461,7 +461,7 @@ def generate_multiple_variable_dataset(
         if separate_dims:
             var_names += list(ds_base.sizes.keys())  # type: ignore[arg-type]
 
-        ds_copy = ds_copy.rename({x: f"{x}{idx+1}" for x in var_names})
+        ds_copy = ds_copy.rename({x: f"{x}{idx + 1}" for x in var_names})
 
         datasets.append(ds_copy)
 

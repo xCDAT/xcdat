@@ -978,7 +978,7 @@ class TemporalAccessor:
         if mode not in list(MODES):
             modes = ", ".join(f'"{word}"' for word in MODES)
             raise ValueError(
-                f"Incorrect `mode` argument. Supported modes include: " f"{modes}."
+                f"Incorrect `mode` argument. Supported modes include: {modes}."
             )
 
         freq_keys = TIME_GROUPS[mode].keys()

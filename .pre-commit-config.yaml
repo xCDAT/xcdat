@@ -2,16 +2,18 @@ exclude: "docs|node_modules|migrations|.git|.tox"
 default_stages: [commit]
 fail_fast: true
 
+# To update pre-commit hooks, run `pre-commit autoupdate` in the terminal.
+# Then update the versions in `conda-env/dev.yml`.
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v4.6.0
+      rev: v5.0.0
       hooks:
           - id: trailing-whitespace
           - id: end-of-file-fixer
           - id: check-yaml
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.6.8
+      rev: v0.9.4
       hooks:
           # Sort the imports
           - id: ruff
@@ -24,15 +26,15 @@ repos:
           - id: ruff-format
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.11.2
+      rev: v1.14.1
       hooks:
           - id: mypy
             args: ["--config=pyproject.toml"]
             additional_dependencies:
                 [
                     dask,
-                    numpy>=1.23.0,
+                    "numpy>=2.0.0,<3.0.0",
                     pandas,
-                    xarray>=2023.2.0,
+                    xarray>=2024.03.0,
                     types-python-dateutil,
                 ]
