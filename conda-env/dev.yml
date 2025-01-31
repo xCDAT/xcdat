@@ -36,9 +36,9 @@ dependencies:
     # ==================
     - types-python-dateutil
     # NOTE: If the tools below are updated, also update their 'rev' in `.pre-commit.config.yaml`
-    - pre-commit=3.2.0
-    - ruff=0.6.8
-    - mypy=1.11.2
+    - pre-commit=4.1.0
+    - ruff=0.9.4
+    - mypy=1.14.1
     # Testing
     # ==================
     - pytest
