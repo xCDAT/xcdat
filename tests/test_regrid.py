@@ -1261,6 +1261,21 @@ class TestAccessor:
         ):
             ds_multi.regridder.grid  # noqa: B018
 
+    def test_grid_adds_cf_attributes_to_non_cf_compliant_coords(self):
+        ds = fixtures.generate_dataset(
+            decode_times=True, cf_compliant=False, has_bounds=True
+        )
+        # Remove "axis" and "standard_name" attributes.
+        ds["lat"].attrs = {"units": "degrees_east"}
+        ds["lon"].attrs = {"units": "degrees_north"}
+
+        grid = ds.regridder.grid
+
+        assert grid["lat"].attrs["axis"] == "Y"
+        assert grid["lat"].attrs["standard_name"] == "latitude"
+        assert grid["lon"].attrs["axis"] == "X"
+        assert grid["lon"].attrs["standard_name"] == "longitude"
+
     def test_grid_raises_error_when_dataset_has_multiple_dims_for_an_axis(self):
         ds_bounds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=True, has_bounds=True

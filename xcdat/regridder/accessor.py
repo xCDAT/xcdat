@@ -4,7 +4,7 @@ from typing import Any, List, Literal, Tuple
 
 import xarray as xr
 
-from xcdat.axis import CFAxisKey, get_dim_coords
+from xcdat.axis import CF_ATTR_MAP, CFAxisKey, get_dim_coords
 from xcdat.regridder import regrid2, xesmf, xgcm
 from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
 
@@ -109,12 +109,46 @@ class RegridderAccessor:
 
         _validate_grid_has_single_axis_dim(name, coord_var)
 
+        coord_var = self._ensure_cf_compliance(coord_var, name)  # type: ignore
+
         try:
             bounds_var = self._ds.bounds.get_bounds(name, coord_var.name)
         except KeyError:
             bounds_var = None
 
         return coord_var, bounds_var
+
+    def _ensure_cf_compliance(
+        self, coord_var: xr.DataArray, name: CFAxisKey
+    ) -> xr.DataArray:
+        """Ensure that the coordinate variable is CF-compliant.
+
+        This function adds the "axis" and "standard_name" attributes to the
+        coordinates if they are not already present. Coordinates must be
+        CF-compliant in order for xESMF to interpret them using CF-xarray.
+
+        Parameters
+        ----------
+        coords : xr.DataArray
+            Coordinates to make CF compliant.
+        name : CFAxisKey
+            Name of the axis.
+
+        Returns
+        -------
+        xr.DataArray
+            CF compliant coordinates.
+        """
+        coord_var_new = coord_var.copy()
+        cf_attrs = CF_ATTR_MAP[name]
+
+        if "axis" not in coord_var_new.attrs:
+            coord_var_new.attrs["axis"] = cf_attrs["axis"]
+
+        if "standard_name" not in coord_var_new.attrs:
+            coord_var_new.attrs["standard_name"] = cf_attrs["coordinate"]
+
+        return coord_var_new
 
     def horizontal(
         self,
