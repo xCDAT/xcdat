@@ -1266,8 +1266,8 @@ class TestAccessor:
             decode_times=True, cf_compliant=False, has_bounds=True
         )
         # Remove "axis" and "standard_name" attributes.
-        ds["lat"].attrs = {"units": "degrees_east"}
-        ds["lon"].attrs = {"units": "degrees_north"}
+        ds["lat"].attrs = {"units": "degrees_north"}
+        ds["lon"].attrs = {"units": "degrees_east"}
 
         grid = ds.regridder.grid
 
