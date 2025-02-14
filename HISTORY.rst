@@ -7,9 +7,9 @@ v0.8.0 (14 February 2025)
 
 This minor release introduces a new feature for temporal averaging with custom seasons
 spanning the calendar year. It also includes the ability to detect and drop incomplete
-seasons using the `drop_incomplete_season` config, which will eventually replace
-`drop_incomplete_djf` (previously limited to DJF seasons). Additionally, a bug in the
-`regrid2` regridder has been fixed, ensuring coordinates are now preserved correctly.
+seasons using the ``drop_incomplete_season`` config, which will eventually replace
+``drop_incomplete_djf`` (previously limited to DJF seasons). Additionally, a bug in the
+``regrid2`` regridder has been fixed, ensuring coordinates are now preserved correctly.
 
 Enhancements
 ~~~~~~~~~~~~

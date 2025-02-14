@@ -1195,8 +1195,9 @@ class TemporalAccessor:
         A season spans the calendar year if it includes "Jan" and "Jan" is not
         the first month. For example, for
         ``custom_seasons = ["Nov", "Dec", "Jan", "Feb", "Mar"]``:
-          - ["Nov", "Dec"] are from the previous year.
-          - ["Jan", "Feb", "Mar"] are from the current year.
+
+        - ["Nov", "Dec"] are from the previous year.
+        - ["Jan", "Feb", "Mar"] are from the current year.
 
         Therefore, ["Nov", "Dec"] need to be shifted a year forward for correct
         grouping.
@@ -1361,9 +1362,10 @@ class TemporalAccessor:
         coordinates ["2000-11-16", "2000-12-16", "2001-01-16", "2001-02-16"]
         and we want to group seasons by "ND" ("Nov", "Dec") and "JFM" ("Jan",
         "Feb", "Mar").
-          - ["2000-11-16", "2000-12-16"] is considered a complete "ND" season
+
+        - ["2000-11-16", "2000-12-16"] is considered a complete "ND" season
             since both "Nov" and "Dec" are present.
-          - ["2001-01-16", "2001-02-16"] is considered an incomplete "JFM"
+        - ["2001-01-16", "2001-02-16"] is considered an incomplete "JFM"
             season because it only has "Jan" and "Feb". Therefore, these
             time coordinates are dropped.
 
