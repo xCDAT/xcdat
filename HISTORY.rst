@@ -41,7 +41,7 @@ DevOps
 -  Fix ``DeprecationWarning`` and ``FutureWarning`` found in test suite
    by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/724
 
-**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.3...0.8.0
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.3...v0.8.0
 
 
 v0.7.3 (06 November 2024)
