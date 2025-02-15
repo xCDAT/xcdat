@@ -2,6 +2,48 @@
 History
 =======
 
+v0.8.0 (14 February 2025)
+-------------------------
+
+This minor release introduces a new feature for temporal averaging with custom seasons
+spanning the calendar year. It also includes the ability to detect and drop incomplete
+seasons using the ``drop_incomplete_season`` config, which will eventually replace
+``drop_incomplete_djf`` (previously limited to DJF seasons). Additionally, a bug in the
+``regrid2`` regridder has been fixed, ensuring coordinates are now preserved correctly.
+
+Enhancements
+~~~~~~~~~~~~
+
+-  Add support for custom seasons spanning calendar years by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/423
+
+Bug Fixes
+~~~~~~~~~
+
+-  Fixes preserving coordinates in regrid2 by `Jason Boutte`_ and
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/716
+-  Fix ``DeprecationWarning`` and ``FutureWarning`` found in test suite
+   by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/724
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Replace Miniconda with Miniforge by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/727
+-  Update Miniconda references to Miniforge in HPC docs by `Tom Vo`_
+   in https://github.com/xCDAT/xcdat/pull/731
+
+DevOps
+~~~~~~
+
+-  Update pre-commit hooks and add ci config by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/732
+-  Fix ``DeprecationWarning`` and ``FutureWarning`` found in test suite
+   by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/724
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.7.3...v0.8.0
+
+
 v0.7.3 (06 November 2024)
 -------------------------
 
