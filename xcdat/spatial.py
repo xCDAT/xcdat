@@ -749,30 +749,30 @@ class SpatialAccessor:
         ``weights`` must be a DataArray and cannot contain missing values.
         Missing values are replaced with 0 using ``weights.fillna(0)``.
         """
+        dv = data_var.copy()
         weights = self._weights.fillna(0)
-
-        # TODO: This conditional might not be needed because Xarray will
-        # automatically broadcast the weights to the data variable for
-        # operations such as .mean() and .where().
-        if min_weight > 0.0:
-            weights, data_var = xr.broadcast(weights, data_var)
 
         dim: List[str] = []
         for key in axis:
-            dim.append(get_dim_keys(data_var, key))  # type: ignore
+            dim.append(get_dim_keys(dv, key))  # type: ignore
 
         with xr.set_options(keep_attrs=True):
-            dv_mean = data_var.cf.weighted(weights).mean(dim=dim)
+            dv_mean = dv.cf.weighted(weights).mean(dim=dim)
 
         if min_weight > 0.0:
             dv_mean = self._mask_var_with_weight_threshold(
-                dv_mean, dim, weights, min_weight
+                dv, dv_mean, dim, weights, min_weight
             )
 
         return dv_mean
 
     def _mask_var_with_weight_threshold(
-        self, dv: xr.DataArray, dim: List[str], weights: xr.DataArray, min_weight: float
+        self,
+        dv: xr.DataArray,
+        dv_mean: xr.DataArray,
+        dim: List[str],
+        weights: xr.DataArray,
+        min_weight: float,
     ) -> xr.DataArray:
         """Mask values that do not meet the minimum weight threshold with np.nan.
 
@@ -786,7 +786,9 @@ class SpatialAccessor:
         Parameters
         ----------
         dv : xr.DataArray
-            The weighted variable.
+            The weighted variable used for getting masked weights.
+        dv_mean : xr.DataArray
+            The average of the weighted variable.
         dim: List[str]:
             List of axis dimensions to average over.
         weights : xr.DataArray
@@ -800,7 +802,8 @@ class SpatialAccessor:
         Returns
         -------
         xr.DataArray
-            The variable with the minimum weight threshold applied.
+            The average of the weighted with the minimum weight threshold
+            applied.
         """
         # Sum all weights, including zero for missing values.
         weight_sum_all = weights.sum(dim=dim)
@@ -812,7 +815,7 @@ class SpatialAccessor:
         frac = weight_sum_masked / weight_sum_all
 
         # Nan out values that don't meet specified weight threshold.
-        dv_new = xr.where(frac >= min_weight, dv, np.nan, keep_attrs=True)
-        dv_new.name = dv.name
+        dv_new = xr.where(frac >= min_weight, dv_mean, np.nan, keep_attrs=True)
+        dv_new.name = dv_mean.name
 
         return dv_new
