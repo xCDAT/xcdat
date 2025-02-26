@@ -183,12 +183,11 @@ def _validate_min_weight(min_weight: float | None) -> float:
         return 0.0
     elif min_weight < 0.0:
         raise ValueError(
-            "min_weight argument is less than 0. " "min_weight must be between 0 and 1."
+            "min_weight argument is less than 0. min_weight must be between 0 and 1.",
         )
     elif min_weight > 1.0:
         raise ValueError(
-            "min_weight argument is greater than 1. "
-            "min_weight must be between 0 and 1."
+            "min_weight argument is greater than 1. min_weight must be between 0 and 1.",
         )
 
     return min_weight
