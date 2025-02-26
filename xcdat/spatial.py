@@ -802,8 +802,8 @@ class SpatialAccessor:
         Returns
         -------
         xr.DataArray
-            The average of the weighted with the minimum weight threshold
-            applied.
+            The average of the weighted variable with the minimum weight
+            threshold applied.
         """
         # Sum all weights, including zero for missing values.
         weight_sum_all = weights.sum(dim=dim)
