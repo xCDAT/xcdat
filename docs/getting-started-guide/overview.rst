@@ -230,7 +230,7 @@ xCDAT is supported by the `Pangeo`_ community and the `World Climate Research Pr
          <img style="display: inline-block; width:200px" src="../_static/pangeo-logo-full.png" alt="Pangeo logo"/>
       </a>
       <a href="https://wcrp-cmip.org/tools/">
-         <img style="display: inline-block; width:200px" src="../_static/wrcp-logo.png" alt="Pangeo logo"/>
+         <img style="display: inline-block; width:200px" src="../_static/wrcp-logo.png" alt="WRCP logo"/>
       </a>
    </p>
 
