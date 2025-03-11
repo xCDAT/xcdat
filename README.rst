@@ -274,8 +274,8 @@ Support
 xCDAT is supported by the `Pangeo`_ community and the `World Climate Research Programme (WCRP)`_
 as a recommended tool for geoscience and climate data analysis.
 
-.. _Pangeo: https://pangeo.io
-.. _World Climate Research Programme (WCRP): https://www.wcrp-climate.org/
+.. _Pangeo: https://www.pangeo.io/#ecosystem
+.. _World Climate Research Programme (WCRP): https://wcrp-cmip.org/tools/
 
 .. raw:: html
 
