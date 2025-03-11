@@ -275,7 +275,8 @@ xCDAT is supported by the `Pangeo`_ community and the `World Climate Research Pr
 
 .. _Pangeo: https://pangeo.io
 .. _World Climate Research Programme (WCRP): https://www.wcrp-climate.org/
-`
+
+
 .. raw:: html
 
    <p align="center">
