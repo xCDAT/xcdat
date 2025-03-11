@@ -215,6 +215,25 @@ Thank you to all of our `contributors`_!
 
 .. _contributors: https://github.com/xCDAT/xcdat/graphs/contributors
 
+Support
+-------
+
+xCDAT is supported by the `Pangeo`_ community and the `World Climate Research Programme (WCRP)`_.
+
+.. _Pangeo: https://pangeo.io
+.. _World Climate Research Programme (WCRP): https://www.wcrp-climate.org/
+
+.. raw:: html
+
+   <p align="center">
+      <a href="https://pangeo.io">
+         <img style="display: inline-block; width:200px" src="../_static/pangeo-logo-full.png" alt="Pangeo logo"/>
+      </a>
+      <a href="https://wcrp-cmip.org/tools/">
+         <img style="display: inline-block; width:200px" src="../_static/wrcp-logo.png" alt="Pangeo logo"/>
+      </a>
+   </p>
+
 License
 -------
 
