@@ -281,13 +281,9 @@ as a recommended tool for geoscience and climate data analysis.
 .. raw:: html
 
    <p align="center">
-      <a href="https://xarray.dev">
-         <img style="display: inline-block; width:200px" src="./docs/_static/xarray-logo.png" alt="Xarray logo"/>
-      </a><a href="https://pangeo.io">
-         <img style="display: inline-block; width:200px" src="./docs/_static/pangeo-logo-full.png" alt="Pangeo logo"/>
-      </a><a href="https://wcrp-cmip.org">
-         <img style="display: inline-block; width:200px" src="./docs/_static/wrcp-logo.png" alt="WRCP logo"/>
-      </a>
+      <img style="display: inline-block; width:200px" src="./docs/_static/xarray-logo.png" alt="Xarray logo"/>
+      <img style="display: inline-block; width:200px" src="./docs/_static/pangeo-logo-full.png" alt="Pangeo logo"/>
+      <img style="display: inline-block; width:200px" src="./docs/_static/wrcp-logo.png" alt="WRCP logo"/>
    </p>
 
 License
