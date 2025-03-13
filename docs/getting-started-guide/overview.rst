@@ -218,15 +218,19 @@ Thank you to all of our `contributors`_!
 Support
 -------
 
-xCDAT is supported by the `Pangeo`_ community and the `World Climate Research Programme (WCRP)`_
+xCDAT is supported by `Xarray`_, `Pangeo`_, and the `World Climate Research Programme (WCRP)`_
 as a recommended tool for geoscience and climate data analysis.
 
+.. _Xarray: https://xarray.dev/
 .. _Pangeo: https://www.pangeo.io/#ecosystem
 .. _World Climate Research Programme (WCRP): https://wcrp-cmip.org/tools/
 
 .. raw:: html
 
    <p align="center">
+      <a href="https://www.xarray.dev">
+         <img style="display: inline-block; width:200px" src="../_static/xarray-logo.png" alt="Xarray logo"/>
+      </a>
       <a href="https://www.pangeo.io/#ecosystem">
          <img style="display: inline-block; width:200px" src="../_static/pangeo-logo-full.png" alt="Pangeo logo"/>
       </a>
