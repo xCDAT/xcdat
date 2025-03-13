@@ -227,7 +227,6 @@ as a recommended tool for geoscience and climate data analysis.
 
 .. raw:: html
 
-
   <p align="center">
     <img style="display: inline-block; width:200px" src="../_static/xarray-logo.png" alt="Xarray logo"/>
     <img style="display: inline-block; width:200px" src="../_static/pangeo-logo-full.png" alt="Pangeo logo"/>
