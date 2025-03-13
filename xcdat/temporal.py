@@ -1,5 +1,7 @@
 """Module containing temporal functions."""
 
+from __future__ import annotations
+
 import warnings
 from datetime import datetime
 from itertools import chain
@@ -163,7 +165,13 @@ class TemporalAccessor:
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
 
-    def average(self, data_var: str, weighted: bool = True, keep_weights: bool = False):
+    def average(
+        self,
+        data_var: str,
+        weighted: bool = True,
+        keep_weights: bool = False,
+        skipna: bool | None = None,
+    ):
         """
         Returns a Dataset with the average of a data variable and the time
         dimension removed.
@@ -204,6 +212,11 @@ class TemporalAccessor:
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -239,7 +252,12 @@ class TemporalAccessor:
         freq = _infer_freq(self._dataset[self.dim])
 
         return self._averager(
-            data_var, "average", freq, weighted=weighted, keep_weights=keep_weights
+            data_var,
+            "average",
+            freq,
+            weighted=weighted,
+            keep_weights=keep_weights,
+            skipna=skipna,
         )
 
     def group_average(
@@ -249,6 +267,7 @@ class TemporalAccessor:
         weighted: bool = True,
         keep_weights: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        skipna: bool | None = None,
     ):
         """Returns a Dataset with average of a data variable by time group.
 
@@ -345,6 +364,11 @@ class TemporalAccessor:
                 >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -423,6 +447,7 @@ class TemporalAccessor:
             weighted=weighted,
             keep_weights=keep_weights,
             season_config=season_config,
+            skipna=skipna,
         )
 
     def climatology(
@@ -433,6 +458,7 @@ class TemporalAccessor:
         keep_weights: bool = False,
         reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        skipna: bool | None = None,
     ):
         """Returns a Dataset with the climatology of a data variable.
 
@@ -538,6 +564,11 @@ class TemporalAccessor:
                 >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -621,6 +652,7 @@ class TemporalAccessor:
             keep_weights,
             reference_period,
             season_config,
+            skipna,
         )
 
     def departures(
@@ -631,6 +663,7 @@ class TemporalAccessor:
         keep_weights: bool = False,
         reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        skipna: bool | None = None,
     ) -> xr.Dataset:
         """
         Returns a Dataset with the climatological departures (anomalies) for a
@@ -747,6 +780,11 @@ class TemporalAccessor:
                 >>>     ["Jul", "Aug", "Sep"],  # "JulAugSep"
                 >>>     ["Oct", "Nov", "Dec"],  # "OctNovDec"
                 >>> ]
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -827,11 +865,7 @@ class TemporalAccessor:
         inferred_freq = _infer_freq(ds[self.dim])
         if inferred_freq != freq:
             ds_obs = ds_obs.temporal.group_average(
-                data_var,
-                freq,
-                weighted,
-                keep_weights,
-                season_config,
+                data_var, freq, weighted, keep_weights, season_config, skipna
             )
 
         # 4. Calculate the climatology of the data variable.
@@ -844,6 +878,7 @@ class TemporalAccessor:
             keep_weights,
             reference_period,
             season_config,
+            skipna,
         )
 
         # 5. Calculate the departures for the data variable.
@@ -865,6 +900,7 @@ class TemporalAccessor:
         keep_weights: bool = False,
         reference_period: Optional[Tuple[str, str]] = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        skipna: bool | None = None,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
         ds = self._dataset.copy()
@@ -874,9 +910,9 @@ class TemporalAccessor:
         ds = self._preprocess_dataset(ds)
 
         if self._mode == "average":
-            dv_avg = self._average(ds, data_var)
+            dv_avg = self._average(ds, data_var, skipna=skipna)
         elif self._mode in ["group_average", "climatology", "departures"]:
-            dv_avg = self._group_average(ds, data_var)
+            dv_avg = self._group_average(ds, data_var, skipna=skipna)
 
         # The original time dimension is dropped from the dataset because
         # it becomes obsolete after the data variable is averaged. When the
@@ -1447,7 +1483,9 @@ class TemporalAccessor:
         )
         return ds
 
-    def _average(self, ds: xr.Dataset, data_var: str) -> xr.DataArray:
+    def _average(
+        self, ds: xr.Dataset, data_var: str, skipna: bool | None = None
+    ) -> xr.DataArray:
         """Averages a data variable with the time dimension removed.
 
         Parameters
@@ -1456,6 +1494,11 @@ class TemporalAccessor:
             The dataset.
         data_var : str
             The key of the data variable.
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -1469,15 +1512,17 @@ class TemporalAccessor:
                 time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
                 self._weights = self._get_weights(time_bounds)
 
-                dv = dv.weighted(self._weights).mean(dim=self.dim)
+                dv = dv.weighted(self._weights).mean(dim=self.dim, skipna=skipna)
             else:
-                dv = dv.mean(dim=self.dim)
+                dv = dv.mean(dim=self.dim, skipna=skipna)
 
         dv = self._add_operation_attrs(dv)
 
         return dv
 
-    def _group_average(self, ds: xr.Dataset, data_var: str) -> xr.DataArray:
+    def _group_average(
+        self, ds: xr.Dataset, data_var: str, skipna: bool | None = None
+    ) -> xr.DataArray:
         """Averages a data variable by time group.
 
         Parameters
@@ -1486,6 +1531,11 @@ class TemporalAccessor:
             The dataset.
         data_var : str
             The key of the data variable.
+        skipna : bool | None, optional
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -1517,12 +1567,14 @@ class TemporalAccessor:
             # WA = sum(data*weights) / sum(weights). The denominator must be
             # included to take into account zero weight for missing data.
             with xr.set_options(keep_attrs=True):
-                dv = self._group_data(dv).sum() / self._group_data(weights).sum()
+                dv = self._group_data(dv).sum(skipna=skipna) / self._group_data(
+                    weights
+                ).sum(skipna=skipna)
 
             # Restore the data variable's name.
             dv.name = data_var
         else:
-            dv = self._group_data(dv).mean()
+            dv = self._group_data(dv).mean(skipna=skipna)
 
         # After grouping and aggregating, the grouped time dimension's
         # attributes are removed. Xarray's `keep_attrs=True` option only keeps
