@@ -3,17 +3,19 @@ from __future__ import annotations
 import os
 import pathlib
 import sys
-
 from typing import TYPE_CHECKING, Dict, List, Tuple
 
 import xarray as xr
 from xarray.tutorial import (
     _construct_cache_dir,
-    open_dataset as xr_tut_open_dataset,
     file_formats,
 )
-from xcdat.axis import CFAxisKey
+from xarray.tutorial import (
+    open_dataset as xr_tut_open_dataset,
+)
+
 import xcdat.bounds  # noqa: F401
+from xcdat.axis import CFAxisKey
 
 if TYPE_CHECKING:
     import os
