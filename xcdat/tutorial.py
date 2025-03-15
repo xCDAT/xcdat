@@ -4,15 +4,15 @@ import os
 import pathlib
 import sys
 
-from typing import TYPE_CHECKING, Dict
+from typing import TYPE_CHECKING, Dict, List, Tuple
 
 import xarray as xr
-from xarray import open_dataset as xr_open_dataset
 from xarray.tutorial import (
     _construct_cache_dir,
     open_dataset as xr_tut_open_dataset,
     file_formats,
 )
+from xcdat.axis import CFAxisKey
 import xcdat.bounds  # noqa: F401
 
 if TYPE_CHECKING:
@@ -45,6 +45,10 @@ XCDAT_DATASETS: Dict[str, str] = {
     "tas_amon_canesm5": "tas_Amon_CanESM5_historical_r13i1p1f1_gn_185001-201412_subset.nc",
     # Monthly ocean potential temperature from the CESM2 model.
     "thetao_omon_cesm2": "thetao_Omon_CESM2_historical_r1i1p1f1_gn_185001-201412_subset.nc",
+    # Monthly cloud fraction data from the E3SM-2-0 model.
+    "cl_amon_e3sm2": "cl_Amon_E3SM-2-0_historical_r1i1p1f1_gr_185001-189912_subset.nc",
+    # Monthly air temperature data from the E3SM-2-0 model.
+    "ta_amon_e3sm2": "ta_Amon_E3SM-2-0_historical_r1i1p1f1_gr_185001-189912_subset.nc",
 }
 
 
@@ -52,6 +56,7 @@ def open_dataset(
     name: str,
     cache: bool = True,
     cache_dir: None | str | os.PathLike = None,
+    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
     *,
     engine: T_Engine = None,
     **kws,
@@ -85,6 +90,8 @@ def open_dataset(
     * ``"tas_amon_access"``: Monthly near-surface air temperature from the ACCESS-ESM1-5 model.
     * ``"tas_amon_canesm5"``: Monthly near-surface air temperature from the CanESM5 model.
     * ``"thetao_omon_cesm2"``: Monthly ocean potential temperature from the CESM2 model.
+    * ``"cl_amon_e3sm2"``: Monthly cloud fraction data from the E3SM-2-0 model.
+    * ``"ta_amon_e3sm2"``: Monthly air temperature data from the E3SM-2-0 model.
 
     Parameters
     ----------
@@ -95,14 +102,23 @@ def open_dataset(
         The directory in which to search for and write cached data.
     cache : bool, optional
         If True, then cache data locally for use on subsequent calls
+    add_bounds : List[CFAxisKey] | Tuple[CFAxisKey] | None, optional
+        List or tuple of axis keys for which to add bounds, by default
+        ("X", "Y").
     **kws : dict, optional
-        Passed to xarray.open_dataset
+        Passed to ``xarray.open_dataset`` or ``xcdat.open_dataset``.
     """
     if name in XARRAY_DATASETS:
         ds = xr_tut_open_dataset(
             name=name, cache=cache, cache_dir=cache_dir, engine=engine, **kws
         )
+
+        if add_bounds is not None:
+            ds = ds.bounds.add_missing_bounds(axes=add_bounds)
     else:
+        # Avoid circular import.
+        from xcdat.dataset import open_dataset as xc_open_dataset
+
         logger = pooch.get_logger()
         logger.setLevel("WARNING")
 
@@ -123,12 +139,10 @@ def open_dataset(
         filepath = pooch.retrieve(
             url=url, known_hash=None, path=cache_dir, downloader=downloader
         )
-        ds = xr_open_dataset(filepath, **kws)
+        ds = xc_open_dataset(filepath, **kws, add_bounds=add_bounds)
 
         if not cache:
             ds = ds.load()
             pathlib.Path(filepath).unlink()
-
-    ds = ds.bounds.add_missing_bounds(axes=["X", "Y", "T"])
 
     return ds
