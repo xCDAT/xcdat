@@ -87,6 +87,7 @@ def open_dataset(
     * ``"ersstv5"``: NOAA's Extended Reconstructed Sea Surface Temperature monthly averages
 
     Available xCDAT datasets:
+
     * ``"pr_amon_access"``: Monthly precipitation data from the ACCESS-ESM1-5 model.
     * ``"so_omon_cesm2"``: Monthly ocean salinity data from the CESM2 model.
     * ``"tas_amon_access"``: Monthly near-surface air temperature from the ACCESS-ESM1-5 model.
