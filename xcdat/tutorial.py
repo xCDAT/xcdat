@@ -32,6 +32,8 @@ XCDAT_DATASETS: Dict[str, str] = {
     "so_omon_cesm2": "so_Omon_CESM2_historical_r1i1p1f1_gn_185001-201412_subset.nc",
     # Monthly near-surface air temperature from the ACCESS-ESM1-5 model.
     "tas_amon_access": "tas_Amon_ACCESS-ESM1-5_historical_r10i1p1f1_gn_185001-201412_subset.nc",
+    # 3-hourly near-surface air temperature from the ACCESS-ESM1-5 model.
+    "tas_3hr_access": "tas_3hr_ACCESS-ESM1-5_historical_r10i1p1f1_gn_201001010300-201501010000_subset.nc",
     # Monthly near-surface air temperature from the CanESM5 model.
     "tas_amon_canesm5": "tas_Amon_CanESM5_historical_r13i1p1f1_gn_185001-201412_subset.nc",
     # Monthly ocean potential temperature from the CESM2 model.
@@ -63,6 +65,7 @@ def open_dataset(
      * ``"pr_amon_access"``: Monthly precipitation data from the ACCESS-ESM1-5 model.
      * ``"so_omon_cesm2"``: Monthly ocean salinity data from the CESM2 model.
      * ``"tas_amon_access"``: Monthly near-surface air temperature from the ACCESS-ESM1-5 model.
+     * ``"tas_3hr_access"``: 3-hourly near-surface air temperature from the ACCESS-ESM1-5 model.
      * ``"tas_amon_canesm5"``: Monthly near-surface air temperature from the CanESM5 model.
      * ``"thetao_omon_cesm2"``: Monthly ocean potential temperature from the CESM2 model.
      * ``"cl_amon_e3sm2"``: Monthly cloud fraction data from the E3SM-2-0 model.
