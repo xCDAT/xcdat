@@ -88,10 +88,11 @@ Instructions
 3. [Optional] Some packages that are commonly used with ``xcdat`` can be installed
    either in step 1 or step 2 above:
 
+   - ``pooch``: a library for downloading and managing data files, used by the ``xcdat.tutorial.open_dataset`` module.
    - ``jupyterlab``: a web-based interactive development environment for notebooks,
-     code, and data. This package also includes ``ipykernel``.
+      code, and data. This package also includes ``ipykernel``.
    - ``matplotlib``: a library for creating visualizations in Python.
-   - ``nc-time-axis`` is an optional dependency required for ``matplotlib`` to plot ``cftime`` coordinates
+   - ``nc-time-axis`` is an optional dependency required for ``matplotlib`` to plot ``cftime`` coordinates.
    - ``cartopy``: an add-on package for ``matplotlib`` and specialized for geospatial data processing.
 
 .. _conda create: https://docs.conda.io/projects/conda/en/latest/commands/create.html

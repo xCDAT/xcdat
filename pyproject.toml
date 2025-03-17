@@ -51,6 +51,7 @@ docs = [
   "pandoc",
   "ipython",
   "gsw-xarray",
+  "pooch",
 ]
 dev = ["types-python-dateutil", "pre-commit", "ruff", "mypy"]
 
