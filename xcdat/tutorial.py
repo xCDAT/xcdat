@@ -3,24 +3,13 @@ from __future__ import annotations
 import os
 import pathlib
 import sys
-from typing import TYPE_CHECKING, Dict, List, Tuple
+from typing import Dict, List, Tuple
 
 import xarray as xr
-from xarray.tutorial import (
-    _construct_cache_dir,
-    file_formats,
-)
-from xarray.tutorial import (
-    open_dataset as xr_tut_open_dataset,
-)
+from xarray.tutorial import _construct_cache_dir, file_formats
 
 import xcdat.bounds  # noqa: F401
 from xcdat.axis import CFAxisKey
-
-if TYPE_CHECKING:
-    import os
-
-    from xarray.backends.api import T_Engine
 
 try:
     import pooch
@@ -31,7 +20,7 @@ except ImportError as e:
     ) from e
 
 
-_default_cache_dir_name = "xcdat_tutorial_data"
+DEFAULT_CACHE_DIR_NAME = "xcdat_tutorial_data"
 base_url = "https://github.com/xCDAT/xcdat-data"
 version = "main"
 
@@ -57,95 +46,70 @@ XCDAT_DATASETS: Dict[str, str] = {
 def open_dataset(
     name: str,
     cache: bool = True,
-    cache_dir: None | str | os.PathLike = None,
+    cache_dir: None | str | os.PathLike = DEFAULT_CACHE_DIR_NAME,
     add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
-    *,
-    engine: T_Engine = None,
-    **kws,
+    **kargs,
 ) -> xr.Dataset:
     """
-    Open a dataset from the online repository (requires internet).
+     Open a dataset from the online repository (requires internet).
 
-    If an Xarray tutorial dataset is specified, this function will use the
-    ``xarray.tutorial.open_dataset()`` function. This function is mostly based
-    on ``xarray.tutorial.open_dataset()`` with some modifications such as adding
-    bounds to the dataset.
+    This function is mostly based on ``xarray.tutorial.open_dataset()`` with
+    some modifications, including adding missing bounds to the dataset.
 
     If a local copy is found then always use that to avoid network traffic.
 
-    Available Xarray datasets:
+     Available xCDAT datasets:
 
-    * ``"air_temperature"``: NCEP reanalysis subset
-    * ``"air_temperature_gradient"``: NCEP reanalysis subset with approximate x,y gradients
-    * ``"basin_mask"``: Dataset with ocean basins marked using integers
-    * ``"ASE_ice_velocity"``: MEaSUREs InSAR-Based Ice Velocity of the Amundsen Sea Embayment, Antarctica, Version 1
-    * ``"rasm"``: Output of the Regional Arctic System Model (RASM)
-    * ``"ROMS_example"``: Regional Ocean Model System (ROMS) output
-    * ``"tiny"``: small synthetic dataset with a 1D data variable
-    * ``"era5-2mt-2019-03-uk.grib"``: ERA5 temperature data over the UK
-    * ``"eraint_uvz"``: data from ERA-Interim reanalysis, monthly averages of upper level data
-    * ``"ersstv5"``: NOAA's Extended Reconstructed Sea Surface Temperature monthly averages
+     * ``"pr_amon_access"``: Monthly precipitation data from the ACCESS-ESM1-5 model.
+     * ``"so_omon_cesm2"``: Monthly ocean salinity data from the CESM2 model.
+     * ``"tas_amon_access"``: Monthly near-surface air temperature from the ACCESS-ESM1-5 model.
+     * ``"tas_amon_canesm5"``: Monthly near-surface air temperature from the CanESM5 model.
+     * ``"thetao_omon_cesm2"``: Monthly ocean potential temperature from the CESM2 model.
+     * ``"cl_amon_e3sm2"``: Monthly cloud fraction data from the E3SM-2-0 model.
+     * ``"ta_amon_e3sm2"``: Monthly air temperature data from the E3SM-2-0 model.
 
-    Available xCDAT datasets:
-
-    * ``"pr_amon_access"``: Monthly precipitation data from the ACCESS-ESM1-5 model.
-    * ``"so_omon_cesm2"``: Monthly ocean salinity data from the CESM2 model.
-    * ``"tas_amon_access"``: Monthly near-surface air temperature from the ACCESS-ESM1-5 model.
-    * ``"tas_amon_canesm5"``: Monthly near-surface air temperature from the CanESM5 model.
-    * ``"thetao_omon_cesm2"``: Monthly ocean potential temperature from the CESM2 model.
-    * ``"cl_amon_e3sm2"``: Monthly cloud fraction data from the E3SM-2-0 model.
-    * ``"ta_amon_e3sm2"``: Monthly air temperature data from the E3SM-2-0 model.
-
-    Parameters
-    ----------
-    name : str
-        Name of the file containing the dataset.
-        e.g. 'air_temperature'
-    cache_dir : path-like, optional
-        The directory in which to search for and write cached data.
-    cache : bool, optional
-        If True, then cache data locally for use on subsequent calls
-    add_bounds : List[CFAxisKey] | Tuple[CFAxisKey] | None, optional
-        List or tuple of axis keys for which to add bounds, by default
-        ("X", "Y").
-    **kws : dict, optional
-        Passed to ``xarray.open_dataset`` or ``xcdat.open_dataset``.
+     Parameters
+     ----------
+     name : str
+         Name of the file containing the dataset.
+         e.g. 'air_temperature'
+     cache_dir : path-like, optional
+         The directory in which to search for and write cached data.
+     cache : bool, optional
+         If True, then cache data locally for use on subsequent calls
+     add_bounds : List[CFAxisKey] | Tuple[CFAxisKey] | None, optional
+         List or tuple of axis keys for which to add bounds, by default
+         ("X", "Y").
+     **kargs : dict, optional
+         Passed to ``xcdat.open_dataset``.
     """
-    if name in XARRAY_DATASETS:
-        ds = xr_tut_open_dataset(
-            name=name, cache=cache, cache_dir=cache_dir, engine=engine, **kws
+    # Avoid circular import in __init__.py
+    from xcdat.dataset import open_dataset as xc_open_dataset
+
+    logger = pooch.get_logger()
+    logger.setLevel("WARNING")
+
+    cache_dir = _construct_cache_dir(cache_dir)
+
+    filename = XCDAT_DATASETS.get(name)
+    if filename is None:
+        raise ValueError(
+            f"Dataset {name} not found. Available xcdat datasets are: {XCDAT_DATASETS.keys()}"
         )
 
-        if add_bounds is not None:
-            ds = ds.bounds.add_missing_bounds(axes=add_bounds)
-    else:
-        # Avoid circular import.
-        from xcdat.dataset import open_dataset as xc_open_dataset
+    path = pathlib.Path(filename)
+    url = f"{base_url}/raw/{version}/{path.name}"
 
-        logger = pooch.get_logger()
-        logger.setLevel("WARNING")
+    headers = {"User-Agent": f"xcdat {sys.modules['xcdat'].__version__}"}
+    downloader = pooch.HTTPDownloader(headers=headers)
 
-        cache_dir = _construct_cache_dir(cache_dir)
+    filepath = pooch.retrieve(
+        url=url, known_hash=None, path=cache_dir, downloader=downloader
+    )
+    ds = xc_open_dataset(filepath, **kargs, add_bounds=add_bounds)
 
-        filename = XCDAT_DATASETS.get(name)
-        if filename is None:
-            raise ValueError(
-                f"Dataset {name} not found. Available xcdat datasets are: {XCDAT_DATASETS.keys()}"
-            )
-
-        path = pathlib.Path(filename)
-        url = f"{base_url}/raw/{version}/{path.name}"
-
-        headers = {"User-Agent": f"xcdat {sys.modules['xcdat'].__version__}"}
-        downloader = pooch.HTTPDownloader(headers=headers)
-
-        filepath = pooch.retrieve(
-            url=url, known_hash=None, path=cache_dir, downloader=downloader
-        )
-        ds = xc_open_dataset(filepath, **kws, add_bounds=add_bounds)
-
-        if not cache:
-            ds = ds.load()
-            pathlib.Path(filepath).unlink()
+    if not cache:
+        ds = ds.load()
+        pathlib.Path(filepath).unlink()
 
     return ds
