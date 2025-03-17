@@ -11,15 +11,6 @@ from xarray.tutorial import _construct_cache_dir, file_formats
 import xcdat.bounds  # noqa: F401
 from xcdat.axis import CFAxisKey
 
-try:
-    import pooch
-except ImportError as e:
-    raise ImportError(
-        "tutorial.open_dataset depends on pooch to download and manage datasets."
-        " To proceed please install pooch."
-    ) from e
-
-
 DEFAULT_CACHE_DIR_NAME = "xcdat_tutorial_data"
 base_url = "https://github.com/xCDAT/xcdat-data"
 version = "main"
@@ -86,8 +77,16 @@ def open_dataset(
      **kargs : dict, optional
          Passed to ``xcdat.open_dataset``.
     """
+    try:
+        import pooch
+    except ImportError as e:
+        raise ImportError(
+            "tutorial.open_dataset depends on pooch to download and manage datasets."
+            " To proceed please install pooch."
+        ) from e
+
     # Avoid circular import in __init__.py
-    from xcdat.dataset import open_dataset as xc_open_dataset
+    from xcdat.dataset import open_dataset
 
     logger = pooch.get_logger()
     logger.setLevel("WARNING")
@@ -109,7 +108,7 @@ def open_dataset(
     filepath = pooch.retrieve(
         url=url, known_hash=None, path=cache_dir, downloader=downloader
     )
-    ds = xc_open_dataset(filepath, **kargs, add_bounds=add_bounds)
+    ds = open_dataset(filepath, **kargs, add_bounds=add_bounds)
 
     if not cache:
         ds = ds.load()
