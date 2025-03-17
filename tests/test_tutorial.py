@@ -1,9 +1,9 @@
 import os
+from unittest.mock import patch
 
 import pytest
 import xarray as xr
 from xcdat.tutorial import open_dataset
-from unittest.mock import patch
 
 
 class TestOpenDataset:

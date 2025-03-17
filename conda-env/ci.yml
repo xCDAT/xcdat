@@ -24,3 +24,4 @@ dependencies:
     # ==================
     - pytest
     - pytest-cov
+    - pooch # Required for xarray tutorial data
