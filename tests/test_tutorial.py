@@ -3,6 +3,7 @@ from unittest.mock import patch
 
 import pytest
 import xarray as xr
+
 from xcdat.tutorial import open_dataset
 
 
