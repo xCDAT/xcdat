@@ -90,7 +90,7 @@ Instructions
 
    - ``pooch``: a library for downloading and managing data files, used by the ``xcdat.tutorial.open_dataset`` module.
    - ``jupyterlab``: a web-based interactive development environment for notebooks,
-      code, and data. This package also includes ``ipykernel``.
+     code, and data. This package also includes ``ipykernel``.
    - ``matplotlib``: a library for creating visualizations in Python.
    - ``nc-time-axis`` is an optional dependency required for ``matplotlib`` to plot ``cftime`` coordinates.
    - ``cartopy``: an add-on package for ``matplotlib`` and specialized for geospatial data processing.
