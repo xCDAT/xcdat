@@ -1,3 +1,10 @@
+"""
+This module provides functionality for accessing and working with tutorial
+datasets hosted online for use with xCDAT. It includes a function to open
+datasets, either from a local cache or by downloading them from a remote
+repository.
+"""
+
 from __future__ import annotations
 
 import os
