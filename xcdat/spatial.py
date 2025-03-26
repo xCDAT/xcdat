@@ -133,7 +133,9 @@ class SpatialAccessor:
         min_weight : optional, float
             Fraction of data coverage (i.e, weight) needed to return a
             spatial average value. Value must range from 0 to 1, by default None
-            (equivalent to ``min_weight=0.0``).
+            (equivalent to ``min_weight=0.0``). This parameter is useful for
+            cases where the weighting of data might be skewed based on the
+            availability of data.
 
         Returns
         -------
