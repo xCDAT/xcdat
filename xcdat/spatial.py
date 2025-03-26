@@ -131,11 +131,10 @@ class SpatialAccessor:
             than the upper bound (e.g., across the prime meridian, dateline), by
             default None.
         min_weight : optional, float
-            Fraction of data coverage (i.e, weight) needed to return a
-            spatial average value. Value must range from 0 to 1, by default None
-            (equivalent to ``min_weight=0.0``). This parameter is useful for
-            cases where the weighting of data might be skewed based on the
-            availability of data.
+            Minimum fraction of data coverage (weight) required to compute a
+            spatial average. Must be between 0 and 1. Useful for ensuring
+            accurate averages in regions with missing data, by default None
+            (equivalent to 0.0).
 
         Returns
         -------
@@ -738,8 +737,10 @@ class SpatialAccessor:
         axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
             List of axis dimensions to average over.
         min_weight : float
-            Fraction of data coverage (i.e, weight) needed to return a
-            spatial average value. Value must range from 0 to 1.
+            Minimum fraction of data coverage (weight) required to compute a
+            spatial average. Must be between 0 and 1. Useful for ensuring
+            accurate averages in regions with missing data, by default None
+            (equivalent to 0.0).
 
         Returns
         -------
@@ -798,8 +799,10 @@ class SpatialAccessor:
             averaging. ``weights`` must include the same axis dimensions and
             dimensional sizes as the data variable.
         min_weight : float
-            Fraction of data coverage (i.e, weight) needed to return a
-            spatial average value. Value must range from 0 to 1.
+            Minimum fraction of data coverage (weight) required to compute a
+            spatial average. Must be between 0 and 1. Useful for ensuring
+            accurate averages in regions with missing data, by default None
+            (equivalent to 0.0).
 
         Returns
         -------
