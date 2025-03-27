@@ -47,7 +47,7 @@ jobs:
     build:
         needs: skip-duplicate-actions
         if: needs.skip-duplicate-actions.outputs.should_skip != 'true'
-        name: Build (Python ${{ matrix.python-version }})
+        name: Build (Conda, Python ${{ matrix.python-version }})
         runs-on: "ubuntu-latest"
         timeout-minutes: 10
         defaults:
@@ -115,7 +115,7 @@ jobs:
     build-pypi:
         needs: skip-duplicate-actions
         if: needs.skip-duplicate-actions.outputs.should_skip != 'true'
-        name: Build (Python ${{ matrix.python-version }})
+        name: Build (Pip, Python ${{ matrix.python-version }})
         runs-on: "ubuntu-latest"
         timeout-minutes: 10
         defaults:
