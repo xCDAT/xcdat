@@ -151,21 +151,11 @@ jobs:
                   python -m twine check --strict dist/*
                   pwd
                   if [ -f dist/xcdat-0.0.0.tar.gz ]; then
-                  echo "❌ INVALID VERSION NUMBER"
-                  exit 1
+                    echo "❌ INVALID VERSION NUMBER"
+                    exit 1
                   else
-                  echo "✅ Looks good"
+                    echo "✅ Looks good"
                   fi
-
-            - uses: actions/upload-artifact@v4
-              with:
-                  name: releases
-                  path: dist
-
-            - uses: actions/download-artifact@v4
-              with:
-                  name: releases
-                  path: dist
 
             - name: List contents of built dist
               run: |
