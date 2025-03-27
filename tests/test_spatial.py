@@ -305,9 +305,10 @@ class TestAveragerMinWeight:
     def test_spatial_average_with_min_weight_zero(self):
         ds = self.ds.copy(deep=True)
 
-        # Insert NaN values into the dataset (no minimum required for weighting).
+        # Insert NaN values into the dataset (no minimum required to compute value).
         ds["ts"][0, :, 2] = np.nan
 
+        # min_weight=0.0 means no minimum weight threshold required to compute value
         result = ds.spatial.average(
             "ts",
             axis=["X", "Y"],
@@ -326,9 +327,10 @@ class TestAveragerMinWeight:
     def test_spatial_average_with_min_weight_none_equivalent_to_zero(self):
         ds = self.ds.copy(deep=True)
 
-        # Insert NaN values into the dataset (no minimum required for weighting).
+        # Insert NaN values into the dataset.
         ds["ts"][0, :, 2] = np.nan
 
+        # min_weight=None means no minimum weight threshold required to compute value
         result = ds.spatial.average(
             "ts",
             axis=["X", "Y"],
@@ -350,12 +352,15 @@ class TestAveragerMinWeight:
         # Insert NaN values into the dataset > 50% at second time point.
         ds["ts"][1, :, :] = np.nan
 
+        # At least 50% of the weights must be non-NaN to compute value.
         result = ds.spatial.average(
             "ts",
             axis=["X", "Y"],
             min_weight=0.5,
         )
 
+        # The second grouping window will by NaN because the minimum weight
+        # threshold is not met (>50%).
         expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, np.nan, 1.0]),
@@ -369,16 +374,17 @@ class TestAveragerMinWeight:
         ds = self.ds.copy(deep=True)
 
         # Insert a single NaN value at the last time point.
-        # 100% required for weighting, which means the result for the last time
-        # point should be NaN.
         ds["ts"][2, 0, 0] = np.nan
 
+        # 100% of the weights must be non-NaN to compute value.
         result = ds.spatial.average(
             "ts",
             axis=["X", "Y"],
             min_weight=1.0,
         )
 
+        # The last grouping window will by NaN because the minimum weight
+        # threshold is not met (1 value is NaN out of 4).
         expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, 1.0, np.nan]),
@@ -405,6 +411,8 @@ class TestAveragerMinWeight:
             min_weight=0.5,
         )
 
+        # With all weights set to zero, the results for all grouping windows
+        # should be NaN because the minimum weight threshold is not met (>50%).
         expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array([np.nan, np.nan, np.nan]),
@@ -433,6 +441,8 @@ class TestAveragerMinWeight:
             min_weight=0.5,
         )
 
+        # With partial NaN weights, the averages are still computed because
+        # at least 50% of the weights are non-NaN for each grouping window.
         expected = self.ds.copy(deep=True)
         expected["ts"] = xr.DataArray(
             data=np.array([2.25, 1.0, 1.0]),

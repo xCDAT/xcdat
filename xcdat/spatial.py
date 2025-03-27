@@ -131,10 +131,16 @@ class SpatialAccessor:
             than the upper bound (e.g., across the prime meridian, dateline), by
             default None.
         min_weight : optional, float
-            Minimum fraction of data coverage (weight) required to compute a
-            spatial average. Must be between 0 and 1. Useful for ensuring
-            accurate averages in regions with missing data, by default None
-            (equivalent to 0.0).
+            Minimum threshold of data coverage (weight) required to compute
+            a spatial average for a grouping window. Must be between 0 and 1.
+            Useful for ensuring accurate averages in regions with missing data,
+            by default None (equivalent to 0.0).
+
+            The value must be between 0 and 1, where:
+                - 0/``None`` means no minimum threshold (all data is considered,
+                  even if coverage is minimal).
+                - 1 means full data coverage is required (no missing data is
+                  allowed).
 
         Returns
         -------
@@ -736,11 +742,17 @@ class SpatialAccessor:
             Data variable inside a Dataset.
         axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
             List of axis dimensions to average over.
-        min_weight : float
-            Minimum fraction of data coverage (weight) required to compute a
-            spatial average. Must be between 0 and 1. Useful for ensuring
-            accurate averages in regions with missing data, by default None
-            (equivalent to 0.0).
+        min_weight : optional, float
+            Minimum threshold of data coverage (weight) required to compute
+            a spatial average for a grouping window. Must be between 0 and 1.
+            Useful for ensuring accurate averages in regions with missing data,
+            by default None (equivalent to 0.0).
+
+            The value must be between 0 and 1, where:
+                - 0/``None`` means no minimum threshold (all data is considered,
+                  even if coverage is minimal).
+                - 1 means full data coverage is required (no missing data is
+                  allowed).
 
         Returns
         -------
@@ -798,11 +810,17 @@ class SpatialAccessor:
             A DataArray containing either the regional weights used for weighted
             averaging. ``weights`` must include the same axis dimensions and
             dimensional sizes as the data variable.
-        min_weight : float
-            Minimum fraction of data coverage (weight) required to compute a
-            spatial average. Must be between 0 and 1. Useful for ensuring
-            accurate averages in regions with missing data, by default None
-            (equivalent to 0.0).
+        min_weight : optional, float
+            Minimum threshold of data coverage (weight) required to compute
+            a spatial average for a grouping window. Must be between 0 and 1.
+            Useful for ensuring accurate averages in regions with missing data,
+            by default None (equivalent to 0.0).
+
+            The value must be between 0 and 1, where:
+                - 0/``None`` means no minimum threshold (all data is considered,
+                  even if coverage is minimal).
+                - 1 means full data coverage is required (no missing data is
+                  allowed).
 
         Returns
         -------
