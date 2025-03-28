@@ -176,15 +176,6 @@ class RegridderAccessor:
             if coord_name in self._ds.coords:
                 coord = self._ds.coords[coord_name]
 
-                # if coord.ndim > 1:
-                #     coord = xr.DataArray(
-                #         coord.values.flatten(),
-                #         coords={coord_name: coord.values.flatten()},
-                #         dims=[coord_name],
-                #         attrs=coord.attrs,
-                #         name=coord_name,
-                #     )
-
                 return coord
 
         raise KeyError(f"Coordinate with name '{name}' not found in the dataset.")
