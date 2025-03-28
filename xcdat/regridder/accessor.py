@@ -143,7 +143,6 @@ class RegridderAccessor:
         grids can have multiple coordinates for the same axis (e.g., (nlat,lat)
         for X and (nlon,lon)) for Y.
 
-
         Parameters
         ----------
         name : CFAxisKey
