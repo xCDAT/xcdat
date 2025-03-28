@@ -1261,20 +1261,19 @@ class TestAccessor:
         ):
             ds_multi.regridder.grid  # noqa: B018
 
-    def test_grid_adds_cf_attributes_to_non_cf_compliant_coords(self):
-        ds = fixtures.generate_dataset(
-            decode_times=True, cf_compliant=False, has_bounds=True
+    def test_grid_curvilinear(self):
+        ds = fixtures.generate_curvilinear_dataset()
+
+        result = ds.regridder.grid
+        expected = xr.Dataset(
+            coords={"lat": ds.lat, "lon": ds.lon, "nlon": ds.nlon, "nlat": ds.nlat},
+            data_vars={
+                "lat_bnds": ds.lat_bnds,
+                "lon_bnds": ds.lon_bnds,
+            },
         )
-        # Remove "axis" and "standard_name" attributes.
-        ds["lat"].attrs = {"units": "degrees_north"}
-        ds["lon"].attrs = {"units": "degrees_east"}
 
-        grid = ds.regridder.grid
-
-        assert grid["lat"].attrs["axis"] == "Y"
-        assert grid["lat"].attrs["standard_name"] == "latitude"
-        assert grid["lon"].attrs["axis"] == "X"
-        assert grid["lon"].attrs["standard_name"] == "longitude"
+        xr.testing.assert_identical(result, expected)
 
     def test_grid_raises_error_when_dataset_has_multiple_dims_for_an_axis(self):
         ds_bounds = fixtures.generate_dataset(

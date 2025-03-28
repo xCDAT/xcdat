@@ -4,6 +4,7 @@ from typing import Literal
 
 import cftime
 import numpy as np
+import pandas as pd
 import xarray as xr
 
 # If the fixture is an xarray object, make sure to use .copy() to create a
@@ -598,5 +599,135 @@ def generate_dataset_by_frequency(
     ds["lat"].attrs["bounds"] = "lat_bnds"
     ds["lon"].attrs["bounds"] = "lon_bnds"
     ds["time"].attrs["bounds"] = "time_bnds"
+
+    return ds
+
+
+def generate_curvilinear_dataset() -> xr.Dataset:
+    """Generate a curvilinear Dataset with CF-compliant metadata.
+
+    The dataset includes variables for time, latitude, longitude, and their
+    respective bounds. It also contains a synthetic data variable (``test_var``)
+    and additional coordinate information.
+
+    Returns
+    -------
+    xr.Dataset
+        A curvilinear xarray Dataset with the following structure:
+        - Dimensions: time, nlat, nlon, vertices, d2, bnds
+        - Coordinates:
+            - lat (nlat, nlon): 2D latitude values
+            - lon (nlat, nlon): 2D longitude values
+            - nlat (nlat): Cell indices along the second dimension
+            - nlon (nlon): Cell indices along the first dimension
+            - time (time): Time values
+        - Data variables:
+            - test_var (time, nlat, nlon): Synthetic data array
+            - time_bnds (time, d2): Time bounds
+            - lat_bnds (nlat, nlon, vertices): Latitude bounds for each grid cell
+            - lon_bnds (nlat, nlon, vertices): Longitude bounds for each grid cell
+            - nlat_bnds (nlat, bnds): Bounds for nlat indices
+            - nlon_bnds (nlon, bnds): Bounds for nlon indices
+
+    Notes
+    -----
+    - The latitude and longitude bounds are calculated assuming uniform spacing.
+    - The time bounds are generated with a fixed 30-day offset.
+    - Metadata attributes are added to ensure CF-compliance.
+    """
+    # Define the dimensions
+    n_time = 4
+    n_lat = 4
+    n_lon = 4
+    n_vertices = 4
+
+    # Create a time range with 12 monthly points
+    time_vals = pd.date_range("2015-01-15", periods=n_time, freq="MS")
+
+    # Create a simple 1D lat/lon array and meshgrid for 2D lat/lon
+    lat_1d = np.linspace(-90, 90, n_lat)
+    lon_1d = np.linspace(-180, 180, n_lon)
+    lat_2d, lon_2d = np.meshgrid(lat_1d, lon_1d, indexing="ij")  # shape: (n_lat, n_lon)
+
+    # Create random data array for var.
+    var_data = np.zeros((n_time, n_lat, n_lon))
+
+    # Create time bounds (shape: (time, d2))
+    time_bnds_vals = np.stack(
+        [time_vals.values, (time_vals + pd.DateOffset(days=30)).values], axis=1
+    )
+
+    # Add bounds for lat_2d and lon_2d
+    lat_bnds_data = np.zeros((n_lat, n_lon, n_vertices))
+    lon_bnds_data = np.zeros((n_lat, n_lon, n_vertices))
+
+    # Calculate bounds for each grid cell
+    for i in range(n_lat):
+        for j in range(n_lon):
+            lat_bnds_data[i, j] = [
+                lat_2d[i, j] - (90 / n_lat),
+                lat_2d[i, j] - (90 / n_lat),
+                lat_2d[i, j] + (90 / n_lat),
+                lat_2d[i, j] + (90 / n_lat),
+            ]
+            lon_bnds_data[i, j] = [
+                lon_2d[i, j] - (180 / n_lon),
+                lon_2d[i, j] + (180 / n_lon),
+                lon_2d[i, j] + (180 / n_lon),
+                lon_2d[i, j] - (180 / n_lon),
+            ]
+
+    # Build the Dataset
+    ds = xr.Dataset(
+        data_vars={
+            "test_var": (("time", "nlat", "nlon"), var_data),
+            "time_bnds": (("time", "d2"), time_bnds_vals),
+            "lat_bnds": (("nlat", "nlon", "vertices"), lat_bnds_data),
+            "lon_bnds": (("nlat", "nlon", "vertices"), lon_bnds_data),
+            "nlat_bnds": (
+                ("nlat", "bnds"),
+                np.stack([np.arange(n_lat) - 0.5, np.arange(n_lat) + 0.5], axis=1),
+            ),
+            "nlon_bnds": (
+                ("nlon", "bnds"),
+                np.stack([np.arange(n_lon) - 0.5, np.arange(n_lon) + 0.5], axis=1),
+            ),
+        },
+        coords={
+            # 2D lat/lon fields
+            "lat": (("nlat", "nlon"), lat_2d),
+            "lon": (("nlat", "nlon"), lon_2d),
+            # Main coordinates
+            "nlat": ("nlat", np.arange(n_lat)),
+            "nlon": ("nlon", np.arange(n_lon)),
+            "time": ("time", time_vals),
+        },
+    )
+
+    # Add CF metadata to time, lat, and lon
+    ds["time"].attrs = {
+        "standard_name": "time",
+        "long_name": "time",
+        "bounds": "time_bnds",
+        "units": "days since 2015-01-01",
+        "calendar": "gregorian",
+    }
+
+    ds["lat"].attrs = {
+        "standard_name": "latitude",
+        "long_name": "latitude",
+        "units": "degrees_north",
+        "bounds": "lat_bnds",
+    }
+
+    ds["lon"].attrs = {
+        "standard_name": "longitude",
+        "long_name": "longitude",
+        "units": "degrees_east",
+        "bounds": "lon_bnds",
+    }
+
+    ds["nlat"].attrs = {"long_name": "cell index along second dimension", "units": "1"}
+    ds["nlon"].attrs = {"long_name": "cell index along first dimension", "units": "1"}
 
     return ds

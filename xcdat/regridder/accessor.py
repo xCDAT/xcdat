@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, List, Literal, Tuple
+from typing import Any, Dict, List, Literal, Tuple
 
 import xarray as xr
 
-from xcdat.axis import CF_ATTR_MAP, CFAxisKey, get_dim_coords
+from xcdat.axis import VAR_NAME_MAP, CFAxisKey, get_dim_coords
 from xcdat.regridder import regrid2, xesmf, xgcm
 from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
 
@@ -81,74 +81,113 @@ class RegridderAccessor:
 
         >>> grid = ds.regridder.grid
         """
-        with xr.set_options(keep_attrs=True):
-            coords = {}
-            axis_names: List[CFAxisKey] = ["X", "Y", "Z"]
+        axis_names: List[CFAxisKey] = ["X", "Y", "Z"]
 
+        axis_coords: Dict[str, xr.DataArray] = {}
+        axis_bounds: Dict[str, xr.DataArray] = {}
+        axis_has_bounds: Dict[CFAxisKey, bool] = {}
+
+        with xr.set_options(keep_attrs=True):
             for axis in axis_names:
                 try:
-                    data, bnds = self._get_axis_data(axis)
+                    coord, bounds = self._get_axis_coord_and_bounds(axis)
+                    axis_coords[str(coord.name)] = coord
+
+                    if bounds is not None:
+                        axis_bounds[str(bounds.name)] = bounds
+                        axis_has_bounds[axis] = True
+                    else:
+                        axis_has_bounds[axis] = False
                 except KeyError:
+                    # Skip if the axis is not found.
                     continue
 
-                coords[data.name] = data.copy()
+        # Create a new dataset with coordinates and bounds
+        ds = xr.Dataset(
+            coords=axis_coords,
+            data_vars=axis_bounds,
+            attrs=self._ds.attrs,
+        )
 
-                if bnds is not None:
-                    coords[bnds.name] = bnds.copy()
-
-        ds = xr.Dataset(coords, attrs=self._ds.attrs)
-
-        ds = ds.bounds.add_missing_bounds(axes=["X", "Y", "Z"])
+        # Add bounds only for axes that do not already have them. This
+        # prevents multiple sets of bounds being added for the same axis.
+        # For example, curvilinear grids can have multiple coordinates for the
+        # same axis (e.g., (nlat, lat) for X and (nlon, lon) for Y). We only
+        # need lat_bnds and lon_bnds for the X and Y axes, respectively, and not
+        # nlat_bnds and nlon_bnds.
+        for axis, has_bounds in axis_has_bounds.items():
+            if not has_bounds:
+                ds = ds.bounds.add_bounds(axis=axis)
 
         return ds
 
-    def _get_axis_data(
+    def _get_axis_coord_and_bounds(
         self, name: CFAxisKey
-    ) -> Tuple[xr.DataArray | xr.Dataset, xr.DataArray]:
-        coord_var = get_dim_coords(self._ds, name)
+    ) -> Tuple[xr.DataArray, xr.DataArray | None]:
+        # Attempt to retrieve the coordinate variable by name, which is
+        # useful for curvilinear grids with multiple coordinates for the same
+        # axis (e.g., (nlat, lat) for X and (nlon, lon) for Y).
+        try:
+            coord_var = self._get_coord_by_name(name)
+        except KeyError:
+            coord_var = get_dim_coords(self._ds, name)  # type: ignore
 
         _validate_grid_has_single_axis_dim(name, coord_var)
 
-        coord_var = self._ensure_cf_compliance(coord_var, name)  # type: ignore
+        bounds_key = coord_var.attrs["bounds"]
 
         try:
-            bounds_var = self._ds.bounds.get_bounds(name, coord_var.name)
+            bounds_var = self._ds[bounds_key]
         except KeyError:
             bounds_var = None
 
         return coord_var, bounds_var
 
-    def _ensure_cf_compliance(
-        self, coord_var: xr.DataArray, name: CFAxisKey
-    ) -> xr.DataArray:
-        """Ensure that the coordinate variable is CF-compliant.
+    def _get_coord_by_name(self, name: CFAxisKey) -> xr.DataArray:
+        """Get the coordinate variable based on its name.
 
-        This function adds the "axis" and "standard_name" attributes to the
-        coordinates if they are not already present. Coordinates must be
-        CF-compliant in order for xESMF to interpret them using CF-xarray.
+        This method is useful for returning the desired coordinates for an
+        axis that has multiple sets of coordinates. For example, curvilinear
+        grids can have multiple coordinates for the same axis (e.g., (nlat,lat)
+        for X and (nlon,lon)) for Y.
+
+        This method will find the desired coordinates based on its name while
+        ensuring that the coordinate variable is 1D by dropping any extra
+        dimensions (e.g., "nlat" or "nlon").
 
         Parameters
         ----------
-        coords : xr.DataArray
-            Coordinates to make CF compliant.
         name : CFAxisKey
-            Name of the axis.
+            Name of the coordinate.
 
         Returns
         -------
         xr.DataArray
-            CF compliant coordinates.
+            The coordinate variable.
+
+        Raises
+        ------
+        KeyError
+            If the coordinate variable is not found in the dataset.
         """
-        coord_var_new = coord_var.copy()
-        cf_attrs = CF_ATTR_MAP[name]
+        coord_names = VAR_NAME_MAP[name]
 
-        if "axis" not in coord_var_new.attrs:
-            coord_var_new.attrs["axis"] = cf_attrs["axis"]
+        for coord_name in coord_names:
+            if coord_name in self._ds.coords:
+                coord = self._ds.coords[coord_name]
 
-        if "standard_name" not in coord_var_new.attrs:
-            coord_var_new.attrs["standard_name"] = cf_attrs["coordinate"]
+                # if coord.ndim > 1:
+                #     coord = xr.DataArray(
+                #         coord.values.flatten(),
+                #         coords={coord_name: coord.values.flatten()},
+                #         dims=[coord_name],
+                #         attrs=coord.attrs,
+                #         name=coord_name,
+                #     )
 
-        return coord_var_new
+                return coord
+
+        raise KeyError(f"Coordinate with name '{name}' not found in the dataset.")
 
     def horizontal(
         self,
