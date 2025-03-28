@@ -143,9 +143,6 @@ class RegridderAccessor:
         grids can have multiple coordinates for the same axis (e.g., (nlat,lat)
         for X and (nlon,lon)) for Y.
 
-        This method will find the desired coordinates based on its name while
-        ensuring that the coordinate variable is 1D by dropping any extra
-        dimensions (e.g., "nlat" or "nlon").
 
         Parameters
         ----------
