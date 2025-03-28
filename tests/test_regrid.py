@@ -1251,9 +1251,14 @@ class TestAccessor:
         assert "lat_bnds" in grid
         assert "lon_bnds" in grid
 
+        # Test that axes with multiple sets of coordinates raise an error.
         ds_multi = fixtures.generate_multiple_variable_dataset(
             1, separate_dims=True, decode_times=True, cf_compliant=True, has_bounds=True
         )
+        # "lat" and "lon" need to be renamed because they can be mapped to
+        # directly by their name, which means other sets of coordinates
+        # are ignored and no error is raised.
+        ds_multi = ds_multi.rename({"lat": "lat2", "lon": "lon2"})
 
         with pytest.raises(
             ValueError,
@@ -1279,8 +1284,9 @@ class TestAccessor:
         ds_bounds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=True, has_bounds=True
         )
-        ds_bounds.coords["lat2"] = xr.DataArray(
-            data=[], dims="lat2", attrs={"axis": "Y"}
+        ds_bounds = ds_bounds.rename({"lat": "lat_test"})
+        ds_bounds.coords["lat_test2"] = xr.DataArray(
+            data=[], dims="lat_test2", attrs={"axis": "Y"}
         )
 
         with pytest.raises(ValueError):

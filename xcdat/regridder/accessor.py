@@ -91,6 +91,9 @@ class RegridderAccessor:
             for axis in axis_names:
                 try:
                     coord, bounds = self._get_axis_coord_and_bounds(axis)
+                except KeyError:
+                    continue
+                else:
                     axis_coords[str(coord.name)] = coord
 
                     if bounds is not None:
@@ -98,9 +101,6 @@ class RegridderAccessor:
                         axis_has_bounds[axis] = True
                     else:
                         axis_has_bounds[axis] = False
-                except KeyError:
-                    # Skip if the axis is not found.
-                    continue
 
         # Create a new dataset with coordinates and bounds
         ds = xr.Dataset(
@@ -124,22 +124,14 @@ class RegridderAccessor:
     def _get_axis_coord_and_bounds(
         self, name: CFAxisKey
     ) -> Tuple[xr.DataArray, xr.DataArray | None]:
-        # Attempt to retrieve the coordinate variable by name, which is
-        # useful for curvilinear grids with multiple coordinates for the same
-        # axis (e.g., (nlat, lat) for X and (nlon, lon) for Y).
         try:
             coord_var = self._get_coord_by_name(name)
         except KeyError:
             coord_var = get_dim_coords(self._ds, name)  # type: ignore
+            _validate_grid_has_single_axis_dim(name, coord_var)
 
-        _validate_grid_has_single_axis_dim(name, coord_var)
-
-        bounds_key = coord_var.attrs["bounds"]
-
-        try:
-            bounds_var = self._ds[bounds_key]
-        except KeyError:
-            bounds_var = None
+        bounds_key = coord_var.attrs.get("bounds")
+        bounds_var = self._ds.get(bounds_key)
 
         return coord_var, bounds_var
 
