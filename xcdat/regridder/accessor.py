@@ -89,11 +89,9 @@ class RegridderAccessor:
 
         with xr.set_options(keep_attrs=True):
             for axis in axis_names:
-                try:
-                    coord, bounds = self._get_axis_coord_and_bounds(axis)
-                except KeyError:
-                    continue
-                else:
+                coord, bounds = self._get_axis_coord_and_bounds(axis)
+
+                if coord is not None:
                     axis_coords[str(coord.name)] = coord
 
                     if bounds is not None:
@@ -123,15 +121,27 @@ class RegridderAccessor:
 
     def _get_axis_coord_and_bounds(
         self, axis: CFAxisKey
-    ) -> Tuple[xr.DataArray, xr.DataArray | None]:
+    ) -> Tuple[xr.DataArray | None, xr.DataArray | None]:
         try:
             coord_var = get_coords_by_name(self._ds, axis)
+            if coord_var.size == 1:
+                raise ValueError(
+                    f"Coordinate '{coord_var}' is a singleton and cannot be used."
+                )
         except (ValueError, KeyError):
-            coord_var = get_dim_coords(self._ds, axis)  # type: ignore
-            _validate_grid_has_single_axis_dim(axis, coord_var)
+            try:
+                coord_var = get_dim_coords(self._ds, axis)  # type: ignore
+                _validate_grid_has_single_axis_dim(axis, coord_var)
+            except KeyError:
+                coord_var = None
 
+        if coord_var is None:
+            return None, None
+
+        bounds_var = None
         bounds_key = coord_var.attrs.get("bounds")
-        bounds_var = self._ds.get(bounds_key)
+        if bounds_key:
+            bounds_var = self._ds.get(bounds_key)
 
         return coord_var, bounds_var
 

@@ -249,23 +249,6 @@ class TestGetDimCoords:
 
 
 class TestGetCoordsByName:
-    def test_raises_error_if_coordinate_is_singleton(self):
-        ds = xr.Dataset(
-            coords={
-                "height": xr.DataArray(
-                    data=np.array([1]),
-                    dims=["height"],
-                    attrs={"standard_name": "height"},
-                )
-            }
-        )
-
-        with pytest.raises(
-            ValueError,
-            match="Coordinate 'height' is a singleton and cannot be used.",
-        ):
-            get_coords_by_name(ds, "Z")
-
     def test_raises_error_if_coordinate_not_found(self):
         ds = xr.Dataset(
             coords={
@@ -327,25 +310,6 @@ class TestGetCoordsByName:
 
         coord = get_coords_by_name(ds, "Y")
         assert coord.identical(ds["lat"])
-
-    def test_returns_coordinate_from_dataset_with_singleton_z_axis(self):
-        ds = xr.Dataset(
-            coords={
-                "height": xr.DataArray(
-                    data=np.array([10]),
-                    dims=["height"],
-                    attrs={"standard_name": "height"},
-                ),
-                "lat": xr.DataArray(data=np.arange(3), dims="lat"),
-                "lon": xr.DataArray(data=np.arange(3), dims="lon"),
-            }
-        )
-
-        with pytest.raises(
-            ValueError,
-            match="Coordinate 'height' is a singleton and cannot be used.",
-        ):
-            get_coords_by_name(ds, "Z")
 
 
 class TestCenterTimes:
