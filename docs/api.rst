@@ -27,6 +27,7 @@ Below is a list of top-level API functions that are available in ``xcdat``.
     compare_datasets
     get_dim_coords
     get_dim_keys
+    get_coords_by_name
     create_bounds
     create_axis
     create_gaussian_grid

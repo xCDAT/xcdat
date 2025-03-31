@@ -3,7 +3,9 @@ Axis module for utilities related to axes, including functions to manipulate
 coordinates.
 """
 
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from __future__ import annotations
+
+from typing import Dict, List, Literal, Optional, Tuple
 
 import numpy as np
 import xarray as xr
@@ -22,16 +24,14 @@ CFStandardNameKey = Literal[
 # we can fetch specific `cf_xarray` mapping tables such as `ds.cf.axes["X"]`
 # or `ds.cf.coordinates["longitude"]`.
 # More information: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html
-CF_ATTR_MAP: Dict[CFAxisKey, Dict[str, Union[CFAxisKey, CFStandardNameKey]]] = {
+CF_ATTR_MAP: Dict[CFAxisKey, Dict[str, CFAxisKey | CFStandardNameKey]] = {
     "X": {"axis": "X", "coordinate": "longitude"},
     "Y": {"axis": "Y", "coordinate": "latitude"},
     "T": {"axis": "T", "coordinate": "time"},
     "Z": {"axis": "Z", "coordinate": "vertical"},
 }
 
-COORD_DEFAULT_ATTRS: Dict[
-    CFAxisKey, Dict[str, Union[str, CFAxisKey, CFStandardNameKey]]
-] = {
+COORD_DEFAULT_ATTRS: Dict[CFAxisKey, Dict[str, str | CFAxisKey | CFStandardNameKey]] = {
     "X": dict(units="degrees_east", **CF_ATTR_MAP["X"]),
     "Y": dict(units="degrees_north", **CF_ATTR_MAP["Y"]),
     "T": dict(calendar="standard", **CF_ATTR_MAP["T"]),
@@ -49,9 +49,7 @@ VAR_NAME_MAP: Dict[CFAxisKey, List[str]] = {
 }
 
 
-def get_dim_keys(
-    obj: Union[xr.Dataset, xr.DataArray], axis: CFAxisKey
-) -> Union[str, List[str]]:
+def get_dim_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> str | List[str]:
     """Gets the dimension key(s) for an axis.
 
     Each dimension should have a corresponding dimension coordinate variable,
@@ -61,14 +59,14 @@ def get_dim_keys(
 
     Parameters
     ----------
-    obj : Union[xr.Dataset, xr.DataArray]
+    obj : xr.Dataset | xr.DataArray
         The Dataset or DataArray object.
     axis : CFAxisKey
         The CF axis key ("X", "Y", "T", or "Z")
 
     Returns
     -------
-    Union[str, List[str]]
+    str | List[str]
         The dimension string or a list of dimensions strings for an axis.
     """
     dims = sorted([str(dim) for dim in get_dim_coords(obj, axis).dims])
@@ -77,8 +75,8 @@ def get_dim_keys(
 
 
 def get_dim_coords(
-    obj: Union[xr.Dataset, xr.DataArray], axis: CFAxisKey
-) -> Union[xr.Dataset, xr.DataArray]:
+    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey
+) -> xr.Dataset | xr.DataArray:
     """Gets the dimension coordinates for an axis.
 
     This function uses ``cf_xarray`` to attempt to map the axis to its
@@ -94,14 +92,14 @@ def get_dim_coords(
 
     Parameters
     ----------
-    obj : Union[xr.Dataset, xr.DataArray]
+    obj : xr.Dataset | xr.DataArray
         The Dataset or DataArray object.
     axis : CFAxisKey
         The CF axis key ("X", "Y", "T", "Z").
 
     Returns
     -------
-    Union[xr.Dataset, xr.DataArray]
+    xr.Dataset | xr.DataArray
         A Dataset of dimension coordinate variables or a DataArray for
         the single dimension coordinate variable.
 
@@ -154,6 +152,52 @@ def get_dim_coords(
     ].copy()
 
     return dim_coords
+
+
+def get_coords_by_name(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> xr.DataArray:
+    """Retrieve the coordinate variable based on its name.
+
+    This method is useful for returning the desired coordinate in the following
+    cases:
+
+    - Coordinates that are not CF-compliant (e.g., missing CF attributes like
+      "axis", "standard_name", or "long_name") but use common names.
+    - Axes with multiple sets of coordinates. For example, curvilinear grids may
+      have multiple coordinates for the same axis (e.g., (nlat, lat) for X and
+      (nlon, lon) for Y). In most cases, "lat" and "lon" are the desired
+      coordinates, which this function will return.
+
+    Common variable names for each axis (from ``VAR_NAME_MAP``):
+
+    - "X" axis: ["longitude", "lon"]
+    - "Y" axis: ["latitude", "lat"]
+    - "T" axis: ["time"]
+    - "Z" axis: ["vertical", "height", "pressure", "lev", "plev"]
+
+    Parameters
+    ----------
+    axis : CFAxisKey
+        The CF axis key ("X", "Y", "T", or "Z").
+
+    Returns
+    -------
+    xr.DataArray
+        The coordinate variable.
+
+    Raises
+    ------
+    KeyError
+        If the coordinate variable is not found in the dataset.
+    """
+    coord_names = VAR_NAME_MAP[axis]
+
+    for coord_name in coord_names:
+        if coord_name in obj.coords:
+            coord = obj.coords[coord_name]
+
+            return coord
+
+    raise KeyError(f"Coordinate with name '{axis}' not found in the dataset.")
 
 
 def center_times(dataset: xr.Dataset) -> xr.Dataset:
@@ -275,9 +319,7 @@ def swap_lon_axis(
     return ds
 
 
-def _get_all_coord_keys(
-    obj: Union[xr.Dataset, xr.DataArray], axis: CFAxisKey
-) -> List[str]:
+def _get_all_coord_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> List[str]:
     """Gets all dimension and non-dimension coordinate keys for an axis.
 
     This function uses ``cf_xarray`` to interpret CF axis and coordinate name
@@ -289,7 +331,7 @@ def _get_all_coord_keys(
 
     Parameters
     ----------
-    obj : Union[xr.Dataset, xr.DataArray]
+    obj : xr.Dataset | xr.DataArray
         The Dataset or DataArray object.
     axis : CFAxisKey
         The CF axis key ("X", "Y", "T", or "Z").

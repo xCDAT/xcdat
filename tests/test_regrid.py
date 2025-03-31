@@ -1251,9 +1251,14 @@ class TestAccessor:
         assert "lat_bnds" in grid
         assert "lon_bnds" in grid
 
+        # Test that axes with multiple sets of coordinates raise an error.
         ds_multi = fixtures.generate_multiple_variable_dataset(
             1, separate_dims=True, decode_times=True, cf_compliant=True, has_bounds=True
         )
+        # "lat" and "lon" need to be renamed because they can be mapped to
+        # directly by their name, which means other sets of coordinates
+        # are ignored and no error is raised.
+        ds_multi = ds_multi.rename({"lat": "lat2", "lon": "lon2"})
 
         with pytest.raises(
             ValueError,
@@ -1261,12 +1266,54 @@ class TestAccessor:
         ):
             ds_multi.regridder.grid  # noqa: B018
 
+    def test_grid_curvilinear(self):
+        ds = fixtures.generate_curvilinear_dataset()
+
+        result = ds.regridder.grid
+        expected = xr.Dataset(
+            coords={"lat": ds.lat, "lon": ds.lon, "nlon": ds.nlon, "nlat": ds.nlat},
+            data_vars={
+                "lat_bnds": ds.lat_bnds,
+                "lon_bnds": ds.lon_bnds,
+            },
+        )
+
+        xr.testing.assert_identical(result, expected)
+
+    def test_grid_curvilinear_ignores_singleton_for_Z_axis(self):
+        ds = fixtures.generate_curvilinear_dataset()
+        ds = ds.assign_coords(
+            height=xr.DataArray(
+                2.0,
+                attrs={
+                    "axis": "Z",
+                    "units": "m",
+                    "positive": "up",
+                    "long_name": "height",
+                },
+            )
+        )
+
+        result = ds.regridder.grid
+
+        # The resulting grid should not have a Z axis.
+        expected = xr.Dataset(
+            coords={"lat": ds.lat, "lon": ds.lon, "nlon": ds.nlon, "nlat": ds.nlat},
+            data_vars={
+                "lat_bnds": ds.lat_bnds,
+                "lon_bnds": ds.lon_bnds,
+            },
+        )
+
+        xr.testing.assert_identical(result, expected)
+
     def test_grid_raises_error_when_dataset_has_multiple_dims_for_an_axis(self):
         ds_bounds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=True, has_bounds=True
         )
-        ds_bounds.coords["lat2"] = xr.DataArray(
-            data=[], dims="lat2", attrs={"axis": "Y"}
+        ds_bounds = ds_bounds.rename({"lat": "lat_test"})
+        ds_bounds.coords["lat_test2"] = xr.DataArray(
+            data=[], dims="lat_test2", attrs={"axis": "Y"}
         )
 
         with pytest.raises(ValueError):

@@ -50,39 +50,37 @@ def open_dataset(
     add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
     **kargs,
 ) -> xr.Dataset:
-    """
-     Open a dataset from the online repository (requires internet).
+    """Open a dataset from the online repository (requires internet).
 
     This function is mostly based on ``xarray.tutorial.open_dataset()`` with
     some modifications, including adding missing bounds to the dataset.
 
     If a local copy is found then always use that to avoid network traffic.
 
-     Available xCDAT datasets:
+    Available xCDAT datasets:
 
-     * ``"pr_amon_access"``: Monthly precipitation data from the ACCESS-ESM1-5 model.
-     * ``"so_omon_cesm2"``: Monthly ocean salinity data from the CESM2 model.
-     * ``"tas_amon_access"``: Monthly near-surface air temperature from the ACCESS-ESM1-5 model.
-     * ``"tas_3hr_access"``: 3-hourly near-surface air temperature from the ACCESS-ESM1-5 model.
-     * ``"tas_amon_canesm5"``: Monthly near-surface air temperature from the CanESM5 model.
-     * ``"thetao_omon_cesm2"``: Monthly ocean potential temperature from the CESM2 model.
-     * ``"cl_amon_e3sm2"``: Monthly cloud fraction data from the E3SM-2-0 model.
-     * ``"ta_amon_e3sm2"``: Monthly air temperature data from the E3SM-2-0 model.
+    - ``"pr_amon_access"``: Monthly precipitation data from the ACCESS-ESM1-5 model.
+    - ``"so_omon_cesm2"``: Monthly ocean salinity data from the CESM2 model.
+    - ``"tas_amon_access"``: Monthly near-surface air temperature from the ACCESS-ESM1-5 model.
+    - ``"tas_3hr_access"``: 3-hourly near-surface air temperature from the ACCESS-ESM1-5 model.
+    - ``"tas_amon_canesm5"``: Monthly near-surface air temperature from the CanESM5 model.
+    - ``"thetao_omon_cesm2"``: Monthly ocean potential temperature from the CESM2 model.
+    - ``"cl_amon_e3sm2"``: Monthly cloud fraction data from the E3SM-2-0 model.
+    - ``"ta_amon_e3sm2"``: Monthly air temperature data from the E3SM-2-0 model.
 
-     Parameters
-     ----------
-     name : str
-         Name of the file containing the dataset.
-         e.g. 'tas_amon_access'
-     cache_dir : path-like, optional
-         The directory in which to search for and write cached data.
-     cache : bool, optional
-         If True, then cache data locally for use on subsequent calls
-     add_bounds : List[CFAxisKey] | Tuple[CFAxisKey] | None, optional
-         List or tuple of axis keys for which to add bounds, by default
-         ("X", "Y").
-     **kargs : dict, optional
-         Passed to ``xcdat.open_dataset``.
+    Parameters
+    ----------
+    name : str
+        Name of the file containing the dataset (e.g., "tas_amon_access").
+    cache_dir : path-like, optional
+        The directory in which to search for and write cached data.
+    cache : bool, optional
+        If True, then cache data locally for use on subsequent calls
+    add_bounds : List[CFAxisKey] | Tuple[CFAxisKey] | None, optional
+        List or tuple of axis keys for which to add bounds, by default
+    ("X", "Y").
+    **kargs : dict, optional
+        Passed to ``xcdat.open_dataset``.
     """
     try:
         import pooch

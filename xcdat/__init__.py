@@ -3,6 +3,7 @@
 from xcdat import tutorial  # noqa: F401
 from xcdat.axis import (  # noqa: F401
     center_times,
+    get_coords_by_name,
     get_dim_coords,
     get_dim_keys,
     swap_lon_axis,
