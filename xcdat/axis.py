@@ -156,6 +156,57 @@ def get_dim_coords(
     return dim_coords
 
 
+def get_coords_by_name(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> xr.DataArray:
+    """Retrieve the coordinate variable based on its name.
+
+    This method is useful for returning the desired coordinate in the following
+    cases:
+    - Coordinates that are not CF-compliant (e.g., missing CF attributes like
+      "axis", "standard_name", or "long_name") but use common names.
+    - Axes with multiple sets of coordinates. For example, curvilinear grids may
+      have multiple coordinates for the same axis (e.g., (nlat, lat) for X and
+      (nlon, lon) for Y). In most cases, "lat" and "lon" are the desired
+      coordinates, which this function will return.
+
+    Common variable names for each axis (from ``VAR_NAME_MAP``):
+    - "X" axis: ["longitude", "lon"]
+    - "Y" axis: ["latitude", "lat"]
+    - "T" axis: ["time"]
+    - "Z" axis: ["vertical", "height", "pressure", "lev", "plev"]
+
+    Parameters
+    ----------
+    axis : CFAxisKey
+        The CF axis key ("X", "Y", "T", or "Z").
+
+    Returns
+    -------
+    xr.DataArray
+        The coordinate variable.
+
+    Raises
+    ------
+    ValueError
+        If the coordinate variable is a singleton (size == 1).
+    KeyError
+        If the coordinate variable is not found in the dataset.
+    """
+    coord_names = VAR_NAME_MAP[axis]
+
+    for coord_name in coord_names:
+        if coord_name in obj.coords:
+            coord = obj.coords[coord_name]
+
+            if coord.size == 1:
+                raise ValueError(
+                    f"Coordinate '{coord_name}' is a singleton and cannot be used."
+                )
+
+            return coord
+
+    raise KeyError(f"Coordinate with name '{axis}' not found in the dataset.")
+
+
 def center_times(dataset: xr.Dataset) -> xr.Dataset:
     """Centers time coordinates using the midpoint between time bounds.
 

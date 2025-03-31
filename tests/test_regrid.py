@@ -1280,6 +1280,33 @@ class TestAccessor:
 
         xr.testing.assert_identical(result, expected)
 
+    def test_grid_curvilinear_ignores_singleton_for_Z_axis(self):
+        ds = fixtures.generate_curvilinear_dataset()
+        ds = ds.assign_coords(
+            height=xr.DataArray(
+                2.0,
+                attrs={
+                    "axis": "Z",
+                    "units": "m",
+                    "positive": "up",
+                    "long_name": "height",
+                },
+            )
+        )
+
+        result = ds.regridder.grid
+
+        # The resulting grid should not have a Z axis.
+        expected = xr.Dataset(
+            coords={"lat": ds.lat, "lon": ds.lon, "nlon": ds.nlon, "nlat": ds.nlat},
+            data_vars={
+                "lat_bnds": ds.lat_bnds,
+                "lon_bnds": ds.lon_bnds,
+            },
+        )
+
+        xr.testing.assert_identical(result, expected)
+
     def test_grid_raises_error_when_dataset_has_multiple_dims_for_an_axis(self):
         ds_bounds = fixtures.generate_dataset(
             decode_times=True, cf_compliant=True, has_bounds=True

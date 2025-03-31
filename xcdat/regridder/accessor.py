@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Literal, Tuple
 
 import xarray as xr
 
-from xcdat.axis import VAR_NAME_MAP, CFAxisKey, get_dim_coords
+from xcdat.axis import CFAxisKey, get_coords_by_name, get_dim_coords
 from xcdat.regridder import regrid2, xesmf, xgcm
 from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
 
@@ -122,51 +122,18 @@ class RegridderAccessor:
         return ds
 
     def _get_axis_coord_and_bounds(
-        self, name: CFAxisKey
+        self, axis: CFAxisKey
     ) -> Tuple[xr.DataArray, xr.DataArray | None]:
         try:
-            coord_var = self._get_coord_by_name(name)
-        except KeyError:
-            coord_var = get_dim_coords(self._ds, name)  # type: ignore
-            _validate_grid_has_single_axis_dim(name, coord_var)
+            coord_var = get_coords_by_name(self._ds, axis)
+        except (ValueError, KeyError):
+            coord_var = get_dim_coords(self._ds, axis)  # type: ignore
+            _validate_grid_has_single_axis_dim(axis, coord_var)
 
         bounds_key = coord_var.attrs.get("bounds")
         bounds_var = self._ds.get(bounds_key)
 
         return coord_var, bounds_var
-
-    def _get_coord_by_name(self, name: CFAxisKey) -> xr.DataArray:
-        """Get the coordinate variable based on its name.
-
-        This method is useful for returning the desired coordinates for an
-        axis that has multiple sets of coordinates. For example, curvilinear
-        grids can have multiple coordinates for the same axis (e.g., (nlat,lat)
-        for X and (nlon,lon)) for Y.
-
-        Parameters
-        ----------
-        name : CFAxisKey
-            Name of the coordinate.
-
-        Returns
-        -------
-        xr.DataArray
-            The coordinate variable.
-
-        Raises
-        ------
-        KeyError
-            If the coordinate variable is not found in the dataset.
-        """
-        coord_names = VAR_NAME_MAP[name]
-
-        for coord_name in coord_names:
-            if coord_name in self._ds.coords:
-                coord = self._ds.coords[coord_name]
-
-                return coord
-
-        raise KeyError(f"Coordinate with name '{name}' not found in the dataset.")
 
     def horizontal(
         self,

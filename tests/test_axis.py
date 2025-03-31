@@ -6,6 +6,7 @@ from tests.fixtures import generate_dataset
 from xcdat.axis import (
     CFAxisKey,
     center_times,
+    get_coords_by_name,
     get_dim_coords,
     get_dim_keys,
     swap_lon_axis,
@@ -245,6 +246,106 @@ class TestGetDimCoords:
         expected = self.ds_sn.lev
 
         assert result.identical(expected)
+
+
+class TestGetCoordsByName:
+    def test_raises_error_if_coordinate_is_singleton(self):
+        ds = xr.Dataset(
+            coords={
+                "height": xr.DataArray(
+                    data=np.array([1]),
+                    dims=["height"],
+                    attrs={"standard_name": "height"},
+                )
+            }
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="Coordinate 'height' is a singleton and cannot be used.",
+        ):
+            get_coords_by_name(ds, "Z")
+
+    def test_raises_error_if_coordinate_not_found(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(data=np.ones(3), dims="lat"),
+                "lon": xr.DataArray(data=np.ones(3), dims="lon"),
+            }
+        )
+
+        with pytest.raises(
+            KeyError, match="Coordinate with name 'T' not found in the dataset."
+        ):
+            get_coords_by_name(ds, "T")
+
+    def test_returns_coordinate_from_dataset(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": xr.DataArray(data=np.ones(3), dims="lat"),
+                "lon": xr.DataArray(data=np.ones(3), dims="lon"),
+                "time": xr.DataArray(data=np.arange(3), dims="time"),
+            }
+        )
+
+        coord = get_coords_by_name(ds, "T")
+        assert coord.identical(ds["time"])
+
+    def test_returns_coordinate_from_dataarray(self):
+        da = xr.DataArray(
+            data=np.random.rand(3, 3),
+            dims=["lat", "lon"],
+            coords={
+                "lat": xr.DataArray(data=np.arange(3), dims="lat"),
+                "lon": xr.DataArray(data=np.arange(3), dims="lon"),
+            },
+        )
+
+        coord = get_coords_by_name(da, "X")
+        assert coord.identical(da["lon"])
+
+    def test_returns_coordinate_from_curvilinear_dataset(self):
+        ds = xr.Dataset(
+            coords={
+                "nlat": xr.DataArray(data=np.arange(3), dims="nlat"),
+                "nlon": xr.DataArray(data=np.arange(3), dims="nlon"),
+                "lat": xr.DataArray(
+                    data=np.random.rand(3, 3),
+                    dims=["nlat", "nlon"],
+                    attrs={"standard_name": "latitude"},
+                ),
+                "lon": xr.DataArray(
+                    data=np.random.rand(3, 3),
+                    dims=["nlat", "nlon"],
+                    attrs={"standard_name": "longitude"},
+                ),
+            }
+        )
+
+        coord = get_coords_by_name(ds, "X")
+        assert coord.identical(ds["lon"])
+
+        coord = get_coords_by_name(ds, "Y")
+        assert coord.identical(ds["lat"])
+
+    def test_returns_coordinate_from_dataset_with_singleton_z_axis(self):
+        ds = xr.Dataset(
+            coords={
+                "height": xr.DataArray(
+                    data=np.array([10]),
+                    dims=["height"],
+                    attrs={"standard_name": "height"},
+                ),
+                "lat": xr.DataArray(data=np.arange(3), dims="lat"),
+                "lon": xr.DataArray(data=np.arange(3), dims="lon"),
+            }
+        )
+
+        with pytest.raises(
+            ValueError,
+            match="Coordinate 'height' is a singleton and cannot be used.",
+        ):
+            get_coords_by_name(ds, "Z")
 
 
 class TestCenterTimes:
