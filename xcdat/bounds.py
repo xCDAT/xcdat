@@ -26,6 +26,10 @@ from xcdat.temporal import (
 
 logger = _setup_custom_logger(__name__)
 
+# A list of valid bounds dimension names, useful for dynamic retrieval using
+# get_bounds_dim().
+VALID_BOUNDS_DIMS = ["bnds", "bnd", "bounds", "bound"]
+
 
 @xr.register_dataset_accessor("bounds")
 class BoundsAccessor:
@@ -1007,3 +1011,40 @@ def create_bounds(axis: CFAxisKey, coord_var: xr.DataArray) -> xr.DataArray:
     )
 
     return bounds
+
+
+def get_bounds_dim(da_bounds: xr.DataArray) -> str:
+    """Identify the bounds dimension in the given bounds DataArray.
+
+    This function checks the dimensions of the provided DataArray to find
+    a valid bounds dimension. Valid bounds dimensions include "bnds", "bnd",
+    "bounds", and "bound".
+
+    Parameters
+    ----------
+    da_bounds : xr.DataArray
+        The bounds DataArray whose dimensions are to be checked for a valid
+        bounds dimension.
+
+    Returns
+    -------
+    str
+        The name of the valid bounds dimension found in the DataArray.
+
+    Raises
+    ------
+    ValueError
+        If no valid bounds dimension is found in the DataArray.
+
+    Notes
+    -----
+    This function is designed to work with DataArrays that include a dimension
+    representing bounds, which is commonly used in geospatial or temporal data.
+    """
+    for dim in VALID_BOUNDS_DIMS:
+        if dim in da_bounds.dims:
+            return dim
+
+    raise ValueError(
+        f"Invalid bounds dimension. Supported dimensions include: {VALID_BOUNDS_DIMS}."
+    )
