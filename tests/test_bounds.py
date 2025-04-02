@@ -12,7 +12,7 @@ from tests.fixtures import (
     lat_bnds,
     lon_bnds,
 )
-from xcdat.bounds import BoundsAccessor
+from xcdat.bounds import BoundsAccessor, get_bounds_dim
 
 logger = logging.getLogger(__name__)
 
@@ -1059,3 +1059,22 @@ class TestAddTimeBounds:
         )
 
         assert result.identical(expected)
+
+
+class TestGetBoundsDim:
+    def test_raises_error_if_no_valid_bounds_dim(self):
+        da_bounds = xr.DataArray(
+            data=np.array([[0, 1], [1, 2], [2, 3]]),
+            dims=["time", "invalid_dim"],
+        )
+        with pytest.raises(ValueError, match="Invalid bounds dimension"):
+            get_bounds_dim(da_bounds)
+
+    @pytest.mark.parametrize("dim", ["bnds", "bnd", "bounds", "bound"])
+    def test_returns_correct_bounds_dim(self, dim):
+        da_bounds = xr.DataArray(
+            data=np.array([[0, 1], [1, 2], [2, 3]]),
+            dims=["time", dim],
+        )
+        result = get_bounds_dim(da_bounds)
+        assert result == dim
