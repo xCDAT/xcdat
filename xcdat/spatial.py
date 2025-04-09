@@ -12,7 +12,6 @@ from typing import (
     Optional,
     Tuple,
     TypedDict,
-    Union,
     get_args,
 )
 
@@ -72,11 +71,11 @@ class SpatialAccessor:
         self,
         data_var: str,
         axis: List[SpatialAxis] | Tuple[SpatialAxis, ...] = ("X", "Y"),
-        weights: Union[Literal["generate"], xr.DataArray] = "generate",
+        weights: Literal["generate"] | xr.DataArray = "generate",
         keep_weights: bool = False,
         lat_bounds: Optional[RegionAxisBounds] = None,
         lon_bounds: Optional[RegionAxisBounds] = None,
-        skipna: Union[bool, None] = None,
+        skipna: bool | None = None,
     ) -> xr.Dataset:
         """
         Calculates the spatial average for a rectilinear grid over an optionally
@@ -502,13 +501,13 @@ class SpatialAccessor:
         return np.abs(domain_bounds[:, 1] - domain_bounds[:, 0])
 
     def _swap_lon_axis(
-        self, lon: Union[xr.DataArray, np.ndarray], to: Literal[180, 360]
-    ) -> Union[xr.DataArray, np.ndarray]:
+        self, lon: xr.DataArray | np.ndarray, to: Literal[180, 360]
+    ) -> xr.DataArray | np.ndarray:
         """Swap the longitude axis orientation.
 
         Parameters
         ----------
-        lon : Union[xr.DataArray, np.ndarray]
+        lon : xr.DataArray | np.ndarray
              Longitude values to convert.
         to : Literal[180, 360]
             Axis orientation to convert to, either 180 [-180, 180) or 360
@@ -516,7 +515,7 @@ class SpatialAccessor:
 
         Returns
         -------
-        Union[xr.DataArray, np.ndarray]
+        xr.DataArray | np.ndarray
             Converted longitude values.
 
         Notes
