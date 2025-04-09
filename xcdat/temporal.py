@@ -1618,8 +1618,8 @@ class TemporalAccessor:
         ----------
         .. [4] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
-        with xr.set_options(keep_attrs=True):
-            time_lengths: xr.DataArray = time_bounds[:, 1] - time_bounds[:, 0]
+        bounds_dim = bounds.get_bounds_dim(time_bounds)
+        time_lengths = time_bounds.diff(dim=bounds_dim).squeeze()
 
         # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
         # when using Dask arrays. Otherwise, the numpy warning below is thrown:
