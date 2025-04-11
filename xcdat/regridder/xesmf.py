@@ -78,6 +78,9 @@ class XESMFRegridder(BaseRegridder):
             regridding methods.
         unmapped_to_nan : bool
             Sets values of unmapped points to `np.nan` instead of 0 (ESMF default).
+        output_weights : Union[bool, str]
+            If True, output weights are added to the output dataset as weights.
+            If str, the name of the variable to store the weights. Default is False.
         **options : Any
             Additional arguments passed to the underlying ``xesmf.XESMFRegridder``
             constructor.

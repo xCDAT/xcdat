@@ -32,7 +32,12 @@ class Regrid2Regridder(BaseRegridder):
             Dataset containing the source grid.
         output_grid : xr.Dataset
             Dataset containing the destination grid.
-        options : Any
+        unmapped_to_nan : bool
+            If True, unmapped values are set to NaN. Default is True.
+        output_weights : Union[bool, str]
+            If True, output weights are added to the output dataset as weights.
+            If str, the name of the variable to store the weights. Default is False.
+        **options : Any
             Dictionary with extra parameters for the regridder.
 
         Examples
