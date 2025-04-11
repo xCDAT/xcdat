@@ -160,7 +160,6 @@ class XESMFRegridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        # import pdb; pdb.set_trace()
         regridder = xe.Regridder(
             self._input_grid,
             self._output_grid,
