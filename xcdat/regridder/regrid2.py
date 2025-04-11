@@ -1,11 +1,13 @@
 from typing import Any
 
 import numpy as np
+import sparse as sp
 import xarray as xr
 
 import xcdat as xc
 from xcdat.axis import get_dim_keys
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
+from xcdat.regridder.grid import create_mask, create_nan_mask
 
 
 class Regrid2Regridder(BaseRegridder):
@@ -13,7 +15,9 @@ class Regrid2Regridder(BaseRegridder):
         self,
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
-        unmapped_to_nan=True,
+        unmapped_to_nan: bool = True,
+        output_weights: bool | str = False,
+        create_nan_mask: bool = False,
         **options: Any,
     ):
         """
@@ -30,7 +34,15 @@ class Regrid2Regridder(BaseRegridder):
             Dataset containing the source grid.
         output_grid : xr.Dataset
             Dataset containing the destination grid.
-        options : Any
+        unmapped_to_nan : bool
+            If True, unmapped values are set to NaN. Default is True.
+        output_weights : bool | str
+            If True, output weights are added to the output dataset as weights.
+            If str, the name of the variable to store the weights. Default is False.
+        create_nan_mask : bool
+            If True, a mask is created using the nan values from source variable. If
+            a mask already exists in the Dataset it will be ignored.
+        **options : Any
             Dictionary with extra parameters for the regridder.
 
         Examples
@@ -55,6 +67,8 @@ class Regrid2Regridder(BaseRegridder):
         super().__init__(input_grid, output_grid, **options)
 
         self._unmapped_to_nan = unmapped_to_nan
+        self._output_weights = output_weights
+        self._create_nan_mask = create_nan_mask
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Placeholder for base class."""
@@ -75,13 +89,15 @@ class Regrid2Regridder(BaseRegridder):
         dst_lat_bnds = _get_bounds_ensure_dtype(self._output_grid, "Y")
         dst_lon_bnds = _get_bounds_ensure_dtype(self._output_grid, "X")
 
-        src_mask_da = self._input_grid.get("mask", None)
-
-        # DataArray to np.ndarray, handle error when None
-        try:
-            src_mask = src_mask_da.values  # type: ignore
-        except AttributeError:
-            src_mask = None
+        if self._create_nan_mask:
+            src_mask = create_nan_mask(input_data_var, ["Y", "X"]).values
+        else:
+            # DataArray to np.ndarray, handle error when None
+            try:
+                src_mask = self._input_grid.get("mask", None).values  # type: ignore
+            except AttributeError:
+                # regrid2 requires a mask, so create one
+                src_mask = create_mask(self._input_grid, ["Y", "X"]).values
 
         nan_replace = input_data_var.encoding.get("_FillValue", None)
 
@@ -91,13 +107,16 @@ class Regrid2Regridder(BaseRegridder):
         # exclude alternative of NaN values if there are any
         input_data_var = input_data_var.where(input_data_var != nan_replace)
 
+        lat_mapping, lat_weights = _map_latitude(src_lat_bnds, dst_lat_bnds)
+        lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
+
         # horizontal regrid
         output_data = _regrid(
             input_data_var,
-            src_lat_bnds,
-            src_lon_bnds,
-            dst_lat_bnds,
-            dst_lon_bnds,
+            lat_mapping,
+            lon_mapping,
+            lat_weights,
+            lon_weights,
             src_mask,
             unmapped_to_nan=self._unmapped_to_nan,
         )
@@ -110,24 +129,38 @@ class Regrid2Regridder(BaseRegridder):
             self._output_grid,
         )
 
+        if self._output_weights:
+            weights = _sparse_weights(
+                (len(src_lat_bnds), len(src_lon_bnds)),
+                (len(dst_lat_bnds), len(dst_lon_bnds)),
+                len(src_lon_bnds),
+                len(dst_lon_bnds),
+                lat_mapping,
+                lon_mapping,
+                lat_weights,
+                lon_weights,
+            )
+
+            if isinstance(self._output_weights, str):
+                output_ds[self._output_weights] = weights
+            else:
+                output_ds["weights"] = weights
+
         return output_ds
 
 
 def _regrid(
     input_data_var: xr.DataArray,
-    src_lat_bnds: np.ndarray,
-    src_lon_bnds: np.ndarray,
-    dst_lat_bnds: np.ndarray,
-    dst_lon_bnds: np.ndarray,
-    src_mask: np.ndarray | None,
+    lat_mapping: list[np.ndarray],
+    lon_mapping: list[np.ndarray],
+    lat_weights: list[np.ndarray],
+    lon_weights: list[np.ndarray],
+    src_mask: np.ndarray,
     omitted=None,
     unmapped_to_nan=True,
 ) -> np.ndarray:
     if omitted is None:
         omitted = np.nan
-
-    lat_mapping, lat_weights = _map_latitude(src_lat_bnds, dst_lat_bnds)
-    lon_mapping, lon_weights = _map_longitude(src_lon_bnds, dst_lon_bnds)
 
     # convert to pure numpy
     input_data = input_data_var.astype(np.float32).values
@@ -137,11 +170,6 @@ def _regrid(
 
     y_length = len(lat_mapping)
     x_length = len(lon_mapping)
-
-    if src_mask is None:
-        input_data_shape = input_data.shape
-
-        src_mask = np.ones((input_data_shape[y_index], input_data_shape[x_index]))
 
     other_dims = {
         x: y for x, y in input_data_var.sizes.items() if x not in (y_name, x_name)
@@ -268,6 +296,63 @@ def _build_dataset(
     output_ds = _preserve_bounds(ds, output_grid, output_ds, ["X", "Y"])
 
     return output_ds
+
+
+def _sparse_weights(
+    in_shape,
+    out_shape,
+    in_width,
+    out_width,
+    lat_mapping,
+    lon_mapping,
+    lat_weights,
+    lon_weights,
+):
+    """
+    Generates a sparse weight matrix for regridding.
+
+    Parameters
+    ----------
+    in_shape : tuple
+        Shape of the input grid.
+    out_shape : tuple
+        Shape of the output grid.
+    in_width : int
+        Width of the input grid row.
+    out_width : int
+        Width of the output grid row.
+    lat_mapping : list
+        List of latitude mappings.
+    lon_mapping : list
+        List of longitude mappings.
+    lat_weights : list
+        List of latitude weights.
+    lon_weights : list
+        List of longitude weights.
+
+    Returns
+    -------
+    xr.DataArray
+        A sparse weight matrix for regridding.
+    """
+    weights = np.zeros((np.prod(out_shape), np.prod(in_shape)), dtype=np.float32)
+
+    for i, y in enumerate(lat_mapping):
+        for j, x in enumerate(lon_mapping):
+            # destination index
+            dst_row = i * out_width + j
+
+            # list of source indexes
+            src_col = ((y * in_width).reshape((-1, 1)) + x).flatten()
+
+            # assign weights to matrix
+            weights[dst_row, src_col] = np.dot(lat_weights[i], lon_weights[j]).flatten()
+
+    # reshape from 2D (src, dest) to 4D (src y, src x, dest y, dest x), then convert to sparse
+    # provides user with simple way to explore weights and mapping
+    sparse_weights = sp.COO.from_numpy(weights).reshape(out_shape + in_shape)
+
+    return xr.DataArray(sparse_weights, dims=["y_out", "x_out", "y_in", "x_in"])
 
 
 def _get_output_coords(

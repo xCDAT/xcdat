@@ -26,104 +26,109 @@ class XGCMRegridder(BaseRegridder):
         **options: Any,
     ):
         """
-        Extension of ``xgcm`` regridder.
+                Extension of ``xgcm`` regridder.
 
-        The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the
-        ``Grid`` object, transposing the output data to match the dimensional
-        order of the input data, and ensuring bounds and metadata are preserved
-        in the output dataset.
+                The ``XGCMRegridder`` extends ``xgcm`` by automatically constructing the
+                ``Grid`` object, transposing the output data to match the dimensional
+                order of the input data, and ensuring bounds and metadata are preserved
+                in the output dataset.
 
-        Linear and log methods require a single dimension position, which can
-        usually be automatically derived. A custom position can be specified using
-        the `grid_positions` argument.
+                Linear and log methods require a single dimension position, which can
+                usually be automatically derived. A custom position can be specified using
+                the `grid_positions` argument.
 
-        Conservative regridding requires multiple dimension positions, e.g.,
-        {"center": "xc", "left": "xg"} which can be passed using the `grid_positions`
-        argument.
+                Conservative regridding requires multiple dimension positions, e.g.,
+                {"center": "xc", "left": "xg"} which can be passed using the `grid_positions`
+                argument.
 
-        ``xgcm.Grid`` can be passed additional arguments using ``extra_init_options``.
-        These arguments can be found on `XGCM's Grid documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.__init__>`_.
+                ``xgcm.Grid`` can be passed additional arguments using ``extra_init_options``.
+                These arguments can be found on `XGCM's Grid documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.__init__>`_.
 
-        ``xgcm.Grid.transform`` can be passed additional arguments using ``options``.
-        These arguments can be found on `XGCM's Grid.transform documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.transform>`_.
+                ``xgcm.Grid.transform`` can be passed additional arguments using ``options``.
+                These arguments can be found on `XGCM's Grid.transform documentation <https://xgcm.readthedocs.io/en/latest/api.html#xgcm.Grid.transform>`_.
 
-        Parameters
-        ----------
-        input_grid : xr.Dataset
-            Contains source grid coordinates.
-        output_grid : xr.Dataset
-            Contains destination grid coordinates.
-        method : XGCMVerticalMethods
-            Regridding method, by default "linear". Options are
-               - linear (default)
-               - log
-               - conservative
-        target_data : str | xr.DataArray | None
-            Data to transform onto, if this is a str it can be the key of a
-            variable in the input dataset or "infer" to automatically
-            determine the vertical coordinate. If it is an ``xr.DataArray``, it
-            should be a vertical coordinate that is compatible with the
-            output grid. If ``None``, then the source levels are mapped to the
-            destination levels.
-        grid_positions : dict[str, str] | None
-            Mapping of dimension positions, by default None. If ``None`` then an
-            attempt is made to derive this argument.
-        periodic : bool
-            Whether the grid is periodic, by default False.
-        extra_init_options : dict[str, Any] | None
-            Extra options passed to the ``xgcm.Grid`` constructor, by default
-            None.
-        options : dict[str, Any] | None
-            Extra options passed to the ``xgcm.Grid.transform`` method.
+                Parameters
+                ----------
+                input_grid : xr.Dataset
+                    Contains source grid coordinates.
+                output_grid : xr.Dataset
+                    Contains destination grid coordinates.
+                method : XGCMVerticalMethods
+                    Regridding method, by default "linear". Options are
+                       - linear (default)
+                       - log
+                       - conservative
+                target_data : str | xr.DataArray | None
+        <<<<<<< HEAD
+                    Data to transform onto, if this is a str it can be the key of a
+                    variable in the input dataset or "infer" to automatically
+                    determine the vertical coordinate. If it is an ``xr.DataArray``, it
+                    should be a vertical coordinate that is compatible with the
+                    output grid. If ``None``, then the source levels are mapped to the
+                    destination levels.
+        =======
+                                Data to transform target data onto, either the key of a variable
+                    in the input dataset or an ``xr.DataArray``, by default None.
+        >>>>>>> d3e6b8b (Adds option output_weights to xesmf and regrid2)
+                grid_positions : dict[str, str] | None
+                    Mapping of dimension positions, by default None. If ``None`` then an
+                    attempt is made to derive this argument.
+                periodic : bool
+                    Whether the grid is periodic, by default False.
+                extra_init_options : dict[str, Any] | None
+                    Extra options passed to the ``xgcm.Grid`` constructor, by default
+                    None.
+                options : dict[str, Any] | None
+                    Extra options passed to the ``xgcm.Grid.transform`` method.
 
-        Raises
-        ------
-        KeyError
-            If data variable does not exist in the Dataset.
-        ValueError
-            If ``method`` is not valid.
+                Raises
+                ------
+                KeyError
+                    If data variable does not exist in the Dataset.
+                ValueError
+                    If ``method`` is not valid.
 
-        Examples
-        --------
-        Import xCDAT:
+                Examples
+                --------
+                Import xCDAT:
 
-        >>> import xcdat
+                >>> import xcdat
 
-        Open a dataset:
+                Open a dataset:
 
-        >>> ds = xcdat.open_dataset("...")
+                >>> ds = xcdat.open_dataset("...")
 
-        Create output grid:
+                Create output grid:
 
-        >>> output_grid = xcdat.create_grid(lev=np.linspace(1000, 1, 5))
+                >>> output_grid = xcdat.create_grid(lev=np.linspace(1000, 1, 5))
 
-        Regrid data to ``output_grid``:
+                Regrid data to ``output_grid``:
 
-        >>> output_data = ds.regridder.vertical(
-        >>>     "so", output_grid, tool="xgcm", method="linear"
-        >>> )
+                >>> output_data = ds.regridder.vertical(
+                >>>     "so", output_grid, tool="xgcm", method="linear"
+                >>> )
 
-        Create pressure variable:
+                Create pressure variable:
 
-        >>> ds["pressure"] = (ds["hyam"] * ds["P0"] + ds["hybm"] * ds["PS"]).transpose(
-        >>>     **ds["T"].dims
-        >>> )
+                >>> ds["pressure"] = (ds["hyam"] * ds["P0"] + ds["hybm"] * ds["PS"]).transpose(
+                >>>     **ds["T"].dims
+                >>> )
 
-        Regrid data to ``output_grid`` in pressure space:
+                Regrid data to ``output_grid`` in pressure space:
 
-        >>> output_data = ds.regridder.vertical(
-        >>>     "so", output_grid, tool="xgcm", method="linear", target_data="pressure"
-        >>> )
+                >>> output_data = ds.regridder.vertical(
+                >>>     "so", output_grid, tool="xgcm", method="linear", target_data="pressure"
+                >>> )
 
-        Passing additional arguments to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
+                Passing additional arguments to ``xgcm.Grid`` and ``xgcm.Grid.transform``:
 
-        >>> regridder = xgcm.XGCMRegridder(
-        >>>     ds,
-        >>>     output_grid,
-        >>>     method="linear",
-        >>>     extra_init_options={"boundary": "fill", "fill_value": 1e27},
-        >>>     mask_edges=True
-        >>> )
+                >>> regridder = xgcm.XGCMRegridder(
+                >>>     ds,
+                >>>     output_grid,
+                >>>     method="linear",
+                >>>     extra_init_options={"boundary": "fill", "fill_value": 1e27},
+                >>>     mask_edges=True
+                >>> )
         """
         super().__init__(input_grid, output_grid)
 
