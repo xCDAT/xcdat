@@ -605,14 +605,21 @@ class TestRegrid2Regridder:
         assert np.all(output_data.ts == 1)
 
     def test_output_weigths(self):
-        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds, output_weights=True)
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, output_weights=True
+        )
 
         output_ds = regridder.horizontal("ts", self.coarse_2d_ds)
 
         assert "weights" in output_ds
-        assert output_ds["weights"].shape ==  self.fine_2d_ds["ts"].shape + self.coarse_2d_ds["ts"].shape
+        assert (
+            output_ds["weights"].shape
+            == self.fine_2d_ds["ts"].shape + self.coarse_2d_ds["ts"].shape
+        )
 
-        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds, output_weights="ts_weights")
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, output_weights="ts_weights"
+        )
 
         output_ds = regridder.horizontal("ts", self.coarse_2d_ds)
 
@@ -760,14 +767,21 @@ class TestXESMFRegridder:
     def test_output_weights(self):
         ds = self.ds.copy()
 
-        regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear", output_weights=True)
+        regridder = xesmf.XESMFRegridder(
+            ds, self.new_grid, "bilinear", output_weights=True
+        )
 
         output = regridder.horizontal("ts", ds)
 
         assert "weights" in output
-        assert output["weights"].shape == (self.new_grid["lat"].shape[0], self.new_grid["lon"].shape[0]) + (ds["lat"].shape[0], ds["lon"].shape[0])
+        assert output["weights"].shape == (
+            self.new_grid["lat"].shape[0],
+            self.new_grid["lon"].shape[0],
+        ) + (ds["lat"].shape[0], ds["lon"].shape[0])
 
-        regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear", output_weights="ts_weights")
+        regridder = xesmf.XESMFRegridder(
+            ds, self.new_grid, "bilinear", output_weights="ts_weights"
+        )
 
         output = regridder.horizontal("ts", ds)
 
