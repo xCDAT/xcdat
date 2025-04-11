@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any, Optional, Union
 
 import xarray as xr
 import xesmf as xe
@@ -29,6 +29,7 @@ class XESMFRegridder(BaseRegridder):
         extrap_num_src_pnts: Optional[int] = None,
         ignore_degenerate: bool = True,
         unmapped_to_nan: bool = True,
+        output_weights: Union[bool, str] = False,
         **options: Any,
     ):
         """Extension of ``xESMF`` regridder.
@@ -141,6 +142,7 @@ class XESMFRegridder(BaseRegridder):
         )
 
         self._extra_options = options
+        self._output_weights = output_weights
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Placeholder for base class."""
@@ -155,6 +157,7 @@ class XESMFRegridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
+        # import pdb; pdb.set_trace()
         regridder = xe.Regridder(
             self._input_grid,
             self._output_grid,
@@ -166,5 +169,11 @@ class XESMFRegridder(BaseRegridder):
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
         output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["X", "Y"])
+
+        if self._output_weights:
+            if isinstance(self._output_weights, str):
+                output_ds[self._output_weights] = regridder.w
+            else:
+                output_ds["weights"] = regridder.w
 
         return output_ds
