@@ -22,7 +22,7 @@ from xarray.core.variable import as_variable
 
 from xcdat import bounds as bounds_accessor  # noqa: F401
 from xcdat._logger import _setup_custom_logger
-from xcdat.axis import CFAxisKey, _get_all_coord_keys, swap_lon_axis
+from xcdat.axis import CFAxisKey, _get_all_coord_keys, get_dim_keys, swap_lon_axis
 from xcdat.axis import center_times as center_times_func
 
 logger = _setup_custom_logger(__name__)
@@ -746,3 +746,107 @@ def _get_data_var(dataset: xr.Dataset, key: str) -> xr.DataArray:
         raise KeyError(f"The data variable '{key}' does not exist in the Dataset.")
 
     return dv.copy()
+
+
+def get_bounded_dataarray(ds: xr.Dataset, key: str) -> xr.DataArray:
+    """
+    Convert a dataset to a dataarray with the bounds embedded as coordinates
+    (i.e., a bounded DataArray).
+
+    Parameters
+    ----------
+    dataset : xr.Dataset
+        The Dataset.
+    key : str
+        The data variable key.
+
+    Returns
+    -------
+    xr.DataArray
+        The bounded DataArray.
+
+    Raises
+    ------
+    KeyError
+        If the data variable does not exist in the Dataset.
+    """
+    ds = ds.copy()
+    # get dataarray
+    da = ds.get(key)
+    # check if dataarray exists
+    if da is None:
+        raise KeyError(f"The data variable '{key}' does not exist in the Dataset.")
+    # loop over coordinates to get coordinates and coordinate bounds
+    coords = {}
+    for c_key in ds[key].cf.axes.keys():
+        try:
+            # get dimension key (e.g., "time", "lat", "lon")
+            dim_key = get_dim_keys(ds, c_key)
+            # add axis to coordinate dict
+            coords[dim_key] = ds[dim_key]
+            # get coordinate dtype
+            dim_value_dtype = ds[dim_key].dtype
+            # create a bounds dtype (based on coordinate dtype)
+            bounds_dtype = np.dtype(
+                [("lower", dim_value_dtype), ("upper", dim_value_dtype)]
+            )
+            # get the bounds for axis
+            bnds = ds.bounds.get_bounds(axis=c_key)
+            # convert to expected form for bounds_dtype
+            newbnds = [tuple(row) for row in bnds.values]
+            # create new bounds object
+            newbnds = np.array(newbnds, dtype=bounds_dtype)
+            # add bounds to coordinate dict
+            coords[bnds.name] = (dim_key, newbnds)
+        except:  # noqa: E722
+            continue
+    # return dataarray with bounds
+    da = xr.DataArray(ds[key], coords=coords, dims=ds[key].dims, attrs=ds[key].attrs)
+    return da
+
+
+def boundedDataArray_to_dataset(bda):
+    """
+    Convert a bounded dataarray to a dataset.
+
+    Parameters
+    ----------
+    bda : xr.DataArray
+        The bounded dataarray.
+
+    Returns
+    -------
+    xr.Dataset
+        The dataset.
+
+    Notes
+    -----
+    Note that the .name attribute must be set in the dataarray.
+    """
+    # convert to dataset object
+    ds = bda.to_dataset()
+    # loop over coordinates and convert data array bound coordinates
+    # to bounds dataarrays
+    for c_key in ds.cf.axes.keys():
+        try:
+            # get dimension key (e.g., "time", "lat", "lon")
+            dim_key = get_dim_keys(ds, c_key)
+            # get bounds key
+            bnds_key = ds[dim_key].bounds
+            # get bounds in xr.dataset form
+            bnds = [[b[0], b[1]] for b in ds[bnds_key].to_numpy()]
+            # remove bounds from dataarray
+            del ds[bnds_key]
+            # create bounds dataarray
+            bda = xr.DataArray(
+                data=bnds, dims=[dim_key, "bnds"], coords={dim_key: ds[dim_key]}
+            )
+            # update bounds in output dataset
+            ds[bnds_key] = bda
+        except:  # noqa: E722
+            continue
+    return ds
+
+
+# add get_bounded_array call to xr dataset objects
+xr.Dataset.__call__ = get_bounded_dataarray
