@@ -532,7 +532,20 @@ def create_grid(
 
         ds = ds.assign_coords({coords.name: coords})
 
+    ds["mask"] = create_mask(ds)
+
     return ds
+
+
+def create_mask(ds: xr.Dataset, dims: Optional[List[CFAxisKey]] = None) -> xr.DataArray:
+    if dims is None:
+        dims = ["X", "Y", "Z"]
+
+    dims = list(dims)
+
+    mask_shape = {ds.cf[x].name: ds.cf[x].shape[0] for x in dims if x in ds.cf.axes}
+
+    return xr.DataArray(np.ones(list(mask_shape.values())), dims=list(mask_shape))
 
 
 def create_axis(
