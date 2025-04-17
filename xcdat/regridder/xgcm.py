@@ -163,17 +163,20 @@ class XGCMRegridder(BaseRegridder):
 
         target_data: Union[str, xr.DataArray, None] = None
 
-        try:
-            target_data = ds[self._target_data]
-        except ValueError:
-            target_data = self._target_data
-        except KeyError as e:
-            if self._target_data is not None and isinstance(self._target_data, str):
-                raise RuntimeError(
-                    f"Could not find target variable {self._target_data!r} in dataset"
-                ) from e
+        if isinstance(self._target_data, str) and self._target_data == "infer":
+            target_data = self._infer_target_data(ds)
+        else:
+            try:
+                target_data = ds[self._target_data]
+            except ValueError:
+                target_data = self._target_data
+            except KeyError as e:
+                if self._target_data is not None and isinstance(self._target_data, str):
+                    raise RuntimeError(
+                        f"Could not find target variable {self._target_data!r} in dataset"
+                    ) from e
 
-            target_data = None
+                target_data = None
 
         # assumes new verical coordinate has been calculated and stored as `pressure`
         # TODO: auto calculate pressure reference http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#parametric-v-coord
@@ -208,6 +211,26 @@ class XGCMRegridder(BaseRegridder):
         output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["Z"])
 
         return output_ds
+
+    def _infer_target_data(self, ds) -> Union[xr.DataArray, None]:
+        try:
+            zcoord = ds.cf["Z"]
+
+            ds.cf.decode_vertical_coords(
+                outnames={zcoord.name: "decoded_vertical_coord"}
+            )
+        except KeyError as e:
+            raise RuntimeError(
+                "Could not infer target data, missing z-coordinate."
+            ) from e
+
+        # decode_vertical_coord doesn't raise exception if it cannot decode
+        if "decoded_vertical_coord" not in ds:
+            raise RuntimeError(
+                f"Could not infer vertical coordinate for {zcoord.name!r}"
+            )
+
+        return ds.decoded_vertical_coord
 
     def _get_grid_positions(self) -> Dict[str, Union[Any, Hashable]]:
         if self._method == "conservative":
