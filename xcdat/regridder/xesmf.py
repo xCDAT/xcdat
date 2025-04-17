@@ -160,6 +160,12 @@ class XESMFRegridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
+        # align the grid dimension to input data ordering
+        if "mask" in self._output_grid:
+            self._output_grid["mask"] = self._output_grid.mask.transpose(
+                *input_da.dims, missing_dims="ignore"
+            )
+
         regridder = xe.Regridder(
             self._input_grid,
             self._output_grid,

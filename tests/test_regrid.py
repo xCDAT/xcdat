@@ -848,7 +848,9 @@ class TestGrid:
     @pytest.fixture(autouse=True)
     def setUp(self):
         self.lat_data = np.array([-45, 0, 45])
-        self.lat = xr.DataArray(self.lat_data.copy(), dims=["lat"], name="lat")
+        self.lat = xr.DataArray(
+            self.lat_data.copy(), dims=["lat"], name="lat", attrs={"axis": "Y"}
+        )
 
         self.lat_bnds_data = np.array([[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
         self.lat_bnds = xr.DataArray(
@@ -856,7 +858,9 @@ class TestGrid:
         )
 
         self.lon_data = np.array([30, 60, 90, 120, 150])
-        self.lon = xr.DataArray(self.lon_data.copy(), dims=["lon"], name="lon")
+        self.lon = xr.DataArray(
+            self.lon_data.copy(), dims=["lon"], name="lon", attrs={"axis": "X"}
+        )
 
         self.lon_bnds_data = np.array(
             [[15, 45], [45, 75], [75, 105], [105, 135], [135, 165]]
@@ -951,6 +955,9 @@ class TestGrid:
 
         assert np.array_equal(new_grid.lat, self.lat)
         assert np.array_equal(new_grid.lon, self.lon)
+        assert np.array_equal(
+            new_grid.mask, xr.DataArray(np.ones((5, 3)), dims=("lat", "lon"))
+        )
 
     def test_create_grid_with_tuple_of_coords_and_no_bounds(self):
         # This case happens if `create_axis` is used without creating bounds,
