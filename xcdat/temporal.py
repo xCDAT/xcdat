@@ -1946,7 +1946,7 @@ class TemporalAccessor:
         dates = [
             self.date_type(year, month, day, hour)
             for year, month, day, hour in zip(
-                df_new.year, df_new.month, df_new.day, df_new.hour
+                df_new.year, df_new.month, df_new.day, df_new.hour, strict=False
             )
         ]
 
