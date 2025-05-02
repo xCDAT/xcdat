@@ -40,6 +40,36 @@ class TestXGCMRegridder:
         z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
         self.output_grid = grid.create_grid(z=z)
 
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_infer_target_data(self, grid):
+        ds = self.ds.copy(True)
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data="infer"
+        )
+
+        with pytest.raises(
+            RuntimeError, match="Could not infer vertical coordinate for 'lev'"
+        ):
+            regridder.vertical("so", ds)
+
+        ds.lev.attrs["formula_terms"] = "p0: p0 lev: lev"
+        ds.lev.attrs["standard_name"] = "atmosphere_ln_pressure_coordinate"
+        ds["p0"] = xr.DataArray(np.array(10))
+
+        regridder.vertical("so", ds)
+
+        call_kwargs = grid.return_value.transform.call_args[1]
+
+        assert (call_kwargs["target_data"].data == (10 * np.exp(-ds.lev))).all()
+
+        ds = ds.drop_dims("lev")
+
+        with pytest.raises(
+            RuntimeError, match="Could not infer target data, missing z-coordinate"
+        ):
+            regridder.vertical("so", ds)
+
     def test_multiple_z_axes(self):
         self.ds = self.ds.assign_coords({"ilev": self.ds.lev.copy().rename("ilev")})
 
