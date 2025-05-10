@@ -6,6 +6,7 @@ import xarray as xr
 
 import xcdat as xc
 from xcdat.axis import get_dim_keys
+from xcdat.regridder.grid import create_mask
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
 
 
@@ -89,7 +90,7 @@ class Regrid2Regridder(BaseRegridder):
         try:
             src_mask = src_mask_da.values  # type: ignore
         except AttributeError:
-            src_mask = None
+            src_mask = create_mask(self._input_grid, ['Y', 'X']).values
 
         nan_replace = input_data_var.encoding.get("_FillValue", None)
 
@@ -147,7 +148,7 @@ def _regrid(
     lon_mapping: List[np.ndarray],
     lat_weights: List[np.ndarray],
     lon_weights: List[np.ndarray],
-    src_mask: Optional[np.ndarray],
+    src_mask: np.ndarray,
     omitted=None,
     unmapped_to_nan=True,
 ) -> np.ndarray:
@@ -162,11 +163,6 @@ def _regrid(
 
     y_length = len(lat_mapping)
     x_length = len(lon_mapping)
-
-    if src_mask is None:
-        input_data_shape = input_data.shape
-
-        src_mask = np.ones((input_data_shape[y_index], input_data_shape[x_index]))
 
     other_dims = {
         x: y for x, y in input_data_var.sizes.items() if x not in (y_name, x_name)
