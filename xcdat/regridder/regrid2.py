@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
 import sparse as sp
@@ -6,8 +6,8 @@ import xarray as xr
 
 import xcdat as xc
 from xcdat.axis import get_dim_keys
-from xcdat.regridder.grid import create_mask
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
+from xcdat.regridder.grid import create_mask
 
 
 class Regrid2Regridder(BaseRegridder):
@@ -17,6 +17,7 @@ class Regrid2Regridder(BaseRegridder):
         output_grid: xr.Dataset,
         unmapped_to_nan: bool = True,
         output_weights: Union[bool, str] = False,
+        create_nan_mask: bool = False,
         **options: Any,
     ):
         """
@@ -38,6 +39,9 @@ class Regrid2Regridder(BaseRegridder):
         output_weights : Union[bool, str]
             If True, output weights are added to the output dataset as weights.
             If str, the name of the variable to store the weights. Default is False.
+        create_nan_mask : bool
+            If True, a mask is created using the nan values from source variable. If
+            a mask already exists in the Dataset it will be ignored.
         **options : Any
             Dictionary with extra parameters for the regridder.
 
@@ -64,6 +68,7 @@ class Regrid2Regridder(BaseRegridder):
 
         self._unmapped_to_nan = unmapped_to_nan
         self._output_weights = output_weights
+        self._create_nan_mask = create_nan_mask
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Placeholder for base class."""
@@ -84,13 +89,21 @@ class Regrid2Regridder(BaseRegridder):
         dst_lat_bnds = _get_bounds_ensure_dtype(self._output_grid, "Y")
         dst_lon_bnds = _get_bounds_ensure_dtype(self._output_grid, "X")
 
-        src_mask_da = self._input_grid.get("mask", None)
+        if self._create_nan_mask:
+            non_yx = set(input_data_var.cf.axes.keys()) - set(["Y", "X"])
+            non_yx_selector: Dict[Any, Any] = {
+                input_data_var.cf[x].name: 0 for x in non_yx
+            }
 
-        # DataArray to np.ndarray, handle error when None
-        try:
-            src_mask = src_mask_da.values  # type: ignore
-        except AttributeError:
-            src_mask = create_mask(self._input_grid, ['Y', 'X']).values
+            src_mask = xr.where(
+                np.isnan(input_data_var.isel(**non_yx_selector)), 0, 1
+            ).values
+        else:
+            # DataArray to np.ndarray, handle error when None
+            try:
+                src_mask = self._input_grid.get("mask", None).values  # type: ignore
+            except AttributeError:
+                src_mask = create_mask(self._input_grid, ["Y", "X"]).values
 
         nan_replace = input_data_var.encoding.get("_FillValue", None)
 

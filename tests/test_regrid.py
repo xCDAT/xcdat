@@ -517,6 +517,30 @@ class TestRegrid2Regridder:
         with pytest.raises(KeyError):
             regridder.horizontal("unknown", self.coarse_2d_ds)
 
+    def test_regrid_create_nan_mask(self):
+        self.coarse_2d_ds.ts.loc[dict(lat=0.0, lon=89.5)] = np.nan
+
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, create_nan_mask=True
+        )
+
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
+
+        # np.nan != np.nan, replace with 1e20
+        output_data = output_data.fillna(1e20)
+
+        expected_output = np.array(
+            [
+                [1] * 4,
+                [1e20, 1e20, 1, 1],
+                [1e20, 1e20, 1, 1],
+                [1] * 4,
+            ],
+            dtype=np.float32,
+        )
+
+        assert np.all(output_data.ts.values == expected_output)
+
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_regrid_input_mask(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
