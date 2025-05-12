@@ -93,8 +93,7 @@ jobs:
               run: |
                   conda env update -n xcdat_ci -f conda-env/ci.yml
                   # Make sure the Python version in the env matches the current matrix version.
-                  # Make sure numpy is not > 2.0.
-                  conda install -c conda-forge python=${{ matrix.python-version }} "numpy>=1.23.0,<2.0"
+                  conda install -c conda-forge python=${{ matrix.python-version }}
 
             - name: Install xcdat
               # Source: https://github.com/conda/conda-build/issues/4251#issuecomment-1053460542
