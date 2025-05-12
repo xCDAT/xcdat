@@ -1,4 +1,4 @@
-from typing import Any, Optional
+from typing import Any
 
 import xarray as xr
 import xesmf as xe
@@ -24,9 +24,9 @@ class XESMFRegridder(BaseRegridder):
         output_grid: xr.Dataset,
         method: str,
         periodic: bool = False,
-        extrap_method: Optional[str] = None,
-        extrap_dist_exponent: Optional[float] = None,
-        extrap_num_src_pnts: Optional[int] = None,
+        extrap_method: str | None = None,
+        extrap_dist_exponent: float | None = None,
+        extrap_num_src_pnts: int | None = None,
         ignore_degenerate: bool = True,
         unmapped_to_nan: bool = True,
         **options: Any,
@@ -61,12 +61,12 @@ class XESMFRegridder(BaseRegridder):
             The regridding method to apply, defaults to "bilinear".
         periodic : bool
             Treat longitude as periodic, used for global grids.
-        extrap_method : Optional[str]
+        extrap_method : str | None
             Extrapolation method, useful when moving from a fine to coarse grid.
-        extrap_dist_exponent : Optional[float]
+        extrap_dist_exponent : float | None
             The exponent to raise the distance to when calculating weights for
             the extrapolation method.
-        extrap_num_src_pnts : Optional[int]
+        extrap_num_src_pnts : int | None
             The number of source points to use for the extrapolation methods
             that use more than one source point.
         ignore_degenerate : bool

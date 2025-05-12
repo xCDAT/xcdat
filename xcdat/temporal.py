@@ -1,11 +1,9 @@
 """Module containing temporal functions."""
 
-from __future__ import annotations
-
 import warnings
 from datetime import datetime
 from itertools import chain
-from typing import Dict, List, Literal, Optional, Tuple, TypedDict, Union, get_args
+from typing import Literal, TypedDict, get_args
 
 import cf_xarray  # noqa: F401
 import cftime
@@ -39,7 +37,7 @@ FREQUENCIES = get_args(Frequency)
 DateTimeComponent = Literal["year", "season", "month", "day", "hour"]
 
 #: A dictionary mapping temporal averaging mode and frequency to the time groups.
-TIME_GROUPS: Dict[Mode, Dict[Frequency, Tuple[DateTimeComponent, ...]]] = {
+TIME_GROUPS: dict[Mode, dict[Frequency, tuple[DateTimeComponent, ...]]] = {
     "average": {
         "year": ("year",),
         "month": ("month",),
@@ -73,7 +71,7 @@ SeasonConfigInput = TypedDict(
         "drop_incomplete_djf": bool,
         "drop_incomplete_seasons": bool,
         "dec_mode": Literal["DJF", "JFD"],
-        "custom_seasons": Optional[List[List[str]]],
+        "custom_seasons": list[list[str]] | None,
     },
     total=False,
 )
@@ -85,7 +83,7 @@ SeasonConfigAttr = TypedDict(
         "drop_incomplete_djf": bool,
         "drop_incomplete_seasons": bool,
         "dec_mode": Literal["DJF", "JFD"],
-        "custom_seasons": Optional[Dict[str, List[str]]],
+        "custom_seasons": dict[str, list[str]] | None,
     },
     total=False,
 )
@@ -99,7 +97,7 @@ DEFAULT_SEASON_CONFIG: SeasonConfigInput = {
 }
 
 #: A dictionary mapping month integers to their equivalent 3-letter string.
-MONTH_INT_TO_STR: Dict[int, str] = {
+MONTH_INT_TO_STR: dict[int, str] = {
     1: "Jan",
     2: "Feb",
     3: "Mar",
@@ -118,7 +116,7 @@ MONTH_STR_TO_INT = {v: k for k, v in MONTH_INT_TO_STR.items()}
 # A dictionary mapping pre-defined seasons to their middle month. This
 # dictionary is used during the creation of datetime objects, which don't
 # support season values.
-SEASON_TO_MONTH: Dict[str, int] = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
+SEASON_TO_MONTH: dict[str, int] = {"DJF": 1, "MAM": 4, "JJA": 7, "SON": 10}
 
 
 @xr.register_dataset_accessor("temporal")
@@ -349,7 +347,7 @@ class TemporalAccessor:
                     Xarray labels the season with December as "DJF", but it is
                     actually "JFD".
 
-            * "custom_seasons" ([List[List[str]]], by default None)
+            * "custom_seasons" ([list[list[str]]], by default None)
                 List of sublists containing month strings, with each sublist
                 representing a custom season.
 
@@ -456,7 +454,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         keep_weights: bool = False,
-        reference_period: Optional[Tuple[str, str]] = None,
+        reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
     ):
@@ -506,7 +504,7 @@ class TemporalAccessor:
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
-        reference_period : Optional[Tuple[str, str]], optional
+        reference_period : tuple[str, str] | None, optional
             The climatological reference period, which is a subset of the entire
             time series. This parameter accepts a tuple of strings in the format
             'yyyy-mm-dd'. For example, ``('1850-01-01', '1899-12-31')``. If no
@@ -549,7 +547,7 @@ class TemporalAccessor:
                     Xarray labels the season with December as "DJF", but it is
                     actually "JFD".
 
-            * "custom_seasons" ([List[List[str]]], by default None)
+            * "custom_seasons" ([list[list[str]]], by default None)
                 List of sublists containing month strings, with each sublist
                 representing a custom season.
 
@@ -661,7 +659,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         keep_weights: bool = False,
-        reference_period: Optional[Tuple[str, str]] = None,
+        reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
     ) -> xr.Dataset:
@@ -717,7 +715,7 @@ class TemporalAccessor:
         keep_weights : bool, optional
             If calculating averages using weights, keep the weights in the
             final dataset output, by default False.
-        reference_period : Optional[Tuple[str, str]], optional
+        reference_period : tuple[str, str] | None, optional
             The climatological reference period, which is a subset of the entire
             time series and used for calculating departures. This parameter
             accepts a tuple of strings in the format 'yyyy-mm-dd'. For example,
@@ -765,7 +763,7 @@ class TemporalAccessor:
 
             Configs for custom seasons:
 
-            * "custom_seasons" ([List[List[str]]], by default None)
+            * "custom_seasons" ([list[list[str]]], by default None)
                 List of sublists containing month strings, with each sublist
                 representing a custom season.
 
@@ -898,7 +896,7 @@ class TemporalAccessor:
         freq: Frequency,
         weighted: bool = True,
         keep_weights: bool = False,
-        reference_period: Optional[Tuple[str, str]] = None,
+        reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
     ) -> xr.Dataset:
@@ -983,7 +981,7 @@ class TemporalAccessor:
         mode: Mode,
         freq: Frequency,
         weighted: bool,
-        reference_period: Optional[Tuple[str, str]] = None,
+        reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
     ):
         """Validates method arguments and sets them as object attributes.
@@ -1074,7 +1072,7 @@ class TemporalAccessor:
 
                 self._season_config["drop_incomplete_djf"] = drop_incomplete_djf
 
-    def _is_valid_reference_period(self, reference_period: Tuple[str, str]):
+    def _is_valid_reference_period(self, reference_period: tuple[str, str]):
         try:
             datetime.strptime(reference_period[0], "%Y-%m-%d")
             datetime.strptime(reference_period[1], "%Y-%m-%d")
@@ -1085,7 +1083,7 @@ class TemporalAccessor:
                 "'1899-12-31')."
             ) from e
 
-    def _form_seasons(self, custom_seasons: List[List[str]]) -> Dict[str, List[str]]:
+    def _form_seasons(self, custom_seasons: list[list[str]]) -> dict[str, list[str]]:
         """Forms custom seasons from a nested list of months.
 
         This method concatenates the strings in each sublist to form a
@@ -1093,13 +1091,13 @@ class TemporalAccessor:
 
         Parameters
         ----------
-        custom_seasons : List[List[str]]
+        custom_seasons : list[list[str]]
             List of sublists containing month strings, with each sublist
             representing a custom season.
 
         Returns
         -------
-        Dict[str, List[str]]
+        dict[str, list[str]]
            A dictionary with the keys being the custom season and the
            values being the corresponding list of months.
 
@@ -1202,7 +1200,7 @@ class TemporalAccessor:
         return ds
 
     def _subset_coords_for_custom_seasons(
-        self, ds: xr.Dataset, months: List[str]
+        self, ds: xr.Dataset, months: list[str]
     ) -> xr.Dataset:
         """Subsets time coordinates to the months included in custom seasons.
 
@@ -1210,7 +1208,7 @@ class TemporalAccessor:
         ----------
         ds : xr.Dataset
             The dataset.
-        months : List[str]
+        months : list[str]
             A list of months included in custom seasons.
             Example: ["Nov", "Dec", "Jan"]
 
@@ -1267,7 +1265,7 @@ class TemporalAccessor:
         # Identify months that span across years in custom seasons by getting
         # the months before "Jan" if "Jan" is not the first month of the season.
         # Note: Only one custom season can span the calendar year.
-        span_months: List[int] = []
+        span_months: list[int] = []
         for months in custom_seasons.values():  # type: ignore
             month_ints = [MONTH_STR_TO_INT[month] for month in months]
 
@@ -1946,7 +1944,7 @@ class TemporalAccessor:
         dates = [
             self.date_type(year, month, day, hour)
             for year, month, day, hour in zip(
-                df_new.year, df_new.month, df_new.day, df_new.hour
+                df_new.year, df_new.month, df_new.day, df_new.hour, strict=False
             )
         ]
 
@@ -2141,7 +2139,7 @@ def _contains_datetime_like_objects(var: xr.DataArray) -> bool:
 
 def _get_datetime_like_type(
     var: xr.DataArray,
-) -> Union[np.datetime64, np.timedelta64, cftime.datetime]:
+) -> np.datetime64 | np.timedelta64 | cftime.datetime:
     """Get the DataArray's object type if they are datetime-like.
 
      A variable contains datetime-like objects if they are either
@@ -2159,7 +2157,7 @@ def _get_datetime_like_type(
 
      Returns
      -------
-     Union[np.datetime64, np.timedelta64, cftime.datetime]:
+     np.datetime64 | np.timedelta64 | cftime.datetime:
     """
     var_obj = xr.as_variable(var)
     dtype = var.dtype

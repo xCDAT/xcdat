@@ -1,6 +1,4 @@
-from __future__ import annotations
-
-from typing import Any, Dict, List, Literal, Tuple
+from typing import Any, Literal
 
 import xarray as xr
 
@@ -81,11 +79,11 @@ class RegridderAccessor:
 
         >>> grid = ds.regridder.grid
         """
-        axis_names: List[CFAxisKey] = ["X", "Y", "Z"]
+        axis_names: list[CFAxisKey] = ["X", "Y", "Z"]
 
-        axis_coords: Dict[str, xr.DataArray] = {}
-        axis_bounds: Dict[str, xr.DataArray] = {}
-        axis_has_bounds: Dict[CFAxisKey, bool] = {}
+        axis_coords: dict[str, xr.DataArray] = {}
+        axis_bounds: dict[str, xr.DataArray] = {}
+        axis_has_bounds: dict[CFAxisKey, bool] = {}
 
         with xr.set_options(keep_attrs=True):
             for axis in axis_names:
@@ -121,7 +119,7 @@ class RegridderAccessor:
 
     def _get_axis_coord_and_bounds(
         self, axis: CFAxisKey
-    ) -> Tuple[xr.DataArray | None, xr.DataArray | None]:
+    ) -> tuple[xr.DataArray | None, xr.DataArray | None]:
         try:
             coord_var = get_coords_by_name(self._ds, axis)
             if coord_var.size == 1:
@@ -312,7 +310,7 @@ class RegridderAccessor:
         return output_ds
 
 
-def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: List[CFAxisKey]):
+def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKey]):
     """
     Extract the grid from ``ds``.
 
@@ -326,7 +324,7 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: List[CFAxisKe
         Dataset to extract grid from.
     data_var : str
         Name of target data variable.
-    dup_check_dims : List[CFAxisKey]
+    dup_check_dims : list[CFAxisKey]
         List of dimensions to check for duplicates.
 
     Returns

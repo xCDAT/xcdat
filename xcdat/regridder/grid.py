@@ -1,7 +1,3 @@
-from __future__ import annotations
-
-from typing import Dict, List, Optional, Tuple, Union
-
 import numpy as np
 import xarray as xr
 
@@ -98,7 +94,7 @@ def create_gaussian_grid(nlats: int) -> xr.Dataset:
     return create_grid(x=create_axis("lon", lon), y=(lat, lat_bnds))
 
 
-def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
+def _create_gaussian_axis(nlats: int) -> tuple[xr.DataArray, xr.DataArray]:
     """Create Gaussian axis.
 
     Creates a Gaussian axis of `nlats`.
@@ -158,7 +154,7 @@ def _create_gaussian_axis(nlats: int) -> Tuple[xr.DataArray, xr.DataArray]:
     return bounds_da, points_da
 
 
-def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
+def _gaussian_axis(mid: int, nlats: int) -> tuple[np.ndarray, np.ndarray]:
     """Calculates the bounds and weights for a Guassian axis.
 
 
@@ -176,7 +172,7 @@ def _gaussian_axis(mid: int, nlats: int) -> Tuple[np.ndarray, np.ndarray]:
 
     Returns
     -------
-    Tuple[np.ndarray, np.ndarray]
+    tuple[np.ndarray, np.ndarray]
         First `np.ndarray` contains the angles of the bounds and the second contains the weights.
     """
     points = _bessel_function_zeros(mid + 1)
@@ -249,7 +245,7 @@ def _bessel_function_zeros(n: int) -> np.ndarray:
     return values
 
 
-def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, float]:
+def _legendre_polinomial(bessel_zero: int, nlats: int) -> tuple[float, float, float]:
     """Legendre_polynomials.
 
     Calculates the third legendre polynomial.
@@ -269,7 +265,7 @@ def _legendre_polinomial(bessel_zero: int, nlats: int) -> Tuple[float, float, fl
 
     Returns
     -------
-    Tuple[float, float, float]
+    tuple[float, float, float]
         First, second and third legendre polynomial.
     """
     zero_poly = np.cos(bessel_zero / np.sqrt(np.power(nlats + 0.5, 2) + ESTIMATE_CONST))
@@ -429,7 +425,7 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
     lat_bnds = grid.bounds.get_bounds("Y", var_key=lat.name)
 
     # Ignore `Argument 1 to "create_grid" has incompatible type
-    # "Union[Dataset, DataArray]"; expected "Union[ndarray[Any, Any], DataArray]"
+    # "Dataset | DataArray"; expected "ndarray[Any, Any] | DataArray"
     # mypy(error)` because this arg is validated to be a DataArray beforehand.
     return create_grid(
         x=create_axis("lon", out_lon_data, bounds=lon_bnds),
@@ -438,25 +434,25 @@ def create_zonal_grid(grid: xr.Dataset) -> xr.Dataset:
 
 
 def create_grid(
-    x: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
-    y: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
-    z: xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
-    attrs: Optional[Dict[str, str]] = None,
+    x: xr.DataArray | tuple[xr.DataArray, xr.DataArray | None] | None = None,
+    y: xr.DataArray | tuple[xr.DataArray, xr.DataArray | None] | None = None,
+    z: xr.DataArray | tuple[xr.DataArray, xr.DataArray | None] | None = None,
+    attrs: dict[str, str] | None = None,
 ) -> xr.Dataset:
     """Creates a grid dataset using the specified axes.
 
     Parameters
     ----------
-    x : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None
+    x : xr.DataArray | tuple[xr.DataArray, xr.DataArray | None] | None
         An optional dataarray or tuple of a datarray with optional bounds to use
         for the "X" axis, by default None.
-    y : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None = None,
+    y : xr.DataArray | tuple[xr.DataArray, xr.DataArray | None] | None = None,
         An optional dataarray or tuple of a datarray with optional bounds to use
         for the "Y" axis, by default None.
-    z : xr.DataArray | Tuple[xr.DataArray, xr.DataArray | None] | None
+    z : xr.DataArray | tuple[xr.DataArray, xr.DataArray | None] | None
         An optional dataarray or tuple of a datarray with optional bounds to use
         for the "Z" axis, by default None.
-    attrs : Optional[Dict[str, str]]
+    attrs : dict[str, str] | None
         Custom attributes to be added to the generated `xr.Dataset`.
 
     Returns
@@ -537,11 +533,11 @@ def create_grid(
 
 def create_axis(
     name: str,
-    data: Union[List[Union[int, float]], np.ndarray],
-    bounds: Optional[Union[List[List[Union[int, float]]], np.ndarray]] = None,
-    generate_bounds: Optional[bool] = True,
-    attrs: Optional[Dict[str, str]] = None,
-) -> Tuple[xr.DataArray, Optional[xr.DataArray]]:
+    data: list[int | float] | np.ndarray,
+    bounds: list[list[int | float]] | np.ndarray | None = None,
+    generate_bounds: bool = True,
+    attrs: dict[str, str] | None = None,
+) -> tuple[xr.DataArray, xr.DataArray | None]:
     """Creates an axis and optional bounds.
 
 
@@ -551,14 +547,14 @@ def create_axis(
         The CF standard name for the axis (e.g., "longitude", "latitude",
         "height"). xCDAT also accepts additional names such as "lon", "lat",
         and "lev". Refer to ``xcdat.axis.VAR_NAME_MAP`` for accepted names.
-    data : Union[List[Union[int, float]], np.ndarray]
+    data : list[int | float] | np.ndarray
         1-D axis data consisting of integers or floats.
-    bounds : Optional[Union[List[List[Union[int, float]]], np.ndarray]]
+    bounds : list[list[int | float]] | np.ndarray | None
         2-D axis bounds data consisting of integers or floats, defaults to None.
         Must have a shape of n x 2, where n is the length of ``data``.
-    generate_bounds : Optiona[bool]
+    generate_bounds : bool
         Generate bounds for the axis if ``bounds`` is None, by default True.
-    attrs : Optional[Dict[str, str]]
+    attrs : dict[str, str] | None
         Custom attributes to be added to the generated `xr.DataArray` axis, by
         default None.
 
@@ -568,7 +564,7 @@ def create_axis(
 
     Returns
     -------
-    Tuple[xr.DataArray, Optional[xr.DataArray]]
+    tuple[xr.DataArray, xr.DataArray | None]
         A DataArray containing the axis data and optional bounds.
 
     Raises
@@ -638,7 +634,7 @@ def create_axis(
 
 
 def _validate_grid_has_single_axis_dim(
-    axis: CFAxisKey, coord_var: Union[xr.DataArray, xr.Dataset]
+    axis: CFAxisKey, coord_var: xr.DataArray | xr.Dataset
 ):
     """Validates that the grid's axis has a single dimension.
 
@@ -650,7 +646,7 @@ def _validate_grid_has_single_axis_dim(
     ----------
     axis : CFAxisKey
         The CF axis key ("X", "Y", "T", or "Z").
-    coord_var : Union[xr.DataArray, xr.Dataset]
+    coord_var : xr.DataArray | xr.Dataset
         The dimension coordinate variable(s) for the axis.
 
     Raises
