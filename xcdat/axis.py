@@ -423,7 +423,7 @@ def _swap_lon_axis(coords: xr.DataArray, to: tuple[float, float]) -> xr.DataArra
             # Example with 360 coords: [60, 150, 0] -> [60, 150, 360]
             index_with_360 = np.where(coords == 360)
 
-            if len(index_with_360) > 0:
+            if index_with_360[0].size > 0:
                 _if_multidim_dask_array_then_load(new_coords)
 
                 new_coords[index_with_360] = 360
