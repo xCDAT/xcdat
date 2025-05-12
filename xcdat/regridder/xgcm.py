@@ -228,7 +228,10 @@ class XGCMRegridder(BaseRegridder):
         # decode_vertical_coord doesn't raise exception if it cannot decode
         if "decoded_vertical_coord" not in ds:
             raise RuntimeError(
-                f"Could not infer vertical coordinate for {zcoord.name!r}"
+                f"Could not infer vertical coordinate for {zcoord.name!r}. "
+                "Make sure the vertical coordinate is CF-compliant with valid "
+                "'formula_terms' and 'standard_name' attributes. The dataset must "
+                "contain all of the required variables for the formula terms."
             )
 
         return ds.decoded_vertical_coord

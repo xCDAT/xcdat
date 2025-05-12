@@ -70,6 +70,56 @@ class TestXGCMRegridder:
         ):
             regridder.vertical("so", ds)
 
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_infer_target_data_missing_formula_terms(self, _):
+        ds = self.ds.copy(True)
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data="infer"
+        )
+
+        # Missing formula_terms attribute
+        ds.lev.attrs["standard_name"] = "atmosphere_ln_pressure_coordinate"
+
+        with pytest.raises(
+            RuntimeError, match="Could not infer vertical coordinate for 'lev'."
+        ):
+            regridder.vertical("so", ds)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_infer_target_data_invalid_standard_name(self, _):
+        ds = self.ds.copy(True)
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data="infer"
+        )
+
+        # Invalid standard_name
+        ds.lev.attrs["standard_name"] = "invalid_standard_name"
+
+        with pytest.raises(
+            RuntimeError, match="Could not infer vertical coordinate for 'lev'."
+        ):
+            regridder.vertical("so", ds)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_infer_target_data_missing_required_variable(self, _):
+        ds = self.ds.copy(True)
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data="infer"
+        )
+
+        # Missing required variable (e.g., p0)
+        ds.lev.attrs["formula_terms"] = "p0: p0 lev: lev"
+        ds.lev.attrs["standard_name"] = "atmosphere_ln_pressure_coordinate"
+
+        with pytest.raises(
+            RuntimeError,
+            match="Could not infer target data, missing z-coordinate.",
+        ):
+            regridder.vertical("so", ds)
+
     def test_multiple_z_axes(self):
         self.ds = self.ds.assign_coords({"ilev": self.ds.lev.copy().rename("ilev")})
 
