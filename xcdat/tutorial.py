@@ -5,8 +5,6 @@ datasets, either from a local cache or by downloading them from a remote
 repository.
 """
 
-from __future__ import annotations
-
 import os
 import pathlib
 import sys

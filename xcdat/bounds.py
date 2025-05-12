@@ -1,7 +1,5 @@
 """Bounds module for functions related to coordinate bounds."""
 
-from __future__ import annotations
-
 import collections
 import datetime
 import warnings

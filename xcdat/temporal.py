@@ -1,7 +1,5 @@
 """Module containing temporal functions."""
 
-from __future__ import annotations
-
 import warnings
 from datetime import datetime
 from itertools import chain

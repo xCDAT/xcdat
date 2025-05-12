@@ -3,8 +3,6 @@ Axis module for utilities related to axes, including functions to manipulate
 coordinates.
 """
 
-from __future__ import annotations
-
 from typing import Dict, List, Literal, Optional, Tuple
 
 import numpy as np
