@@ -3,7 +3,7 @@
 import collections
 import datetime
 import warnings
-from typing import Dict, List, Literal, Optional, Tuple, Union
+from typing import Literal
 
 import cf_xarray as cfxr  # noqa: F401
 import cftime
@@ -88,7 +88,7 @@ class BoundsAccessor:
         self._dataset: xr.Dataset = dataset
 
     @property
-    def map(self) -> Dict[str, Optional[xr.DataArray]]:
+    def map(self) -> dict[str, xr.DataArray | None]:
         """Returns a map of axis and coordinates keys to their bounds.
 
         The dictionary provides all valid CF compliant keys for axis and
@@ -97,12 +97,12 @@ class BoundsAccessor:
 
         Returns
         -------
-        Dict[str, Optional[xr.DataArray]]
+        dict[str, xr.DataArray | None]
             Dictionary mapping axis and coordinate keys to their bounds.
         """
         ds = self._dataset
 
-        bounds: Dict[str, Optional[xr.DataArray]] = {}
+        bounds: dict[str, xr.DataArray | None] = {}
         for axis, bounds_keys in ds.cf.bounds.items():
             bound = ds.get(bounds_keys[0], None)
             bounds[axis] = bound
@@ -110,12 +110,12 @@ class BoundsAccessor:
         return collections.OrderedDict(sorted(bounds.items()))
 
     @property
-    def keys(self) -> List[str]:
+    def keys(self) -> list[str]:
         """Returns a list of keys for the bounds data variables in the Dataset.
 
         Returns
         -------
-        List[str]
+        list[str]
             A list of sorted bounds data variable keys.
         """
         return sorted(
@@ -129,7 +129,7 @@ class BoundsAccessor:
         )
 
     def add_missing_bounds(  # noqa: C901
-        self, axes: List[CFAxisKey] | Tuple[CFAxisKey, ...] = ("X", "Y", "T")
+        self, axes: list[CFAxisKey] | tuple[CFAxisKey, ...] = ("X", "Y", "T")
     ) -> xr.Dataset:
         """Adds missing coordinate bounds for supported axes in the Dataset.
 
@@ -158,7 +158,7 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        axes : List[CFAxesKey] | Tuple[CFAxisKey, ...]
+        axes : list[CFAxesKey] | tuple[CFAxisKey, ...]
             List of CF axes that function should operate on, by default
             ("X", "Y", "T"). Options include "X", "Y", "T", or "Z".
 
@@ -202,15 +202,15 @@ class BoundsAccessor:
         return ds
 
     def get_bounds(
-        self, axis: CFAxisKey, var_key: Optional[str] = None
-    ) -> Union[xr.Dataset, xr.DataArray]:
+        self, axis: CFAxisKey, var_key: str | None = None
+    ) -> xr.Dataset | xr.DataArray:
         """Gets coordinate bounds.
 
         Parameters
         ----------
         axis : CFAxisKey
             The CF axis key ("X", "Y", "T", "Z").
-        var_key: Optional[str]
+        var_key: str | None
             The key of the coordinate or data variable to get axis bounds for.
             This parameter is useful if you only want the single bounds
             DataArray related to the axis on the variable (e.g., "tas" has
@@ -218,7 +218,7 @@ class BoundsAccessor:
 
         Returns
         -------
-        Union[xr.Dataset, xr.DataArray]
+        xr.Dataset | xr.DataArray
             A Dataset of N bounds variables, or a single bounds variable
             DataArray.
 
@@ -249,7 +249,7 @@ class BoundsAccessor:
                 "or `ds.bounds.add_bounds()`."
             )
 
-        bounds: Union[xr.Dataset, xr.DataArray] = self._dataset[
+        bounds: xr.Dataset | xr.DataArray = self._dataset[
             bounds_keys if len(bounds_keys) > 1 else bounds_keys[0]
         ].copy()
 
@@ -289,9 +289,7 @@ class BoundsAccessor:
         ds = self._dataset.copy()
         self._validate_axis_arg(axis)
 
-        coord_vars: Union[xr.DataArray, xr.Dataset] = get_dim_coords(
-            self._dataset, axis
-        )
+        coord_vars: xr.DataArray | xr.Dataset = get_dim_coords(self._dataset, axis)
         # In xarray, ancillary singleton coordinates that aren't related to the
         # axis can still be attached to dimension coordinates. For example,
         # if the "height" singleton exists, it will be attached to "time".
@@ -317,8 +315,8 @@ class BoundsAccessor:
     def add_time_bounds(
         self,
         method: Literal["freq", "midpoint"],
-        freq: Optional[Literal["year", "month", "day", "hour"]] = None,
-        daily_subfreq: Optional[Literal[1, 2, 3, 4, 6, 8, 12, 24]] = None,
+        freq: Literal["year", "month", "day", "hour"] | None = None,
+        daily_subfreq: Literal[1, 2, 3, 4, 6, 8, 12, 24] | None = None,
         end_of_month: bool = False,
     ) -> xr.Dataset:
         """Add bounds for an axis using its coordinate points.
@@ -389,7 +387,7 @@ class BoundsAccessor:
             The dataset with time bounds added.
         """
         ds = self._dataset.copy()
-        coord_vars: Union[xr.DataArray, xr.Dataset] = get_dim_coords(self._dataset, "T")
+        coord_vars: xr.DataArray | xr.Dataset = get_dim_coords(self._dataset, "T")
         # In xarray, ancillary singleton coordinates that aren't related to axis
         # can still be attached to dimension coordinates (e.g., "height" is
         # attached to "time"). We ignore these singleton coordinates to avoid
@@ -418,8 +416,8 @@ class BoundsAccessor:
         return ds
 
     def _drop_ancillary_singleton_coords(
-        self, coord_vars: Union[xr.Dataset, xr.DataArray]
-    ) -> Union[xr.Dataset, xr.DataArray]:
+        self, coord_vars: xr.Dataset | xr.DataArray
+    ) -> xr.Dataset | xr.DataArray:
         """Drop ancillary singleton coordinates from dimension coordinates.
 
         Xarray coordinate variables retain all coordinates from the parent
@@ -441,13 +439,13 @@ class BoundsAccessor:
 
         Parameters
         ----------
-        coord_vars : Union[xr.Dataset, xr.DataArray]
+        coord_vars : xr.Dataset | xr.DataArray
             The dimension coordinate variables with ancillary coordinates (if
             they exist).
 
         Returns
         -------
-        Union[xr.Dataset, xr.DataArray]
+        xr.Dataset | xr.DataArray
             The dimension coordinate variables with ancillary coordinates
             dropped (if they exist).
 
@@ -465,7 +463,7 @@ class BoundsAccessor:
 
         return coord_vars
 
-    def _get_bounds_keys(self, axis: CFAxisKey) -> List[str]:
+    def _get_bounds_keys(self, axis: CFAxisKey) -> list[str]:
         """Get bounds keys for an axis's coordinate variables in the dataset.
 
         This function attempts to map bounds to an axis using ``cf_xarray``
@@ -478,13 +476,13 @@ class BoundsAccessor:
 
         Returns
         -------
-        List[str]
+        list[str]
             The axis bounds key(s).
         """
         cf_method = self._dataset.cf.bounds
         cf_attrs = CF_ATTR_MAP[axis]
 
-        keys: List[str] = []
+        keys: list[str] = []
 
         try:
             keys = keys + cf_method[cf_attrs["axis"]]
@@ -503,7 +501,7 @@ class BoundsAccessor:
 
     def _get_bounds_from_attr(
         self, obj: xr.DataArray | xr.Dataset, axis: CFAxisKey
-    ) -> List[str]:
+    ) -> list[str]:
         """Retrieve bounds attribute keys from the given xarray object.
 
         This method extracts the "bounds" attribute keys from the coordinates
@@ -518,12 +516,12 @@ class BoundsAccessor:
 
         Returns:
         --------
-        List[str]
+        list[str]
             A list of bounds attribute keys found in the coordinates of the
             specified axis. Otherwise, an empty list is returned.
         """
         coords_obj = get_dim_coords(obj, axis)
-        bounds_keys: List[str] = []
+        bounds_keys: list[str] = []
 
         if isinstance(coords_obj, xr.DataArray):
             bounds_keys = self._extract_bounds_key(coords_obj, bounds_keys)
@@ -534,8 +532,8 @@ class BoundsAccessor:
         return bounds_keys
 
     def _extract_bounds_key(
-        self, coords_obj: xr.DataArray, bounds_keys: List[str]
-    ) -> List[str]:
+        self, coords_obj: xr.DataArray, bounds_keys: list[str]
+    ) -> list[str]:
         bnds_key = coords_obj.attrs.get("bounds")
 
         if bnds_key is not None:
@@ -546,8 +544,8 @@ class BoundsAccessor:
     def _create_time_bounds(  # noqa: C901
         self,
         time: xr.DataArray,
-        freq: Optional[Literal["year", "month", "day", "hour"]] = None,
-        daily_subfreq: Optional[Literal[1, 2, 3, 4, 6, 8, 12, 24]] = None,
+        freq: Literal["year", "month", "day", "hour"] | None = None,
+        daily_subfreq: Literal[1, 2, 3, 4, 6, 8, 12, 24] | None = None,
         end_of_month: bool = False,
     ) -> xr.DataArray:
         """Creates time bounds for each timestep of the time coordinate axis.
@@ -673,8 +671,8 @@ class BoundsAccessor:
     def _create_yearly_time_bounds(
         self,
         timesteps: np.ndarray,
-        obj_type: Union[cftime.datetime, pd.Timestamp],
-    ) -> List[Union[cftime.datetime, pd.Timestamp]]:
+        obj_type: cftime.datetime | pd.Timestamp,
+    ) -> list[cftime.datetime | pd.Timestamp]:
         """Creates time bounds for each timestep with the start and end of the year.
 
         Bounds for each timestep correspond to Jan. 1 00:00:00 of the year of the
@@ -686,16 +684,16 @@ class BoundsAccessor:
             An array of timesteps, represented as either `cftime.datetime` or
             `pd.Timestamp` (casted from `np.datetime64[ns]` to support pandas
             time/date components).
-        obj_type : Union[cftime.datetime, pd.Timestamp]
+        obj_type : cftime.datetime | pd.Timestamp
             The object type for time bounds based on the dtype of
             ``time_values``.
 
         Returns
         -------
-        List[Union[cftime.datetime, pd.Timestamp]]
+        list[cftime.datetime | pd.Timestamp]
             A list of time bound values.
         """
-        time_bnds: List[cftime.datetime] = []
+        time_bnds: list[cftime.datetime] = []
 
         for step in timesteps:
             year = step.year
@@ -710,9 +708,9 @@ class BoundsAccessor:
     def _create_monthly_time_bounds(
         self,
         timesteps: np.ndarray,
-        obj_type: Union[cftime.datetime, pd.Timestamp],
+        obj_type: cftime.datetime | pd.Timestamp,
         end_of_month: bool = False,
-    ) -> List[Union[cftime.datetime, pd.Timestamp]]:
+    ) -> list[cftime.datetime | pd.Timestamp]:
         """Creates time bounds for each timestep with the start and end of the month.
 
         Bounds for each timestep correspond to 00:00:00 on the first of the month
@@ -724,7 +722,7 @@ class BoundsAccessor:
             An array of timesteps, represented as either `cftime.datetime` or
             `pd.Timestamp` (casted from `np.datetime64[ns]` to support pandas
             time/date components).
-        obj_type : Union[cftime.datetime, pd.Timestamp]
+        obj_type : cftime.datetime | pd.Timestamp
             The object type for time bounds based on the dtype of
             ``time_values``.
         end_of_month : bool, optional
@@ -733,7 +731,7 @@ class BoundsAccessor:
 
         Returns
         -------
-        List[Union[cftime.datetime, pd.Timestamp]]
+        list[cftime.datetime | pd.Timestamp]
             A list of time bound values.
 
         Note
@@ -763,10 +761,10 @@ class BoundsAccessor:
 
     def _add_months_to_timestep(
         self,
-        timestep: Union[cftime.datetime, pd.Timestamp],
-        obj_type: Union[cftime.datetime, pd.Timestamp],
+        timestep: cftime.datetime | pd.Timestamp,
+        obj_type: cftime.datetime | pd.Timestamp,
         delta: int,
-    ) -> Union[cftime.datetime, pd.Timestamp]:
+    ) -> cftime.datetime | pd.Timestamp:
         """Adds delta month(s) to a timestep.
 
         The delta value can be positive or negative (for subtraction). Refer to
@@ -776,7 +774,7 @@ class BoundsAccessor:
         ----------
         timestep : Union[cftime.datime, pd.Timestamp]
             A timestep represented as ``cftime.datetime`` or ``pd.Timestamp``.
-        obj_type : Union[cftime.datetime, pd.Timestamp]
+        obj_type : cftime.datetime | pd.Timestamp
                 The object type for time bounds based on the dtype of
                 ``timestep``.
         delta : int
@@ -784,7 +782,7 @@ class BoundsAccessor:
 
         Returns
         -------
-        Union[cftime.datetime, pd.Timestamp]
+        cftime.datetime | pd.Timestamp
 
         References
         ----------
@@ -814,9 +812,9 @@ class BoundsAccessor:
     def _create_daily_time_bounds(
         self,
         timesteps: np.ndarray,
-        obj_type: Union[cftime.datetime, pd.Timestamp],
+        obj_type: cftime.datetime | pd.Timestamp,
         freq: Literal[1, 2, 3, 4, 6, 8, 12, 24] = 1,
-    ) -> List[Union[cftime.datetime, pd.Timestamp]]:
+    ) -> list[cftime.datetime | pd.Timestamp]:
         """Creates time bounds for each timestep with the start and end of the day.
 
         Bounds for each timestep corresponds to 00:00:00 timepoint on the
@@ -839,7 +837,7 @@ class BoundsAccessor:
             An array of timesteps, represented as either `cftime.datetime` or
             `pd.Timestamp` (casted from `np.datetime64[ns]` to support pandas
             time/date components).
-        obj_type : Union[cftime.datetime, pd.Timestamp]
+        obj_type : cftime.datetime | pd.Timestamp
             The object type for time bounds based on the dtype of
             ``time_values``.
         freq : {1, 2, 3, 4, 6, 8, 12, 24}, optional
@@ -855,7 +853,7 @@ class BoundsAccessor:
 
         Returns
         -------
-        List[Union[cftime.datetime, pd.Timestamp]]
+        list[cftime.datetime | pd.Timestamp]
             A list of time bound values.
 
         Raises

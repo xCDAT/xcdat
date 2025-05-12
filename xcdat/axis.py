@@ -3,7 +3,7 @@ Axis module for utilities related to axes, including functions to manipulate
 coordinates.
 """
 
-from typing import Dict, List, Literal, Optional, Tuple
+from typing import Literal
 
 import numpy as np
 import xarray as xr
@@ -22,14 +22,14 @@ CFStandardNameKey = Literal[
 # we can fetch specific `cf_xarray` mapping tables such as `ds.cf.axes["X"]`
 # or `ds.cf.coordinates["longitude"]`.
 # More information: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html
-CF_ATTR_MAP: Dict[CFAxisKey, Dict[str, CFAxisKey | CFStandardNameKey]] = {
+CF_ATTR_MAP: dict[CFAxisKey, dict[str, CFAxisKey | CFStandardNameKey]] = {
     "X": {"axis": "X", "coordinate": "longitude"},
     "Y": {"axis": "Y", "coordinate": "latitude"},
     "T": {"axis": "T", "coordinate": "time"},
     "Z": {"axis": "Z", "coordinate": "vertical"},
 }
 
-COORD_DEFAULT_ATTRS: Dict[CFAxisKey, Dict[str, str | CFAxisKey | CFStandardNameKey]] = {
+COORD_DEFAULT_ATTRS: dict[CFAxisKey, dict[str, str | CFAxisKey | CFStandardNameKey]] = {
     "X": dict(units="degrees_east", **CF_ATTR_MAP["X"]),
     "Y": dict(units="degrees_north", **CF_ATTR_MAP["Y"]),
     "T": dict(calendar="standard", **CF_ATTR_MAP["T"]),
@@ -39,7 +39,7 @@ COORD_DEFAULT_ATTRS: Dict[CFAxisKey, Dict[str, str | CFAxisKey | CFStandardNameK
 # A dictionary that maps common variable names to coordinate variables. This
 # map is used as fall-back when coordinate variables don't have CF attributes
 # set for ``cf_xarray`` to interpret using `CF_ATTR_MAP`.
-VAR_NAME_MAP: Dict[CFAxisKey, List[str]] = {
+VAR_NAME_MAP: dict[CFAxisKey, list[str]] = {
     "X": ["longitude", "lon"],
     "Y": ["latitude", "lat"],
     "T": ["time"],
@@ -47,7 +47,7 @@ VAR_NAME_MAP: Dict[CFAxisKey, List[str]] = {
 }
 
 
-def get_dim_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> str | List[str]:
+def get_dim_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> str | list[str]:
     """Gets the dimension key(s) for an axis.
 
     Each dimension should have a corresponding dimension coordinate variable,
@@ -64,7 +64,7 @@ def get_dim_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> str | List[
 
     Returns
     -------
-    str | List[str]
+    str | list[str]
         The dimension string or a list of dimensions strings for an axis.
     """
     dims = sorted([str(dim) for dim in get_dim_coords(obj, axis).dims])
@@ -254,7 +254,7 @@ def center_times(dataset: xr.Dataset) -> xr.Dataset:
 
 
 def swap_lon_axis(
-    dataset: xr.Dataset, to: Tuple[float, float], sort_ascending: bool = True
+    dataset: xr.Dataset, to: tuple[float, float], sort_ascending: bool = True
 ) -> xr.Dataset:
     """Swaps the orientation of a dataset's longitude axis.
 
@@ -272,7 +272,7 @@ def swap_lon_axis(
     ----------
     dataset : xr.Dataset
          The Dataset containing a longitude axis.
-    to : Tuple[float, float]
+    to : tuple[float, float]
         The orientation to swap the Dataset's longitude axis to. Supported
         orientations include:
 
@@ -317,7 +317,7 @@ def swap_lon_axis(
     return ds
 
 
-def _get_all_coord_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> List[str]:
+def _get_all_coord_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> list[str]:
     """Gets all dimension and non-dimension coordinate keys for an axis.
 
     This function uses ``cf_xarray`` to interpret CF axis and coordinate name
@@ -336,7 +336,7 @@ def _get_all_coord_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> List
 
     Returns
     -------
-    List[str]
+    list[str]
         The axis coordinate variable keys.
 
     References
@@ -346,7 +346,7 @@ def _get_all_coord_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> List
     cf_attrs = CF_ATTR_MAP[axis]
     var_names = VAR_NAME_MAP[axis]
 
-    keys: List[str] = []
+    keys: list[str] = []
 
     try:
         keys = keys + obj.cf.axes[cf_attrs["axis"]]
@@ -365,7 +365,7 @@ def _get_all_coord_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> List
     return list(set(keys))
 
 
-def _swap_lon_bounds(ds: xr.Dataset, key: str, to: Tuple[float, float]):
+def _swap_lon_bounds(ds: xr.Dataset, key: str, to: tuple[float, float]):
     bounds = ds[key].copy()
     new_bounds = _swap_lon_axis(bounds, to)
 
@@ -386,14 +386,14 @@ def _swap_lon_bounds(ds: xr.Dataset, key: str, to: Tuple[float, float]):
     return ds
 
 
-def _swap_lon_axis(coords: xr.DataArray, to: Tuple[float, float]) -> xr.DataArray:
+def _swap_lon_axis(coords: xr.DataArray, to: tuple[float, float]) -> xr.DataArray:
     """Swaps the axis orientation for longitude coordinates.
 
     Parameters
     ----------
     coords : xr.DataArray
         Coordinates on a longitude axis.
-    to : Tuple[float, float]
+    to : tuple[float, float]
         The new longitude axis orientation.
 
     Returns
@@ -438,7 +438,7 @@ def _swap_lon_axis(coords: xr.DataArray, to: Tuple[float, float]) -> xr.DataArra
     return new_coords
 
 
-def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> Optional[np.ndarray]:
+def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> np.ndarray | None:
     """Gets the index of the prime meridian cell in the longitude bounds.
 
     A prime meridian cell can exist when converting the axis orientation
@@ -451,7 +451,7 @@ def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> Optional[np.ndarray]:
 
     Returns
     -------
-    Optional[np.ndarray]
+    np.ndarray | None
         An array with a single element representing the index of the prime
         meridian index if it exists. Otherwise, None if the cell does not exist.
 

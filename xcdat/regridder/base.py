@@ -1,5 +1,5 @@
 import abc
-from typing import Any, List, Tuple, Union
+from typing import Any
 
 import numpy as np
 import xarray as xr
@@ -10,16 +10,16 @@ from xcdat.axis import CFAxisKey, get_dim_keys
 
 logger = _setup_custom_logger(__name__)
 
-Coord = Union[np.ndarray, xr.DataArray]
+Coord = np.ndarray | xr.DataArray
 
-CoordOptionalBnds = Union[Coord, Tuple[Coord, Coord]]
+CoordOptionalBnds = Coord | tuple[Coord, Coord]
 
 
 def _preserve_bounds(
     input_ds: xr.Dataset,
     output_grid: xr.Dataset,
     output_ds: xr.Dataset,
-    drop_axis: List[CFAxisKey],
+    drop_axis: list[CFAxisKey],
 ) -> xr.Dataset:
     """Preserves existing bounds from datasets.
 
@@ -33,7 +33,7 @@ def _preserve_bounds(
         Output grid Dataset used for regridding.
     output_ds : xr.Dataset
         Dataset bounds will be copied to.
-    drop_axis : List[CFAxisKey]
+    drop_axis : list[CFAxisKey]
         Axis or axes to drop from `input_ds`, which drops the related coords
         and bounds. For example, dropping the "Y" axis in `input_ds` ensures
         that the "Y" axis in `output_grid` is referenced for bounds.
@@ -58,14 +58,14 @@ def _preserve_bounds(
     return output_ds
 
 
-def _drop_axis(ds: xr.Dataset, axis: List[CFAxisKey]) -> xr.Dataset:
+def _drop_axis(ds: xr.Dataset, axis: list[CFAxisKey]) -> xr.Dataset:
     """Drops an axis or axes in a dataset.
 
     Parameters
     ----------
     ds : xr.Dataset
         The dataset.
-    axis : List[CFAxisKey]
+    axis : list[CFAxisKey]
         The axis or axes to drop.
 
     Returns
@@ -73,7 +73,7 @@ def _drop_axis(ds: xr.Dataset, axis: List[CFAxisKey]) -> xr.Dataset:
     xr.Daatset
         The dataset with axis or axes dropped.
     """
-    dims: List[str] = []
+    dims: list[str] = []
 
     for ax in axis:
         try:

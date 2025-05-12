@@ -1,12 +1,11 @@
 import importlib
 import json
-from typing import Dict, List, Optional, Union
 
 import xarray as xr
 from dask.array.core import Array
 
 
-def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> Dict[str, List[str]]:
+def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> dict[str, list[str]]:
     """Compares the keys and values of two datasets.
 
     This utility function is especially useful for debugging tests that
@@ -30,7 +29,7 @@ def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> Dict[str, List[str]]:
 
     Returns
     -------
-    Dict[str, Union[List[str]]]
+    dict[str, list[str]]
         A dictionary mapping unique, non-identical, and
         non-equal keys in both Datasets.
     """
@@ -111,8 +110,8 @@ def _has_module(modname: str) -> bool:  # pragma: no cover
 
 
 def _if_multidim_dask_array_then_load(
-    obj: Union[xr.DataArray, xr.Dataset],
-) -> Optional[Union[xr.DataArray, xr.Dataset]]:
+    obj: xr.DataArray | xr.Dataset,
+) -> xr.DataArray | xr.Dataset | None:
     """
     If the underlying array for an xr.DataArray or xr.Dataset is a
     multidimensional, lazy Dask Array, load it into an in-memory NumPy array.
@@ -124,9 +123,9 @@ def _if_multidim_dask_array_then_load(
 
     Parameters
     ----------
-    obj : Union[xr.DataArray, xr.Dataset]
+    obj : xr.DataArray | xr.Dataset | None
         The xr.DataArray or xr.Dataset. If the xarray object is chunked,
-        the underlying array will be a Dask Array.
+        the underlying array will be a Dask Array. Otherwise, return None.
     """
     if isinstance(obj.data, Array) and obj.ndim > 1:
         return obj.load()

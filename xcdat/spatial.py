@@ -1,17 +1,8 @@
 """Module containing geospatial averaging functions."""
 
+from collections.abc import Callable, Hashable
 from functools import reduce
-from typing import (
-    Callable,
-    Dict,
-    Hashable,
-    List,
-    Literal,
-    Optional,
-    Tuple,
-    TypedDict,
-    get_args,
-)
+from typing import Literal, TypedDict, get_args
 
 import cf_xarray  # noqa: F401
 import numpy as np
@@ -31,12 +22,12 @@ from xcdat.utils import (
 )
 
 #: Type alias for a dictionary of axis keys mapped to their bounds.
-AxisWeights = Dict[Hashable, xr.DataArray]
+AxisWeights = dict[Hashable, xr.DataArray]
 #: Type alias for supported spatial axis keys.
 SpatialAxis = Literal["X", "Y"]
-SPATIAL_AXES: Tuple[SpatialAxis, ...] = get_args(SpatialAxis)
+SPATIAL_AXES: tuple[SpatialAxis, ...] = get_args(SpatialAxis)
 #: Type alias for a tuple of floats/ints for the regional selection bounds.
-RegionAxisBounds = Tuple[float, float]
+RegionAxisBounds = tuple[float, float]
 
 
 @xr.register_dataset_accessor("spatial")
@@ -72,7 +63,7 @@ class SpatialAccessor:
     def average(
         self,
         data_var: str,
-        axis: List[SpatialAxis] | Tuple[SpatialAxis, ...] = ("X", "Y"),
+        axis: list[SpatialAxis] | tuple[SpatialAxis, ...] = ("X", "Y"),
         weights: Literal["generate"] | xr.DataArray = "generate",
         keep_weights: bool = False,
         lat_bounds: RegionAxisBounds | None = None,
@@ -105,7 +96,7 @@ class SpatialAccessor:
         data_var: str
             The name of the data variable inside the dataset to spatially
             average.
-        axis : List[SpatialAxis]
+        axis : list[SpatialAxis]
             List of axis dimensions to average over, by default ("X", "Y").
             Valid axis keys include "X" and "Y".
         weights : {"generate", xr.DataArray}, optional
@@ -226,7 +217,7 @@ class SpatialAccessor:
 
     def get_weights(
         self,
-        axis: List[SpatialAxis] | Tuple[SpatialAxis, ...],
+        axis: list[SpatialAxis] | tuple[SpatialAxis, ...],
         lat_bounds: RegionAxisBounds | None = None,
         lon_bounds: RegionAxisBounds | None = None,
         data_var: str | None = None,
@@ -246,7 +237,7 @@ class SpatialAccessor:
 
         Parameters
         ----------
-        axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
+        axis : list[SpatialAxis] | tuple[SpatialAxis, ...]
             List of axis dimensions to average over.
         lat_bounds : RegionAxisBounds | None
             Tuple of latitude boundaries for regional selection, by default
@@ -275,10 +266,10 @@ class SpatialAccessor:
         and pressure).
         """
         Bounds = TypedDict(
-            "Bounds", {"weights_method": Callable, "region": Optional[np.ndarray]}
+            "Bounds", {"weights_method": Callable, "region": np.ndarray | None}
         )
 
-        axis_bounds: Dict[SpatialAxis, Bounds] = {
+        axis_bounds: dict[SpatialAxis, Bounds] = {
             "X": {
                 "weights_method": self._get_longitude_weights,
                 "region": np.array(lon_bounds, dtype="float")
@@ -315,13 +306,13 @@ class SpatialAccessor:
 
         return weights
 
-    def _validate_axis_arg(self, axis: List[SpatialAxis] | Tuple[SpatialAxis, ...]):
+    def _validate_axis_arg(self, axis: list[SpatialAxis] | tuple[SpatialAxis, ...]):
         """
         Validates that the ``axis`` dimension(s) exists in the dataset.
 
         Parameters
         ----------
-        axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
+        axis : list[SpatialAxis] | tuple[SpatialAxis, ...]
             List of axis dimensions to average over.
 
         Raises
@@ -673,7 +664,7 @@ class SpatialAccessor:
         return region_weights
 
     def _validate_weights(
-        self, data_var: xr.DataArray, axis: List[SpatialAxis] | Tuple[SpatialAxis, ...]
+        self, data_var: xr.DataArray, axis: list[SpatialAxis] | tuple[SpatialAxis, ...]
     ):
         """Validates the ``weights`` arg based on a set of criteria.
 
@@ -686,7 +677,7 @@ class SpatialAccessor:
         ----------
         data_var : xr.DataArray
             The data variable used for validation with user supplied weights.
-        axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
+        axis : list[SpatialAxis] | tuple[SpatialAxis, ...]
             List of axes dimension(s) average over.
         weights : xr.DataArray
             A DataArray containing the region area weights for averaging.
@@ -725,7 +716,7 @@ class SpatialAccessor:
     def _averager(
         self,
         data_var: xr.DataArray,
-        axis: List[SpatialAxis] | Tuple[SpatialAxis, ...],
+        axis: list[SpatialAxis] | tuple[SpatialAxis, ...],
         skipna: bool | None = None,
         min_weight: float = 0.0,
     ) -> xr.DataArray:
@@ -744,7 +735,7 @@ class SpatialAccessor:
         ----------
         data_var : xr.DataArray
             Data variable inside a Dataset.
-        axis : List[SpatialAxis] | Tuple[SpatialAxis, ...]
+        axis : list[SpatialAxis] | tuple[SpatialAxis, ...]
             List of axis dimensions to average over.
         skipna : bool | None, optional
             If True, skip missing values (as marked by NaN). By default, only
@@ -776,7 +767,7 @@ class SpatialAccessor:
         dv = data_var.copy()
         weights = self._weights.fillna(0)
 
-        dim: List[str] = []
+        dim: list[str] = []
         for key in axis:
             dim.append(get_dim_keys(dv, key))  # type: ignore
 
@@ -794,7 +785,7 @@ class SpatialAccessor:
         self,
         dv: xr.DataArray,
         dv_mean: xr.DataArray,
-        dim: List[str],
+        dim: list[str],
         weights: xr.DataArray,
         min_weight: float,
     ) -> xr.DataArray:
@@ -813,7 +804,7 @@ class SpatialAccessor:
             The weighted variable used for getting masked weights.
         dv_mean : xr.DataArray
             The average of the weighted variable.
-        dim: List[str]:
+        dim: list[str]:
             List of axis dimensions to average over.
         weights : xr.DataArray
             A DataArray containing either the regional weights used for weighted

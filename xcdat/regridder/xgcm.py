@@ -1,4 +1,5 @@
-from typing import Any, Dict, Hashable, Literal, Optional, Union, get_args
+from collections.abc import Hashable
+from typing import Any, Literal, get_args
 
 import xarray as xr
 from xgcm import Grid
@@ -18,10 +19,10 @@ class XGCMRegridder(BaseRegridder):
         input_grid: xr.Dataset,
         output_grid: xr.Dataset,
         method: XGCMVerticalMethods = "linear",
-        target_data: Optional[Union[str, xr.DataArray]] = None,
-        grid_positions: Optional[Dict[str, str]] = None,
+        target_data: str | xr.DataArray | None = None,
+        grid_positions: dict[str, str] | None = None,
         periodic: bool = False,
-        extra_init_options: Optional[Dict[str, Any]] = None,
+        extra_init_options: dict[str, Any] | None = None,
         **options: Any,
     ):
         """
@@ -57,18 +58,18 @@ class XGCMRegridder(BaseRegridder):
                - linear (default)
                - log
                - conservative
-        target_data : Optional[Union[str, xr.DataArray]]
+        target_data : str | xr.DataArray | None
                         Data to transform target data onto, either the key of a variable
             in the input dataset or an ``xr.DataArray``, by default None.
-        grid_positions : Optional[Dict[str, str]]
+        grid_positions : dict[str, str] | None
             Mapping of dimension positions, by default None. If ``None`` then an
             attempt is made to derive this argument.
-        periodic : Optional[bool]
+        periodic : bool
             Whether the grid is periodic, by default False.
-        extra_init_options : Optional[Dict[str, Any]]
+        extra_init_options : dict[str, Any] | None
             Extra options passed to the ``xgcm.Grid`` constructor, by default
             None.
-        options : Optional[Dict[str, Any]]
+        options : dict[str, Any] | None
             Extra options passed to the ``xgcm.Grid.transform`` method.
 
         Raises
@@ -161,7 +162,7 @@ class XGCMRegridder(BaseRegridder):
 
         grid = Grid(ds, coords=grid_coords, **self._extra_init_options)
 
-        target_data: Union[str, xr.DataArray, None] = None
+        target_data: str | xr.DataArray | None = None
 
         try:
             target_data = ds[self._target_data]
@@ -209,7 +210,7 @@ class XGCMRegridder(BaseRegridder):
 
         return output_ds
 
-    def _get_grid_positions(self) -> Dict[str, Union[Any, Hashable]]:
+    def _get_grid_positions(self) -> dict[str, Any | Hashable]:
         if self._method == "conservative":
             raise RuntimeError(
                 "Conservative regridding requires a second point position, pass these "
