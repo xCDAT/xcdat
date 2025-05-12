@@ -70,7 +70,7 @@ def _drop_axis(ds: xr.Dataset, axis: list[CFAxisKey]) -> xr.Dataset:
 
     Returns
     -------
-    xr.Daatset
+    xr.Dataset
         The dataset with axis or axes dropped.
     """
     dims: list[str] = []
