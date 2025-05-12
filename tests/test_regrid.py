@@ -66,7 +66,11 @@ class TestXGCMRegridder:
         ds = ds.drop_dims("lev")
 
         with pytest.raises(
-            RuntimeError, match="Could not infer target data, missing z-coordinate"
+            RuntimeError,
+            match=(
+                "Could not infer target data, missing z-coordinate or "
+                "required variables for formula terms."
+            ),
         ):
             regridder.vertical("so", ds)
 
@@ -116,7 +120,10 @@ class TestXGCMRegridder:
 
         with pytest.raises(
             RuntimeError,
-            match="Could not infer target data, missing z-coordinate.",
+            match=(
+                "Could not infer target data, missing z-coordinate or "
+                "required variables for formula terms."
+            ),
         ):
             regridder.vertical("so", ds)
 

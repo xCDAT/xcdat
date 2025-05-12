@@ -222,7 +222,8 @@ class XGCMRegridder(BaseRegridder):
             )
         except KeyError as e:
             raise RuntimeError(
-                "Could not infer target data, missing z-coordinate."
+                "Could not infer target data, missing z-coordinate or required "
+                "variables for formula terms."
             ) from e
 
         # decode_vertical_coord doesn't raise exception if it cannot decode
