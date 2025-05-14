@@ -1,0 +1,56 @@
+cff-version: 1.2.0
+message: "If you use xCDAT in your research, please cite it as below."
+title: "xCDAT: Xarray Climate Data Analysis Tools"
+abstract: "xCDAT is an open-source Python package that extends Xarray for climate data analysis on structured grids. It simplifies common analysis operations such as spatial and temporal averaging, climatology calculations, and regridding, promoting software sustainability and scientific reproducibility."
+doi: 10.5281/zenodo.7216173
+license: Apache-2.0
+repository-code: "https://github.com/XCDAT/xcdat"
+url: "https://xcdat.readthedocs.io/"
+authors:
+    - family-names: "Vo"
+      given-names: "Tom"
+      orcid: "https://orcid.org/0000-0002-2461-0191"
+      affiliation: "Lawrence Livermore National Laboratory"
+    - family-names: "Po-Chedley"
+      given-names: "Stephen"
+      orcid: "https://orcid.org/0000-0002-0390-238X"
+      affiliation: "Lawrence Livermore National Laboratory"
+    - family-names: "Boutte"
+      given-names: "Jason"
+      orcid: "https://orcid.org/0009-0009-3996-3772"
+      affiliation: "Lawrence Livermore National Laboratory"
+    - family-names: "Lee"
+      given-names: "Jiwoo"
+      orcid: "https://orcid.org/0000-0002-0016-7199"
+      affiliation: "Lawrence Livermore National Laboratory"
+    - family-names: "Zhang"
+      given-names: "Chengzhu"
+      orcid: "https://orcid.org/0000-0002-9632-0716"
+      affiliation: "Lawrence Livermore National Laboratory"
+preferred-citation:
+    type: article
+    title: "xCDAT: A Python Package for Simple and Robust Analysis of Climate Data"
+    authors:
+        - family-names: "Vo"
+          given-names: "Tom"
+          orcid: "https://orcid.org/0000-0002-2461-0191"
+        - family-names: "Po-Chedley"
+          given-names: "Stephen"
+          orcid: "https://orcid.org/0000-0002-0390-238X"
+        - family-names: "Boutte"
+          given-names: "Jason"
+          orcid: "https://orcid.org/0009-0009-3996-3772"
+        - family-names: "Lee"
+          given-names: "Jiwoo"
+          orcid: "https://orcid.org/0000-0002-0016-7199"
+        - family-names: "Zhang"
+          given-names: "Chengzhu"
+          orcid: "https://orcid.org/0000-0002-9632-0716"
+    journal: "Journal of Open Source Software"
+    volume: 9
+    issue: 98
+    pages: "6426"
+    year: 2024
+    month: 6
+    doi: "10.21105/joss.06426"
+    url: "https://joss.theoj.org/papers/10.21105/joss.06426"
