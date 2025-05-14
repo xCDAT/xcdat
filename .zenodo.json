@@ -1,0 +1,29 @@
+{
+    "creators": [
+        {
+            "name": "Vo, Tom",
+            "affiliation": "Lawrence Livermore National Laboratory",
+            "orcid": "0000-0002-2461-0191"
+        },
+        {
+            "name": "Po-Chedley, Stephen",
+            "affiliation": "Lawrence Livermore National Laboratory",
+            "orcid": "0000-0002-0390-238X"
+        },
+        {
+            "name": "Boutte, Jason",
+            "affiliation": "Lawrence Livermore National Laboratory",
+            "orcid": "0009-0009-3996-3772"
+        },
+        {
+            "name": "Lee, Jiwoo",
+            "affiliation": "Lawrence Livermore National Laboratory",
+            "orcid": "0000-0002-0016-7199"
+        },
+        {
+            "name": "Zhang, Chengzhu",
+            "affiliation": "Lawrence Livermore National Laboratory",
+            "orcid": "0000-0002-9632-0716"
+        }
+    ]
+}
