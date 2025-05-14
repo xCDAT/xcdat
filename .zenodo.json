@@ -25,5 +25,21 @@
             "affiliation": "Lawrence Livermore National Laboratory",
             "orcid": "0000-0002-9632-0716"
         }
+    ],
+    "license": "Apache-2.0",
+    "keywords": [
+        "climate data",
+        "xarray",
+        "climate analysis",
+        "E3SM",
+        "python",
+        "structured grid"
+    ],
+    "related_identifiers": [
+        {
+            "relation": "isSupplementTo",
+            "identifier": "10.21105/joss.06426",
+            "scheme": "doi"
+        }
     ]
 }
