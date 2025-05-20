@@ -648,7 +648,7 @@ class BoundsAccessor:
                 if isinstance(diff, np.timedelta64):
                     diff = pd.to_timedelta(diff)
 
-                hrs = diff.seconds / 3600
+                hrs = diff.total_seconds() / 3600
                 daily_subfreq = int(24 / hrs)  # type: ignore
 
             time_bnds = self._create_daily_time_bounds(
