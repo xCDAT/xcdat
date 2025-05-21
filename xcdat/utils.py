@@ -1,12 +1,11 @@
 import importlib
 import json
-from typing import Dict, List, Optional, Union
 
 import xarray as xr
 from dask.array.core import Array
 
 
-def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> Dict[str, List[str]]:
+def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> dict[str, list[str]]:
     """Compares the keys and values of two datasets.
 
     This utility function is especially useful for debugging tests that
@@ -30,7 +29,7 @@ def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> Dict[str, List[str]]:
 
     Returns
     -------
-    Dict[str, Union[List[str]]]
+    dict[str, list[str]]
         A dictionary mapping unique, non-identical, and
         non-equal keys in both Datasets.
     """
@@ -111,8 +110,8 @@ def _has_module(modname: str) -> bool:  # pragma: no cover
 
 
 def _if_multidim_dask_array_then_load(
-    obj: Union[xr.DataArray, xr.Dataset],
-) -> Optional[Union[xr.DataArray, xr.Dataset]]:
+    obj: xr.DataArray | xr.Dataset,
+) -> xr.DataArray | xr.Dataset | None:
     """
     If the underlying array for an xr.DataArray or xr.Dataset is a
     multidimensional, lazy Dask Array, load it into an in-memory NumPy array.
@@ -124,11 +123,68 @@ def _if_multidim_dask_array_then_load(
 
     Parameters
     ----------
-    obj : Union[xr.DataArray, xr.Dataset]
+    obj : xr.DataArray | xr.Dataset | None
         The xr.DataArray or xr.Dataset. If the xarray object is chunked,
-        the underlying array will be a Dask Array.
+        the underlying array will be a Dask Array. Otherwise, return None.
     """
     if isinstance(obj.data, Array) and obj.ndim > 1:
         return obj.load()
 
     return None
+
+
+def _get_masked_weights(dv: xr.DataArray, weights: xr.DataArray) -> xr.DataArray:
+    """Get weights with missing data (`np.nan`) receiving no weight (zero).
+
+    Parameters
+    ----------
+    dv : xr.DataArray
+        The variable.
+    weights : xr.DataArray
+        A DataArray containing either the regional or temporal weights used for
+        weighted averaging. ``weights`` must include the same axis dimensions
+        and dimensional sizes as the data variable.
+
+    Returns
+    -------
+    xr.DataArray
+        The masked weights.
+    """
+    masked_weights = xr.where(dv.copy().isnull(), 0.0, weights)
+
+    return masked_weights
+
+
+def _validate_min_weight(min_weight: float | None) -> float:
+    """Validate the ``min_weight`` value.
+
+    Parameters
+    ----------
+    min_weight : float | None
+        Fraction of data coverage (i..e, weight) needed to return a
+        spatial average value. Value must range from 0 to 1.
+
+    Returns
+    -------
+    float
+        The required weight percentage.
+
+    Raises
+    ------
+    ValueError
+        If the `min_weight` argument is less than 0.
+    ValueError
+        If the `min_weight` argument is greater than 1.
+    """
+    if min_weight is None:
+        return 0.0
+    elif min_weight < 0.0:
+        raise ValueError(
+            "min_weight argument is less than 0. min_weight must be between 0 and 1.",
+        )
+    elif min_weight > 1.0:
+        raise ValueError(
+            "min_weight argument is greater than 1. min_weight must be between 0 and 1.",
+        )
+
+    return min_weight

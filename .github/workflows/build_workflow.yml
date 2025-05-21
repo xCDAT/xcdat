@@ -36,10 +36,10 @@ jobs:
             - name: Checkout Code Repository
               uses: actions/checkout@v3
 
-            - name: Set up Python 3.10
+            - name: Set up Python 3.12
               uses: actions/setup-python@v3
               with:
-                  python-version: "3.10"
+                  python-version: "3.12"
 
             - name: Install and Run Pre-commit
               uses: pre-commit/action@v3.0.1
@@ -55,7 +55,7 @@ jobs:
                 shell: bash -l {0}
         strategy:
             matrix:
-                python-version: ["3.9", "3.10", "3.11", "3.12"]
+                python-version: ["3.10", "3.11", "3.12", "3.13"]
         steps:
             - uses: actions/checkout@v3
 
@@ -93,8 +93,7 @@ jobs:
               run: |
                   conda env update -n xcdat_ci -f conda-env/ci.yml
                   # Make sure the Python version in the env matches the current matrix version.
-                  # Make sure numpy is not > 2.0.
-                  conda install -c conda-forge python=${{ matrix.python-version }} "numpy>=1.23.0,<2.0"
+                  conda install -c conda-forge python=${{ matrix.python-version }}
 
             - name: Install xcdat
               # Source: https://github.com/conda/conda-build/issues/4251#issuecomment-1053460542

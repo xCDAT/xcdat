@@ -66,7 +66,64 @@ class TestXGCMRegridder:
         ds = ds.drop_dims("lev")
 
         with pytest.raises(
-            RuntimeError, match="Could not infer target data, missing z-coordinate"
+            RuntimeError,
+            match=(
+                "Could not infer target data, missing z-coordinate or "
+                "required variables for formula terms."
+            ),
+        ):
+            regridder.vertical("so", ds)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_infer_target_data_missing_formula_terms(self, _):
+        ds = self.ds.copy(True)
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data="infer"
+        )
+
+        # Missing formula_terms attribute
+        ds.lev.attrs["standard_name"] = "atmosphere_ln_pressure_coordinate"
+
+        with pytest.raises(
+            RuntimeError, match="Could not infer vertical coordinate for 'lev'."
+        ):
+            regridder.vertical("so", ds)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_infer_target_data_invalid_standard_name(self, _):
+        ds = self.ds.copy(True)
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data="infer"
+        )
+
+        # Invalid standard_name
+        ds.lev.attrs["standard_name"] = "invalid_standard_name"
+
+        with pytest.raises(
+            RuntimeError, match="Could not infer vertical coordinate for 'lev'."
+        ):
+            regridder.vertical("so", ds)
+
+    @mock.patch("xcdat.regridder.xgcm.Grid")
+    def test_infer_target_data_missing_required_variable(self, _):
+        ds = self.ds.copy(True)
+
+        regridder = xgcm.XGCMRegridder(
+            ds, self.output_grid, method="linear", target_data="infer"
+        )
+
+        # Missing required variable (e.g., p0)
+        ds.lev.attrs["formula_terms"] = "p0: p0 lev: lev"
+        ds.lev.attrs["standard_name"] = "atmosphere_ln_pressure_coordinate"
+
+        with pytest.raises(
+            RuntimeError,
+            match=(
+                "Could not infer target data, missing z-coordinate or "
+                "required variables for formula terms."
+            ),
         ):
             regridder.vertical("so", ds)
 
@@ -694,10 +751,10 @@ class TestRegrid2Regridder:
             [[0.29289322]],
         ]
 
-        for x, y in zip(mapping, expected_mapping):
+        for x, y in zip(mapping, expected_mapping, strict=False):
             np.testing.assert_allclose(x, y)
 
-        for x2, y2 in zip(weights, expected_weigths):
+        for x2, y2 in zip(weights, expected_weigths, strict=False):
             np.testing.assert_allclose(x2, y2)
 
     def test_map_latitude_fine_to_coarse(self):

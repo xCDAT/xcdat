@@ -6,8 +6,9 @@ channels:
 dependencies:
     # Base - required for building the package.
     # =========================================
-    - python >=3.9
-    - cf_xarray >=0.9.1
+    - python >=3.10
+    - setuptools
+    - cf_xarray >=0.10.3
     - cftime
     - dask
     - netcdf4
