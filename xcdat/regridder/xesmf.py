@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Union
 
 import xarray as xr
 import xesmf as xe

@@ -1,5 +1,6 @@
 import numpy as np
 import xarray as xr
+from typings import List, Optional
 
 from xcdat.axis import COORD_DEFAULT_ATTRS, VAR_NAME_MAP, CFAxisKey, get_dim_coords
 from xcdat.bounds import create_bounds
