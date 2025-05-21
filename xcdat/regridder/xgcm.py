@@ -179,9 +179,6 @@ class XGCMRegridder(BaseRegridder):
 
                 target_data = None
 
-        # assumes new verical coordinate has been calculated and stored as `pressure`
-        # TODO: auto calculate pressure reference http://cfconventions.org/Data/cf-conventions/cf-conventions-1.8/cf-conventions.html#parametric-v-coord
-        #       cf_xarray only supports two ocean s-coordinate and ocean_sigma_coordinate
         output_da = grid.transform(
             ds[data_var],
             "Z",
