@@ -21,7 +21,6 @@ import os
 import pathlib
 import sys
 from pathlib import Path
-from typing import Dict
 from textwrap import dedent, indent
 
 import sphinx_autosummary_accessors
@@ -178,7 +177,7 @@ htmlhelp_basename = "xcdatdoc"
 
 # -- Options for LaTeX output ------------------------------------------
 
-latex_elements: Dict[str, str] = {
+latex_elements: dict[str, str] = {
     # The paper size ('letterpaper' or 'a4paper').
     #
     # 'papersize': 'letterpaper',

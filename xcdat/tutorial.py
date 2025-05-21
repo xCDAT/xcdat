@@ -5,12 +5,9 @@ datasets, either from a local cache or by downloading them from a remote
 repository.
 """
 
-from __future__ import annotations
-
 import os
 import pathlib
 import sys
-from typing import Dict, List, Tuple
 
 import xarray as xr
 from xarray.tutorial import _construct_cache_dir, file_formats
@@ -23,7 +20,7 @@ base_url = "https://github.com/xCDAT/xcdat-data"
 version = "main"
 
 XARRAY_DATASETS = list(file_formats.keys()) + ["era5-2mt-2019-03-uk.grib"]
-XCDAT_DATASETS: Dict[str, str] = {
+XCDAT_DATASETS: dict[str, str] = {
     # Monthly precipitation data from the ACCESS-ESM1-5 model.
     "pr_amon_access": "pr_Amon_ACCESS-ESM1-5_historical_r10i1p1f1_gn_185001-201412_subset.nc",
     # Monthly ocean salinity data from the CESM2 model.
@@ -47,7 +44,7 @@ def open_dataset(
     name: str,
     cache: bool = True,
     cache_dir: None | str | os.PathLike = DEFAULT_CACHE_DIR_NAME,
-    add_bounds: List[CFAxisKey] | Tuple[CFAxisKey, ...] | None = ("X", "Y"),
+    add_bounds: list[CFAxisKey] | tuple[CFAxisKey, ...] | None = ("X", "Y"),
     **kargs,
 ) -> xr.Dataset:
     """Open a dataset from the online repository (requires internet).
@@ -76,7 +73,7 @@ def open_dataset(
         The directory in which to search for and write cached data.
     cache : bool, optional
         If True, then cache data locally for use on subsequent calls
-    add_bounds : List[CFAxisKey] | Tuple[CFAxisKey] | None, optional
+    add_bounds : list[CFAxisKey] | tuple[CFAxisKey] | None, optional
         List or tuple of axis keys for which to add bounds, by default
     ("X", "Y").
     **kargs : dict, optional

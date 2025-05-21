@@ -363,7 +363,7 @@ def _sparse_weights(
 
 def _get_output_coords(
     dv_input: xr.DataArray, output_grid: xr.Dataset
-) -> Dict[str, xr.DataArray]:
+) -> dict[str, xr.DataArray]:
     """
     Generate the output coordinates for regridding based on the input data
     variable and output grid.
@@ -377,12 +377,12 @@ def _get_output_coords(
 
     Returns
     -------
-    Dict[str, xr.DataArray]
+    dict[str, xr.DataArray]
         A dictionary where keys are coordinate names and values are the
         corresponding coordinates from the output grid or input data variable,
         aligned with the dimensions of the input data variable.
     """
-    output_coords: Dict[str, xr.DataArray] = {}
+    output_coords: dict[str, xr.DataArray] = {}
 
     # First get the X and Y axes from the output grid.
     for key in ["X", "Y"]:
@@ -404,7 +404,7 @@ def _get_output_coords(
 
 def _map_latitude(
     src: np.ndarray, dst: np.ndarray
-) -> Tuple[List[np.ndarray], List[np.ndarray]]:
+) -> tuple[list[np.ndarray], list[np.ndarray]]:
     """
     Map source to destination latitude.
 
@@ -426,7 +426,7 @@ def _map_latitude(
 
     Returns
     -------
-    Tuple[List[np.ndarray], List[np.ndarray]]
+    tuple[list[np.ndarray], list[np.ndarray]]
         A tuple of cell mappings and cell weights.
     """
     src_south, src_north = _extract_bounds(src)
@@ -457,8 +457,8 @@ def _map_latitude(
 
 
 def _get_latitude_weights(
-    bounds: List[Tuple[np.ndarray, np.ndarray]],
-) -> List[np.ndarray]:
+    bounds: list[tuple[np.ndarray, np.ndarray]],
+) -> list[np.ndarray]:
     weights = []
 
     for x, y in bounds:
@@ -470,7 +470,7 @@ def _get_latitude_weights(
     return weights
 
 
-def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
+def _map_longitude(src: np.ndarray, dst: np.ndarray) -> tuple[list, list]:
     """
     Map source to destination longitude.
 
@@ -495,7 +495,7 @@ def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
 
     Returns
     -------
-    Tuple[List, List]
+    tuple[list, list]
         A tuple of cell mappings and cell weights.
     """
     src_west, src_east = _extract_bounds(src)
@@ -547,7 +547,7 @@ def _map_longitude(src: np.ndarray, dst: np.ndarray) -> Tuple[List, List]:
     return mapping, weights
 
 
-def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+def _extract_bounds(bounds: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Extract lower and upper bounds from an axis.
 
@@ -558,7 +558,7 @@ def _extract_bounds(bounds: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
 
     Returns
     -------
-    Tuple[np.ndarray, np.ndarray]
+    tuple[np.ndarray, np.ndarray]
         A tuple containing the lower and upper bounds for the axis.
     """
     if bounds[0, 0] < bounds[0, 1]:
@@ -575,7 +575,7 @@ def _align_axis(
     src_west: np.ndarray,
     src_east: np.ndarray,
     dst_west: np.ndarray,
-) -> Tuple[np.ndarray, np.ndarray, int]:
+) -> tuple[np.ndarray, np.ndarray, int]:
     """
     Aligns a source and destination longitude axis.
 
@@ -590,7 +590,7 @@ def _align_axis(
 
     Returns
     -------
-    Tuple[np.ndarray, np.ndarray, int]
+    tuple[np.ndarray, np.ndarray, int]
         A tuple containing the shifted western source bounds, the shifted eastern
         source bounds, and the number of places shifted to align axis.
     """
