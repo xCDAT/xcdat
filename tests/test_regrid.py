@@ -517,6 +517,30 @@ class TestRegrid2Regridder:
         with pytest.raises(KeyError):
             regridder.horizontal("unknown", self.coarse_2d_ds)
 
+    def test_regrid_create_nan_mask(self):
+        self.coarse_2d_ds.ts.loc[dict(lat=0.0, lon=89.5)] = np.nan
+
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, create_nan_mask=True
+        )
+
+        output_data = regridder.horizontal("ts", self.coarse_2d_ds)
+
+        # np.nan != np.nan, replace with 1e20
+        output_data = output_data.fillna(1e20)
+
+        expected_output = np.array(
+            [
+                [1] * 4,
+                [1e20, 1e20, 1, 1],
+                [1e20, 1e20, 1, 1],
+                [1] * 4,
+            ],
+            dtype=np.float32,
+        )
+
+        assert np.all(output_data.ts.values == expected_output)
+
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
     def test_regrid_input_mask(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, self.fine_2d_ds)
@@ -603,6 +627,27 @@ class TestRegrid2Regridder:
         output_data = regridder.horizontal("ts", self.coarse_4d_ds)
 
         assert np.all(output_data.ts == 1)
+
+    def test_output_weigths(self):
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, output_weights=True
+        )
+
+        output_ds = regridder.horizontal("ts", self.coarse_2d_ds)
+
+        assert "weights" in output_ds
+        assert (
+            output_ds["weights"].shape
+            == self.fine_2d_ds["ts"].shape + self.coarse_2d_ds["ts"].shape
+        )
+
+        regridder = regrid2.Regrid2Regridder(
+            self.coarse_2d_ds, self.fine_2d_ds, output_weights="ts_weights"
+        )
+
+        output_ds = regridder.horizontal("ts", self.coarse_2d_ds)
+
+        assert "ts_weights" in output_ds
 
     def test_map_longitude_coarse_to_fine(self):
         mapping, weights = regrid2._map_longitude(
@@ -743,6 +788,29 @@ class TestXESMFRegridder:
         assert "lon_bnds" in output
         assert "time_bnds" in output
 
+    def test_output_weights(self):
+        ds = self.ds.copy()
+
+        regridder = xesmf.XESMFRegridder(
+            ds, self.new_grid, "bilinear", output_weights=True
+        )
+
+        output = regridder.horizontal("ts", ds)
+
+        assert "weights" in output
+        assert output["weights"].shape == (
+            self.new_grid["lat"].shape[0],
+            self.new_grid["lon"].shape[0],
+        ) + (ds["lat"].shape[0], ds["lon"].shape[0])
+
+        regridder = xesmf.XESMFRegridder(
+            ds, self.new_grid, "bilinear", output_weights="ts_weights"
+        )
+
+        output = regridder.horizontal("ts", ds)
+
+        assert "ts_weights" in output
+
     @pytest.mark.parametrize(
         "name,value,_",
         [
@@ -804,7 +872,9 @@ class TestGrid:
     @pytest.fixture(autouse=True)
     def setUp(self):
         self.lat_data = np.array([-45, 0, 45])
-        self.lat = xr.DataArray(self.lat_data.copy(), dims=["lat"], name="lat")
+        self.lat = xr.DataArray(
+            self.lat_data.copy(), dims=["lat"], name="lat", attrs={"axis": "Y"}
+        )
 
         self.lat_bnds_data = np.array([[-67.5, -22.5], [-22.5, 22.5], [22.5, 67.5]])
         self.lat_bnds = xr.DataArray(
@@ -812,7 +882,9 @@ class TestGrid:
         )
 
         self.lon_data = np.array([30, 60, 90, 120, 150])
-        self.lon = xr.DataArray(self.lon_data.copy(), dims=["lon"], name="lon")
+        self.lon = xr.DataArray(
+            self.lon_data.copy(), dims=["lon"], name="lon", attrs={"axis": "X"}
+        )
 
         self.lon_bnds_data = np.array(
             [[15, 45], [45, 75], [75, 105], [105, 135], [135, 165]]
@@ -907,6 +979,9 @@ class TestGrid:
 
         assert np.array_equal(new_grid.lat, self.lat)
         assert np.array_equal(new_grid.lon, self.lon)
+        assert np.array_equal(
+            new_grid.mask, xr.DataArray(np.ones((5, 3)), dims=("lat", "lon"))
+        )
 
     def test_create_grid_with_tuple_of_coords_and_no_bounds(self):
         # This case happens if `create_axis` is used without creating bounds,
