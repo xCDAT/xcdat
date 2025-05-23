@@ -8,13 +8,14 @@ dependencies:
     # =========================================
     - python >=3.10
     - setuptools
-    - cf_xarray >=0.9.1
+    - cf_xarray >=0.10.3
     - cftime
     - dask
     - netcdf4
     - numpy >=2.0.0,<3.0.0
     - pandas
     - python-dateutil
+    - scipy
     - xarray >=2024.03.0
     - xesmf >=0.8.7
     - xgcm
