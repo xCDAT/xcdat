@@ -1558,6 +1558,12 @@ class TemporalAccessor:
             # achieve this, first broadcast the one-dimensional (temporal
             # dimension) shape of the `weights` DataArray to the
             # multi-dimensional shape of its corresponding data variable.
+            weights = self._weights
+            if dv.chunks:
+                # For Dask-backed data variables, chunk the weights along the
+                # time dimension before broadcasting to avoid eager evaluation
+                # of the masking step.
+                weights = weights.chunk({self.dim: dv.chunksizes[self.dim]})
             weights, _ = xr.broadcast(self._weights, dv)
             weights = xr.where(dv.copy().isnull(), 0.0, weights)
 
