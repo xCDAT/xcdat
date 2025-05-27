@@ -2105,10 +2105,10 @@ def _infer_freq(time_coords: xr.DataArray) -> Frequency:
         The time frequency.
     """
     # Ensure time_coords is sorted and diffable
-    time_deltas = np.diff(time_coords.values).astype('timedelta64[ns]')
-    
+    time_deltas = np.diff(time_coords.values).astype("timedelta64[ns]")
+
     # Calculate the median delta
-    median_delta = pd.to_timedelta(np.median(time_deltas), unit='ns')
+    median_delta = pd.to_timedelta(np.median(time_deltas), unit="ns")
 
     if median_delta < pd.Timedelta(days=1):
         return "hour"
