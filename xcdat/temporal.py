@@ -2083,7 +2083,7 @@ class TemporalAccessor:
         return ds_departs
 
 
-def _infer_freq(time_coords: xr.DataArray) -> str:
+def _infer_freq(time_coords: xr.DataArray) -> Frequency:
     """Infers the time frequency from the coordinates.
 
     This method infers the time frequency from the coordinates by
@@ -2101,8 +2101,8 @@ def _infer_freq(time_coords: xr.DataArray) -> str:
 
     Returns
     -------
-    str
-        The inferred time frequency: "hour", "day", "month", or "year".
+    Frequency
+        The time frequency.
     """
     # Ensure time_coords is sorted and diffable
     time_deltas = np.diff(time_coords.values).astype('timedelta64[ns]')
