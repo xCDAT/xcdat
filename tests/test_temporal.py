@@ -3,6 +3,7 @@ import warnings
 
 import cftime
 import numpy as np
+import pandas as pd
 import pytest
 import xarray as xr
 from xarray.coding.cftime_offsets import get_date_type
@@ -14,6 +15,7 @@ from xcdat.temporal import (
     TemporalAccessor,
     _contains_datetime_like_objects,
     _get_datetime_like_type,
+    _infer_freq,
 )
 
 logger = _setup_custom_logger("xcdat.temporal", propagate=True)
@@ -3983,3 +3985,76 @@ class TestGetDatetimeLikeType:
         )
 
         assert _get_datetime_like_type(time) == cftime.datetime
+
+
+class TestInferFreq:
+    def test_infers_hourly_frequency(self):
+        times = xr.DataArray(pd.date_range("2000-01-01", periods=5, freq="H"))
+        freq = _infer_freq(times)
+
+        assert freq == "hour"
+
+    def test_infers_daily_frequency(self):
+        times = xr.DataArray(pd.date_range("2000-01-01", periods=5, freq="D"))
+        freq = _infer_freq(times)
+
+        assert freq == "day"
+
+    def test_infers_monthly_frequency(self):
+        times = xr.DataArray(pd.date_range("2000-01-01", periods=5, freq="MS"))
+        freq = _infer_freq(times)
+
+        assert freq == "month"
+
+    def test_infers_yearly_frequency(self):
+        times = xr.DataArray(pd.date_range("2000-01-01", periods=5, freq="YS"))
+        freq = _infer_freq(times)
+
+        assert freq == "year"
+
+    def test_handles_irregular_intervals(self):
+        # 1 day, 1 day, 30 days, 365 days: median is 15.5 days, so "day"
+        times = xr.DataArray(
+            pd.to_datetime(
+                [
+                    "2000-01-01",
+                    "2000-01-02",
+                    "2000-01-03",
+                    "2000-02-02",
+                    "2001-02-02",
+                ]
+            )
+        )
+        freq = _infer_freq(times)
+
+        assert freq == "day"
+
+    def test_handles_irregular_subdaily_gap(self):
+        # All intervals are 1 day except one is less than 24 hours.
+        # 1 day, 1 day, 12 hours, 1 day: median is 1 day, so "day"
+        times = xr.DataArray(
+            pd.to_datetime(
+                [
+                    "2000-01-01T00:00:00",
+                    "2000-01-02T00:00:00",  # 1 day gap
+                    "2000-01-03T00:00:00",  # 1 day gap
+                    "2000-01-03T12:00:00",  # 12 hour gap
+                    "2000-01-04T12:00:00",  # 1 day gap
+                ]
+            )
+        )
+        freq = _infer_freq(times)
+        assert freq == "day"
+
+    def test_handles_cftime_datetime(self):
+        import datetime
+
+        times = xr.DataArray(
+            [
+                cftime.DatetimeGregorian(2000, 1, 1) + datetime.timedelta(days=i * 30)
+                for i in range(5)
+            ]
+        )
+        freq = _infer_freq(times)
+
+        assert freq == "month"
