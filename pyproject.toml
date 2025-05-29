@@ -23,7 +23,7 @@ classifiers = [
 ]
 keywords = ["xcdat"]
 dependencies = [
-  "cf_xarray >=0.9.1",
+  "cf_xarray >=0.10.3",
   "cftime",
   "dask",
   "netcdf4",
