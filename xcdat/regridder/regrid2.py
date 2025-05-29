@@ -96,6 +96,7 @@ class Regrid2Regridder(BaseRegridder):
             try:
                 src_mask = self._input_grid.get("mask", None).values  # type: ignore
             except AttributeError:
+                # regrid2 requires a mask, so create one
                 src_mask = create_mask(self._input_grid, ["Y", "X"]).values
 
         nan_replace = input_data_var.encoding.get("_FillValue", None)

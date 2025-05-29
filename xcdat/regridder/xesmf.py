@@ -4,6 +4,7 @@ import xarray as xr
 import xesmf as xe
 
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
+from xcdat.regridder.grid import create_nan_mask
 
 VALID_METHODS = [
     "bilinear",
@@ -30,6 +31,7 @@ class XESMFRegridder(BaseRegridder):
         ignore_degenerate: bool = True,
         unmapped_to_nan: bool = True,
         output_weights: Union[bool, str] = False,
+        create_nan_mask: bool = False,
         **options: Any,
     ):
         """Extension of ``xESMF`` regridder.
@@ -81,6 +83,9 @@ class XESMFRegridder(BaseRegridder):
         output_weights : Union[bool, str]
             If True, output weights are added to the output dataset as weights.
             If str, the name of the variable to store the weights. Default is False.
+        create_nan_mask : bool
+            If True, a mask is created using the nan values from source variable. If
+            a mask already exists in the Dataset it will be ignored.
         **options : Any
             Additional arguments passed to the underlying ``xesmf.XESMFRegridder``
             constructor.
@@ -146,6 +151,7 @@ class XESMFRegridder(BaseRegridder):
 
         self._extra_options = options
         self._output_weights = output_weights
+        self._create_nan_mask = create_nan_mask
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Placeholder for base class."""
@@ -160,11 +166,16 @@ class XESMFRegridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        # align the grid dimension to input data ordering
-        if "mask" in self._output_grid:
-            self._output_grid["mask"] = self._output_grid.mask.transpose(
-                *input_da.dims, missing_dims="ignore"
-            )
+        # Create nan mask if requested, xESM will handle exisitng masks on either input or output grid
+        if self._create_nan_mask:
+            self._input_grid["mask"] = create_nan_mask(input_da, ["X", "Y"])
+
+        # Align output grid dims with input grid dims, self._input_grid is derived from ``ds``.
+        self._output_grid = self._output_grid.transpose(
+            *[x for x in input_da.dims if x in self._output_grid],
+            ...,
+            missing_dims="ignore",
+        )
 
         regridder = xe.Regridder(
             self._input_grid,
