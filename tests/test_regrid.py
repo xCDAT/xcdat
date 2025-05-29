@@ -893,6 +893,72 @@ class TestGrid:
             self.lon_bnds_data.copy(), dims=["lon", "bnds"], name="lon_bnds"
         )
 
+    def test_create_mask(self):
+        data = fixtures.generate_lev_dataset()
+
+        expected_mask = xr.DataArray(
+            np.ones((4, 4, 4)), dims=["lev", "lat", "lon"], name="mask"
+        )
+
+        mask = grid.create_mask(data)
+
+        assert np.array_equal(mask, expected_mask)
+        assert mask.name == "mask"
+        assert mask.dims == ("lev", "lat", "lon")
+
+    def test_create_mask_specific_dims(self):
+        data = fixtures.generate_lev_dataset()
+
+        expected_mask = xr.DataArray(np.ones((4, 4)), dims=["lat", "lon"], name="mask")
+
+        mask = grid.create_mask(data, ["X", "Y"])
+
+        assert np.array_equal(mask, expected_mask)
+        assert mask.name == "mask"
+        assert mask.dims == ("lat", "lon")
+
+    def test_create_nan_mask(self):
+        data = fixtures.generate_lev_dataset()
+
+        data["so"].sel(lat=-88, lon=25, method="nearest")[:] = np.nan
+
+        mask = grid.create_nan_mask(data["so"])
+
+        expected_coords = data["so"].coords.copy()
+        del expected_coords["time"]
+        expected_mask = xr.DataArray(
+            np.ones((4, 4, 4)),
+            dims=["lev", "lat", "lon"],
+            name="mask",
+            coords=expected_coords,
+        )
+        expected_mask.sel(lat=-88, lon=25, method="nearest")[:] = 0.0
+
+        assert np.array_equal(mask, expected_mask)
+        assert mask.name == "mask"
+        assert mask.dims == ("lev", "lat", "lon")
+
+    def test_create_nan_mask_specific_dims(self):
+        data = fixtures.generate_lev_dataset()
+
+        data["so"].sel(lat=-88, lon=25, method="nearest")[:] = np.nan
+
+        mask = grid.create_nan_mask(data["so"], ["X", "Y"])
+
+        expected_coords = data["so"].coords.copy()
+        del expected_coords["time"]
+        del expected_coords["lev"]
+        expected_mask = xr.DataArray(
+            [[1, 1, 1, 1], [1, 0, 1, 1], [1, 1, 1, 1], [1, 1, 1, 1]],
+            dims=["lat", "lon"],
+            name="mask",
+            coords=expected_coords,
+        )
+
+        assert np.array_equal(mask, expected_mask)
+        assert mask.name == "mask"
+        assert mask.dims == ("lat", "lon")
+
     def test_create_axis(self):
         expected_axis_attrs = {
             "axis": "Y",

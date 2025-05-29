@@ -562,7 +562,11 @@ def create_mask(ds: xr.Dataset, dims: Optional[List[CFAxisKey]] = None) -> xr.Da
 
     mask_shape = {ds.cf[x].name: ds.cf[x].shape[0] for x in dims if x in ds.cf.axes}
 
-    return xr.DataArray(np.ones(list(mask_shape.values())), dims=list(mask_shape))
+    return xr.DataArray(
+        np.ones(list(mask_shape.values())),
+        dims=[x for x in ds.dims if x in mask_shape],
+        name="mask",
+    )
 
 
 def create_nan_mask(
@@ -592,7 +596,9 @@ def create_nan_mask(
 
     mask = xr.where(np.isnan(ds.isel(**non_core_selector)), 0, 1)
 
-    return xr.DataArray(mask, dims=list(ds.cf[x].name for x in dims))
+    return xr.DataArray(
+        mask, dims=[x for x in ds.dims if x not in non_core_selector], name="mask"
+    )
 
 
 def create_axis(
