@@ -167,17 +167,7 @@ class XGCMRegridder(BaseRegridder):
         if isinstance(self._target_data, str) and self._target_data == "infer":
             target_data = self._infer_target_data(ds)
         else:
-            try:
-                target_data = ds[self._target_data]
-            except ValueError:
-                target_data = self._target_data
-            except KeyError as e:
-                if self._target_data is not None and isinstance(self._target_data, str):
-                    raise RuntimeError(
-                        f"Could not find target variable {self._target_data!r} in dataset"
-                    ) from e
-
-                target_data = None
+            target_data = self._get_target_data(ds)
 
         output_da = grid.transform(
             ds[data_var],
@@ -233,6 +223,21 @@ class XGCMRegridder(BaseRegridder):
             )
 
         return ds.decoded_vertical_coord
+
+    def _get_target_data(self, ds) -> xr.DataArray | None:
+        try:
+            target_data = ds[self._target_data]
+        except ValueError:
+            target_data = self._target_data
+        except KeyError as e:
+            if self._target_data is not None and isinstance(self._target_data, str):
+                raise RuntimeError(
+                    f"Could not find target variable {self._target_data!r} in dataset"
+                ) from e
+
+            target_data = None
+
+        return target_data
 
     def _get_grid_positions(self) -> dict[str, Any | Hashable]:
         if self._method == "conservative":
