@@ -193,7 +193,7 @@ class XGCMRegridder(BaseRegridder):
         if target_data is None:
             output_da.attrs = ds[data_var].attrs.copy()
         else:
-            output_da.attrs = target_data.attrs.copy()  # type: ignore[union-attr]
+            output_da.attrs = target_data.attrs.copy()
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs.copy())
         output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["Z"])
@@ -203,24 +203,25 @@ class XGCMRegridder(BaseRegridder):
     def _infer_target_data(self, ds) -> xr.DataArray | None:
         try:
             zcoord = ds.cf["Z"]
-
-            ds.cf.decode_vertical_coords(
-                outnames={zcoord.name: "decoded_vertical_coord"}
-            )
         except KeyError as e:
             raise RuntimeError(
-                "Could not infer target data, missing z-coordinate or required "
-                "variables for formula terms."
+                "Missing 'Z' coordinate or CF-compliant attributes on the 'Z' coordinate "
+                "in the dataset. Ensure the dataset has a valid 'Z' coordinate."
             ) from e
 
-        # decode_vertical_coord doesn't raise exception if it cannot decode
-        if "decoded_vertical_coord" not in ds:
+        if "formula_terms" not in zcoord.attrs:
             raise RuntimeError(
-                f"Could not infer vertical coordinate for {zcoord.name!r}. "
-                "Make sure the vertical coordinate is CF-compliant with valid "
-                "'formula_terms' and 'standard_name' attributes. The dataset must "
-                "contain all of the required variables for the formula terms."
+                f"Vertical coordinate {zcoord.name!r} is not CF-compliant, "
+                "missing 'formula_terms' attribute."
             )
+        elif zcoord.attrs["formula_terms"] == "":
+            raise RuntimeError(
+                f"Vertical coordinate {zcoord.name!r} is not CF-compliant, "
+                "empty 'formula_terms' attribute."
+            )
+
+        # will raise keyerror if there's a missing variable
+        ds.cf.decode_vertical_coords(outnames={zcoord.name: "decoded_vertical_coord"})
 
         return ds.decoded_vertical_coord
 
