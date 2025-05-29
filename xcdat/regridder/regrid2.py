@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Union
+from typing import Any, List, Union
 
 import numpy as np
 import sparse as sp
@@ -7,7 +7,7 @@ import xarray as xr
 import xcdat as xc
 from xcdat.axis import get_dim_keys
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
-from xcdat.regridder.grid import create_mask
+from xcdat.regridder.grid import create_mask, create_nan_mask
 
 
 class Regrid2Regridder(BaseRegridder):
@@ -90,14 +90,7 @@ class Regrid2Regridder(BaseRegridder):
         dst_lon_bnds = _get_bounds_ensure_dtype(self._output_grid, "X")
 
         if self._create_nan_mask:
-            non_yx = set(input_data_var.cf.axes.keys()) - set(["Y", "X"])
-            non_yx_selector: Dict[Any, Any] = {
-                input_data_var.cf[x].name: 0 for x in non_yx
-            }
-
-            src_mask = xr.where(
-                np.isnan(input_data_var.isel(**non_yx_selector)), 0, 1
-            ).values
+            src_mask = create_nan_mask(input_data_var, ["Y", "X"]).values
         else:
             # DataArray to np.ndarray, handle error when None
             try:

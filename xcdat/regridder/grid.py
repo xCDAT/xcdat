@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import xarray as xr
@@ -563,6 +563,36 @@ def create_mask(ds: xr.Dataset, dims: Optional[List[CFAxisKey]] = None) -> xr.Da
     mask_shape = {ds.cf[x].name: ds.cf[x].shape[0] for x in dims if x in ds.cf.axes}
 
     return xr.DataArray(np.ones(list(mask_shape.values())), dims=list(mask_shape))
+
+
+def create_nan_mask(
+    ds: xr.DataArray, dims: Optional[List[CFAxisKey]] = None
+) -> xr.DataArray:
+    """Create a mask as an `xarray.DataArray` with NaN values based on source data.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The input xarray Dataset containing the data and coordinate information.
+    dims : List[CFAxisKey], optional
+        A list of dimension keys to include in the mask. If not provided, defaults to ["X", "Y", "Z"].
+
+    Returns
+    -------
+    xr.DataArray
+        A DataArray representing the mask, where only valid data points are passed through.
+    """
+    if dims is None:
+        dims = ["X", "Y", "Z"]
+
+    dims = list(dims)
+
+    non_core = set(ds.cf.axes.keys()) - set(dims)
+    non_core_selector: Dict[Any, Any] = {ds.cf[x].name: 0 for x in non_core}
+
+    mask = xr.where(np.isnan(ds.isel(**non_core_selector)), 0, 1)
+
+    return xr.DataArray(mask, dims=list(ds.cf[x].name for x in dims))
 
 
 def create_axis(
