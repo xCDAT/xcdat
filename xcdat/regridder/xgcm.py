@@ -59,8 +59,12 @@ class XGCMRegridder(BaseRegridder):
                - log
                - conservative
         target_data : str | xr.DataArray | None
-                        Data to transform target data onto, either the key of a variable
-            in the input dataset or an ``xr.DataArray``, by default None.
+            Data to transform ontot, if this is a str it can be the key of a
+            variable in the input dataset or "infer" to automatically
+            determine the vertical coordinate. If it is an ``xr.DataArray``, it
+            should be a vertical coordinate that is compatible with the
+            output grid. If ``None``, then the source levels are mapped to the
+            destination levels.
         grid_positions : dict[str, str] | None
             Mapping of dimension positions, by default None. If ``None`` then an
             attempt is made to derive this argument.
@@ -201,6 +205,35 @@ class XGCMRegridder(BaseRegridder):
         return output_ds
 
     def _infer_target_data(self, ds) -> xr.DataArray | None:
+        """
+        Infer and decode the target vertical coordinate from a dataset.
+
+        This method attempts to extract the CF-compliant vertical ("Z") coordinate from the
+        provided xarray dataset, verifies the presence and validity of the 'formula_terms'
+        attribute, and decodes the vertical coordinate using CF conventions.
+
+        Parameters
+        ----------
+        ds : xarray.Dataset
+            The input dataset from which to infer and decode the vertical coordinate.
+
+        Returns
+        -------
+        xarray.DataArray or None
+            The decoded vertical coordinate as a DataArray if successful, otherwise None.
+
+        Raises
+        ------
+        RuntimeError
+            If the 'Z' coordinate is missing, not CF-compliant, or lacks a valid 'formula_terms' attribute.
+        KeyError
+            If required variables for decoding the vertical coordinate are missing from the dataset.
+
+        Notes
+        -----
+        This method relies on the dataset being CF-compliant and having appropriate attributes
+        on the vertical coordinate variable.
+        """
         try:
             zcoord = ds.cf["Z"]
         except KeyError as e:
@@ -226,6 +259,29 @@ class XGCMRegridder(BaseRegridder):
         return ds.decoded_vertical_coord
 
     def _get_target_data(self, ds) -> xr.DataArray | None:
+        """
+        Retrieve the target data from the given xarray Dataset.
+
+        Attempts to access the target data variable from the provided dataset using the
+        attribute `self._target_data`. If `self._target_data` is a string and not found
+        in the dataset, raises a RuntimeError. If `self._target_data` is not a string or
+        is None, returns None. If a ValueError occurs, returns `self._target_data` as is.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            The xarray Dataset from which to retrieve the target data.
+
+        Returns
+        -------
+        xr.DataArray or None
+            The target data as an xarray DataArray if found, otherwise None.
+
+        Raises
+        ------
+        RuntimeError
+            If `self._target_data` is a string and not found in the dataset.
+        """
         try:
             target_data = ds[self._target_data]
         except ValueError:
@@ -241,6 +297,23 @@ class XGCMRegridder(BaseRegridder):
         return target_data
 
     def _get_grid_positions(self) -> dict[str, Any | Hashable]:
+        """
+        Determine the grid point positions for the "Z" axis in the input grid.
+
+        This method inspects the input grid to infer the position of the "Z" coordinate
+        (e.g., center, left, or right) based on its relationship to the corresponding bounds.
+        It raises informative errors if the method is not supported, if the "Z" coordinate or
+        its bounds cannot be determined, or if the position cannot be inferred automatically.
+
+        Returns:
+            dict[str, Any | Hashable]: A dictionary mapping the "Z" axis to its grid position,
+            e.g., {"Z": {"center": <coord_name>}}.
+
+        Raises:
+            RuntimeError: If conservative regridding is requested, if the "Z" coordinate or
+            bounds cannot be determined, if multiple "Z" axes are found, or if the grid
+            position cannot be inferred.
+        """
         if self._method == "conservative":
             raise RuntimeError(
                 "Conservative regridding requires a second point position, pass these "
