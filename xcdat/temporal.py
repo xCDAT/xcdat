@@ -1558,6 +1558,12 @@ class TemporalAccessor:
             # achieve this, first broadcast the one-dimensional (temporal
             # dimension) shape of the `weights` DataArray to the
             # multi-dimensional shape of its corresponding data variable.
+            weights = self._weights
+            if dv.chunks:
+                # For Dask-backed data variables, chunk the weights along the
+                # time dimension before broadcasting to avoid eager evaluation
+                # of the masking step.
+                weights = weights.chunk({self.dim: dv.chunksizes[self.dim]})
             weights, _ = xr.broadcast(self._weights, dv)
             weights = xr.where(dv.copy().isnull(), 0.0, weights)
 
@@ -2081,7 +2087,7 @@ def _infer_freq(time_coords: xr.DataArray) -> Frequency:
     """Infers the time frequency from the coordinates.
 
     This method infers the time frequency from the coordinates by
-    calculating the minimum delta and comparing it against a set of
+    calculating the median delta and comparing it against a set of
     conditionals.
 
     The native ``xr.infer_freq()`` method does not work for all cases
@@ -2098,14 +2104,17 @@ def _infer_freq(time_coords: xr.DataArray) -> Frequency:
     Frequency
         The time frequency.
     """
-    # TODO: Raise exception if the frequency cannot be inferred.
-    min_delta = pd.to_timedelta(np.diff(time_coords).min(), unit="ns")
+    # Ensure time_coords is sorted and diffable
+    time_deltas = np.diff(time_coords.values).astype("timedelta64[ns]")
 
-    if min_delta < pd.Timedelta(days=1):
+    # Calculate the median delta
+    median_delta = pd.to_timedelta(np.median(time_deltas), unit="ns")
+
+    if median_delta < pd.Timedelta(days=1):
         return "hour"
-    elif min_delta >= pd.Timedelta(days=1) and min_delta < pd.Timedelta(days=21):
+    elif pd.Timedelta(days=1) <= median_delta < pd.Timedelta(days=21):
         return "day"
-    elif min_delta >= pd.Timedelta(days=21) and min_delta < pd.Timedelta(days=300):
+    elif pd.Timedelta(days=21) <= median_delta < pd.Timedelta(days=300):
         return "month"
     else:
         return "year"
