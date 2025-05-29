@@ -570,13 +570,13 @@ def create_mask(ds: xr.Dataset, dims: Optional[List[CFAxisKey]] = None) -> xr.Da
 
 
 def create_nan_mask(
-    ds: xr.DataArray, dims: Optional[List[CFAxisKey]] = None
+    da: xr.DataArray, dims: Optional[List[CFAxisKey]] = None
 ) -> xr.DataArray:
     """Create a mask as an `xarray.DataArray` with NaN values based on source data.
 
     Parameters
     ----------
-    ds : xr.Dataset
+    da : xr.Dataset
         The input xarray Dataset containing the data and coordinate information.
     dims : List[CFAxisKey], optional
         A list of dimension keys to include in the mask. If not provided, defaults to ["X", "Y", "Z"].
@@ -591,13 +591,13 @@ def create_nan_mask(
 
     dims = list(dims)
 
-    non_core = set(ds.cf.axes.keys()) - set(dims)
-    non_core_selector: Dict[Any, Any] = {ds.cf[x].name: 0 for x in non_core}
+    non_core = set(da.cf.axes.keys()) - set(dims)
+    non_core_selector: Dict[Any, Any] = {da.cf[x].name: 0 for x in non_core}
 
-    mask = xr.where(np.isnan(ds.isel(**non_core_selector)), 0, 1)
+    mask = xr.where(np.isnan(da.isel(**non_core_selector)), 0, 1)
 
     return xr.DataArray(
-        mask, dims=[x for x in ds.dims if x not in non_core_selector], name="mask"
+        mask, dims=[x for x in da.dims if x not in non_core_selector], name="mask"
     )
 
 
