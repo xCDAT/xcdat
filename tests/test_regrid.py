@@ -788,6 +788,18 @@ class TestXESMFRegridder:
         assert "lon_bnds" in output
         assert "time_bnds" in output
 
+    def test_regrid_create_nan_mask(self):
+        ds = self.ds.copy()
+        ds["ts"].sel(lat=-88, lon=25, method="nearest")[:] = np.nan
+
+        regridder = xesmf.XESMFRegridder(
+            ds, self.new_grid, "bilinear", create_nan_mask=True
+        )
+
+        output = regridder.horizontal("ts", ds)
+
+        assert (output["ts"] == 1).count() == 50370
+
     def test_output_weights(self):
         ds = self.ds.copy()
 
