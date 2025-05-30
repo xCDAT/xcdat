@@ -16,6 +16,7 @@ dependencies:
     - pandas
     - python-dateutil
     - scipy
+    - sparse
     - xarray >=2024.03.0
     - xesmf >=0.8.7
     - xgcm
