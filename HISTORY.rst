@@ -47,14 +47,12 @@ Documentation
 
 - Add ``.zenodo.json`` and ``CITATION.cff`` to cite core authors by
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/759
-- Replace support section with endorsements by `Tom Vo`_ in
-   https://github.com/xCDAT/xcdat/pull/757
 - Add xCDAT tutorial datasets and update gallery notebooks by
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/705
-- Add support by Xarray to docs by `Tom Vo`_ in
+- Add endorsement section to docs with Xarray, Pangeo, and WRCP by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/741,
    https://github.com/xCDAT/xcdat/pull/742
-- Add support section to docs with Pangeo and WRCP by `Tom Vo`_ in
-   https://github.com/xCDAT/xcdat/pull/741
+   https://github.com/xCDAT/xcdat/pull/757
 
 DevOps
 ~~~~~~
@@ -71,7 +69,6 @@ New Contributors
    https://github.com/xCDAT/xcdat/pull/767
 
 **Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.8.0...v0.9.0
-
 
 
 v0.8.0 (14 February 2025)
