@@ -299,15 +299,15 @@ def _build_dataset(
 
 
 def _sparse_weights(
-    in_shape,
-    out_shape,
-    in_width,
-    out_width,
-    lat_mapping,
-    lon_mapping,
-    lat_weights,
-    lon_weights,
-):
+    in_shape: tuple[int, int],
+    out_shape: tuple[int, int],
+    in_width: int,
+    out_width: int,
+    lat_mapping: list[np.ndarray],
+    lon_mapping: list[np.ndarray],
+    lat_weights: list[np.ndarray],
+    lon_weights: list[np.ndarray],
+) -> xr.DataArray:
     """
     Generates a sparse weight matrix for regridding.
 
@@ -321,13 +321,13 @@ def _sparse_weights(
         Width of the input grid row.
     out_width : int
         Width of the output grid row.
-    lat_mapping : list
+    lat_mapping : list[np.ndarray]
         List of latitude mappings.
-    lon_mapping : list
+    lon_mapping : list[np.ndarray]
         List of longitude mappings.
-    lat_weights : list
+    lat_weights : list[np.ndarray]
         List of latitude weights.
-    lon_weights : list
+    lon_weights : list[np.ndarray]
         List of longitude weights.
 
     Returns
