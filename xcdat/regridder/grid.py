@@ -535,25 +535,29 @@ def create_grid(
 
 
 def create_mask(ds: xr.Dataset, dims: list[CFAxisKey] | None = None) -> xr.DataArray:
-    """Create a mask as an `xarray.DataArray` based on the specified dimensions.
+    """
+    Create a mask as an `xarray.DataArray` based on the specified dimensions.
 
     Parameters
     ----------
     ds : xr.Dataset
         The input xarray Dataset containing the data and coordinate information.
-    dims : list[CFAxisKey] | None
+    dims : list[CFAxisKey] or None
         A list of dimension keys to include in the mask. If not provided,
         defaults to ["X", "Y", "Z"].
 
     Returns
     -------
     xr.DataArray
-        A DataArray representing the mask, with ones in the shape of the specified dimensions.
+        A DataArray representing the mask, with ones in the shape of the
+        specified dimensions.
 
     Notes
     -----
-    - The function uses the `cf` accessor to retrieve the coordinate names and shapes for the specified dimensions.
-    - Only dimensions present in the `cf.axes` of the dataset are included in the mask.
+    - The function uses the `cf` accessor to retrieve the coordinate names and
+      shapes for the specified dimensions.
+    - Only dimensions present in the `cf.axes` of the dataset are included in
+      the mask.
     """
     if dims is None:
         dims = ["X", "Y", "Z"]
@@ -572,7 +576,8 @@ def create_mask(ds: xr.Dataset, dims: list[CFAxisKey] | None = None) -> xr.DataA
 def create_nan_mask(
     da: xr.DataArray, dims: list[CFAxisKey] | None = None
 ) -> xr.DataArray:
-    """Create a mask as an `xarray.DataArray` with NaN values based on source data.
+    """
+    Create a mask as an `xarray.DataArray` with NaN values based on source data.
 
     Parameters
     ----------
@@ -585,7 +590,8 @@ def create_nan_mask(
     Returns
     -------
     xr.DataArray
-        A DataArray representing the mask, where only valid data points are passed through.
+        A DataArray representing the mask, where only valid data points are
+        passed through.
     """
     if dims is None:
         dims = ["X", "Y", "Z"]
@@ -610,7 +616,6 @@ def create_axis(
     attrs: dict[str, str] | None = None,
 ) -> tuple[xr.DataArray, xr.DataArray | None]:
     """Creates an axis and optional bounds.
-
 
     Parameters
     ----------
