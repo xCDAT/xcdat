@@ -579,6 +579,10 @@ def create_nan_mask(
     """
     Create a mask as an `xarray.DataArray` with NaN values based on source data.
 
+    This function is useful for regridding workflows (e.g., with xESMF) where a
+    mask can help prevent NaN values from affecting interpolation accuracy
+    ("bleeding" of NaNs into valid regions).
+
     Parameters
     ----------
     da : xr.DataArray
