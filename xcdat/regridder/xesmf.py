@@ -166,7 +166,7 @@ class XESMFRegridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
-        # Create nan mask if requested, xESM will handle exisitng masks on either input or output grid
+        # Create nan mask if requested, xESMF will handle existing masks on either input or output grid.
         if self._create_nan_mask:
             self._input_grid["mask"] = create_nan_mask(input_da, ["X", "Y"])
 
