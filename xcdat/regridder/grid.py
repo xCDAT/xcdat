@@ -544,7 +544,7 @@ def create_mask(ds: xr.Dataset, dims: list[CFAxisKey] | None = None) -> xr.DataA
         The input xarray Dataset containing the data and coordinate information.
     dims : list[CFAxisKey] or None
         A list of dimension keys to include in the mask. If not provided,
-        defaults to ["X", "Y", "Z"].
+        defaults to None.
 
     Returns
     -------
