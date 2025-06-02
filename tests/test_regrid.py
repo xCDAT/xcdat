@@ -736,7 +736,7 @@ class TestRegrid2Regridder:
 
         assert np.all(output_data.ts == 1)
 
-    def test_output_weigths(self):
+    def test_output_weights(self):
         regridder = regrid2.Regrid2Regridder(
             self.coarse_2d_ds, self.fine_2d_ds, output_weights=True
         )
