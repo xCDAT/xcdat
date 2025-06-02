@@ -41,7 +41,7 @@ class Regrid2Regridder(BaseRegridder):
             If str, the name of the variable to store the weights. Default is False.
         create_nan_mask : bool
             If True, a mask is created using the nan values from source variable. If
-            a mask already exists in the Dataset it will be ignored.
+            a mask already exists in the Dataset it will be ignored. Default is False.
         **options : Any
             Dictionary with extra parameters for the regridder.
 
