@@ -352,9 +352,14 @@ def _sparse_weights(
     # provides user with simple way to explore weights and mapping
     sparse_weights = sp.COO.from_numpy(weights).reshape(out_shape + in_shape)
 
-    return xr.DataArray(sparse_weights, dims=["y_out", "x_out", "y_in", "x_in"])
+    coords = {
+        "y_out": np.arange(out_shape[0]),
+        "x_out": np.arange(out_shape[1]),
+        "y_in": np.arange(in_shape[0]),
+        "x_in": np.arange(in_shape[1]),
+    }
 
-
+    return xr.DataArray(sparse_weights, dims=["y_out", "x_out", "y_in", "x_in"], coords=coords)
 def _get_output_coords(
     dv_input: xr.DataArray, output_grid: xr.Dataset
 ) -> dict[str, xr.DataArray]:
