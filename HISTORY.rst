@@ -2,6 +2,76 @@
 History
 =======
 
+v0.9.0 (02 June 2025)
+---------------------
+
+This release introduces key functional and performance enhancements
+across regridding, averaging, and coordinate handling workflows. Users
+can now output regridding weights and infer vertical target data,
+improving flexibility in vertical and horizontal transformations. Time
+frequency inference logic is more robust through median delta
+computation, and new options for ``skipna`` handling and spatial weight
+thresholds support more accurate and configurable statistical
+operations. Additional improvements to coordinate handling enable
+support for curvilinear grids. The release also includes critical bug
+fixes, expanded documentation, and updated compatibility for modern
+Python environments by dropping Python 3.9 and adding compatibility with
+Python 3.13.
+
+Enhancements
+~~~~~~~~~~~~
+
+- Adds option to output regridding weights and create mask for
+   regridding by `Jason Boutte`_ in https://github.com/xCDAT/xcdat/pull/752
+- Adds ability to infer target data for vertical regridding by `Jason Boutte`_
+   in https://github.com/xCDAT/xcdat/pull/756
+- Use the median of the delta instead of min for time freq inference by
+   `Jill Chengzhu Zhang`_ in https://github.com/xCDAT/xcdat/pull/768
+- Add weight threshold option for spatial averaging by `Stephen Po-Chedley`_ in
+   https://github.com/xCDAT/xcdat/pull/672
+- Enhance coordinate handling and add curvilinear dataset support by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/736
+
+Bug Fixes
+~~~~~~~~~
+
+- Eliminate performance bottleneck in ``temporal.group_average()`` by
+   `will-s-hart <https://github.com/will-s-hart>`_ in https://github.com/xCDAT/xcdat/pull/767
+- Fix incorrect dimension used for temporal weights generation by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/749
+
+Documentation
+~~~~~~~~~~~~~
+
+- Add ``.zenodo.json`` and ``CITATION.cff`` to cite core authors by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/759
+- Replace support section with endorsements by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/757
+- Add xCDAT tutorial datasets and update gallery notebooks by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/705
+- Add support by Xarray to docs by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/742
+- Add support section to docs with Pangeo and WRCP by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/741
+
+DevOps
+~~~~~~
+
+- Make ``scipy`` a required dependency by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/765
+- Drop Python 3.9 support and add compatibility for Python 3.13 by
+   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/721
+
+New Contributors
+~~~~~~~~~~~~~~~~
+
+- `will-s-hart <https://github.com/will-s-hart>`_ made their first contribution in
+   https://github.com/xCDAT/xcdat/pull/767
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.8.0...v0.9.0
+
+
+
 v0.8.0 (14 February 2025)
 -------------------------
 
