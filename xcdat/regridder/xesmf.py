@@ -4,6 +4,7 @@ import xarray as xr
 import xesmf as xe
 
 from xcdat.regridder.base import BaseRegridder, _preserve_bounds
+from xcdat.regridder.grid import create_nan_mask
 
 VALID_METHODS = [
     "bilinear",
@@ -29,6 +30,8 @@ class XESMFRegridder(BaseRegridder):
         extrap_num_src_pnts: int | None = None,
         ignore_degenerate: bool = True,
         unmapped_to_nan: bool = True,
+        output_weights: bool | str = False,
+        create_nan_mask: bool = False,
         **options: Any,
     ):
         """Extension of ``xESMF`` regridder.
@@ -77,6 +80,12 @@ class XESMFRegridder(BaseRegridder):
             regridding methods.
         unmapped_to_nan : bool
             Sets values of unmapped points to `np.nan` instead of 0 (ESMF default).
+        output_weights : bool | str
+            If True, output weights are added to the output dataset as weights.
+            If str, the name of the variable to store the weights. Default is False.
+        create_nan_mask : bool
+            If True, a mask is created using the nan values from source variable. If
+            a mask already exists in the Dataset it will be ignored. Default is False.
         **options : Any
             Additional arguments passed to the underlying ``xesmf.XESMFRegridder``
             constructor.
@@ -141,6 +150,8 @@ class XESMFRegridder(BaseRegridder):
         )
 
         self._extra_options = options
+        self._output_weights = output_weights
+        self._create_nan_mask = create_nan_mask
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """Placeholder for base class."""
@@ -155,6 +166,17 @@ class XESMFRegridder(BaseRegridder):
                 f"The data variable '{data_var}' does not exist in the dataset."
             )
 
+        # Create nan mask if requested, xESMF will handle existing masks on either input or output grid.
+        if self._create_nan_mask:
+            self._input_grid["mask"] = create_nan_mask(input_da, ["X", "Y"])
+
+        # Align output grid dims with input grid dims, self._input_grid is derived from ``ds``.
+        self._output_grid = self._output_grid.transpose(
+            *[x for x in input_da.dims if x in self._output_grid],
+            ...,
+            missing_dims="ignore",
+        )
+
         regridder = xe.Regridder(
             self._input_grid,
             self._output_grid,
@@ -166,5 +188,11 @@ class XESMFRegridder(BaseRegridder):
 
         output_ds = xr.Dataset({data_var: output_da}, attrs=ds.attrs)
         output_ds = _preserve_bounds(ds, self._output_grid, output_ds, ["X", "Y"])
+
+        if self._output_weights:
+            if isinstance(self._output_weights, str):
+                output_ds[self._output_weights] = regridder.w
+            else:
+                output_ds["weights"] = regridder.w
 
         return output_ds

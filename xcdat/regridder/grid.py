@@ -1,3 +1,5 @@
+from typing import Any
+
 import numpy as np
 import xarray as xr
 
@@ -528,7 +530,88 @@ def create_grid(
 
         ds = ds.assign_coords({coords.name: coords})
 
+    ds["mask"] = create_mask(ds)
+
     return ds
+
+
+def create_mask(ds: xr.Dataset, dims: list[CFAxisKey] | None = None) -> xr.DataArray:
+    """
+    Create a mask as an `xarray.DataArray` based on the specified dimensions.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The input xarray Dataset containing the data and coordinate information.
+    dims : list[CFAxisKey] or None
+        A list of dimension keys to include in the mask. If not provided,
+        defaults to None.
+
+    Returns
+    -------
+    xr.DataArray
+        A DataArray representing the mask, with ones in the shape of the
+        specified dimensions.
+
+    Notes
+    -----
+    - The function uses the `cf` accessor to retrieve the coordinate names and
+      shapes for the specified dimensions.
+    - Only dimensions present in the `cf.axes` of the dataset are included in
+      the mask.
+    """
+    if dims is None:
+        dims = ["X", "Y", "Z"]
+
+    dims = list(dims)
+
+    mask_shape = {ds.cf[x].name: ds.cf[x].shape[0] for x in dims if x in ds.cf.axes}
+
+    return xr.DataArray(
+        np.ones(list(mask_shape.values())),
+        dims=[x for x in ds.dims if x in mask_shape],
+        name="mask",
+    )
+
+
+def create_nan_mask(
+    da: xr.DataArray, dims: list[CFAxisKey] | None = None
+) -> xr.DataArray:
+    """
+    Create a mask as an `xarray.DataArray` with NaN values based on source data.
+
+    This function is useful for regridding workflows (e.g., with xESMF) where a
+    mask can help prevent NaN values from affecting interpolation accuracy
+    ("bleeding" of NaNs into valid regions).
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        The input xarray DataArray containing the data and coordinate
+        information.
+    dims : list[CFAxisKey] | None, optional
+        A list of dimension keys to include in the mask. If not provided,
+        defaults to None.
+
+    Returns
+    -------
+    xr.DataArray
+        A DataArray representing the mask, where only valid data points are
+        passed through.
+    """
+    if dims is None:
+        dims = ["X", "Y", "Z"]
+
+    dims = list(dims)
+
+    non_core = set(da.cf.axes.keys()) - set(dims)
+    non_core_selector: dict[Any, Any] = {da.cf[x].name: 0 for x in non_core}
+
+    mask = xr.where(np.isnan(da.isel(**non_core_selector)), 0, 1)
+
+    return xr.DataArray(
+        mask, dims=[x for x in da.dims if x not in non_core_selector], name="mask"
+    )
 
 
 def create_axis(
@@ -539,7 +622,6 @@ def create_axis(
     attrs: dict[str, str] | None = None,
 ) -> tuple[xr.DataArray, xr.DataArray | None]:
     """Creates an axis and optional bounds.
-
 
     Parameters
     ----------
