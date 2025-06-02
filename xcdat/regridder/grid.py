@@ -581,8 +581,9 @@ def create_nan_mask(
 
     Parameters
     ----------
-    da : xr.Dataset
-        The input xarray Dataset containing the data and coordinate information.
+    da : xr.DataArray
+        The input xarray DataArray containing the data and coordinate
+        information.
     dims : list[CFAxisKey] | None, optional
         A list of dimension keys to include in the mask. If not provided,
         defaults to None.

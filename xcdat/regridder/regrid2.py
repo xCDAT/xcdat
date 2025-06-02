@@ -359,7 +359,11 @@ def _sparse_weights(
         "x_in": np.arange(in_shape[1]),
     }
 
-    return xr.DataArray(sparse_weights, dims=["y_out", "x_out", "y_in", "x_in"], coords=coords)
+    return xr.DataArray(
+        sparse_weights, dims=["y_out", "x_out", "y_in", "x_in"], coords=coords
+    )
+
+
 def _get_output_coords(
     dv_input: xr.DataArray, output_grid: xr.Dataset
 ) -> dict[str, xr.DataArray]:
