@@ -29,7 +29,7 @@ Enhancements
    `Jill Chengzhu Zhang`_ in https://github.com/xCDAT/xcdat/pull/768
 -  Add weight threshold option for spatial averaging by `Stephen Po-Chedley`_ in
    https://github.com/xCDAT/xcdat/pull/672
--  Enable `skipna` for spatial and temporal mean operations by `Jiwoo Lee`_ in
+-  Enable ``skipna`` for spatial and temporal mean operations by `Jiwoo Lee`_ in
    https://github.com/xCDAT/xcdat/pull/655
 -  Enhance coordinate handling and add curvilinear dataset support by
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/736
