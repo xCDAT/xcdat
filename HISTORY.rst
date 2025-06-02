@@ -49,7 +49,7 @@ Documentation
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/759
 -  Add xCDAT tutorial datasets and update gallery notebooks by
    `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/705
--  Add endorsement section to docs with Xarray, Pangeo, and WRCP by `Tom Vo`_ in
+-  Add endorsement section to docs with Xarray, Pangeo, and WCRP by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/741,
    https://github.com/xCDAT/xcdat/pull/742,
    https://github.com/xCDAT/xcdat/pull/757
