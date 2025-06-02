@@ -3989,7 +3989,7 @@ class TestGetDatetimeLikeType:
 
 class TestInferFreq:
     def test_infers_hourly_frequency(self):
-        times = xr.DataArray(pd.date_range("2000-01-01", periods=5, freq="H"))
+        times = xr.DataArray(pd.date_range("2000-01-01", periods=5, freq="h"))
         freq = _infer_freq(times)
 
         assert freq == "hour"
