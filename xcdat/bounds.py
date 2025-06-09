@@ -1009,15 +1009,21 @@ def create_bounds(axis: CFAxisKey, coord_var: xr.DataArray) -> xr.DataArray:
     return bounds
 
 
-def get_bounds_dim(da_bounds: xr.DataArray) -> str:
+def get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
     """Identify the bounds dimension in the given bounds DataArray.
 
-    This function checks the dimensions of the provided DataArray to find
-    a valid bounds dimension. Valid bounds dimensions include "bnds", "bnd",
-    "bounds", and "bound".
+    This function is used to identify the bounds dimension in a
+    DataArray that contains bounds information. The bounds dimension is
+    typically a dimension that is not present in the coordinate DataArray,
+    and it is used to represent the lower and upper bounds of the coordinate
+    values. If no valid bounds dimension is found, try to find one from
+    the predefined list of valid bounds dimensions.
 
     Parameters
     ----------
+    da_coords: xr.DataArray
+        The coordinate DataArray whose dimensions are to be checked for a
+        valid bounds dimension.
     da_bounds : xr.DataArray
         The bounds DataArray whose dimensions are to be checked for a valid
         bounds dimension.
@@ -1037,6 +1043,14 @@ def get_bounds_dim(da_bounds: xr.DataArray) -> str:
     This function is designed to work with DataArrays that include a dimension
     representing bounds, which is commonly used in geospatial or temporal data.
     """
+    # If only one bounds dimension is found, return it.
+    bounds_dim = [dim for dim in da_bounds.dims if dim not in da_coords.dims]
+
+    if len(bounds_dim) == 1:
+        return str(bounds_dim[0])
+
+    # FIXME: Do we still need this logic, or do we always expect bounds to have
+    # one additional dimension?
     for dim in VALID_BOUNDS_DIMS:
         if dim in da_bounds.dims:
             return dim

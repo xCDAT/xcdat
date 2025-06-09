@@ -1622,7 +1622,7 @@ class TemporalAccessor:
         ----------
         .. [4] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
-        bounds_dim = bounds.get_bounds_dim(time_bounds)
+        bounds_dim = bounds.get_bounds_dim(self._dataset[self.dim], time_bounds)
         time_lengths = time_bounds.diff(dim=bounds_dim).squeeze()
 
         # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
