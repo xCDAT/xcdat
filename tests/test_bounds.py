@@ -1062,19 +1062,53 @@ class TestAddTimeBounds:
 
 
 class TestGetBoundsDim:
-    def test_raises_error_if_no_valid_bounds_dim(self):
+    def test_returns_error_if_no_valid_bounds_dim_among_multiple_extra_dims(self):
+        da_coords = xr.DataArray(
+            data=np.array([0, 1, 2]),
+            dims=["time"],
+        )
         da_bounds = xr.DataArray(
-            data=np.array([[0, 1], [1, 2], [2, 3]]),
-            dims=["time", "invalid_dim"],
+            data=np.ones((3, 2, 2)),
+            dims=["time", "foo", "bar"],
         )
         with pytest.raises(ValueError, match="Invalid bounds dimension"):
-            get_bounds_dim(da_bounds)
+            get_bounds_dim(da_coords, da_bounds)
 
-    @pytest.mark.parametrize("dim", ["bnds", "bnd", "bounds", "bound"])
-    def test_returns_correct_bounds_dim(self, dim):
+    def test_returns_correct_bounds_dim(self):
+        da_coords = xr.DataArray(
+            data=np.array([0, 1, 2]),
+            dims=["time"],
+        )
         da_bounds = xr.DataArray(
             data=np.array([[0, 1], [1, 2], [2, 3]]),
-            dims=["time", dim],
+            dims=["time", "nv"],
         )
-        result = get_bounds_dim(da_bounds)
-        assert result == dim
+        result = get_bounds_dim(da_coords, da_bounds)
+        assert result == "nv"
+
+    @pytest.mark.parametrize(
+        "dims,expected",
+        [
+            (["time", "bnds", "member"], "bnds"),
+            (["time", "bounds", "member"], "bounds"),
+            (["time", "bound", "member"], "bounds"),
+            (["time", "bnd", "member"], "bnd"),
+            (["time", "bounds", "member"], "bounds"),
+            (["time", "bound", "member"], "bound"),
+            (["time", "nv", "member"], "nv"),
+        ],
+    )
+    def test_returns_first_valid_bounds_dim_from_VALID_BOUNDS_DIMS(
+        self, dims, expected
+    ):
+        # Add extra dims not in da_coords, but at least one is in VALID_BOUNDS_DIMS
+        da_coords = xr.DataArray(
+            data=np.array([0, 1, 2]),
+            dims=["time"],
+        )
+        da_bounds = xr.DataArray(
+            data=np.ones((3, 2, 2)),  # shape matches dims
+            dims=dims,
+        )
+        result = get_bounds_dim(da_coords, da_bounds)
+        assert result == expected
