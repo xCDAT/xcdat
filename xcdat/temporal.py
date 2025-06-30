@@ -1476,10 +1476,10 @@ class TemporalAccessor:
         -------
         xr.Dataset
         """
-        ds = ds.sel(
-            **{self.dim: ~((ds[self.dim].dt.month == 2) & (ds[self.dim].dt.day == 29))}
-        )
-        return ds
+        mask = ~((ds[self.dim].dt.month == 2) & (ds[self.dim].dt.day == 29))
+        ds_new = ds.sel({self.dim: mask})
+
+        return ds_new
 
     def _average(
         self, ds: xr.Dataset, data_var: str, skipna: bool | None = None
@@ -1508,7 +1508,7 @@ class TemporalAccessor:
         with xr.set_options(keep_attrs=True):
             if self._weighted:
                 time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
-                self._weights = self._get_weights(time_bounds)
+                self._weights = self._get_weights(dv[self.dim], time_bounds)
 
                 dv = dv.weighted(self._weights).mean(dim=self.dim, skipna=skipna)
             else:
@@ -1549,7 +1549,7 @@ class TemporalAccessor:
 
         if self._weighted:
             time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
-            self._weights = self._get_weights(time_bounds)
+            self._weights = self._get_weights(dv[self.dim], time_bounds)
 
             # Weight the data variable.
             dv *= self._weights
@@ -1591,7 +1591,9 @@ class TemporalAccessor:
 
         return dv
 
-    def _get_weights(self, time_bounds: xr.DataArray) -> xr.DataArray:
+    def _get_weights(
+        self, time_coords: xr.DataArray, time_bounds: xr.DataArray
+    ) -> xr.DataArray:
         """Calculates weights for a data variable using time bounds.
 
         This method gets the length of time for each coordinate point by using
@@ -1622,7 +1624,7 @@ class TemporalAccessor:
         ----------
         .. [4] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
-        bounds_dim = bounds.get_bounds_dim(self._dataset[self.dim], time_bounds)
+        bounds_dim = bounds.get_bounds_dim(time_coords, time_bounds)
         time_lengths = time_bounds.diff(dim=bounds_dim).squeeze()
 
         # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
