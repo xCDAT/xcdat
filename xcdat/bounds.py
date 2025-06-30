@@ -24,10 +24,6 @@ from xcdat.temporal import (
 
 logger = _setup_custom_logger(__name__)
 
-# A list of valid bounds dimension names, useful for dynamic retrieval using
-# get_bounds_dim().
-VALID_BOUNDS_DIMS = ["bnds", "bnd", "bounds", "bound"]
-
 
 @xr.register_dataset_accessor("bounds")
 class BoundsAccessor:
