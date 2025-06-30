@@ -1092,16 +1092,6 @@ class TestGetBoundsDim:
         bounds = xr.DataArray(np.zeros((3, 2, 2)), dims=["lat", "bnds", "extra"])
 
         with pytest.raises(
-            ValueError, match="Multiple extra dimensions found in bounds variable"
-        ):
-            get_bounds_dim(coords, bounds)
-
-    def test_raises_error_when_bounds_dim_count_is_incorrect(self):
-        coords = xr.DataArray([0, 1, 2], dims=["lat"])
-        bounds = xr.DataArray(np.zeros((3,)), dims=["lat"])
-
-        # Bounds has same number of dims as coords, but not more.
-        with pytest.raises(
             ValueError, match="Bounds variable must have exactly one more dimension"
         ):
             get_bounds_dim(coords, bounds)

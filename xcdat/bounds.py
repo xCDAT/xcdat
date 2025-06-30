@@ -1050,11 +1050,6 @@ def get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
             f"variable. Coordinate dims: {da_coords.dims}, bounds dims: "
             f"{da_bounds.dims}"
         )
-    elif len(bounds_dim) > 1:
-        raise ValueError(
-            f"Multiple extra dimensions found in bounds variable: {bounds_dim}. "
-            "Bounds variable should have exactly one extra dimension."
-        )
     else:
         raise ValueError(
             f"Bounds variable must have exactly one more dimension than the coordinate "
