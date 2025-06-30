@@ -1062,53 +1062,46 @@ class TestAddTimeBounds:
 
 
 class TestGetBoundsDim:
-    def test_returns_error_if_no_valid_bounds_dim_among_multiple_extra_dims(self):
-        da_coords = xr.DataArray(
-            data=np.array([0, 1, 2]),
-            dims=["time"],
-        )
-        da_bounds = xr.DataArray(
-            data=np.ones((3, 2, 2)),
-            dims=["time", "foo", "bar"],
-        )
-        with pytest.raises(ValueError, match="Invalid bounds dimension"):
-            get_bounds_dim(da_coords, da_bounds)
+    def test_returns_bounds_dim_for_standard_case(self):
+        coords = xr.DataArray([0, 1, 2], dims=["lat"])
+        bounds = xr.DataArray([[0, 1], [1, 2], [2, 3]], dims=["lat", "bnds"])
 
-    def test_returns_correct_bounds_dim(self):
-        da_coords = xr.DataArray(
-            data=np.array([0, 1, 2]),
-            dims=["time"],
-        )
-        da_bounds = xr.DataArray(
-            data=np.array([[0, 1], [1, 2], [2, 3]]),
-            dims=["time", "nv"],
-        )
-        result = get_bounds_dim(da_coords, da_bounds)
-        assert result == "nv"
+        result = get_bounds_dim(coords, bounds)
 
-    @pytest.mark.parametrize(
-        "dims,expected",
-        [
-            (["time", "bnds", "member"], "bnds"),
-            (["time", "bounds", "member"], "bounds"),
-            (["time", "bound", "member"], "bounds"),
-            (["time", "bnd", "member"], "bnd"),
-            (["time", "bounds", "member"], "bounds"),
-            (["time", "bound", "member"], "bound"),
-            (["time", "nv", "member"], "nv"),
-        ],
-    )
-    def test_returns_first_valid_bounds_dim_from_VALID_BOUNDS_DIMS(
-        self, dims, expected
-    ):
-        # Add extra dims not in da_coords, but at least one is in VALID_BOUNDS_DIMS
-        da_coords = xr.DataArray(
-            data=np.array([0, 1, 2]),
-            dims=["time"],
-        )
-        da_bounds = xr.DataArray(
-            data=np.ones((3, 2, 2)),  # shape matches dims
-            dims=dims,
-        )
-        result = get_bounds_dim(da_coords, da_bounds)
-        assert result == expected
+        assert result == "bnds"
+
+    def test_returns_bounds_dim_when_bounds_dim_has_custom_name(self):
+        coords = xr.DataArray([10, 20, 30], dims=["lon"])
+        bounds = xr.DataArray([[5, 15], [15, 25], [25, 35]], dims=["lon", "boundaries"])
+
+        result = get_bounds_dim(coords, bounds)
+
+        assert result == "boundaries"
+
+    def test_raises_error_when_bounds_has_no_extra_dim(self):
+        coords = xr.DataArray([0, 1, 2], dims=["lat"])
+        bounds = xr.DataArray([0, 1, 2], dims=["lat"])
+
+        with pytest.raises(
+            ValueError, match="No extra dimension found in bounds variable"
+        ):
+            get_bounds_dim(coords, bounds)
+
+    def test_raises_error_when_bounds_has_multiple_extra_dims(self):
+        coords = xr.DataArray([0, 1, 2], dims=["lat"])
+        bounds = xr.DataArray(np.zeros((3, 2, 2)), dims=["lat", "bnds", "extra"])
+
+        with pytest.raises(
+            ValueError, match="Multiple extra dimensions found in bounds variable"
+        ):
+            get_bounds_dim(coords, bounds)
+
+    def test_raises_error_when_bounds_dim_count_is_incorrect(self):
+        coords = xr.DataArray([0, 1, 2], dims=["lat"])
+        bounds = xr.DataArray(np.zeros((3,)), dims=["lat"])
+
+        # Bounds has same number of dims as coords, but not more.
+        with pytest.raises(
+            ValueError, match="Bounds variable must have exactly one more dimension"
+        ):
+            get_bounds_dim(coords, bounds)
