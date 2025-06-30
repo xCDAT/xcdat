@@ -1012,7 +1012,7 @@ def get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
     represents the bounds (e.g., lower and upper limits) for each value
     in the coordinate DataArray. According to the CF Conventions, a boundary
     variable will have one more dimension than its associated coordinate or
-    auxiliary coordinate variable. Refer to [1] for more details.
+    auxiliary coordinate variable. Refer to [6] for more details.
 
     Parameters
     ----------
@@ -1033,8 +1033,8 @@ def get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
         the coordinate variable, or if no valid bounds dimension is found.
 
     References
-    -----
-    .. [1] https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#cell-boundaries
+    ----------
+    .. [6] https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#cell-boundaries
     """
     bounds_dim = [dim for dim in da_bounds.dims if dim not in da_coords.dims]
 
