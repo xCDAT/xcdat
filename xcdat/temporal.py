@@ -1476,10 +1476,10 @@ class TemporalAccessor:
         -------
         xr.Dataset
         """
-        ds = ds.sel(
-            **{self.dim: ~((ds[self.dim].dt.month == 2) & (ds[self.dim].dt.day == 29))}
-        )
-        return ds
+        mask = ~((ds[self.dim].dt.month == 2) & (ds[self.dim].dt.day == 29))
+        ds_new = ds.sel({self.dim: mask})
+
+        return ds_new
 
     def _average(
         self, ds: xr.Dataset, data_var: str, skipna: bool | None = None
@@ -1507,8 +1507,7 @@ class TemporalAccessor:
 
         with xr.set_options(keep_attrs=True):
             if self._weighted:
-                time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
-                self._weights = self._get_weights(time_bounds)
+                self._weights = self._get_weights(ds, data_var)
 
                 dv = dv.weighted(self._weights).mean(dim=self.dim, skipna=skipna)
             else:
@@ -1548,8 +1547,7 @@ class TemporalAccessor:
         dv = dv.assign_coords({self.dim: self._labeled_time})
 
         if self._weighted:
-            time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
-            self._weights = self._get_weights(time_bounds)
+            self._weights = self._get_weights(ds, data_var)
 
             # Weight the data variable.
             dv *= self._weights
@@ -1591,7 +1589,7 @@ class TemporalAccessor:
 
         return dv
 
-    def _get_weights(self, time_bounds: xr.DataArray) -> xr.DataArray:
+    def _get_weights(self, ds: xr.Dataset, data_var: str) -> xr.DataArray:
         """Calculates weights for a data variable using time bounds.
 
         This method gets the length of time for each coordinate point by using
@@ -1606,8 +1604,10 @@ class TemporalAccessor:
 
         Parameters
         ----------
-        time_bounds : xr.DataArray
-            The time bounds.
+        ds : xr.Dataset
+            The dataset containing the data variable.
+        data_var : str
+            The key of the data variable.
 
         Returns
         -------
@@ -1622,7 +1622,10 @@ class TemporalAccessor:
         ----------
         .. [4] https://cfconventions.org/cf-conventions/cf-conventions.html#calendar
         """
-        bounds_dim = bounds.get_bounds_dim(time_bounds)
+        time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
+        time_coords = ds[data_var][self.dim]
+
+        bounds_dim = bounds._get_bounds_dim(time_coords, time_bounds)
         time_lengths = time_bounds.diff(dim=bounds_dim).squeeze()
 
         # Must be cast dtype from "timedelta64[ns]" to "float64", specifically

@@ -24,10 +24,6 @@ from xcdat.temporal import (
 
 logger = _setup_custom_logger(__name__)
 
-# A list of valid bounds dimension names, useful for dynamic retrieval using
-# get_bounds_dim().
-VALID_BOUNDS_DIMS = ["bnds", "bnd", "bounds", "bound"]
-
 
 @xr.register_dataset_accessor("bounds")
 class BoundsAccessor:
@@ -1009,38 +1005,49 @@ def create_bounds(axis: CFAxisKey, coord_var: xr.DataArray) -> xr.DataArray:
     return bounds
 
 
-def get_bounds_dim(da_bounds: xr.DataArray) -> str:
+def _get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
     """Identify the bounds dimension in the given bounds DataArray.
 
-    This function checks the dimensions of the provided DataArray to find
-    a valid bounds dimension. Valid bounds dimensions include "bnds", "bnd",
-    "bounds", and "bound".
+    This function determines which dimension in the bounds DataArray
+    represents the bounds (e.g., lower and upper limits) for each value
+    in the coordinate DataArray. According to the CF Conventions, a boundary
+    variable will have one more dimension than its associated coordinate or
+    auxiliary coordinate variable. Refer to [6] for more details.
 
     Parameters
     ----------
+    da_coords : xr.DataArray
+        The coordinate DataArray.
     da_bounds : xr.DataArray
-        The bounds DataArray whose dimensions are to be checked for a valid
-        bounds dimension.
+        The bounds DataArray.
 
     Returns
     -------
     str
-        The name of the valid bounds dimension found in the DataArray.
+        The name of the bounds dimension.
 
     Raises
     ------
     ValueError
-        If no valid bounds dimension is found in the DataArray.
+        If the bounds variable does not have exactly one more dimension than
+        the coordinate variable, or if no valid bounds dimension is found.
 
-    Notes
-    -----
-    This function is designed to work with DataArrays that include a dimension
-    representing bounds, which is commonly used in geospatial or temporal data.
+    References
+    ----------
+    .. [6] https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#cell-boundaries
     """
-    for dim in VALID_BOUNDS_DIMS:
-        if dim in da_bounds.dims:
-            return dim
+    bounds_dim = [dim for dim in da_bounds.dims if dim not in da_coords.dims]
 
-    raise ValueError(
-        f"Invalid bounds dimension. Supported dimensions include: {VALID_BOUNDS_DIMS}."
-    )
+    if len(bounds_dim) == 1:
+        return str(bounds_dim[0])
+    elif len(bounds_dim) == 0:
+        raise ValueError(
+            "No extra dimension found in bounds variable compared to coordinate "
+            f"variable. Coordinate dims: {da_coords.dims}, bounds dims: "
+            f"{da_bounds.dims}"
+        )
+    else:
+        raise ValueError(
+            f"Bounds variable must have exactly one more dimension than the coordinate "
+            f"variable. Coordinate dims: {da_coords.dims}, bounds dims: {da_bounds.dims}"
+        )
