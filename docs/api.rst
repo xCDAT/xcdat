@@ -30,6 +30,8 @@ Below is a list of top-level API functions that are available in ``xcdat``.
     get_coords_by_name
     create_bounds
     create_axis
+    create_mask
+    create_nan_mask
     create_gaussian_grid
     create_global_mean_grid
     create_grid
