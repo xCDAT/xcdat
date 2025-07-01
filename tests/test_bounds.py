@@ -12,7 +12,7 @@ from tests.fixtures import (
     lat_bnds,
     lon_bnds,
 )
-from xcdat.bounds import BoundsAccessor, get_bounds_dim
+from xcdat.bounds import BoundsAccessor, _get_bounds_dim
 
 logger = logging.getLogger(__name__)
 
@@ -1066,7 +1066,7 @@ class TestGetBoundsDim:
         coords = xr.DataArray([0, 1, 2], dims=["lat"])
         bounds = xr.DataArray([[0, 1], [1, 2], [2, 3]], dims=["lat", "bnds"])
 
-        result = get_bounds_dim(coords, bounds)
+        result = _get_bounds_dim(coords, bounds)
 
         assert result == "bnds"
 
@@ -1074,7 +1074,7 @@ class TestGetBoundsDim:
         coords = xr.DataArray([10, 20, 30], dims=["lon"])
         bounds = xr.DataArray([[5, 15], [15, 25], [25, 35]], dims=["lon", "boundaries"])
 
-        result = get_bounds_dim(coords, bounds)
+        result = _get_bounds_dim(coords, bounds)
 
         assert result == "boundaries"
 
@@ -1085,7 +1085,7 @@ class TestGetBoundsDim:
         with pytest.raises(
             ValueError, match="No extra dimension found in bounds variable"
         ):
-            get_bounds_dim(coords, bounds)
+            _get_bounds_dim(coords, bounds)
 
     def test_raises_error_when_bounds_has_multiple_extra_dims(self):
         coords = xr.DataArray([0, 1, 2], dims=["lat"])
@@ -1094,4 +1094,4 @@ class TestGetBoundsDim:
         with pytest.raises(
             ValueError, match="Bounds variable must have exactly one more dimension"
         ):
-            get_bounds_dim(coords, bounds)
+            _get_bounds_dim(coords, bounds)

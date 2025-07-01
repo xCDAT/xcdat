@@ -1005,7 +1005,7 @@ def create_bounds(axis: CFAxisKey, coord_var: xr.DataArray) -> xr.DataArray:
     return bounds
 
 
-def get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
+def _get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
     """Identify the bounds dimension in the given bounds DataArray.
 
     This function determines which dimension in the bounds DataArray

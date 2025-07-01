@@ -2812,7 +2812,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     0.08469945,
@@ -2876,7 +2876,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     0.5,
@@ -2950,7 +2950,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     0.08469945,
@@ -3016,7 +3016,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
@@ -3165,7 +3165,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     0.33695652,
@@ -3235,7 +3235,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     0.34065934,
@@ -3315,7 +3315,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     0.34065934,
@@ -3381,7 +3381,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
@@ -3428,7 +3428,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.ones(15)
             assert np.allclose(result, expected)
 
@@ -3576,7 +3576,7 @@ class Test_GetWeights:
                 },
             )
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     0.33695652,
@@ -3640,7 +3640,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     [
@@ -3706,7 +3706,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     [
@@ -3772,7 +3772,7 @@ class Test_GetWeights:
             )
 
             # Compare result of the method against the expected.
-            result = ds.temporal._get_weights(ds.time, ds.time_bnds)
+            result = ds.temporal._get_weights(ds, "ts")
             expected = np.array(
                 [
                     0.5,
