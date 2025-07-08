@@ -1,6 +1,7 @@
 import datetime
 import re
 import sys
+import warnings
 from unittest import mock
 
 import numpy as np
@@ -10,7 +11,6 @@ import xarray as xr
 
 from tests import fixtures
 from xcdat.regridder import accessor, base, grid, regrid2, xesmf, xgcm
-import warnings
 
 np.set_printoptions(threshold=sys.maxsize, suppress=True)
 
