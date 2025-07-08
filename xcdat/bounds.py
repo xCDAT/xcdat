@@ -240,7 +240,7 @@ class BoundsAccessor:
             raise KeyError(
                 f"No bounds data variables were found for the '{axis}' axis. Make sure "
                 "the dataset has bound data vars and their names match the 'bounds' "
-                "attributes found on their related time coordinate variables. "
+                "attributes found on their related coordinate variables. "
                 "Alternatively, you can add bounds with `ds.bounds.add_missing_bounds()` "
                 "or `ds.bounds.add_bounds()`."
             )
