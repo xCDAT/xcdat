@@ -24,7 +24,7 @@ Documentation
 -  Add ``create_mask()`` and ``create_nan_mask()`` to API reference page by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/774
 
 
-**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.9.0...0.9.1
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.9.0...v0.9.1
 
 
 v0.9.0 (02 June 2025)
