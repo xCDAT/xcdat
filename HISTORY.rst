@@ -2,6 +2,31 @@
 History
 =======
 
+v0.9.1 (08 July 2025)
+---------------------
+
+This patch release includes enhancements to bounds handling, improved error messages,
+and documentation updates.
+
+Enhancements
+~~~~~~~~~~~~
+
+-  Update ``get_bounds_dim()`` to dynamically get correct dimension by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/773
+
+Bug Fixes
+~~~~~~~~~
+
+-  Fix ``get_bounds()`` error message by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/776
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Add ``create_mask()`` and ``create_nan_mask()`` to API reference page by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/774
+
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.9.0...0.9.1
+
+
 v0.9.0 (02 June 2025)
 ---------------------
 
