@@ -123,6 +123,13 @@ addopts = "--cov=xcdat --cov-report term --cov-report html:tests_coverage_report
 python_files = ["tests.py", "test_*.py"]
 # These markers are defined in `xarray.tests` and must be included to avoid warnings when importing from this module.
 markers = ["flaky", "network"]
+# Ignore warnings related to xgcm Axis deprecation, which will always appear
+# until they are removed in a future xgcm release (last release was v0.8.1 in
+# Nov 2022).
+filterwarnings = [
+  "ignore:From version 0.8.0 the Axis computation methods will be removed, in favour of using the Grid computation methods instead. i.e. use `Grid.transform` instead of `Axis.transform`:FutureWarning:xgcm.grid",
+  "ignore:The `xgcm.Axis` class will be deprecated in the future. Please make sure to use the `xgcm.Grid` methods for your work instead.:DeprecationWarning:xgcm.grid",
+]
 
 [tool.mypy]
 # Docs: https://mypy.readthedocs.io/en/stable/config_file.html

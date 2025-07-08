@@ -10,8 +10,29 @@ import xarray as xr
 
 from tests import fixtures
 from xcdat.regridder import accessor, base, grid, regrid2, xesmf, xgcm
+import warnings
 
 np.set_printoptions(threshold=sys.maxsize, suppress=True)
+
+# Ignore warnings related to xgcm Axis deprecation, which will always appear
+# until they are removed in a future xgcm release (last release was v0.8.1 in
+# Nov 2022).
+warnings.filterwarnings(
+    "ignore",
+    message=(
+        "From version 0.8.0 the Axis computation methods will be removed, in favour of using the Grid computation methods instead. i.e. use `Grid.transform` instead of `Axis.transform`"
+    ),
+    category=FutureWarning,
+    module="xgcm.grid",
+)
+warnings.filterwarnings(
+    "ignore",
+    message=(
+        "The `xgcm.Axis` class will be deprecated in the future. Please make sure to use the `xgcm.Grid` methods for your work instead."
+    ),
+    category=DeprecationWarning,
+    module="xgcm.grid",
+)
 
 
 def gen_uniform_axis(start, stop, step, name, axis):
@@ -518,7 +539,7 @@ class TestRegrid2Regridder:
 
         regridder = regrid2.Regrid2Regridder(ds, output_grid)
 
-        with pytest.raises(NotImplementedError, match=""):
+        with pytest.raises(NotImplementedError):
             regridder.vertical("so", ds)
 
     @pytest.mark.filterwarnings("ignore:.*invalid value.*divide.*:RuntimeWarning")
@@ -881,7 +902,7 @@ class TestXESMFRegridder:
 
         regridder = xesmf.XESMFRegridder(ds, self.new_grid, "bilinear")
 
-        with pytest.raises(NotImplementedError, match=""):
+        with pytest.raises(NotImplementedError):
             regridder.vertical("ts", ds)
 
     def test_regrid(self):
