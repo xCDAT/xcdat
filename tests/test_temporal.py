@@ -494,6 +494,14 @@ class TestGroupAverage:
                             cftime.DatetimeGregorian(2001, 1, 1),
                         ],
                     ),
+                    coords={
+                        "time": np.array(
+                            [
+                                cftime.DatetimeGregorian(2000, 1, 1),
+                                cftime.DatetimeGregorian(2001, 1, 1),
+                            ],
+                        )
+                    },
                     dims=["time"],
                     attrs={
                         "axis": "T",
@@ -588,6 +596,14 @@ class TestGroupAverage:
                             cftime.DatetimeGregorian(2001, 1, 1),
                         ],
                     ),
+                    coords={
+                        "time": np.array(
+                            [
+                                cftime.DatetimeGregorian(2000, 1, 1),
+                                cftime.DatetimeGregorian(2001, 1, 1),
+                            ],
+                        )
+                    },
                     dims=["time"],
                     attrs={
                         "axis": "T",
@@ -786,6 +802,17 @@ class TestGroupAverage:
                             cftime.DatetimeGregorian(2001, 1, 1),
                         ],
                     ),
+                    coords={
+                        "time": np.array(
+                            [
+                                cftime.DatetimeGregorian(2000, 1, 1),
+                                cftime.DatetimeGregorian(2000, 4, 1),
+                                cftime.DatetimeGregorian(2000, 7, 1),
+                                cftime.DatetimeGregorian(2000, 10, 1),
+                                cftime.DatetimeGregorian(2001, 1, 1),
+                            ],
+                        )
+                    },
                     dims=["time"],
                     attrs={
                         "axis": "T",
