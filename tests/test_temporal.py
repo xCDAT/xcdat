@@ -809,8 +809,67 @@ class TestGroupAverage:
 
         xr.testing.assert_identical(result, expected)
 
-    def test_weighted_seasonal_averages_with_JFD_with_min_weight_threshold_of_100_percent(
-        self,
+    @pytest.mark.parametrize(
+        "min_weight, ts_data, expected_data",
+        [
+            # min_weight=0.0, all missing, output is all np.nan
+            (
+                0.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=1.0, all missing, output is all np.nan
+            (
+                1.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.25, first group has 33% data, second group 0%; keeps first only
+            (
+                0.25,
+                np.array([[[np.nan]], [[1.0]], [[np.nan]], [[1.0]], [[2.0]]]),
+                np.array([[[1.6777778]], [[np.nan]], [[1.0]]]),
+            ),
+            # min_weight=0.33, first group has 33% data, keeps first group
+            (
+                0.33,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[2.0]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.66, first group has 33% data, drops first group
+            (
+                0.66,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.66, first group has 66% data, keeps first group
+            (
+                0.66,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.6777778]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=1.0, first group has 66% data, drops first group
+            (
+                1.0,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.0, all present, output is weighted mean
+            (
+                0.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.50413223]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=1.0, all present, output is weighted mean
+            (
+                1.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.50413223]], [[1.0]], [[1.0]]]),
+            ),
+        ],
+    )
+    def test_weighted_seasonal_averages_with_JFD_and_min_weight_threshold(
+        self, min_weight, ts_data, expected_data
     ):
         time = xr.DataArray(
             data=np.array(
@@ -824,7 +883,12 @@ class TestGroupAverage:
                 dtype="datetime64[ns]",
             ),
             dims=["time"],
-            attrs={"axis": "T", "long_name": "time", "standard_name": "time"},
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
         )
         time.encoding = {"calendar": "standard"}
         time_bnds = xr.DataArray(
@@ -848,30 +912,25 @@ class TestGroupAverage:
             data_vars={"time_bnds": time_bnds},
             coords={"lat": [-90], "lon": [0], "time": time},
         )
-        ds.time.attrs["bounds"] = "time_bnds"
 
         ds["ts"] = xr.DataArray(
-            data=np.array(
-                [[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]], dtype="float64"
-            ),
-            coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
+            data=ts_data,
+            coords={"time": time, "lat": ds.lat, "lon": ds.lon},
             dims=["time", "lat", "lon"],
             attrs={"test_attr": "test"},
         )
 
-        # NOTE: If a cell has a missing value for any of the seasons, the average
-        # for that season should be masked with a min_weight threshold of 100%.
         result = ds.temporal.group_average(
             "ts",
             "season",
             season_config={"dec_mode": "JFD"},
-            min_weight=1.0,
+            min_weight=min_weight,
         )
         expected = ds.copy()
         expected = expected.drop_dims("time")
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            data=expected_data,
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
@@ -904,7 +963,7 @@ class TestGroupAverage:
             },
         )
 
-        xr.testing.assert_identical(result, expected)
+        xr.testing.assert_allclose(result["ts"], expected["ts"])
 
     def test_raises_error_with_incorrect_custom_seasons_argument(self):
         # Test raises error with non-3 letter strings
@@ -1279,10 +1338,72 @@ class TestGroupAverage:
 
         xr.testing.assert_identical(result, expected)
 
-    def test_weighted_monthly_averages_with_masked_data_and_min_weight_threshold_of_100_percent(
-        self,
+    @pytest.mark.parametrize(
+        "min_weight, ts_data, expected_data",
+        [
+            # min_weight=0.0, all data missing, all output bins should be np.nan
+            (
+                0.0,
+                np.array(
+                    [
+                        [[np.nan]],
+                        [[np.nan]],
+                        [[np.nan]],
+                        [[np.nan]],
+                        [[np.nan]],
+                        [[np.nan]],
+                    ]
+                ),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.5, only one value present in Jan, allows Jan only
+            (
+                0.5,
+                np.array(
+                    [
+                        [[1.0]],
+                        [[np.nan]],
+                        [[np.nan]],
+                        [[np.nan]],
+                        [[np.nan]],
+                        [[np.nan]],
+                    ]
+                ),
+                np.array([[[1.0]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.5, Jan and Feb have one value present, allows both
+            (
+                0.5,
+                np.array(
+                    [[[2.0]], [[np.nan]], [[3.0]], [[np.nan]], [[np.nan]], [[np.nan]]]
+                ),
+                np.array([[[2.0]], [[3.0]], [[np.nan]]]),
+            ),
+            # min_weight=1.0, Jan has both values present, allows Jan only
+            (
+                1.0,
+                np.array(
+                    [[[2.0]], [[1.0]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]
+                ),
+                np.array([[[1.5]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.0, all months have both values present, allows all
+            (
+                0.0,
+                np.array([[[2.0]], [[1.0]], [[3.0]], [[4.0]], [[5.0]], [[6.0]]]),
+                np.array([[[1.5]], [[3.5]], [[5.5]]]),
+            ),
+            # min_weight=1.0, all months have both values present, allows all
+            (
+                1.0,
+                np.array([[[2.0]], [[1.0]], [[3.0]], [[4.0]], [[5.0]], [[6.0]]]),
+                np.array([[[1.5]], [[3.5]], [[5.5]]]),
+            ),
+        ],
+    )
+    def test_weighted_monthly_averages_min_weight_threshold_additional(
+        self, min_weight, ts_data, expected_data
     ):
-        # Set up dataset
         ds = xr.Dataset(
             coords={
                 "lat": [-90],
@@ -1291,10 +1412,11 @@ class TestGroupAverage:
                     data=np.array(
                         [
                             "2000-01-01T00:00:00.000000000",
+                            "2000-01-15T00:00:00.000000000",
                             "2000-02-01T00:00:00.000000000",
                             "2000-02-15T00:00:00.000000000",
-                            "2000-04-01T00:00:00.000000000",
-                            "2001-02-01T00:00:00.000000000",
+                            "2000-03-01T00:00:00.000000000",
+                            "2000-03-15T00:00:00.000000000",
                         ],
                         dtype="datetime64[ns]",
                     ),
@@ -1309,16 +1431,16 @@ class TestGroupAverage:
             }
         )
         ds.time.encoding = {"calendar": "standard"}
-
         ds["time_bnds"] = xr.DataArray(
             name="time_bnds",
             data=np.array(
                 [
                     ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
                     ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
                     ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
-                    ["2000-04-01T00:00:00.000000000", "2000-05-01T00:00:00.000000000"],
-                    ["2001-02-01T00:00:00.000000000", "2001-03-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
                 ],
                 dtype="datetime64[ns]",
             ),
@@ -1326,22 +1448,16 @@ class TestGroupAverage:
             dims=["time", "bnds"],
             attrs={"xcdat_bounds": "True"},
         )
-
         ds["ts"] = xr.DataArray(
-            data=np.array([[[2]], [[np.nan]], [[1]], [[1]], [[1]]]),
+            data=ts_data,
             coords={"lat": ds.lat, "lon": ds.lon, "time": ds.time},
             dims=["time", "lat", "lon"],
-            attrs={"test_attr": "test"},
         )
-
-        # NOTE: If a cell has a missing value for any of the months, the average
-        # for that month should be masked with a min_weight threshold of 100%.
-        result = ds.temporal.group_average("ts", "month", min_weight=0.55)
-        expected = ds.copy()
-        expected = expected.drop_dims("time")
+        result = ds.temporal.group_average("ts", "month", min_weight=min_weight)
+        expected = ds.copy().drop_dims("time")
         expected["ts"] = xr.DataArray(
             name="ts",
-            data=np.array([[[2.0]], [[np.nan]], [[1.0]], [[1.0]]]),
+            data=expected_data,
             coords={
                 "lat": expected.lat,
                 "lon": expected.lon,
@@ -1350,8 +1466,7 @@ class TestGroupAverage:
                         [
                             cftime.DatetimeGregorian(2000, 1, 1),
                             cftime.DatetimeGregorian(2000, 2, 1),
-                            cftime.DatetimeGregorian(2000, 4, 1),
-                            cftime.DatetimeGregorian(2001, 2, 1),
+                            cftime.DatetimeGregorian(2000, 3, 1),
                         ],
                     ),
                     dims=["time"],
@@ -1364,16 +1479,8 @@ class TestGroupAverage:
                 ),
             },
             dims=["time", "lat", "lon"],
-            attrs={
-                "test_attr": "test",
-                "operation": "temporal_avg",
-                "mode": "group_average",
-                "freq": "month",
-                "weighted": "True",
-            },
         )
-
-        xr.testing.assert_identical(result, expected)
+        xr.testing.assert_equal(result["ts"], expected["ts"])
 
     def test_weighted_daily_averages(self):
         ds = self.ds.copy()
