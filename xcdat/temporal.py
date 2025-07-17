@@ -1635,7 +1635,7 @@ class TemporalAccessor:
             dv_group_sum = self._group_data(dv_weighted).sum(skipna=skipna)
 
             # Mask weights where data is missing (set to zero).
-            masked_weights = _get_masked_weights(dv, self._weights)
+            masked_weights = _get_masked_weights(dv_weighted, self._weights)
 
             # Group and sum masked weights.
             masked_weights_group_sum = self._group_data(masked_weights).sum(
@@ -1649,10 +1649,6 @@ class TemporalAccessor:
             # affect the result.
             dv_avg = dv_group_sum / masked_weights_group_sum
 
-            # Restore the data variables name which gets lost with groupby
-            # arithmetic.
-            dv_avg.name = dv.name
-
             # Set averaged data to NaN where masked weights are below the
             # minimum threshold.
             if self._min_weight > 0.0:
@@ -1662,6 +1658,10 @@ class TemporalAccessor:
                     np.nan,
                     keep_attrs=True,
                 )
+
+            # Restore the data variables name which gets lost after arithmetic
+            # and masking operations.
+            dv_avg.name = dv.name
 
         return dv_avg
 
