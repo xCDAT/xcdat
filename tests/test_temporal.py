@@ -611,6 +611,57 @@ class TestGroupAverage:
         assert result.ts.attrs == expected.ts.attrs
         assert result.time.attrs == expected.time.attrs
 
+    def test_weighted_seasonal_averages_with_DJF_without_dropping_incomplete_seasons(
+        self,
+    ):
+        ds = self.ds.copy()
+
+        result = ds.temporal.group_average(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": False},
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2000, 10, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "False",
+                "dec_mode": "DJF",
+            },
+        )
+
+        xr.testing.assert_identical(result, expected)
+
     def test_weighted_seasonal_averages_with_DJF_and_drop_incomplete_seasons(self):
         ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=True)
 
@@ -709,65 +760,6 @@ class TestGroupAverage:
 
         xr.testing.assert_identical(result, expected)
 
-    def test_weighted_seasonal_averages_with_DJF_without_dropping_incomplete_seasons(
-        self,
-    ):
-        ds = self.ds.copy()
-        ds["ts"] = xr.DataArray(
-            data=np.array(
-                [[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]], dtype="float64"
-            ),
-            coords={"time": self.ds.time, "lat": self.ds.lat, "lon": self.ds.lon},
-            dims=["time", "lat", "lon"],
-            attrs={"test_attr": "test"},
-        )
-
-        result = ds.temporal.group_average(
-            "ts",
-            "season",
-            season_config={"dec_mode": "DJF", "drop_incomplete_djf": False},
-        )
-        expected = ds.copy()
-        expected = expected.drop_dims("time")
-        expected["ts"] = xr.DataArray(
-            name="ts",
-            data=np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
-            coords={
-                "lat": expected.lat,
-                "lon": expected.lon,
-                "time": xr.DataArray(
-                    data=np.array(
-                        [
-                            cftime.DatetimeGregorian(2000, 1, 1),
-                            cftime.DatetimeGregorian(2000, 4, 1),
-                            cftime.DatetimeGregorian(2000, 7, 1),
-                            cftime.DatetimeGregorian(2000, 10, 1),
-                            cftime.DatetimeGregorian(2001, 1, 1),
-                        ],
-                    ),
-                    dims=["time"],
-                    attrs={
-                        "axis": "T",
-                        "long_name": "time",
-                        "standard_name": "time",
-                        "bounds": "time_bnds",
-                    },
-                ),
-            },
-            dims=["time", "lat", "lon"],
-            attrs={
-                "test_attr": "test",
-                "operation": "temporal_avg",
-                "mode": "group_average",
-                "freq": "season",
-                "weighted": "True",
-                "dec_mode": "DJF",
-                "drop_incomplete_djf": "False",
-            },
-        )
-
-        xr.testing.assert_identical(result, expected)
-
     def test_weighted_seasonal_averages_with_JFD(self):
         ds = self.ds.copy()
 
@@ -810,6 +802,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
         )

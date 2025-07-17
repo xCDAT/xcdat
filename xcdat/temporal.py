@@ -1598,9 +1598,11 @@ class TemporalAccessor:
             The input xarray Dataset containing the data variable and any coordinate information.
         dv : xr.DataArray
             The data variable to be averaged.
-        skipna : bool or None
-            If True, skip NaN values when computing sums. If False, propagate NaNs.
-            If None, the default behavior of xarray's sum is used.
+        skipna : bool | None
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
 
         Returns
         -------
@@ -1614,49 +1616,52 @@ class TemporalAccessor:
         - For Dask-backed data, weights are chunked to avoid eager evaluation.
         - The minimum weight threshold is controlled by `self._min_weight`.
         """
-        # Keep the original weights for other operations and make a copy
-        # to avoid modifying the original weights.
-        self._weights = self._get_weights(ds, dv.name)
-        weights = self._weights.copy()
+        with xr.set_options(keep_attrs=True):
+            # Keep the original weights for other operations and make a copy
+            # to avoid modifying the original weights.
+            self._weights = self._get_weights(ds, str(dv.name))
+            weights = self._weights.copy()
 
-        # For Dask-backed data variables, chunk the weights along the
-        # time dimension before broadcasting to avoid eager evaluation
-        # of the masking step.
-        if dv.chunks:
-            weights = weights.chunk({self.dim: dv.chunksizes[self.dim]})
+            # For Dask-backed data variables, chunk the weights along the
+            # time dimension before broadcasting to avoid eager evaluation
+            # of the masking step.
+            if dv.chunks:
+                weights = weights.chunk({self.dim: dv.chunksizes[self.dim]})
 
-        # Apply the weights to data.
-        dv_weighted = dv * weights
+            # Apply the weights to data.
+            dv_weighted = dv * weights
 
-        # Group and sum weighted data, skippiing NaNs if specified.
-        dv_group_sum = self._group_data(dv_weighted).sum(skipna=skipna)
+            # Group and sum weighted data, skippiing NaNs if specified.
+            dv_group_sum = self._group_data(dv_weighted).sum(skipna=skipna)
 
-        # Mask weights where data is missing (set to zero).
-        masked_weights = _get_masked_weights(dv, self._weights)
+            # Mask weights where data is missing (set to zero).
+            masked_weights = _get_masked_weights(dv, self._weights)
 
-        # Group and sum masked weights.
-        masked_weights_group_sum = self._group_data(masked_weights).sum(skipna=skipna)
-
-        # Compute weighted average using the formula:
-        # WA = sum(data * weights) / sum(weights for non-missing data)
-        # The denominator ensures that only weights for non-missing data
-        # are included, so missing data (with zero weight) does not
-        # affect the result.
-        dv_avg = dv_group_sum / masked_weights_group_sum
-
-        # Restore the data variables name which gets lost with groupby
-        # arithmetic.
-        dv_avg.name = dv.name
-
-        # Set averaged data to NaN where masked weights are below the
-        # minimum threshold.
-        if self._min_weight > 0.0:
-            dv_avg = xr.where(
-                masked_weights_group_sum >= self._min_weight,
-                dv_avg,
-                np.nan,
-                keep_attrs=True,
+            # Group and sum masked weights.
+            masked_weights_group_sum = self._group_data(masked_weights).sum(
+                skipna=skipna
             )
+
+            # Compute weighted average using the formula:
+            # WA = sum(data * weights) / sum(weights for non-missing data)
+            # The denominator ensures that only weights for non-missing data
+            # are included, so missing data (with zero weight) does not
+            # affect the result.
+            dv_avg = dv_group_sum / masked_weights_group_sum
+
+            # Restore the data variables name which gets lost with groupby
+            # arithmetic.
+            dv_avg.name = dv.name
+
+            # Set averaged data to NaN where masked weights are below the
+            # minimum threshold.
+            if self._min_weight > 0.0:
+                dv_avg = xr.where(
+                    masked_weights_group_sum >= self._min_weight,
+                    dv_avg,
+                    np.nan,
+                    keep_attrs=True,
+                )
 
         return dv_avg
 
