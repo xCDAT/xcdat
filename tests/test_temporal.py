@@ -2340,7 +2340,7 @@ class TestClimatology:
                 np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
                 np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
             ),
-            # min_weight=0.1.0: JFD below threshold (np.nan);
+            # min_weight=1.0: JFD below threshold (np.nan);
             # MAM, and JJA meet threshold.
             (
                 1.0,

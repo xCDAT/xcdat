@@ -370,7 +370,7 @@ class TemporalAccessor:
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
         min_weight : float | None, optional
-            Fraction of data coverage (i..e, weight) needed to return a
+            Fraction of data coverage (i.e., weight) needed to return a
             temporal average value. Value must range from 0 to 1, by default
             None (equivalent to ``min_weight=0.0``).
 
@@ -576,7 +576,7 @@ class TemporalAccessor:
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
         min_weight : float | None, optional
-            Fraction of data coverage (i..e, weight) needed to return a
+            Fraction of data coverage (i.e., weight) needed to return a
             temporal average value. Value must range from 0 to 1, by default
             None (equivalent to ``min_weight=0.0``).
 
@@ -798,7 +798,7 @@ class TemporalAccessor:
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
         min_weight : float | None, optional
-            Fraction of data coverage (i..e, weight) needed to return a
+            Fraction of data coverage (i.e., weight) needed to return a
             temporal average value. Value must range from 0 to 1, by default
             None (equivalent to ``min_weight=0.0``).
 
@@ -1028,7 +1028,7 @@ class TemporalAccessor:
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa, by default DEFAULT_SEASON_CONFIG.
         min_weight : float | None, optional
-            Fraction of data coverage (i..e, weight) needed to return a
+            Fraction of data coverage (i.e., weight) needed to return a
             temporal average value. Value must range from 0 to 1, by default
             None (equivalent to ``min_weight=0.0``).
 
@@ -1649,7 +1649,7 @@ class TemporalAccessor:
             # Apply the weights to data.
             dv_weighted = dv * weights
 
-            # Group and sum weighted data, skippiing NaNs if specified.
+            # Group and sum weighted data, skipping NaNs if specified.
             dv_group_sum = self._group_data(dv_weighted).sum(skipna=skipna)
 
             # Mask weights where data is missing (set to zero).
