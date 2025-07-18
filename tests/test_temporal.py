@@ -627,7 +627,7 @@ class TestGroupAverage:
         assert result.ts.attrs == expected.ts.attrs
         assert result.time.attrs == expected.time.attrs
 
-    def test_weighted_seasonal_averages_with_DJF_without_dropping_incomplete_seasons(
+    def test_weighted_seasonal_averages_with_DJF(
         self,
     ):
         ds = self.ds.copy()
@@ -677,6 +677,166 @@ class TestGroupAverage:
         )
 
         xr.testing.assert_identical(result, expected)
+
+    @pytest.mark.parametrize(
+        "min_weight, ts_data, expected_data",
+        [
+            # min_weight=0.0: all missing, output is all np.nan
+            (
+                0.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.0: all present, output is weighted mean
+            (
+                0.0,
+                np.array([[[1.0]], [[1.0]], [[2.0]], [[1.0]], [[1.0]]]),
+                np.array([[[1.318681]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.25: (2000, DJF) meet threshold;
+            # (2000, MAM) below threshold (np.nan);
+            # (2000, JJA) meet threshold.
+            (
+                0.25,
+                np.array([[[np.nan]], [[1.0]], [[np.nan]], [[np.nan]], [[2.0]]]),
+                np.array([[[1.0]], [[np.nan]], [[2.0]]]),
+            ),
+            # min_weight=0.33: (2000, DJF), (2000, MAM), (2000, JJA) all meet threshold
+            (
+                0.33,
+                np.array([[[np.nan]], [[1.0]], [[np.nan]], [[1.0]], [[2.0]]]),
+                np.array([[[1.0]], [[1.0]], [[2.0]]]),
+            ),
+            # min_weight=0.33: (2000, DJF) below threshold (edge case, Feb has
+            # less weight); (2000, MAM), (2000, JJA) meet threshold
+            (
+                0.33,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[2.0]]]),
+            ),
+            # min_weight=0.66: (2000, DJF), (2000, MAM), (2000, JJA) all meet threshold
+            (
+                0.66,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.0]], [[1.0]], [[2.0]]]),
+            ),
+            # min_weight=1.0: all missing, output is all np.nan
+            (
+                1.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=1.0: (2000, DJF) below threshold;
+            # (2000, MAM), (2000, JJA) all meet threshold
+            (
+                1.0,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[2.0]]]),
+            ),
+            # min_weight=1.0: all meet threshold, output is weighted mean
+            (
+                1.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1]], [[1.0]], [[2.0]]]),
+            ),
+        ],
+    )
+    def test_weighted_seasonal_averages_with_DJF_and_min_weight_threshold(
+        self, min_weight, ts_data, expected_data
+    ):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "1999-12-16T00:00:00.000000000",  # (2000, DJF)
+                    "2000-01-16T12:00:00.000000000",  # (2000, DJF)
+                    "2000-02-15T12:00:00.000000000",  # (2000, DJF)
+                    "2000-03-16T12:00:00.000000000",  # (2000, MAM)
+                    "2000-06-16T00:00:00.000000000",  # (2000, JJA)
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        time.encoding = {"calendar": "standard"}
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["1999-12-01T00:00:00.000000000", "2000-01-01T00:00:00.000000000"],
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+
+        ds["ts"] = xr.DataArray(
+            data=ts_data,
+            coords={"time": time, "lat": ds.lat, "lon": ds.lon},
+            dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
+        )
+
+        result = ds.temporal.group_average(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF"},
+            min_weight=min_weight,
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=expected_data,
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "group_average",
+                "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "False",
+                "dec_mode": "DJF",
+            },
+        )
+
+        xr.testing.assert_allclose(result["ts"], expected["ts"])
 
     def test_weighted_seasonal_averages_with_DJF_and_drop_incomplete_seasons(self):
         ds = generate_dataset(decode_times=True, cf_compliant=True, has_bounds=True)
@@ -828,55 +988,61 @@ class TestGroupAverage:
     @pytest.mark.parametrize(
         "min_weight, ts_data, expected_data",
         [
-            # min_weight=0.0, all missing, output is all np.nan
+            # min_weight=0.0: all missing, output is all np.nan
             (
                 0.0,
                 np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
                 np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
             ),
-            # min_weight=1.0, all missing, output is all np.nan
-            (
-                1.0,
-                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
-                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
-            ),
-            # min_weight=0.25, first group has 33% data, second group 0%; keeps first only
-            (
-                0.25,
-                np.array([[[np.nan]], [[1.0]], [[np.nan]], [[1.0]], [[2.0]]]),
-                np.array([[[1.6777778]], [[np.nan]], [[1.0]]]),
-            ),
-            # min_weight=0.33, first group has 33% data, keeps first group
-            (
-                0.33,
-                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
-                np.array([[[2.0]], [[1.0]], [[1.0]]]),
-            ),
-            # min_weight=0.66, first group has 33% data, drops first group
-            (
-                0.66,
-                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
-                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
-            ),
-            # min_weight=0.66, first group has 66% data, keeps first group
-            (
-                0.66,
-                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
-                np.array([[[1.6777778]], [[1.0]], [[1.0]]]),
-            ),
-            # min_weight=1.0, first group has 66% data, drops first group
-            (
-                1.0,
-                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
-                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
-            ),
-            # min_weight=0.0, all present, output is weighted mean
+            # min_weight=0.0: all present, output is weighted mean
             (
                 0.0,
                 np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
                 np.array([[[1.50413223]], [[1.0]], [[1.0]]]),
             ),
-            # min_weight=1.0, all present, output is weighted mean
+            # min_weight=0.25: (2000, JFD) meets threshold;
+            # (2000, MAM) below threshold (np.nan);
+            # (2000, JJA) meets threshold
+            (
+                0.25,
+                np.array([[[np.nan]], [[1.0]], [[np.nan]], [[1.0]], [[2.0]]]),
+                np.array([[[1.6777778]], [[np.nan]], [[1.0]]]),
+            ),
+            # min_weight=0.33: (2000, JFD), (2000, MAM), and (2000, JJA) all
+            # meet threshold
+            (
+                0.33,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[2.0]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.66: (2000, JFD) below threshold (np.nan);
+            # (2000, MAM) and (2000, JJA) meet threshold
+            (
+                0.66,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.66: (2000, JFD), (2000, MAM), and (2000, JJA) all
+            # meet threshold
+            (
+                0.66,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.6777778]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=1.0: all missing, output is all np.nan
+            (
+                1.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=1.0: (2000, JFD) below threshold (np.nan);
+            # (2000, MAM) and (2000, JJA) meet threshold.
+            (
+                1.0,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=1.0: all present, output is weighted mean
             (
                 1.0,
                 np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
@@ -890,11 +1056,11 @@ class TestGroupAverage:
         time = xr.DataArray(
             data=np.array(
                 [
-                    "2000-01-16T12:00:00.000000000",
-                    "2000-02-15T12:00:00.000000000",
-                    "2000-03-16T12:00:00.000000000",
-                    "2000-06-16T00:00:00.000000000",
-                    "2000-12-16T00:00:00.000000000",
+                    "2000-01-16T12:00:00.000000000",  # JFD
+                    "2000-02-15T12:00:00.000000000",  # JFD
+                    "2000-03-16T12:00:00.000000000",  # MAM
+                    "2000-06-16T00:00:00.000000000",  # JJA
+                    "2000-12-16T00:00:00.000000000",  # JFD
                 ],
                 dtype="datetime64[ns]",
             ),
@@ -1733,6 +1899,168 @@ class TestClimatology:
 
         xr.testing.assert_identical(result, expected)
 
+    @pytest.mark.parametrize(
+        "min_weight, ts_data, expected_data",
+        [
+            # min_weight=0.0: all missing (np.nan), output is all np.nan
+            (
+                0.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.0: all present, output is weighted mean.
+            (
+                0.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.504132]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.25: DJF, MAM, and JJA all meet threshold.
+            (
+                0.25,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[2.0]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.33: DJF, MAM, and JJA all meet threshold.
+            (
+                0.33,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[2.0]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.66: DJF below threshold (np.nan);
+            # MAM, and JJA meet threshold.
+            (
+                0.66,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.66: JFD, MAM, and JJA all meet threshold.
+            (
+                0.66,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.677778]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=1.0: all missing, output is all np.nan.
+            (
+                1.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=1.0: DJF below threshold (np.nan);
+            # MAM, and JJA meet threshold.
+            (
+                1.0,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=1.0: All values present, output is weighted mean.
+            (
+                1.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.504132]], [[1.0]], [[1.0]]]),
+            ),
+        ],
+    )
+    def test_weighted_seasonal_climatology_with_DJF_and_min_weight_threshold(
+        self, min_weight, ts_data, expected_data
+    ):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",  # DJF
+                    "2000-02-15T12:00:00.000000000",  # DJF
+                    "2000-03-16T12:00:00.000000000",  # MAM
+                    "2000-06-16T00:00:00.000000000",  # JJA
+                    "2000-12-16T00:00:00.000000000",  # DJF
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        time.encoding = {"calendar": "standard"}
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-11-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+
+        ds["ts"] = xr.DataArray(
+            data=ts_data,
+            coords={"time": time, "lat": ds.lat, "lon": ds.lon},
+            dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
+        )
+
+        result = ds.temporal.climatology(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF"},
+            min_weight=min_weight,
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(1, 1, 1),
+                    cftime.DatetimeGregorian(1, 4, 1),
+                    cftime.DatetimeGregorian(1, 7, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=expected_data,
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "False",
+                "dec_mode": "DJF",
+            },
+        )
+
+        xr.testing.assert_allclose(result["ts"], expected["ts"])
+
     def test_raises_deprecation_warning_with_drop_incomplete_djf_season_config(self):
         # NOTE: This will test will also cover the other public APIs that
         # have drop_incomplete_djf as a season_config arg.
@@ -1965,6 +2293,168 @@ class TestClimatology:
         )
 
         xr.testing.assert_identical(result, expected)
+
+    @pytest.mark.parametrize(
+        "min_weight, ts_data, expected_data",
+        [
+            # min_weight=0.0: all missing (np.nan), output is all np.nan
+            (
+                0.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.0: all present, output is weighted mean.
+            (
+                0.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.504132]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.25: JFD, MAM, and JJA all meet threshold.
+            (
+                0.25,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[2.0]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.33: JFD, MAM, and JJA all meet threshold.
+            (
+                0.33,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[2.0]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.66: JFD below threshold (np.nan);
+            # MAM, and JJA meet threshold.
+            (
+                0.66,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=0.66: JFD, MAM, and JJA all meet threshold.
+            (
+                0.66,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.677778]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=1.0: all missing, output is all np.nan.
+            (
+                1.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.1.0: JFD below threshold (np.nan);
+            # MAM, and JJA meet threshold.
+            (
+                1.0,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[1.0]], [[1.0]]]),
+            ),
+            # min_weight=1.0: All values present, output is weighted mean.
+            (
+                1.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[1.504132]], [[1.0]], [[1.0]]]),
+            ),
+        ],
+    )
+    def test_weighted_seasonal_climatology_with_JFD_and_min_weight_threshold(
+        self, min_weight, ts_data, expected_data
+    ):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",  # JFD
+                    "2000-02-15T12:00:00.000000000",  # JFD
+                    "2000-03-16T12:00:00.000000000",  # MAM
+                    "2000-06-16T00:00:00.000000000",  # JJA
+                    "2000-12-16T00:00:00.000000000",  # JFD
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        time.encoding = {"calendar": "standard"}
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-11-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+
+        ds["ts"] = xr.DataArray(
+            data=ts_data,
+            coords={"time": time, "lat": ds.lat, "lon": ds.lon},
+            dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
+        )
+
+        result = ds.temporal.climatology(
+            "ts",
+            "season",
+            season_config={"dec_mode": "JFD"},
+            min_weight=min_weight,
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected_time = xr.DataArray(
+            data=np.array(
+                [
+                    cftime.DatetimeGregorian(1, 1, 1),
+                    cftime.DatetimeGregorian(1, 4, 1),
+                    cftime.DatetimeGregorian(1, 7, 1),
+                ],
+            ),
+            coords={
+                "time": np.array(
+                    [
+                        cftime.DatetimeGregorian(1, 1, 1),
+                        cftime.DatetimeGregorian(1, 4, 1),
+                        cftime.DatetimeGregorian(1, 7, 1),
+                    ],
+                ),
+            },
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=expected_data,
+            coords={"lat": expected.lat, "lon": expected.lon, "time": expected_time},
+            dims=["time", "lat", "lon"],
+            attrs={
+                "operation": "temporal_avg",
+                "mode": "climatology",
+                "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "False",
+                "dec_mode": "JFD",
+            },
+        )
+
+        xr.testing.assert_allclose(result["ts"], expected["ts"])
 
     def test_weighted_custom_seasonal_climatology(self):
         ds = self.ds.copy()
@@ -2700,6 +3190,161 @@ class TestDepartures:
 
         xr.testing.assert_identical(result, expected)
 
+    @pytest.mark.parametrize(
+        "min_weight, ts_data, expected_data",
+        [
+            # min_weight=0.0: all missing (np.nan), output is all np.nan
+            (
+                0.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.0: all present, output are departures from the mean.
+            (
+                0.0,
+                np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[-0.340659]], [[0.0]], [[0.0]], [[0.659341]]]),
+            ),
+            # min_weight=0.25: (2000, DJF), (2000, MAM) and (2000, JJA) meet threshold;
+            # (2001, DJF) below threshold (np.nan);
+            (
+                0.25,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[0.0]], [[0.0]], [[0.0]], [[np.nan]]]),
+            ),
+            # min_weight=0.33: (2000, DJF) and (2001, DJF) below threshold (np.nan);
+            # (2000, MAM), (2000, JJA) meet threshold.
+            (
+                0.33,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[0.0]], [[0.0]], [[np.nan]]]),
+            ),
+            # min_weight=1.0: (2000, DJF) and (2001, DJF) below threshold (np.nan);
+            # (2000, MAM) and (2000, JJA) meet threshold.
+            (
+                0.66,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[0.0]], [[0.0]], [[np.nan]]]),
+            ),
+            # min_weight=1.0: all missing, output is all np.nan.
+            (
+                1.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=1.0: (2000, DJF) and (2001, DJF) below threshold (np.nan);
+            # (2000, MAM) and (2000, JJA) meet threshold.
+            (
+                1.0,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[0.0]], [[0.0]], [[np.nan]]]),
+            ),
+            # min_weight=1.0: All values present, output are departures from the mean.
+            (
+                1.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[0.0]], [[0.0]], [[0.0]], [[0.0]]]),
+            ),
+        ],
+    )
+    def test_weighted_seasonal_departures_with_DJF_and_min_weight_threshold(
+        self, min_weight, ts_data, expected_data
+    ):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "1999-12-16T00:00:00.000000000",  # DJF
+                    "2000-01-16T12:00:00.000000000",  # DJF
+                    "2000-02-15T12:00:00.000000000",  # DJF
+                    "2000-03-16T12:00:00.000000000",  # MAM
+                    "2000-06-16T00:00:00.000000000",  # JJA
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        time.encoding = {"calendar": "standard"}
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["1999-12-01T00:00:00.000000000", "2000-01-01T00:00:00.000000000"],
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+
+        ds["ts"] = xr.DataArray(
+            data=ts_data,
+            coords={"time": time, "lat": ds.lat, "lon": ds.lon},
+            dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
+        )
+
+        result = ds.temporal.departures(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF"},
+            min_weight=min_weight,
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=expected_data,
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                            cftime.DatetimeGregorian(2001, 1, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "season",
+                "weighted": "True",
+                "dec_mode": "DJF",
+                "drop_incomplete_seasons": "False",
+            },
+        )
+
+        xr.testing.assert_allclose(result["ts"], expected["ts"])
+
     def test_weighted_seasonal_departures_with_DJF_and_skipna(self):
         ds = self.ds.copy(deep=True)
 
@@ -2936,6 +3581,158 @@ class TestDepartures:
         )
 
         xr.testing.assert_identical(result, expected)
+
+    @pytest.mark.parametrize(
+        "min_weight, ts_data, expected_data",
+        [
+            # min_weight=0.0: all missing (np.nan), output is all np.nan
+            (
+                0.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=0.0: all present, output are departures from the mean.
+            (
+                0.0,
+                np.array([[[2.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[0.0]], [[0.0]], [[0.0]]]),
+            ),
+            # min_weight=0.25: (2000, DJF), (2000, MAM) and (2000, JJA) meet threshold;
+            (
+                0.25,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[0.0]], [[0.0]], [[0.0]]]),
+            ),
+            # min_weight=0.33: (2000, DJF), (2000, MAM), (2000, JJA) meet threshold.
+            (
+                0.33,
+                np.array([[[np.nan]], [[np.nan]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[0.0]], [[0.0]], [[0.0]]]),
+            ),
+            # min_weight=1.0: (2000, DJF) below threshold (np.nan);
+            # (2000, MAM) and (2000, JJA) meet threshold.
+            (
+                0.66,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[0.0]], [[0.0]]]),
+            ),
+            # min_weight=1.0: all missing, output is all np.nan.
+            (
+                1.0,
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]], [[np.nan]]]),
+                np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
+            ),
+            # min_weight=1.0: (2000, DJF) below threshold (np.nan);
+            # (2000, MAM) and (2000, JJA) meet threshold.
+            (
+                1.0,
+                np.array([[[np.nan]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[np.nan]], [[0.0]], [[0.0]]]),
+            ),
+            # min_weight=1.0: All values present, output are departures from the mean.
+            (
+                1.0,
+                np.array([[[1.0]], [[1.0]], [[1.0]], [[1.0]], [[2.0]]]),
+                np.array([[[0.0]], [[0.0]], [[0.0]]]),
+            ),
+        ],
+    )
+    def test_weighted_seasonal_departures_with_JFD_and_min_weight_threshold(
+        self, min_weight, ts_data, expected_data
+    ):
+        time = xr.DataArray(
+            data=np.array(
+                [
+                    "2000-01-16T12:00:00.000000000",  # DJF
+                    "2000-02-15T12:00:00.000000000",  # DJF
+                    "2000-03-16T12:00:00.000000000",  # MAM
+                    "2000-06-16T00:00:00.000000000",  # JJA
+                    "2000-12-16T00:00:00.000000000",  # DJF
+                ],
+                dtype="datetime64[ns]",
+            ),
+            dims=["time"],
+            attrs={
+                "axis": "T",
+                "long_name": "time",
+                "standard_name": "time",
+                "bounds": "time_bnds",
+            },
+        )
+        time.encoding = {"calendar": "standard"}
+        time_bnds = xr.DataArray(
+            name="time_bnds",
+            data=np.array(
+                [
+                    ["2000-01-01T00:00:00.000000000", "2000-02-01T00:00:00.000000000"],
+                    ["2000-02-01T00:00:00.000000000", "2000-03-01T00:00:00.000000000"],
+                    ["2000-03-01T00:00:00.000000000", "2000-04-01T00:00:00.000000000"],
+                    ["2000-06-01T00:00:00.000000000", "2000-07-01T00:00:00.000000000"],
+                    ["2000-12-01T00:00:00.000000000", "2001-01-01T00:00:00.000000000"],
+                ],
+                dtype="datetime64[ns]",
+            ),
+            coords={"time": time},
+            dims=["time", "bnds"],
+            attrs={"xcdat_bounds": "True"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"time_bnds": time_bnds},
+            coords={"lat": [-90], "lon": [0], "time": time},
+        )
+
+        ds["ts"] = xr.DataArray(
+            data=ts_data,
+            coords={"time": time, "lat": ds.lat, "lon": ds.lon},
+            dims=["time", "lat", "lon"],
+            attrs={"test_attr": "test"},
+        )
+
+        result = ds.temporal.departures(
+            "ts",
+            "season",
+            season_config={"dec_mode": "JFD"},
+            min_weight=min_weight,
+        )
+        expected = ds.copy()
+        expected = expected.drop_dims("time")
+        expected["ts"] = xr.DataArray(
+            name="ts",
+            data=expected_data,
+            coords={
+                "lat": expected.lat,
+                "lon": expected.lon,
+                "time": xr.DataArray(
+                    data=np.array(
+                        [
+                            cftime.DatetimeGregorian(2000, 1, 1),
+                            cftime.DatetimeGregorian(2000, 4, 1),
+                            cftime.DatetimeGregorian(2000, 7, 1),
+                        ],
+                    ),
+                    dims=["time"],
+                    attrs={
+                        "axis": "T",
+                        "long_name": "time",
+                        "standard_name": "time",
+                        "bounds": "time_bnds",
+                    },
+                ),
+            },
+            dims=["time", "lat", "lon"],
+            attrs={
+                "test_attr": "test",
+                "operation": "temporal_avg",
+                "mode": "departures",
+                "freq": "season",
+                "weighted": "True",
+                "drop_incomplete_seasons": "False",
+                "dec_mode": "JFD",
+            },
+        )
+
+        xr.testing.assert_allclose(result["ts"], expected["ts"])
 
     def test_weighted_daily_departures_drops_leap_days_with_matching_calendar(self):
         time = xr.DataArray(

@@ -464,6 +464,7 @@ class TemporalAccessor:
         reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
+        min_weight: float | None = None,
     ):
         """Returns a Dataset with the climatology of a data variable.
 
@@ -574,6 +575,10 @@ class TemporalAccessor:
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
+        min_weight : float | None, optional
+            Fraction of data coverage (i..e, weight) needed to return a
+            temporal average value. Value must range from 0 to 1, by default
+            None (equivalent to ``min_weight=0.0``).
 
         Returns
         -------
@@ -658,6 +663,7 @@ class TemporalAccessor:
             reference_period,
             season_config,
             skipna,
+            min_weight=min_weight,
         )
 
     def departures(
@@ -669,6 +675,7 @@ class TemporalAccessor:
         reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
+        min_weight: float | None = None,
     ) -> xr.Dataset:
         """
         Returns a Dataset with the climatological departures (anomalies) for a
@@ -790,6 +797,10 @@ class TemporalAccessor:
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
+        min_weight : float | None, optional
+            Fraction of data coverage (i..e, weight) needed to return a
+            temporal average value. Value must range from 0 to 1, by default
+            None (equivalent to ``min_weight=0.0``).
 
         Returns
         -------
@@ -870,7 +881,13 @@ class TemporalAccessor:
         inferred_freq = _infer_freq(ds[self.dim])
         if inferred_freq != freq:
             ds_obs = ds_obs.temporal.group_average(
-                data_var, freq, weighted, keep_weights, season_config, skipna
+                data_var,
+                freq,
+                weighted,
+                keep_weights,
+                season_config,
+                skipna,
+                min_weight,
             )
 
         # 4. Calculate the climatology of the data variable.
@@ -884,6 +901,7 @@ class TemporalAccessor:
             reference_period,
             season_config,
             skipna,
+            min_weight=min_weight,
         )
 
         # 5. Calculate the departures for the data variable.
