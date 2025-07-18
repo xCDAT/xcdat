@@ -1523,7 +1523,7 @@ class TestGroupAverage:
     @pytest.mark.parametrize(
         "min_weight, ts_data, expected_data",
         [
-            # min_weight=0.0, all data missing, all output bins should be np.nan
+            # min_weight=0.0, all missing, output is all np.nan
             (
                 0.0,
                 np.array(
@@ -1538,7 +1538,14 @@ class TestGroupAverage:
                 ),
                 np.array([[[np.nan]], [[np.nan]], [[np.nan]]]),
             ),
-            # min_weight=0.5, only one value present in Jan, allows Jan only
+            # min_weight=0.0, all months meet threshold, output is weighted mean.
+            (
+                0.0,
+                np.array([[[2.0]], [[1.0]], [[3.0]], [[4.0]], [[5.0]], [[6.0]]]),
+                np.array([[[1.5]], [[3.5]], [[5.5]]]),
+            ),
+            # min_weight=0.5, (2000, Jan) meets threshold;
+            # (2000, Feb) and (2000, Mar) below threshold (np.nan).
             (
                 0.5,
                 np.array(
@@ -1553,7 +1560,8 @@ class TestGroupAverage:
                 ),
                 np.array([[[1.0]], [[np.nan]], [[np.nan]]]),
             ),
-            # min_weight=0.5, Jan and Feb have one value present, allows both
+            # min_weight=0.5, (2000, Jan) and (2000, Feb) meet threshold;
+            # (2000, Mar) below threshold (np.nan).
             (
                 0.5,
                 np.array(
@@ -1561,7 +1569,8 @@ class TestGroupAverage:
                 ),
                 np.array([[[2.0]], [[3.0]], [[np.nan]]]),
             ),
-            # min_weight=1.0, Jan has both values present, allows Jan only
+            # min_weight=1.0, (2000, Jan) meets threshold;
+            # (2000, Feb) and (2000, Mar) below threshold (np.nan).
             (
                 1.0,
                 np.array(
@@ -1569,13 +1578,7 @@ class TestGroupAverage:
                 ),
                 np.array([[[1.5]], [[np.nan]], [[np.nan]]]),
             ),
-            # min_weight=0.0, all months have both values present, allows all
-            (
-                0.0,
-                np.array([[[2.0]], [[1.0]], [[3.0]], [[4.0]], [[5.0]], [[6.0]]]),
-                np.array([[[1.5]], [[3.5]], [[5.5]]]),
-            ),
-            # min_weight=1.0, all months have both values present, allows all
+            # min_weight=1.0, all months meet threshold, output is weighted mean.
             (
                 1.0,
                 np.array([[[2.0]], [[1.0]], [[3.0]], [[4.0]], [[5.0]], [[6.0]]]),
@@ -1593,12 +1596,12 @@ class TestGroupAverage:
                 "time": xr.DataArray(
                     data=np.array(
                         [
-                            "2000-01-01T00:00:00.000000000",
-                            "2000-01-15T00:00:00.000000000",
-                            "2000-02-01T00:00:00.000000000",
-                            "2000-02-15T00:00:00.000000000",
-                            "2000-03-01T00:00:00.000000000",
-                            "2000-03-15T00:00:00.000000000",
+                            "2000-01-01T00:00:00.000000000",  # (2000, Jan)
+                            "2000-01-15T00:00:00.000000000",  # (2000, Jan)
+                            "2000-02-01T00:00:00.000000000",  # (2000, Feb)
+                            "2000-02-15T00:00:00.000000000",  # (2000, Feb)
+                            "2000-03-01T00:00:00.000000000",  # (2000, Mar)
+                            "2000-03-15T00:00:00.000000000",  # (2000, Mar)
                         ],
                         dtype="datetime64[ns]",
                     ),
