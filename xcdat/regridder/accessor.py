@@ -3,6 +3,7 @@ from typing import Any, Literal
 import xarray as xr
 
 from xcdat.axis import CFAxisKey, get_coords_by_name, get_dim_coords
+from xcdat.bounds import create_bounds
 from xcdat.regridder import regrid2, xesmf, xgcm
 from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
 
@@ -79,69 +80,7 @@ class RegridderAccessor:
 
         >>> grid = ds.regridder.grid
         """
-        axis_names: list[CFAxisKey] = ["X", "Y", "Z"]
-
-        axis_coords: dict[str, xr.DataArray] = {}
-        axis_bounds: dict[str, xr.DataArray] = {}
-        axis_has_bounds: dict[CFAxisKey, bool] = {}
-
-        with xr.set_options(keep_attrs=True):
-            for axis in axis_names:
-                coord, bounds = self._get_axis_coord_and_bounds(axis)
-
-                if coord is not None:
-                    axis_coords[str(coord.name)] = coord
-
-                    if bounds is not None:
-                        axis_bounds[str(bounds.name)] = bounds
-                        axis_has_bounds[axis] = True
-                    else:
-                        axis_has_bounds[axis] = False
-
-        # Create a new dataset with coordinates and bounds
-        ds = xr.Dataset(
-            coords=axis_coords,
-            data_vars=axis_bounds,
-            attrs=self._ds.attrs,
-        )
-
-        # Add bounds only for axes that do not already have them. This
-        # prevents multiple sets of bounds being added for the same axis.
-        # For example, curvilinear grids can have multiple coordinates for the
-        # same axis (e.g., (nlat, lat) for X and (nlon, lon) for Y). We only
-        # need lat_bnds and lon_bnds for the X and Y axes, respectively, and not
-        # nlat_bnds and nlon_bnds.
-        for axis, has_bounds in axis_has_bounds.items():
-            if not has_bounds:
-                ds = ds.bounds.add_bounds(axis=axis)
-
-        return ds
-
-    def _get_axis_coord_and_bounds(
-        self, axis: CFAxisKey
-    ) -> tuple[xr.DataArray | None, xr.DataArray | None]:
-        try:
-            coord_var = get_coords_by_name(self._ds, axis)
-            if coord_var.size == 1:
-                raise ValueError(
-                    f"Coordinate '{coord_var}' is a singleton and cannot be used."
-                )
-        except (ValueError, KeyError):
-            try:
-                coord_var = get_dim_coords(self._ds, axis)  # type: ignore
-                _validate_grid_has_single_axis_dim(axis, coord_var)
-            except KeyError:
-                coord_var = None
-
-        if coord_var is None:
-            return None, None
-
-        bounds_var = None
-        bounds_key = coord_var.attrs.get("bounds")
-        if bounds_key:
-            bounds_var = self._ds.get(bounds_key)
-
-        return coord_var, bounds_var
+        return obj_to_grid_ds(self._ds)
 
     def horizontal(
         self,
@@ -308,6 +247,76 @@ class RegridderAccessor:
         output_ds = regridder.vertical(data_var, self._ds)
 
         return output_ds
+
+
+def obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
+    axis_names: list[CFAxisKey] = ["X", "Y", "Z"]
+
+    axis_coords: dict[str, xr.DataArray] = {}
+    axis_bounds: dict[str, xr.DataArray] = {}
+    axis_has_bounds: dict[CFAxisKey, bool] = {}
+
+    with xr.set_options(keep_attrs=True):
+        for axis in axis_names:
+            coord, bounds = _get_axis_coord_and_bounds(obj, axis)
+
+            if coord is not None:
+                axis_coords[str(coord.name)] = coord
+
+                if bounds is not None:
+                    axis_bounds[str(bounds.name)] = bounds
+                    axis_has_bounds[axis] = True
+                else:
+                    axis_has_bounds[axis] = False
+
+    # Create a new dataset with coordinates and bounds
+    output_ds = xr.Dataset(
+        coords=axis_coords,
+        data_vars=axis_bounds,
+        attrs=obj.attrs,
+    )
+
+    # Add bounds only for axes that do not already have them. This
+    # prevents multiple sets of bounds being added for the same axis.
+    # For example, curvilinear grids can have multiple coordinates for the
+    # same axis (e.g., (nlat, lat) for X and (nlon, lon) for Y). We only
+    # need lat_bnds and lon_bnds for the X and Y axes, respectively, and not
+    # nlat_bnds and nlon_bnds.
+    for axis, has_bounds in axis_has_bounds.items():
+        if not has_bounds:
+            output_ds = output_ds.bounds.add_bounds(axis=axis)
+
+    return output_ds
+
+
+def _get_axis_coord_and_bounds(
+    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey
+) -> tuple[xr.DataArray | None, xr.DataArray | None]:
+    try:
+        coord_var = get_coords_by_name(obj, axis)
+        if coord_var.size == 1:
+            raise ValueError(
+                f"Coordinate '{coord_var}' is a singleton and cannot be used."
+            )
+    except (ValueError, KeyError):
+        try:
+            coord_var = get_dim_coords(obj, axis)  # type: ignore
+            _validate_grid_has_single_axis_dim(axis, coord_var)
+        except KeyError:
+            coord_var = None
+
+    if coord_var is None:
+        return None, None
+
+    bounds_var = None
+    bounds_key = coord_var.attrs.get("bounds")
+    if bounds_key:
+        try:
+            bounds_var = obj.get(bounds_key)
+        except AttributeError:
+            bounds_var = create_bounds(axis, coord_var)
+
+    return coord_var, bounds_var
 
 
 def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKey]):
