@@ -118,7 +118,7 @@ def _create_gaussian_axis(nlats: int) -> tuple[xr.DataArray, xr.DataArray]:
 
     points, weights = _gaussian_axis(mid, nlats)
 
-    bounds = np.zeros((nlats + 1))
+    bounds = np.zeros((nlats + 1), dtype="f")
     bounds[0], bounds[-1] = 1.0, -1.0
 
     for i in range(1, mid + 1):
@@ -440,6 +440,7 @@ def create_grid(
     y: xr.DataArray | tuple[xr.DataArray, xr.DataArray | None] | None = None,
     z: xr.DataArray | tuple[xr.DataArray, xr.DataArray | None] | None = None,
     attrs: dict[str, str] | None = None,
+    add_bounds: bool = False,
 ) -> xr.Dataset:
     """Creates a grid dataset using the specified axes.
 
@@ -529,6 +530,11 @@ def create_grid(
             coords = item.copy(deep=True)
 
         ds = ds.assign_coords({coords.name: coords})
+
+    if add_bounds:
+        ds = ds.bounds.add_missing_bounds(
+            axes=[x.upper() for x, y in axes.items() if y is not None]
+        )
 
     return ds
 
