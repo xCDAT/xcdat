@@ -285,7 +285,7 @@ def _build_dataset(
 
     output_da = xr.DataArray(
         output_data,
-        dims=dv_input.dims,
+        dims=output_coords.keys(),
         coords=output_coords,
         attrs=ds[data_var].attrs.copy(),
         name=data_var,
@@ -386,25 +386,25 @@ def _get_output_coords(
         aligned with the dimensions of the input data variable.
     """
     output_coords: dict[str, xr.DataArray] = {}
+    input_dims = [str(dim) for dim in dv_input.dims]
 
     # First get the X and Y axes from the output grid.
     for key in ["X", "Y"]:
         input_coord = xc.get_dim_coords(dv_input, key)  # type: ignore
         output_coord = xc.get_dim_coords(output_grid, key)  # type: ignore
 
-        # Align the output coordinate name and dimension with the input
-        # coordinate's name.
-        output_coord = output_coord.rename({output_coord.name: input_coord.name})
-        output_coord.name = input_coord.name
-        output_coords[str(output_coord.name)] = output_coord  # type: ignore
+        output_coords[str(input_coord.name)] = output_coord  # type: ignore
 
     # Get the remaining axes the input data variable (e.g., "time").
     for dim in dv_input.dims:
         if dim not in output_coords:
             output_coords[str(dim)] = dv_input[dim]
 
-    # Sort the coords to align with the input data variable dims.
-    output_coords = {str(dim): output_coords[str(dim)] for dim in dv_input.dims}
+    # Sort the coords to align with order of input data variable dims. Rename
+    # the dictionary keys to match output grid dimensions.
+    output_coords = {
+        str(output_coords[dim].name): output_coords[dim] for dim in input_dims
+    }
 
     return output_coords
 
