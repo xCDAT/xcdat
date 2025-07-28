@@ -248,7 +248,7 @@ def _pcmdi_land_sea_mask(
         logger.debug("Iteration %i", i + 1)
 
         improved_mask = _improve_mask(
-            mask,
+            mask.copy(deep=True),
             highres_regrid,
             "sftlf",
             surrounds,
