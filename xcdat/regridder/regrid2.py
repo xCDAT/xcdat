@@ -392,7 +392,11 @@ def _get_output_coords(
         input_coord = xc.get_dim_coords(dv_input, key)  # type: ignore
         output_coord = xc.get_dim_coords(output_grid, key)  # type: ignore
 
-        output_coords[str(input_coord.name)] = output_coord  # type: ignore
+        # Align the output coordinate name and dimension with the input
+        # coordinate's name.
+        output_coord = output_coord.rename({output_coord.name: input_coord.name})
+        output_coord.name = input_coord.name
+        output_coords[str(output_coord.name)] = output_coord  # type: ignore
 
     # Get the remaining axes the input data variable (e.g., "time").
     for dim in dv_input.dims:
