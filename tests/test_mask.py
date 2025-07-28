@@ -307,7 +307,7 @@ def test_get_resource_path_fallback_from_exception(monkeypatch, tmp_path):
     mock_file.touch()
 
     mock_as_file = mock.MagicMock()
-    mock_as_file.side_effect = Exception("Resource not found")
+    mock_as_file.side_effect = FileNotFoundError("Resource not found")
 
     monkeypatch.setattr(mask.resources, "as_file", mock_as_file)
 
@@ -318,7 +318,7 @@ def test_get_resource_path_fallback_from_exception(monkeypatch, tmp_path):
 
 def test_get_resource_path_fallback_missing(monkeypatch, tmp_path):
     mock_as_file = mock.MagicMock()
-    mock_as_file.side_effect = Exception("Resource not found")
+    mock_as_file.side_effect = FileNotFoundError("Resource not found")
 
     monkeypatch.setattr(mask.resources, "as_file", mock_as_file)
 
