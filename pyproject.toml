@@ -29,6 +29,7 @@ dependencies = [
   "numpy >=2.0.0,<3.0.0",
   "pandas",
   "python-dateutil",
+  "regionmask",
   "scipy",
   "sparse",
   "xarray >=2024.03.0",
@@ -58,6 +59,9 @@ dev = ["types-python-dateutil", "pre-commit", "ruff", "mypy"]
 
 [tool.setuptools.packages.find]
 include = ["xcdat", "xcdat.*"]
+
+[tool.setuptools.package-data]
+"xcdat" = ["*.nc"]
 
 [tool.setuptools.dynamic]
 version = { attr = "xcdat.__version__" }

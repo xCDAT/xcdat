@@ -14,6 +14,7 @@ dependencies:
     - numpy >=2.0.0,<3.0.0
     - pandas
     - python-dateutil
+    - regionmask
     - scipy
     - sparse
     - xarray >=2024.03.0
