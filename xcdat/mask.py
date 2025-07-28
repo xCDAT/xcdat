@@ -290,7 +290,7 @@ def _get_resource_path(filename: str, default_path: Path | None = None) -> Path:
     try:
         with resources.as_file(resources.files("xcdat").joinpath(filename)) as x:
             resource_path = x
-    except Exception as e:
+    except (ModuleNotFoundError, FileNotFoundError) as e:
         logger.warning(e)
         resource_path = None
 
