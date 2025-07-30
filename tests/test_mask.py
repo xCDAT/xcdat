@@ -239,7 +239,7 @@ def test_generate_land_sea_mask_pcmdi(ds):
 
     output = mask.generate_land_sea_mask(ds["ts"], method="pcmdi")
 
-    xr.testing.assert_equal(output.lsmask, expected)
+    xr.testing.assert_equal(output, expected)
 
 
 @mock.patch("xcdat.mask._improve_mask")
@@ -284,7 +284,7 @@ def test_generate_land_sea_mask_pcmdi_multiple_iterations(_improve_mask, ds):
 
     output = mask.generate_land_sea_mask(ds["ts"], method="pcmdi")
 
-    xr.testing.assert_equal(output.lsmask, expected)
+    xr.testing.assert_equal(output, expected)
 
 
 def test_get_resource_path(monkeypatch, tmp_path):
