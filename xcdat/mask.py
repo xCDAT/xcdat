@@ -202,7 +202,6 @@ def _pcmdi_land_sea_mask(
     da: xr.DataArray,
     threshold1: float = 0.2,
     threshold2: float = 0.3,
-    mask_name: str = "lsmask",
 ) -> xr.DataArray:
     """Generate a land-sea mask using the PCMDI method.
 
@@ -264,9 +263,7 @@ def _pcmdi_land_sea_mask(
 
         i += 1
 
-    mask = mask.rename({"sftlf": mask_name})
-
-    return mask
+    return mask["sftlf"]
 
 
 def _get_resource_path(filename: str, default_path: Path | None = None) -> Path:
