@@ -112,6 +112,16 @@ def test_mask_invalid_keep(ds):
         mask._mask(ds, "ts", keep="artic")
 
 
+def test_mask_output_mask(ds):
+    output = mask._mask(ds, "ts", output_mask=True)
+
+    assert "ts_mask" in output
+
+    output = mask._mask(ds, "ts", output_mask="sea_mask")
+
+    assert "sea_mask" in output
+
+
 def test_mask_fractional(ds):
     custom_mask = xr.DataArray(
         [
