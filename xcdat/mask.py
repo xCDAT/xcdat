@@ -31,6 +31,7 @@ class MaskAccessor:
         method: str = "regionmask",
         criteria: float | None = None,
         mask: xr.DataArray | None = None,
+        output_mask: bool | str = False,
     ):
         """Masks a data variable by sea.
 
@@ -47,6 +48,10 @@ class MaskAccessor:
         mask : xr.DataArray | None, optional
             A custom mask to apply, by default None. If None, a mask is
             generated using the specified ``method``.
+        output_mask : bool | str, optional
+            If True, returns the mask as a DataArray along with the masked
+            dataset. If a string, the name of the mask variable to add to the
+            dataset. By default False.
 
         Returns
         -------
@@ -54,7 +59,13 @@ class MaskAccessor:
             The dataset with the data variable masked by sea.
         """
         return _mask(
-            self._ds, data_var, method, keep="sea", criteria=criteria, mask=mask
+            self._ds,
+            data_var,
+            method,
+            keep="sea",
+            criteria=criteria,
+            mask=mask,
+            output_mask=output_mask,
         )
 
     def mask_sea(
@@ -63,6 +74,7 @@ class MaskAccessor:
         method: str = "regionmask",
         criteria: float | None = None,
         mask: xr.DataArray | None = None,
+        output_mask: bool = False,
     ):
         """Masks a data variable by land.
 
@@ -79,6 +91,10 @@ class MaskAccessor:
         mask : xr.DataArray | None, optional
             A custom mask to apply, by default None. If None, a mask is
             generated using the specified ``method``.
+        output_mask : bool | str, optional
+            If True, returns the mask as a DataArray along with the masked
+            dataset. If a string, the name of the mask variable to add to the
+            dataset. By default False.
 
         Returns
         -------
@@ -86,7 +102,13 @@ class MaskAccessor:
             The dataset with the data variable masked by land.
         """
         return _mask(
-            self._ds, data_var, method, keep="land", criteria=criteria, mask=mask
+            self._ds,
+            data_var,
+            method,
+            keep="land",
+            criteria=criteria,
+            mask=mask,
+            output_mask=output_mask,
         )
 
 
@@ -97,6 +119,7 @@ def _mask(
     keep: str = "sea",
     criteria: float | None = None,
     mask: xr.DataArray | None = None,
+    output_mask: bool | str = False,
 ) -> xr.Dataset:
     """Masks a data variable by land or sea.
 
@@ -144,6 +167,14 @@ def _mask(
         _ds[data_var] = da.where(mask <= (criteria or 0.2))
     else:
         _ds[data_var] = da.where(mask >= (criteria or 0.8))
+
+    if output_mask:
+        if isinstance(output_mask, str):
+            mask_name = output_mask
+        else:
+            mask_name = f"{data_var}_mask"
+
+        _ds[mask_name] = mask
 
     return _ds
 
