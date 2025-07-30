@@ -91,11 +91,11 @@ def test_accessor(ds):
 
     ac = mask.MaskAccessor(ds.isel(time=0))
 
-    land_output = ac.sea("ts")
+    land_output = ac.mask_sea("ts")
 
     xr.testing.assert_allclose(land_output.ts, land_expected)
 
-    sea_output = ac.land("ts")
+    sea_output = ac.mask_land("ts")
 
     xr.testing.assert_allclose(sea_output.ts, sea_expected)
 

@@ -18,14 +18,14 @@ VALID_METHODS: list[str] = ["regionmask", "pcmdi"]
 VALID_KEEP: list[str] = ["land", "sea"]
 
 
-@xr.register_dataset_accessor("geo_mask")
+@xr.register_dataset_accessor("geomask")
 class MaskAccessor:
     """A class for masking geographical data."""
 
     def __init__(self, ds: xr.Dataset):
         self._ds = ds
 
-    def land(
+    def mask_land(
         self,
         data_var: str,
         method: str = "regionmask",
@@ -57,7 +57,7 @@ class MaskAccessor:
             self._ds, data_var, method, keep="sea", criteria=criteria, mask=mask
         )
 
-    def sea(
+    def mask_sea(
         self,
         data_var: str,
         method: str = "regionmask",
