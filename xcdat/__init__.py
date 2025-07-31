@@ -24,5 +24,6 @@ from xcdat.regridder.grid import (  # noqa: F401
 from xcdat.spatial import SpatialAccessor  # noqa: F401
 from xcdat.temporal import TemporalAccessor  # noqa: F401
 from xcdat.utils import compare_datasets  # noqa: F401
+from xcdat.mask import MaskAccessor  # noqa: F401
 
 __version__ = "0.9.1"
