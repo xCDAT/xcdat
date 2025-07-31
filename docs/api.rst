@@ -95,6 +95,7 @@ Classes
     regridder.regrid2.Regrid2Regridder
     regridder.xesmf.XESMFRegridder
     regridder.xgcm.XGCMRegridder
+    mask.MaskAccessor
 
 .. currentmodule:: xarray
 
@@ -129,6 +130,8 @@ Methods
     Dataset.temporal.departures
     Dataset.regridder.horizontal
     Dataset.regridder.vertical
+    Dataset.geomask.mask_land
+    Dataset.geomask.mask_sea
 
 .. _dsmeth_1:
 

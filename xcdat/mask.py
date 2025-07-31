@@ -1,6 +1,6 @@
 from importlib import resources
 from pathlib import Path
-from typing import Callable
+from typing import Any, Callable
 
 import numpy as np
 import regionmask
@@ -32,6 +32,7 @@ class MaskAccessor:
         criteria: float | None = None,
         mask: xr.DataArray | None = None,
         output_mask: bool | str = False,
+        **options: Any,
     ):
         """Masks a data variable by sea.
 
@@ -52,6 +53,9 @@ class MaskAccessor:
             If True, returns the mask as a DataArray along with the masked
             dataset. If a string, the name of the mask variable to add to the
             dataset. By default False.
+        **options : Any
+            These options are passed directly to the ``method``. See specific
+            method documentation for available options.
 
         Returns
         -------
@@ -66,6 +70,7 @@ class MaskAccessor:
             criteria=criteria,
             mask=mask,
             output_mask=output_mask,
+            **options,
         )
 
     def mask_sea(
@@ -75,6 +80,7 @@ class MaskAccessor:
         criteria: float | None = None,
         mask: xr.DataArray | None = None,
         output_mask: bool = False,
+        **options: Any,
     ):
         """Masks a data variable by land.
 
@@ -95,6 +101,9 @@ class MaskAccessor:
             If True, returns the mask as a DataArray along with the masked
             dataset. If a string, the name of the mask variable to add to the
             dataset. By default False.
+        **options : Any
+            These options are passed directly to the ``method``. See specific
+            method documentation for available options.
 
         Returns
         -------
@@ -109,6 +118,7 @@ class MaskAccessor:
             criteria=criteria,
             mask=mask,
             output_mask=output_mask,
+            **options,
         )
 
 
@@ -120,6 +130,7 @@ def _mask(
     criteria: float | None = None,
     mask: xr.DataArray | None = None,
     output_mask: bool | str = False,
+    **options: Any,
 ) -> xr.Dataset:
     """Masks a data variable by land or sea.
 
@@ -140,6 +151,8 @@ def _mask(
     mask : xr.DataArray | None, optional
         A custom mask to apply, by default None. If None, a mask is
         generated using the specified ``method``.
+    **options : Any
+        These options are passed directly to the ``method``. See :func:`pcmdi_land_sea_mask`.
 
     Returns
     -------
@@ -161,7 +174,7 @@ def _mask(
     da = _ds[data_var]
 
     if mask is None:
-        mask = generate_land_sea_mask(da, method)
+        mask = generate_land_sea_mask(da, method, **options)
 
     if keep == "sea":
         _ds[data_var] = da.where(mask <= (criteria or 0.2))
@@ -180,7 +193,7 @@ def _mask(
 
 
 def generate_land_sea_mask(
-    da: xr.DataArray, method: str = "regionmask"
+    da: xr.DataArray, method: str = "regionmask", **options: Any
 ) -> xr.DataArray:
     """Generate a land-sea mask.
 
@@ -191,6 +204,9 @@ def generate_land_sea_mask(
     method : str, optional
         The method to use for generating the mask, by default "regionmask".
         Supported methods: "regionmask", "pcmdi".
+    **options : Any
+        These options are passed directly to the ``method``. See specific
+        method documentation for available options.
 
     Returns
     -------
@@ -224,12 +240,12 @@ def generate_land_sea_mask(
 
         land_sea_mask = xr.where(land_sea_mask, 0, 1)
     elif method == "pcmdi":
-        land_sea_mask = _pcmdi_land_sea_mask(da)
+        land_sea_mask = pcmdi_land_sea_mask(da, **options)
 
     return land_sea_mask
 
 
-def _pcmdi_land_sea_mask(
+def pcmdi_land_sea_mask(
     da: xr.DataArray,
     threshold1: float = 0.2,
     threshold2: float = 0.3,
@@ -247,8 +263,6 @@ def _pcmdi_land_sea_mask(
         The first threshold for improving the mask, by default 0.2.
     threshold2 : float, optional
         The second threshold for improving the mask, by default 0.3.
-    mask_name : str, optional
-        The name of the mask variable, by default "lsmask".
 
     Returns
     -------
