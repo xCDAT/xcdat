@@ -20,7 +20,28 @@ VALID_KEEP: list[str] = ["land", "sea"]
 
 @xr.register_dataset_accessor("geomask")
 class MaskAccessor:
-    """A class for masking geographical data."""
+    """
+    An accessor class that provides masking methods on xarray
+    Datasets through the ``.geomask`` attribute.
+
+    Examples
+    --------
+
+    >>> import xcdat
+
+    Use MaskAccessor class:
+
+    >>> ds = xcdat.open_dataset("/path/to/file")
+    >>>
+    >>> ds.geomask.<attribute>
+    >>> ds.geomask.<method>
+    >>> ds.geomask.<property>
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        A Dataset object.
+    """
 
     def __init__(self, ds: xr.Dataset):
         self._ds = ds
@@ -34,7 +55,7 @@ class MaskAccessor:
         output_mask: bool | str = False,
         **options: Any,
     ):
-        """Masks a data variable by sea.
+        """Masks a data variable by land.
 
         Parameters
         ----------
@@ -44,8 +65,8 @@ class MaskAccessor:
             The masking method, by default "regionmask".
             Supported methods: "regionmask", "pcmdi".
         criteria : float | None, optional
-            The value to use as the criteria for masking, by default None.
-            If None, defaults to 0.2.
+            The value to use as the criteria for cell values that are considered
+            land, by default 0.2.
         mask : xr.DataArray | None, optional
             A custom mask to apply, by default None. If None, a mask is
             generated using the specified ``method``.
@@ -55,14 +76,34 @@ class MaskAccessor:
             dataset. By default False.
         **options : Any
             These options are passed directly to the ``method``. See specific
-            method documentation for available options.
+            method documentation for available options; :func:`pcmdi_land_sea_mask` for PCMDI options.
 
         Returns
         -------
         xr.Dataset
-            The dataset with the data variable masked by sea.
+            The dataset with the data variable masked by land.
+
+        Examples
+        --------
+
+        Mask a data variable by land using the default method (regionmask):
+
+        >>> ds_masked = ds.geomask.mask_land("tas")
+
+        Mask a data variable by land using the PCMDI method with custom criteria:
+
+        >>> ds_masked = ds.geomask.mask_land("tas", method="pcmdi", criteria=0.3)
+
+        Mask a data variable by land using a custom mask and output the mask:
+
+        >>> custom_mask = xr.DataArray(...)  # Define your custom mask here
+        >>> ds_masked = ds.geomask.mask_land("tas", mask=custom_mask, output_mask=True)
+
+        Mask a data variable by land and add the mask to the dataset with a custom name:
+
+        >>> ds_masked = ds.geomask.mask_land("tas", output_mask="land_mask")
         """
-        return _mask(
+        return generate_mask(
             self._ds,
             data_var,
             method,
@@ -82,7 +123,7 @@ class MaskAccessor:
         output_mask: bool = False,
         **options: Any,
     ):
-        """Masks a data variable by land.
+        """Masks a data variable by sea.
 
         Parameters
         ----------
@@ -92,8 +133,8 @@ class MaskAccessor:
             The masking method, by default "regionmask".
             Supported methods: "regionmask", "pcmdi".
         criteria : float | None, optional
-            The value to use as the criteria for masking, by default None.
-            If None, defaults to 0.8.
+            The value to use as the criteria for cell values that are considered
+            sea, by default 0.8.
         mask : xr.DataArray | None, optional
             A custom mask to apply, by default None. If None, a mask is
             generated using the specified ``method``.
@@ -103,14 +144,34 @@ class MaskAccessor:
             dataset. By default False.
         **options : Any
             These options are passed directly to the ``method``. See specific
-            method documentation for available options.
+            method documentation for available options; :func:`pcmdi_land_sea_mask` for PCMDI options
 
         Returns
         -------
         xr.Dataset
-            The dataset with the data variable masked by land.
+            The dataset with the data variable masked by sea.
+
+        Examples
+        --------
+
+        Mask a data variable by sea using the default method (regionmask):
+
+        >>> ds_masked = ds.geomask.mask_sea("tas")
+
+        Mask a data variable by sea using the PCMDI method with custom criteria:
+
+        >>> ds_masked = ds.geomask.mask_sea("tas", method="pcmdi", criteria=0.7)
+
+        Mask a data variable by sea using a custom mask and output the mask:
+
+        >>> custom_mask = xr.DataArray(...)  # Define your custom mask here
+        >>> ds_masked = ds.geomask.mask_sea("tas", mask=custom_mask, output_mask=True)
+
+        Mask a data variable by sea and add the mask to the dataset with a custom name:
+
+        >>> ds_masked = ds.geomask.mask_sea("tas", output_mask="sea_mask")
         """
-        return _mask(
+        return generate_mask(
             self._ds,
             data_var,
             method,
@@ -122,7 +183,7 @@ class MaskAccessor:
         )
 
 
-def _mask(
+def generate_mask(
     ds: xr.Dataset,
     data_var: str,
     method: str = "regionmask",
@@ -132,7 +193,7 @@ def _mask(
     output_mask: bool | str = False,
     **options: Any,
 ) -> xr.Dataset:
-    """Masks a data variable by land or sea.
+    """Generate a land-sea mask and apply it to a data variable in a dataset.
 
     Parameters
     ----------
@@ -152,7 +213,7 @@ def _mask(
         A custom mask to apply, by default None. If None, a mask is
         generated using the specified ``method``.
     **options : Any
-        These options are passed directly to the ``method``. See :func:`pcmdi_land_sea_mask`.
+        These options are passed directly to the ``method``. See :func:`pcmdi_land_sea_mask` for PCMDI options.
 
     Returns
     -------
@@ -163,6 +224,22 @@ def _mask(
     ------
     ValueError
         If `keep` is not "land" or "sea".
+
+    Examples
+    --------
+
+    Mask a data variable by land using the default method (regionmask):
+    >>> ds_masked = generate_mask(ds, "tas", keep="sea")
+
+    Mask a data variable by sea using the PCMDI method with custom criteria:
+    >>> ds_masked = generate_mask(ds, "tas", method="pcmdi", keep="land", criteria=0.7)
+
+    Mask a data variable by land using a custom mask and output the mask:
+    >>> custom_mask = xr.DataArray(...)  # Define your custom mask here
+    >>> ds_masked = generate_mask(ds, "tas", keep="sea", mask=custom_mask, output_mask=True)
+
+    Mask a data variable by sea and add the mask to the dataset with a custom name:
+    >>> ds_masked = generate_mask(ds, "tas", keep="land", output_mask="land_mask")
     """
     if keep not in VALID_KEEP:
         raise ValueError(
@@ -206,7 +283,7 @@ def generate_land_sea_mask(
         Supported methods: "regionmask", "pcmdi".
     **options : Any
         These options are passed directly to the ``method``. See specific
-        method documentation for available options.
+        method documentation for available options; :func:`pcmdi_land_sea_mask` for PCMDI options
 
     Returns
     -------
@@ -225,6 +302,19 @@ def generate_land_sea_mask(
     History
     -------
     2023-06 The [original code](https://github.com/CDAT/cdutil/blob/master/cdutil/create_landsea_mask.py) was rewritten using xarray and xcdat by Jiwoo Lee
+
+    Examples
+    --------
+
+    Generate a land-sea mask using the default method (regionmask):
+
+    >>> import xcdat
+    >>> ds = xcdat.open_dataset("/path/to/file")
+    >>> land_sea_mask = xcdat.mask.generate_land_sea_mask(ds["tas"], method="regionmask")
+
+    Generate a land-sea mask using the PCMDI method with custom options:
+
+    >>> land_sea_mask = xcdat.mask.generate_land_sea_mask(ds["tas"], method="pcmdi", threshold1=0.3, threshold2=0.4)
     """
     if method not in VALID_METHODS:
         raise ValueError(
@@ -268,6 +358,11 @@ def pcmdi_land_sea_mask(
     -------
     xr.DataArray
         The land-sea mask.
+
+    Examples
+    --------
+
+
     """
     resource_path = str(_get_resource_path("navy_land.nc", Path.cwd()))
 
