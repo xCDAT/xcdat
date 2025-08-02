@@ -102,22 +102,22 @@ def test_accessor(ds):
 
 def test_mask_invalid_data_var(ds):
     with pytest.raises(KeyError):
-        mask._mask(ds, "tas")
+        mask.generate_mask(ds, "tas")
 
 
 def test_mask_invalid_keep(ds):
     with pytest.raises(
         ValueError, match=r"Keep value 'artic' is not valid, options are 'land, sea'"
     ):
-        mask._mask(ds, "ts", keep="artic")
+        mask.generate_mask(ds, "ts", keep="artic")
 
 
 def test_mask_output_mask(ds):
-    output = mask._mask(ds, "ts", output_mask=True)
+    output = mask.generate_mask(ds, "ts", output_mask=True)
 
     assert "ts_mask" in output
 
-    output = mask._mask(ds, "ts", output_mask="sea_mask")
+    output = mask.generate_mask(ds, "ts", output_mask="sea_mask")
 
     assert "sea_mask" in output
 
@@ -144,7 +144,7 @@ def test_mask_fractional(ds):
         coords={"lat": ds.lat.copy(), "lon": ds.lon.copy(), "time": ds.time.copy()[0]},
     )
 
-    output = mask._mask(ds.isel(time=0), "ts", mask=custom_mask)
+    output = mask.generate_mask(ds.isel(time=0), "ts", mask=custom_mask)
 
     xr.testing.assert_allclose(output.ts, expected_sea)
 
@@ -153,7 +153,7 @@ def test_mask_fractional(ds):
     expected_land = xr.where(expected_sea == 1, np.nan, expected_land)
     expected_land = xr.where(np.isnan(expected_sea), 1.0, np.nan)
 
-    output = mask._mask(ds.isel(time=0), "ts", keep="land", mask=custom_mask)
+    output = mask.generate_mask(ds.isel(time=0), "ts", keep="land", mask=custom_mask)
 
     xr.testing.assert_allclose(output.ts, expected_land)
 
@@ -180,7 +180,7 @@ def test_mask_custom(ds):
         coords={"lat": ds.lat.copy(), "lon": ds.lon.copy(), "time": ds.time.copy()[0]},
     )
 
-    output = mask._mask(ds.isel(time=0), "ts", mask=custom_mask)
+    output = mask.generate_mask(ds.isel(time=0), "ts", mask=custom_mask)
 
     xr.testing.assert_allclose(output.ts, expected)
 
@@ -192,7 +192,7 @@ def test_mask_land(ds):
         coords={"lat": ds.lat.copy(), "lon": ds.lon.copy(), "time": ds.time[0].copy()},
     )
 
-    output = mask._mask(ds.isel(time=0), "ts")
+    output = mask.generate_mask(ds.isel(time=0), "ts")
 
     xr.testing.assert_allclose(output.ts, expected)
 
@@ -204,7 +204,7 @@ def test_mask_sea(ds):
         coords={"lat": ds.lat.copy(), "lon": ds.lon.copy(), "time": ds.time[0].copy()},
     )
 
-    output = mask._mask(ds.isel(time=0), "ts", keep="land")
+    output = mask.generate_mask(ds.isel(time=0), "ts", keep="land")
 
     xr.testing.assert_allclose(output.ts, expected)
 

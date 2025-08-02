@@ -11,6 +11,7 @@ from xcdat.axis import (  # noqa: F401
 )
 from xcdat.bounds import BoundsAccessor, create_bounds  # noqa: F401
 from xcdat.dataset import decode_time, open_dataset, open_mfdataset  # noqa: F401
+from xcdat.mask import MaskAccessor  # noqa: F401
 from xcdat.regridder.accessor import RegridderAccessor  # noqa: F401
 from xcdat.regridder.grid import (  # noqa: F401
     create_axis,
@@ -25,7 +26,6 @@ from xcdat.regridder.grid import (  # noqa: F401
 from xcdat.spatial import SpatialAccessor  # noqa: F401
 from xcdat.temporal import TemporalAccessor  # noqa: F401
 from xcdat.utils import compare_datasets  # noqa: F401
-from xcdat.mask import MaskAccessor  # noqa: F401
 
 # Initialize xCDAT logger once when the package is imported
 _setup_xcdat_logger()
