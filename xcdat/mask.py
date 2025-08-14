@@ -76,7 +76,7 @@ class MaskAccessor:
             dataset. By default False.
         **options : Any
             These options are passed directly to the ``method``. See specific
-            method documentation for available options; :func:`mask.pcmdi_land_sea_mask` for PCMDI options.
+            method documentation for available options; :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
 
         Returns
         -------
@@ -144,7 +144,7 @@ class MaskAccessor:
             dataset. By default False.
         **options : Any
             These options are passed directly to the ``method``. See specific
-            method documentation for available options; :func:`mask.pcmdi_land_sea_mask` for PCMDI options
+            method documentation for available options; :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options
 
         Returns
         -------
@@ -213,7 +213,7 @@ def generate_mask(
         A custom mask to apply, by default None. If None, a mask is
         generated using the specified ``method``.
     **options : Any
-        These options are passed directly to the ``method``. See :func:`pcmdi_land_sea_mask` for PCMDI options.
+        These options are passed directly to the ``method``. See :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
 
     Returns
     -------
