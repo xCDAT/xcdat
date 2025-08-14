@@ -39,6 +39,17 @@ Below is a list of top-level API functions that are available in ``xcdat``.
     create_zonal_grid
     tutorial.open_dataset
 
+Module-level API Functions
+--------------------------
+
+Below is a list of model-level API functions that are available in ``xcdat``.
+
+.. autosummary::
+    :toctree: generated/
+
+    mask.pcmdi_land_sea_mask
+
+
 Accessors
 ---------
 
