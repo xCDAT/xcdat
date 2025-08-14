@@ -252,8 +252,55 @@ def test_generate_land_sea_mask_pcmdi(ds):
     xr.testing.assert_equal(output, expected)
 
 
+def test_pcmdi_land_sea_mask_custom_source(ds):
+    source = xr.DataArray(
+        [
+            [0.1, 0.1, 0.9, 0.2],
+            [0.1, 0.9, 0.9, 0.1],
+            [0.0, 0.1, 0.9, 0.9],
+            [0.1, 0.1, 0.9, 0.1],
+        ],
+        dims=("lat", "lon"),
+        coords={"lat": ds.lat.copy(), "lon": ds.lon.copy()},
+        attrs={"Conventions": "CF-1.0"},
+    ).to_dataset(name="highres_mask")
+
+    output = mask.pcmdi_land_sea_mask(
+        ds["ts"], source=source, source_data_var="highres_mask"
+    )
+
+    expected = xr.DataArray(
+        [[0, 0, 1, 0], [0, 1, 1, 0], [0, 0, 1, 1], [0, 0, 1, 0]],
+        dims=("lat", "lon"),
+        coords={"lat": ds.lat.copy(), "lon": ds.lon.copy()},
+        attrs={"Conventions": "CF-1.0"},
+    )
+
+    xr.testing.assert_allclose(output, expected)
+
+
+def test_pcmdi_land_sea_mask_custom_source_error(ds):
+    source = xr.DataArray(
+        [
+            [0.1, 0.1, 0.9, 0.2],
+            [0.1, 0.9, 0.9, 0.1],
+            [0.0, 0.1, 0.9, 0.9],
+            [0.1, 0.1, 0.9, 0.1],
+        ],
+        dims=("lat", "lon"),
+        coords={"lat": ds.lat.copy(), "lon": ds.lon.copy()},
+        attrs={"Conventions": "CF-1.0"},
+    ).to_dataset(name="highres_mask")
+
+    with pytest.raises(
+        ValueError,
+        match="The 'source_data_var' value cannot be None when using the 'source' option.",
+    ):
+        mask.pcmdi_land_sea_mask(ds["ts"], source=source)
+
+
 @mock.patch("xcdat.mask._improve_mask")
-def test_generate_land_sea_mask_pcmdi_multiple_iterations(_improve_mask, ds):
+def test_pcmdi_land_sea_mask_multiple_iterations(_improve_mask, ds):
     mask1 = xr.DataArray(
         [
             [1, 1, 1, 1],
@@ -292,7 +339,7 @@ def test_generate_land_sea_mask_pcmdi_multiple_iterations(_improve_mask, ds):
         coords={"lat": ds.lat.copy(), "lon": ds.lon.copy()},
     )
 
-    output = mask.generate_land_sea_mask(ds["ts"], method="pcmdi")
+    output = mask.pcmdi_land_sea_mask(ds["ts"])
 
     xr.testing.assert_equal(output, expected)
 

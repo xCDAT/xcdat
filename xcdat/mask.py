@@ -339,6 +339,8 @@ def pcmdi_land_sea_mask(
     da: xr.DataArray,
     threshold1: float = 0.2,
     threshold2: float = 0.3,
+    source: xr.Dataset | None = None,
+    source_data_var: str | None = None,
 ) -> xr.DataArray:
     """Generate a land-sea mask using the PCMDI method.
 
@@ -353,6 +355,10 @@ def pcmdi_land_sea_mask(
         The first threshold for improving the mask, by default 0.2.
     threshold2 : float, optional
         The second threshold for improving the mask, by default 0.3.
+    source : xr.Dataset | None, optional
+        The Dataset containing the variable to use as the high resolution source.
+    source_data_var : str | None, optional
+        Name of the variable in `source` to use as the high resolution source.
 
     Returns
     -------
@@ -362,24 +368,47 @@ def pcmdi_land_sea_mask(
     Examples
     --------
 
+    Generate a land-sea mask using the PCMDI method:
 
+    >>> import xcdat
+    >>> ds = xcdat.open_dataset("/path/to/file")
+    >>> land_sea_mask = xcdat.mask.pcmdi_land_sea_mask(ds["tas"])
+
+    Generate a land-sea mask using the PCMDI method with custom thresholds:
+
+    >>> land_sea_mask = xcdat.mask.pcmdi_land_sea_mask(ds["tas"], threshold1=0.3, threshold2=0.4)
+
+    Generate a land-sea mask using the PCMDI method with a custom high resolution source:
+
+    >>> highres_ds = xcdata.open_dataset("/path/to/file")
+    >>> land_sea_mask = xcdat.mask.pcmdi_land_sea_mask(ds["tas"], source=highres_ds, source_data_var="highres")
     """
-    resource_path = str(_get_resource_path("navy_land.nc", Path.cwd()))
+    if source is not None and source_data_var is None:
+        raise ValueError(
+            "The 'source_data_var' value cannot be None when using the 'source' option."
+        )
 
-    highres = open_dataset(resource_path)
+    if source is None:
+        source_data_var = "sftlf"
 
-    highres_regrid = highres.regridder.horizontal(
-        "sftlf", obj_to_grid_ds(da), tool="regrid2"
+        resource_path = str(_get_resource_path("navy_land.nc", Path.cwd()))
+
+        source = open_dataset(resource_path)
+
+    source_regrid = source.regridder.horizontal(
+        source_data_var, obj_to_grid_ds(da), tool="regrid2"
     )
 
-    mask = highres_regrid.copy()
-    mask["sftlf"] = xr.where(highres_regrid.sftlf > 0.5, 1, 0).astype("i")
+    mask = source_regrid.copy()
+    mask[source_data_var] = xr.where(source_regrid[source_data_var] > 0.5, 1, 0).astype(
+        "i"
+    )
 
-    lon = mask.sftlf.cf["X"]
+    lon = mask[source_data_var].cf["X"]
     lon_bnds = mask.bounds.get_bounds("X")
     is_circular = _is_circular(lon, lon_bnds)
 
-    surrounds = _generate_surrounds(mask.sftlf, is_circular)
+    surrounds = _generate_surrounds(mask[source_data_var], is_circular)
 
     i = 0
 
@@ -388,8 +417,8 @@ def pcmdi_land_sea_mask(
 
         improved_mask = _improve_mask(
             mask.copy(deep=True),
-            highres_regrid,
-            "sftlf",
+            source_regrid,
+            source_data_var,  # type: ignore[arg-type]
             surrounds,
             is_circular,
             threshold1,
@@ -403,7 +432,7 @@ def pcmdi_land_sea_mask(
 
         i += 1
 
-    return mask["sftlf"]
+    return mask[source_data_var]
 
 
 def _get_resource_path(filename: str, default_path: Path | None = None) -> Path:
@@ -610,9 +639,9 @@ def _convert_points(
     diff : xr.DataArray
         The difference between the source and an approximated mask.
     threshold1 : float
-        The first threshold for conversion.
+        Threshold for points in the `diff` DataArray.
     threshold2 : float
-        The second threshold for conversion.
+        Threshold for points in the `source` DataArray.
     is_circular : bool
         Whether the longitude axis is circular.
     surrounds : list[np.ndarray]
@@ -627,15 +656,15 @@ def _convert_points(
     """
     UL, UC, UR, ML, MR, LL, LC, LR = surrounds
 
-    flip_value = 0.0
     mask_value = 1.0
     compare_func: Callable
     if convert_land:
         compare_func = np.greater
     else:
         compare_func = np.less
-        flip_value = 1.0
         mask_value = 0.0
+
+    flip_value = abs(mask_value - 1.0)
 
     c1 = compare_func(diff, threshold1)
     c2 = compare_func(source, threshold2)
