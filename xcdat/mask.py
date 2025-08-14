@@ -76,7 +76,7 @@ class MaskAccessor:
             dataset. By default False.
         **options : Any
             These options are passed directly to the ``method``. See specific
-            method documentation for available options; :func:`pcmdi_land_sea_mask` for PCMDI options.
+            method documentation for available options; :func:`mask.pcmdi_land_sea_mask` for PCMDI options.
 
         Returns
         -------
@@ -144,7 +144,7 @@ class MaskAccessor:
             dataset. By default False.
         **options : Any
             These options are passed directly to the ``method``. See specific
-            method documentation for available options; :func:`pcmdi_land_sea_mask` for PCMDI options
+            method documentation for available options; :func:`mask.pcmdi_land_sea_mask` for PCMDI options
 
         Returns
         -------
