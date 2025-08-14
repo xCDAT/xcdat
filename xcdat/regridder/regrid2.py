@@ -285,7 +285,7 @@ def _build_dataset(
 
     output_da = xr.DataArray(
         output_data,
-        dims=dv_input.dims,
+        dims=output_coords.keys(),
         coords=output_coords,
         attrs=ds[data_var].attrs.copy(),
         name=data_var,
@@ -386,6 +386,7 @@ def _get_output_coords(
         aligned with the dimensions of the input data variable.
     """
     output_coords: dict[str, xr.DataArray] = {}
+    input_dims = [str(dim) for dim in dv_input.dims]
 
     # First get the X and Y axes from the output grid.
     for key in ["X", "Y"]:
@@ -399,8 +400,11 @@ def _get_output_coords(
         if dim not in output_coords:
             output_coords[str(dim)] = dv_input[dim]
 
-    # Sort the coords to align with the input data variable dims.
-    output_coords = {str(dim): output_coords[str(dim)] for dim in dv_input.dims}
+    # Sort the coords to align with order of input data variable dims. Rename
+    # the dictionary keys to match output grid dimensions.
+    output_coords = {
+        str(output_coords[dim].name): output_coords[dim] for dim in input_dims
+    }
 
     return output_coords
 
