@@ -1667,11 +1667,19 @@ class TemporalAccessor:
             # affect the result.
             dv_avg = dv_group_sum / masked_weights_group_sum
 
-            # Set averaged data to NaN where masked weights are below the
-            # minimum threshold.
+            # Mask averaged data where the fraction of weights in each group
+            # does not meet the minimum weight threshold (fractional).
             if self._min_weight > 0.0:
+                # The sum of all weights in each group (i.e., full coverage)
+                weight_sum_all = self._group_data(self._weights).sum(skipna=skipna)
+
+                # Fraction of weights present in each group.
+                weight_fraction = masked_weights_group_sum / weight_sum_all
+
+                # Mask the averaged data where the weight fraction is below
+                # the minimum weight threshold.
                 dv_avg = xr.where(
-                    masked_weights_group_sum >= self._min_weight,
+                    weight_fraction >= self._min_weight,
                     dv_avg,
                     np.nan,
                     keep_attrs=True,
