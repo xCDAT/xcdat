@@ -1652,19 +1652,17 @@ class TemporalAccessor:
             # Group and sum weighted data, skipping NaNs if specified.
             dv_group_sum = self._group_data(dv_weighted).sum(skipna=skipna)
 
-            # Mask weights where data is missing (set to zero).
-            masked_weights = _get_masked_weights(dv_weighted, self._weights)
-
-            # Group and sum masked weights.
+            # Mask weights where data is missing (set to zero), then
+            # group and sum the masked weights. This ensures that only weights
+            # corresponding to non-missing data are used in the denominator of
+            # the weighted average.
+            masked_weights = _get_masked_weights(dv, self._weights)
             masked_weights_group_sum = self._group_data(masked_weights).sum(
                 skipna=skipna
             )
 
             # Compute weighted average using the formula:
             # WA = sum(data * weights) / sum(weights for non-missing data)
-            # The denominator ensures that only weights for non-missing data
-            # are included, so missing data (with zero weight) does not
-            # affect the result.
             dv_avg = dv_group_sum / masked_weights_group_sum
 
             # Mask averaged data where the fraction of weights in each group
