@@ -3219,10 +3219,10 @@ class TestDepartures:
             attrs={
                 "test_attr": "test",
                 "operation": "temporal_avg",
-                "min_weight": 0.0,
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "dec_mode": "DJF",
                 "drop_incomplete_seasons": "False",
             },
