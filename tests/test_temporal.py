@@ -121,6 +121,7 @@ class TestAverage:
                 "mode": "average",
                 "freq": "year",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -208,6 +209,7 @@ class TestAverage:
                 "mode": "average",
                 "freq": "month",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -295,6 +297,7 @@ class TestAverage:
                 "mode": "average",
                 "freq": "day",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -380,6 +383,7 @@ class TestAverage:
                 "mode": "average",
                 "freq": "hour",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -518,6 +522,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -569,6 +574,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -620,6 +626,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "year",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -671,6 +678,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "dec_mode": "DJF",
             },
@@ -831,6 +839,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "dec_mode": "DJF",
             },
@@ -879,6 +888,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "True",
                 "dec_mode": "DJF",
             },
@@ -929,6 +939,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -978,6 +989,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
@@ -1140,6 +1152,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
@@ -1238,6 +1251,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "custom_seasons": [
                     "JanFebMar",
@@ -1304,6 +1318,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "True",
                 "custom_seasons": ["JanMarJun", "FebSep"],
             },
@@ -1361,6 +1376,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "True",
                 "custom_seasons": ["NovDec", "FebMarApr"],
             },
@@ -1418,6 +1434,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "custom_seasons": ["NovDecJanFebMar"],
             },
@@ -1464,6 +1481,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "month",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -1515,6 +1533,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "month",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -1705,6 +1724,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "day",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -1749,6 +1769,7 @@ class TestGroupAverage:
                 "mode": "group_average",
                 "freq": "hour",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -1841,6 +1862,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "dec_mode": "DJF",
                 "drop_incomplete_seasons": "True",
             },
@@ -1895,6 +1917,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "True",
                 "dec_mode": "DJF",
             },
@@ -2057,6 +2080,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": min_weight,
                 "drop_incomplete_seasons": "False",
                 "dec_mode": "DJF",
             },
@@ -2121,6 +2145,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_djf": "True",
                 "dec_mode": "DJF",
             },
@@ -2181,6 +2206,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -2238,6 +2264,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "dec_mode": "DJF",
                 "drop_incomplete_seasons": "True",
             },
@@ -2290,6 +2317,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
@@ -2452,6 +2480,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": min_weight,
                 "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
@@ -2511,6 +2540,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "custom_seasons": [
                     "JanFebMar",
@@ -2567,6 +2597,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "drop_incomplete_seasons": "False",
                 "custom_seasons": ["NovDecJanFebMar"],
             },
@@ -2632,6 +2663,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "month",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -2756,6 +2788,7 @@ class TestClimatology:
                 "mode": "climatology",
                 "freq": "day",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
 
@@ -2847,6 +2880,7 @@ class TestClimatology:
                     "mode": "climatology",
                     "freq": "day",
                     "weighted": "True",
+                    "min_weight": 0.0,
                 },
             )
 
@@ -3050,6 +3084,7 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "dec_mode": "DJF",
                 "drop_incomplete_seasons": "False",
             },
@@ -3105,6 +3140,7 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "month",
                 "weighted": "True",
+                "min_weight": 0.0,
             },
         )
         expected["time_bnds"] = xr.DataArray(
@@ -3183,6 +3219,7 @@ class TestDepartures:
             attrs={
                 "test_attr": "test",
                 "operation": "temporal_avg",
+                "min_weight": 0.0,
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "True",
@@ -3341,6 +3378,7 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": min_weight,
                 "dec_mode": "DJF",
                 "drop_incomplete_seasons": "False",
             },
@@ -3397,6 +3435,7 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "dec_mode": "DJF",
                 "drop_incomplete_djf": "True",
             },
@@ -3449,6 +3488,7 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": 0.0,
                 "dec_mode": "DJF",
                 "drop_incomplete_seasons": "False",
             },
@@ -3730,6 +3770,7 @@ class TestDepartures:
                 "mode": "departures",
                 "freq": "season",
                 "weighted": "True",
+                "min_weight": min_weight,
                 "drop_incomplete_seasons": "False",
                 "dec_mode": "JFD",
             },
@@ -3823,6 +3864,7 @@ class TestDepartures:
                             "mode": "departures",
                             "freq": "day",
                             "weighted": "True",
+                            "min_weight": 0.0,
                         },
                     ),
                 },

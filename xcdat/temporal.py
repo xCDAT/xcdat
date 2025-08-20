@@ -2103,14 +2103,15 @@ class TemporalAccessor:
         xr.DataArray
             The data variable with a temporal averaging attributes.
         """
-        data_var.attrs.update(
-            {
-                "operation": "temporal_avg",
-                "mode": self._mode,
-                "freq": self._freq,
-                "weighted": str(self._weighted),
-            }
-        )
+        attrs_to_set = {
+            "operation": "temporal_avg",
+            "mode": self._mode,
+            "freq": self._freq,
+            "weighted": str(self._weighted),
+        }
+
+        if self._weighted and hasattr(self, "_min_weight"):
+            attrs_to_set["min_weight"] = self._min_weight  # type: ignore
 
         if self._freq == "season":
             drop_incomplete_seasons = self._season_config["drop_incomplete_seasons"]
@@ -2119,16 +2120,18 @@ class TemporalAccessor:
             # TODO: Deprecate drop_incomplete_djf. This attr is only set if the
             # user does not set drop_incomplete_seasons.
             if drop_incomplete_seasons is False and drop_incomplete_djf is not False:
-                data_var.attrs["drop_incomplete_djf"] = str(drop_incomplete_djf)
+                attrs_to_set["drop_incomplete_djf"] = str(drop_incomplete_djf)
             else:
-                data_var.attrs["drop_incomplete_seasons"] = str(drop_incomplete_seasons)
+                attrs_to_set["drop_incomplete_seasons"] = str(drop_incomplete_seasons)
 
             custom_seasons = self._season_config.get("custom_seasons")
             if custom_seasons is not None:
-                data_var.attrs["custom_seasons"] = list(custom_seasons.keys())
+                attrs_to_set["custom_seasons"] = list(custom_seasons.keys())  # type: ignore
             else:
                 dec_mode = self._season_config.get("dec_mode")
-                data_var.attrs["dec_mode"] = dec_mode
+                attrs_to_set["dec_mode"] = dec_mode  # type: ignore
+
+        data_var.attrs.update(attrs_to_set)
 
         return data_var
 
