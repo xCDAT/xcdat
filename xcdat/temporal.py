@@ -19,6 +19,7 @@ from xcdat import bounds  # noqa: F401
 from xcdat._logger import _setup_custom_logger
 from xcdat.axis import get_dim_coords
 from xcdat.dataset import _get_data_var
+from xcdat.utils import _get_masked_weights, _validate_min_weight
 
 logger = _setup_custom_logger(__name__)
 
@@ -266,6 +267,7 @@ class TemporalAccessor:
         keep_weights: bool = False,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
+        min_weight: float | None = None,
     ):
         """Returns a Dataset with average of a data variable by time group.
 
@@ -367,6 +369,10 @@ class TemporalAccessor:
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
+        min_weight : float | None, optional
+            Fraction of data coverage (i.e., weight) needed to return a
+            temporal average value. Value must range from 0 to 1, by default
+            None (equivalent to ``min_weight=0.0``).
 
         Returns
         -------
@@ -446,6 +452,7 @@ class TemporalAccessor:
             keep_weights=keep_weights,
             season_config=season_config,
             skipna=skipna,
+            min_weight=min_weight,
         )
 
     def climatology(
@@ -457,6 +464,7 @@ class TemporalAccessor:
         reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
+        min_weight: float | None = None,
     ):
         """Returns a Dataset with the climatology of a data variable.
 
@@ -567,6 +575,10 @@ class TemporalAccessor:
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
+        min_weight : float | None, optional
+            Fraction of data coverage (i.e., weight) needed to return a
+            temporal average value. Value must range from 0 to 1, by default
+            None (equivalent to ``min_weight=0.0``).
 
         Returns
         -------
@@ -651,6 +663,7 @@ class TemporalAccessor:
             reference_period,
             season_config,
             skipna,
+            min_weight=min_weight,
         )
 
     def departures(
@@ -662,6 +675,7 @@ class TemporalAccessor:
         reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
+        min_weight: float | None = None,
     ) -> xr.Dataset:
         """
         Returns a Dataset with the climatological departures (anomalies) for a
@@ -783,6 +797,10 @@ class TemporalAccessor:
             skips missing values for float dtypes; other dtypes either do not
             have a sentinel missing value (int) or ``skipna=True`` has not been
             implemented (object, datetime64 or timedelta64).
+        min_weight : float | None, optional
+            Fraction of data coverage (i.e., weight) needed to return a
+            temporal average value. Value must range from 0 to 1, by default
+            None (equivalent to ``min_weight=0.0``).
 
         Returns
         -------
@@ -863,7 +881,13 @@ class TemporalAccessor:
         inferred_freq = _infer_freq(ds[self.dim])
         if inferred_freq != freq:
             ds_obs = ds_obs.temporal.group_average(
-                data_var, freq, weighted, keep_weights, season_config, skipna
+                data_var,
+                freq,
+                weighted,
+                keep_weights,
+                season_config,
+                skipna,
+                min_weight,
             )
 
         # 4. Calculate the climatology of the data variable.
@@ -877,6 +901,7 @@ class TemporalAccessor:
             reference_period,
             season_config,
             skipna,
+            min_weight=min_weight,
         )
 
         # 5. Calculate the departures for the data variable.
@@ -899,10 +924,13 @@ class TemporalAccessor:
         reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
         skipna: bool | None = None,
+        min_weight: float | None = None,
     ) -> xr.Dataset:
         """Averages a data variable based on the averaging mode and frequency."""
         ds = self._dataset.copy()
-        self._set_arg_attrs(mode, freq, weighted, reference_period, season_config)
+        self._set_arg_attrs(
+            mode, freq, weighted, reference_period, season_config, min_weight
+        )
 
         # Preprocess the dataset based on method argument values.
         ds = self._preprocess_dataset(ds)
@@ -983,6 +1011,7 @@ class TemporalAccessor:
         weighted: bool,
         reference_period: tuple[str, str] | None = None,
         season_config: SeasonConfigInput = DEFAULT_SEASON_CONFIG,
+        min_weight: float | None = None,
     ):
         """Validates method arguments and sets them as object attributes.
 
@@ -998,6 +1027,10 @@ class TemporalAccessor:
             A dictionary for "season" frequency configurations. If configs for
             predefined seasons are passed, configs for custom seasons are
             ignored and vice versa, by default DEFAULT_SEASON_CONFIG.
+        min_weight : float | None, optional
+            Fraction of data coverage (i.e., weight) needed to return a
+            temporal average value. Value must range from 0 to 1, by default
+            None (equivalent to ``min_weight=0.0``).
 
         Raises
         ------
@@ -1025,6 +1058,7 @@ class TemporalAccessor:
         self._mode = mode
         self._freq = freq
         self._weighted = weighted
+        self._min_weight = _validate_min_weight(min_weight)
 
         self._reference_period = None
         if reference_period is not None:
@@ -1541,53 +1575,119 @@ class TemporalAccessor:
         """
         dv = _get_data_var(ds, data_var)
 
-        # Label the time coordinates for grouping weights and the data variable
-        # values.
+        # Label the time coordinates with groups for grouping data and weights.
         self._labeled_time = self._label_time_coords(dv[self.dim])
         dv = dv.assign_coords({self.dim: self._labeled_time})
 
         if self._weighted:
-            self._weights = self._get_weights(ds, data_var)
-
-            # Weight the data variable.
-            dv *= self._weights
-
-            # Ensure missing data (`np.nan`) receives no weight (zero). To
-            # achieve this, first broadcast the one-dimensional (temporal
-            # dimension) shape of the `weights` DataArray to the
-            # multi-dimensional shape of its corresponding data variable.
-            weights = self._weights
-            if dv.chunks:
-                # For Dask-backed data variables, chunk the weights along the
-                # time dimension before broadcasting to avoid eager evaluation
-                # of the masking step.
-                weights = weights.chunk({self.dim: dv.chunksizes[self.dim]})
-            weights, _ = xr.broadcast(self._weights, dv)
-            weights = xr.where(dv.copy().isnull(), 0.0, weights)
-
-            # Perform weighted average using the formula
-            # WA = sum(data*weights) / sum(weights). The denominator must be
-            # included to take into account zero weight for missing data.
-            with xr.set_options(keep_attrs=True):
-                dv = self._group_data(dv).sum(skipna=skipna) / self._group_data(
-                    weights
-                ).sum(skipna=skipna)
-
-            # Restore the data variable's name.
-            dv.name = data_var
+            dv_avg = self._weighted_group_average(ds, dv, skipna)
         else:
-            dv = self._group_data(dv).mean(skipna=skipna)
+            dv_avg = self._group_data(dv).mean(skipna=skipna)
 
-        # After grouping and aggregating, the grouped time dimension's
-        # attributes are removed. Xarray's `keep_attrs=True` option only keeps
-        # attributes for data variables and not their coordinates, so the
-        # coordinate attributes have to be restored manually.
-        dv[self.dim].attrs = self._labeled_time.attrs
-        dv[self.dim].encoding = self._labeled_time.encoding
+        # After grouping and aggregating, xarray removes attributes from the
+        # grouped time coordinate. The `keep_attrs=True` option only preserves
+        # attributes for data variables, not coordinates. Therefore, we manually
+        # restore the time coordinate's attributes below.
+        dv_avg[self.dim].attrs = self._labeled_time.attrs
+        dv_avg[self.dim].encoding = self._labeled_time.encoding
 
-        dv = self._add_operation_attrs(dv)
+        dv_avg = self._add_operation_attrs(dv_avg)
 
-        return dv
+        return dv_avg
+
+    def _weighted_group_average(
+        self,
+        ds: xr.Dataset,
+        dv: xr.DataArray,
+        skipna: bool | None,
+    ) -> xr.DataArray:
+        """Compute the weighted group average of a data variable.
+
+        This method applies weights to the data variable, groups the weighted data,
+        and computes the average by dividing the sum of weighted data by the sum of
+        weights for non-missing data. It handles missing values according to the
+        `skipna` parameter and ensures that weights for missing data are excluded
+        from the denominator. Optionally, results are masked where the sum of weights
+        falls below a minimum threshold.
+
+        Parameters
+        ----------
+        ds : xr.Dataset
+            The input xarray Dataset containing the data variable and any coordinate information.
+        dv : xr.DataArray
+            The data variable to be averaged.
+        skipna : bool | None
+            If True, skip missing values (as marked by NaN). By default, only
+            skips missing values for float dtypes; other dtypes either do not
+            have a sentinel missing value (int) or ``skipna=True`` has not been
+            implemented (object, datetime64 or timedelta64).
+
+        Returns
+        -------
+        xr.DataArray
+            The weighted group average of the data variable, with the same name as `dv`.
+            Values are set to NaN where the sum of weights is below the minimum threshold.
+
+        Notes
+        -----
+        - Weights are masked to zero where data is missing.
+        - For Dask-backed data, weights are chunked to avoid eager evaluation.
+        - The minimum weight threshold is controlled by `self._min_weight`.
+        """
+        with xr.set_options(keep_attrs=True):
+            # Keep the original weights for other operations and make a copy
+            # to avoid modifying the original weights.
+            self._weights = self._get_weights(ds, str(dv.name))
+            weights = self._weights.copy()
+
+            # For Dask-backed data variables, chunk the weights along the
+            # time dimension before broadcasting to avoid eager evaluation
+            # of the masking step.
+            if dv.chunks:
+                weights = weights.chunk({self.dim: dv.chunksizes[self.dim]})
+
+            # Apply the weights to data.
+            dv_weighted = dv * weights
+
+            # Group and sum weighted data, skipping NaNs if specified.
+            dv_group_sum = self._group_data(dv_weighted).sum(skipna=skipna)
+
+            # Mask weights where data is missing (set to zero), then
+            # group and sum the masked weights. This ensures that only weights
+            # corresponding to non-missing data are used in the denominator of
+            # the weighted average.
+            masked_weights = _get_masked_weights(dv, self._weights)
+            masked_weights_group_sum = self._group_data(masked_weights).sum(
+                skipna=skipna
+            )
+
+            # Compute weighted average using the formula:
+            # WA = sum(data * weights) / sum(weights for non-missing data)
+            dv_avg = dv_group_sum / masked_weights_group_sum
+
+            # Mask averaged data where the fraction of weights in each group
+            # does not meet the minimum weight threshold (fractional).
+            if self._min_weight > 0.0:
+                # The sum of all weights in each group (i.e., full coverage)
+                weight_sum_all = self._group_data(self._weights).sum(skipna=skipna)
+
+                # Fraction of weights present in each group.
+                weight_fraction = masked_weights_group_sum / weight_sum_all
+
+                # Mask the averaged data where the weight fraction is below
+                # the minimum weight threshold.
+                dv_avg = xr.where(
+                    weight_fraction >= self._min_weight,
+                    dv_avg,
+                    np.nan,
+                    keep_attrs=True,
+                )
+
+            # Restore the data variables name which gets lost after arithmetic
+            # and masking operations.
+            dv_avg.name = dv.name
+
+        return dv_avg
 
     def _get_weights(self, ds: xr.Dataset, data_var: str) -> xr.DataArray:
         """Calculates weights for a data variable using time bounds.
@@ -2003,14 +2103,15 @@ class TemporalAccessor:
         xr.DataArray
             The data variable with a temporal averaging attributes.
         """
-        data_var.attrs.update(
-            {
-                "operation": "temporal_avg",
-                "mode": self._mode,
-                "freq": self._freq,
-                "weighted": str(self._weighted),
-            }
-        )
+        attrs_to_set = {
+            "operation": "temporal_avg",
+            "mode": self._mode,
+            "freq": self._freq,
+            "weighted": str(self._weighted),
+        }
+
+        if self._weighted:
+            attrs_to_set["min_weight"] = self._min_weight  # type: ignore
 
         if self._freq == "season":
             drop_incomplete_seasons = self._season_config["drop_incomplete_seasons"]
@@ -2019,16 +2120,18 @@ class TemporalAccessor:
             # TODO: Deprecate drop_incomplete_djf. This attr is only set if the
             # user does not set drop_incomplete_seasons.
             if drop_incomplete_seasons is False and drop_incomplete_djf is not False:
-                data_var.attrs["drop_incomplete_djf"] = str(drop_incomplete_djf)
+                attrs_to_set["drop_incomplete_djf"] = str(drop_incomplete_djf)
             else:
-                data_var.attrs["drop_incomplete_seasons"] = str(drop_incomplete_seasons)
+                attrs_to_set["drop_incomplete_seasons"] = str(drop_incomplete_seasons)
 
             custom_seasons = self._season_config.get("custom_seasons")
             if custom_seasons is not None:
-                data_var.attrs["custom_seasons"] = list(custom_seasons.keys())
+                attrs_to_set["custom_seasons"] = list(custom_seasons.keys())  # type: ignore
             else:
                 dec_mode = self._season_config.get("dec_mode")
-                data_var.attrs["dec_mode"] = dec_mode
+                attrs_to_set["dec_mode"] = dec_mode  # type: ignore
+
+        data_var.attrs.update(attrs_to_set)
 
         return data_var
 
