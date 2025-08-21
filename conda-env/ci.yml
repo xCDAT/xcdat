@@ -2,7 +2,6 @@
 name: xcdat_ci
 channels:
     - conda-forge
-    - defaults
 dependencies:
     # Base - required for building the package.
     # =========================================
@@ -19,7 +18,7 @@ dependencies:
     - sparse
     - xarray >=2024.03.0
     - xesmf >=0.8.7
-    - xgcm
+    - xgcm >=0.9.0
     # Quality Assurance
     # ==================
     - types-python-dateutil

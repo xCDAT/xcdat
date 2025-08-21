@@ -1,7 +1,6 @@
 import datetime
 import re
 import sys
-import warnings
 from unittest import mock
 
 import numpy as np
@@ -13,26 +12,6 @@ from tests import fixtures
 from xcdat.regridder import accessor, base, grid, regrid2, xesmf, xgcm
 
 np.set_printoptions(threshold=sys.maxsize, suppress=True)
-
-# Ignore warnings related to xgcm Axis deprecation, which will always appear
-# until they are removed in a future xgcm release (last release was v0.8.1 in
-# Nov 2022).
-warnings.filterwarnings(
-    "ignore",
-    message=(
-        "From version 0.8.0 the Axis computation methods will be removed, in favour of using the Grid computation methods instead. i.e. use `Grid.transform` instead of `Axis.transform`"
-    ),
-    category=FutureWarning,
-    module="xgcm.grid",
-)
-warnings.filterwarnings(
-    "ignore",
-    message=(
-        "The `xgcm.Axis` class will be deprecated in the future. Please make sure to use the `xgcm.Grid` methods for your work instead."
-    ),
-    category=DeprecationWarning,
-    module="xgcm.grid",
-)
 
 
 def gen_uniform_axis(start, stop, step, name, axis):
