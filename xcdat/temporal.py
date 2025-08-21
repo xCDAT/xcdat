@@ -2110,7 +2110,7 @@ class TemporalAccessor:
             "weighted": str(self._weighted),
         }
 
-        if self._weighted and hasattr(self, "_min_weight"):
+        if self._weighted:
             attrs_to_set["min_weight"] = self._min_weight  # type: ignore
 
         if self._freq == "season":
