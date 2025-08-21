@@ -164,7 +164,7 @@ class XGCMRegridder(BaseRegridder):
             # correctly format argument
             grid_coords = {"Z": self._grid_positions}
 
-        # NOTE: xgcm introduces the arg autoparse_metadata to the Grid
+        # NOTE: xgcm v0.9.0 introduces the arg autoparse_metadata to the Grid
         # constructor, which defaults to True. This is not compatible with
         # manually passing metadata such as coords, so we set it to False.
         grid = Grid(
