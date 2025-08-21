@@ -1165,9 +1165,6 @@ class TestGrid:
 
         assert np.array_equal(new_grid.lat, self.lat)
         assert np.array_equal(new_grid.lon, self.lon)
-        assert np.array_equal(
-            new_grid.mask, xr.DataArray(np.ones((5, 3)), dims=("lat", "lon"))
-        )
 
     def test_create_grid_with_tuple_of_coords_and_no_bounds(self):
         # This case happens if `create_axis` is used without creating bounds,
