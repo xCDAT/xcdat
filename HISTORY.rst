@@ -2,6 +2,39 @@
 History
 =======
 
+v0.10.0 (27 Aug 2025)
+---------------------
+
+This release introduces a new **weight threshold option** for temporal operations,
+improves regridding alignment, and fixes multiple issues with ``xgcm.Grid`` and
+``xESMF`` integration. It also includes a DevOps fix to maintain consistency in handling
+``xgcm.Grid`` metadata.
+
+Enhancements
+~~~~~~~~~~~~
+
+-  Add weight threshold option for temporal operations by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/683
+
+Bug Fixes
+~~~~~~~~~
+
+-  Remove ``mask`` from ``create_grid()`` output to prevent xESMF issue by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/786
+-  Fix ``xgcm.Grid`` errors by passing ``autoparse_metadata=False`` by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/785
+-  Fix regrid2 alignment of output and input dims for final dataarray by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/782
+
+DevOps
+~~~~~~
+
+-  Fix ``xgcm.Grid`` errors by passing ``autoparse_metadata=False`` by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/785
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.9.1...v0.10.0
+
+
 v0.9.1 (08 July 2025)
 ---------------------
 
