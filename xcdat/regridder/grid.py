@@ -530,8 +530,6 @@ def create_grid(
 
         ds = ds.assign_coords({coords.name: coords})
 
-    ds["mask"] = create_mask(ds)
-
     return ds
 
 
