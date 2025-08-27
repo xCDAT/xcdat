@@ -26,11 +26,6 @@ Bug Fixes
 -  Fix regrid2 alignment of output and input dims for final dataarray by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/782
 
-DevOps
-~~~~~~
-
--  Fix ``xgcm.Grid`` errors by passing ``autoparse_metadata=False`` by `Tom Vo`_ in
-   https://github.com/xCDAT/xcdat/pull/785
 
 **Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.9.1...v0.10.0
 
