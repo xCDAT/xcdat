@@ -510,14 +510,14 @@ def _adjust_bounds_for_prime_meridian(
     # implementation in xcdat.bounds.create_bounds.
     # Calculate the bounds interval for the prime meridian cell using
     # the cell as the midpoint and the difference of the bounds.
-    bounds = ds_new[key].isel({dim: p_meridian_index})
+    bounds = ds_new[key].isel({dim: 0})
     bounds_dim = _get_bounds_dim(ds_new[dim], ds_new[key])
-    bounds_delta = bounds.diff(bounds_dim).item()
+    bounds_delta = abs(bounds.diff(bounds_dim).item())
 
     # Create new bounds for the prime meridian cell.
     midpoint = ds_new[dim][p_meridian_index].item()
     new_lower = midpoint - bounds_delta
-    new_upper = midpoint + bounds_delta
+    new_upper = new_lower + bounds_delta
 
     ds_new[key][p_meridian_index, :] = [new_lower, new_upper]
 
