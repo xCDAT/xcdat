@@ -370,18 +370,23 @@ def _swap_lon_bounds(ds: xr.Dataset, key: str, to: tuple[float, float]):
     new_bounds = _swap_lon_axis(bounds, to)
 
     if not ds[key].identical(new_bounds):
-        ds[key] = new_bounds
+        ds_new = ds.copy()
+        ds_new[key] = new_bounds
 
-        # Handle cases where a prime meridian cell exists, which can occur
-        # after swapping longitude bounds to (0, 360). This involves extending
-        # the longitude and bounds by one cell to take into account the prime
-        # meridian. It also results in extending the data variables by one
-        # value.
+        # Handle cases where a prime meridian cell exists after converting
+        # longitude bounds to the range (0, 360). This involves extending
+        # longitude bounds and data variables by one cell to account for the
+        # prime meridian, updating bounds interval for the prime meridian cell,
+        # and then trimming the extra cell to maintain the original shape.
         if to == (0, 360):
-            p_meridian_index = _get_prime_meridian_index(ds[key])
+            p_meridian_index = _get_prime_meridian_index(ds_new[key])
 
             if p_meridian_index is not None:
-                ds = _align_lon_to_360(ds, ds[key], p_meridian_index)
+                ds_new = _adjust_bounds_for_prime_meridian(
+                    ds_new, key, p_meridian_index
+                )
+
+        return ds_new
 
     return ds
 
@@ -468,6 +473,58 @@ def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> np.ndarray | None:
         raise ValueError("More than one grid cell spans prime meridian.")
 
     return p_meridian_index
+
+
+def _adjust_bounds_for_prime_meridian(
+    ds: xr.Dataset, key: str, p_meridian_index: np.ndarray
+) -> xr.Dataset:
+    """Adjusts bounds for the prime meridian cell in longitude coordinates.
+
+    This function modifies the longitude bounds to handle cases where a grid
+    cell spans the prime meridian. It ensures that the longitude bounds are
+    aligned to the (0, 360) range by splitting the prime meridian cell into
+    two parts and adjusting the bounds accordingly. The extra cell created
+    during this process is removed to restore the original shape of the dataset.
+
+    Parameters
+    ----------
+    ds : xr.Dataset
+        The Dataset containing longitude bounds and coordinates.
+    key : str
+        The name of the longitude bounds variable in the dataset.
+    p_meridian_index : np.ndarray
+        An array with a single element representing the index of the prime
+        meridian cell.
+
+    Returns
+    -------
+    xr.Dataset
+        The Dataset with adjusted longitude bounds for the prime meridian cell.
+    """
+    ds_new = ds.copy()
+
+    ds_new = _align_lon_to_360(ds_new, ds_new[key], p_meridian_index)
+    dim = get_dim_keys(ds_new[key], "X")
+
+    # NOTE: The logic for calculating new bounds is similar to the
+    # implementation in xcdat.bounds.create_bounds.
+    # Calculate the bounds interval for the prime meridian cell using
+    # the cell as the midpoint and the difference of the bounds.
+    bounds = ds_new[key].isel({dim: p_meridian_index})
+    bounds_dim = _get_bounds_dim(ds_new[dim], ds_new[key])
+    bounds_delta = bounds.diff(bounds_dim).item()
+
+    # Create new bounds for the prime meridian cell.
+    midpoint = ds_new[dim][p_meridian_index].item()
+    new_lower = midpoint - bounds_delta
+    new_upper = midpoint + bounds_delta
+
+    ds_new[key][p_meridian_index, :] = [new_lower, new_upper]
+
+    # Remove the extra cell to restore the original shape.
+    ds_new = ds_new.isel({dim: slice(0, -1)})
+
+    return ds_new
 
 
 def _align_lon_to_360(
@@ -596,3 +653,51 @@ def _align_lon_bounds_to_360(
     bounds[p_meridian_index, 0], bounds[-1, 1] = (0.0, 360.0)
 
     return bounds
+
+
+def _get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
+    """Identify the bounds dimension in the given bounds DataArray.
+
+    This function determines which dimension in the bounds DataArray
+    represents the bounds (e.g., lower and upper limits) for each value
+    in the coordinate DataArray. According to the CF Conventions, a boundary
+    variable will have one more dimension than its associated coordinate or
+    auxiliary coordinate variable. Refer to [6] for more details.
+
+    Parameters
+    ----------
+    da_coords : xr.DataArray
+        The coordinate DataArray.
+    da_bounds : xr.DataArray
+        The bounds DataArray.
+
+    Returns
+    -------
+    str
+        The name of the bounds dimension.
+
+    Raises
+    ------
+    ValueError
+        If the bounds variable does not have exactly one more dimension than
+        the coordinate variable, or if no valid bounds dimension is found.
+
+    References
+    ----------
+    .. [6] https://cfconventions.org/Data/cf-conventions/cf-conventions-1.10/cf-conventions.html#cell-boundaries
+    """
+    bounds_dim = [dim for dim in da_bounds.dims if dim not in da_coords.dims]
+
+    if len(bounds_dim) == 1:
+        return str(bounds_dim[0])
+    elif len(bounds_dim) == 0:
+        raise ValueError(
+            "No extra dimension found in bounds variable compared to coordinate "
+            f"variable. Coordinate dims: {da_coords.dims}, bounds dims: "
+            f"{da_bounds.dims}"
+        )
+    else:
+        raise ValueError(
+            f"Bounds variable must have exactly one more dimension than the coordinate "
+            f"variable. Coordinate dims: {da_coords.dims}, bounds dims: {da_bounds.dims}"
+        )

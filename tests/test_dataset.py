@@ -1650,7 +1650,7 @@ class Test_PostProcessDataset:
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([0.0, 1.0, 179.0, 180.0, 359.0, 360.0]),
+                    data=np.array([0.0, 1.0, 179.0, 180.0, 359.0]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
                 )
@@ -1660,12 +1660,11 @@ class Test_PostProcessDataset:
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [0, 0.5],
+                            [-0.5, 0.5],
                             [0.5, 1.5],
                             [1.5, 179.5],
                             [179.5, 358.5],
                             [358.5, 359.5],
-                            [359.5, 360],
                         ]
                     ),
                     dims=["lon", "bnds"],

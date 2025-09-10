@@ -5,6 +5,7 @@ import xarray as xr
 from tests.fixtures import generate_dataset
 from xcdat.axis import (
     CFAxisKey,
+    _get_bounds_dim,
     center_times,
     get_coords_by_name,
     get_dim_coords,
@@ -691,12 +692,6 @@ class TestSwapLonAxis:
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
                 ),
-                "lon2": xr.DataArray(
-                    name="lon2",
-                    data=np.array([-180, -1, 0, 1, 179]),
-                    dims=["lon"],
-                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                ),
             },
             data_vars={
                 "ts": xr.DataArray(
@@ -726,13 +721,7 @@ class TestSwapLonAxis:
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([0, 1, 179, 180, 359, 360]),
-                    dims=["lon"],
-                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                ),
-                "lon2": xr.DataArray(
-                    name="lon2",
-                    data=np.array([0, 1, 179, 180, 359, 360]),
+                    data=np.array([0, 1, 179, 180, 359]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
                 ),
@@ -740,7 +729,7 @@ class TestSwapLonAxis:
             data_vars={
                 "ts": xr.DataArray(
                     name="ts",
-                    data=np.array([2, 3, 4, 0, 1, 2]),
+                    data=np.array([2, 3, 4, 0, 1]),
                     dims=["lon"],
                     attrs={"test_attr": "test"},
                 ),
@@ -748,12 +737,11 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [0, 0.5],
+                            [-0.5, 0.5],
                             [0.5, 1.5],
                             [1.5, 179.5],
                             [179.5, 358.5],
                             [358.5, 359.5],
-                            [359.5, 360],
                         ]
                     ),
                     dims=["lon", "bnds"],
@@ -762,7 +750,7 @@ class TestSwapLonAxis:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_swaps_all_dims_from_180_to_360_and_sorts_with_prime_meridian_cell_in_lon_bnds(
         self,
@@ -830,13 +818,13 @@ class TestSwapLonAxis:
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([0, 1, 179, 180, 359, 360]),
+                    data=np.array([0, 1, 179, 180, 359]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
                 ),
                 "zlon": xr.DataArray(
                     name="zlon",
-                    data=np.array([0, 1, 179, 180, 359, 360]),
+                    data=np.array([0, 1, 179, 180, 359]),
                     dims=["zlon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "zlon_bnds"},
                 ),
@@ -844,13 +832,13 @@ class TestSwapLonAxis:
             data_vars={
                 "ts": xr.DataArray(
                     name="ts",
-                    data=np.array([2, 3, 4, 0, 1, 2]),
+                    data=np.array([2, 3, 4, 0, 1]),
                     dims=["lon"],
                     attrs={"test_attr": "test"},
                 ),
                 "ts2": xr.DataArray(
                     name="ts2",
-                    data=np.array([2, 3, 4, 0, 1, 2]),
+                    data=np.array([2, 3, 4, 0, 1]),
                     dims=["zlon"],
                     attrs={"test_attr": "test"},
                 ),
@@ -858,12 +846,11 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [0, 0.5],
+                            [-0.5, 0.5],
                             [0.5, 1.5],
                             [1.5, 179.5],
                             [179.5, 358.5],
                             [358.5, 359.5],
-                            [359.5, 360],
                         ]
                     ),
                     dims=["lon", "bnds"],
@@ -873,12 +860,11 @@ class TestSwapLonAxis:
                     name="zlon_bnds",
                     data=np.array(
                         [
-                            [0, 0.5],
+                            [-0.5, 0.5],
                             [0.5, 1.5],
                             [1.5, 179.5],
                             [179.5, 358.5],
                             [358.5, 359.5],
-                            [359.5, 360],
                         ]
                     ),
                     dims=["zlon", "bnds"],
@@ -887,4 +873,40 @@ class TestSwapLonAxis:
             },
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
+
+
+class TestGetBoundsDim:
+    def test_returns_bounds_dim_for_standard_case(self):
+        coords = xr.DataArray([0, 1, 2], dims=["lat"])
+        bounds = xr.DataArray([[0, 1], [1, 2], [2, 3]], dims=["lat", "bnds"])
+
+        result = _get_bounds_dim(coords, bounds)
+
+        assert result == "bnds"
+
+    def test_returns_bounds_dim_when_bounds_dim_has_custom_name(self):
+        coords = xr.DataArray([10, 20, 30], dims=["lon"])
+        bounds = xr.DataArray([[5, 15], [15, 25], [25, 35]], dims=["lon", "boundaries"])
+
+        result = _get_bounds_dim(coords, bounds)
+
+        assert result == "boundaries"
+
+    def test_raises_error_when_bounds_has_no_extra_dim(self):
+        coords = xr.DataArray([0, 1, 2], dims=["lat"])
+        bounds = xr.DataArray([0, 1, 2], dims=["lat"])
+
+        with pytest.raises(
+            ValueError, match="No extra dimension found in bounds variable"
+        ):
+            _get_bounds_dim(coords, bounds)
+
+    def test_raises_error_when_bounds_has_multiple_extra_dims(self):
+        coords = xr.DataArray([0, 1, 2], dims=["lat"])
+        bounds = xr.DataArray(np.zeros((3, 2, 2)), dims=["lat", "bnds", "extra"])
+
+        with pytest.raises(
+            ValueError, match="Bounds variable must have exactly one more dimension"
+        ):
+            _get_bounds_dim(coords, bounds)
