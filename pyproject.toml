@@ -7,7 +7,7 @@ name = "xcdat"
 dynamic = ["version"]
 description = "Xarray Climate Data Analysis Tools"
 readme = "README.rst"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = { text = "Apache-2.0" }
 authors = [{ name = "xCDAT developers" }]
 classifiers = [
@@ -16,10 +16,10 @@ classifiers = [
   "License :: OSI Approved :: Apache-2.0 License",
   "Natural Language :: English",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
   "Programming Language :: Python :: 3.12",
   "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
 ]
 keywords = ["xcdat"]
 dependencies = [
@@ -126,7 +126,7 @@ markers = ["flaky", "network"]
 
 [tool.mypy]
 # Docs: https://mypy.readthedocs.io/en/stable/config_file.html
-python_version = "3.10"
+python_version = "3.13"
 check_untyped_defs = true
 ignore_missing_imports = true
 warn_unused_ignores = true
