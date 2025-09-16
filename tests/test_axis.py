@@ -195,16 +195,16 @@ class TestGetDimCoords:
         )
 
         result = get_dim_coords(ds, "X")
-        assert result.identical(ds["lon"])
+        xr.testing.assert_identical(result, ds["lon"])
 
         result = get_dim_coords(ds, "Y")
-        assert result.identical(ds["lat"])
+        xr.testing.assert_identical(result, ds["lat"])
 
         result = get_dim_coords(ds, "T")
-        assert result.identical(ds["time"])
+        xr.testing.assert_identical(result, ds["time"])
 
         result = get_dim_coords(ds, "Z")
-        assert result.identical(ds["lev"])
+        xr.testing.assert_identical(result, ds["lev"])
 
     def test_returns_dataset_dimension_coordinate_vars_using_axis_attr(self):
         # For example, E3SM datasets might have "ilev" and "lev" dimensions
@@ -214,7 +214,7 @@ class TestGetDimCoords:
             coords={"ilev": self.ds_axis.ilev, "lev": self.ds_axis.lev}
         )
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_returns_dataset_dimension_coordinate_vars_using_standard_name_attr(self):
         # For example, E3SM datasets might have "ilev" and "lev" dimensions
@@ -223,7 +223,7 @@ class TestGetDimCoords:
         result = get_dim_coords(self.ds_sn, "Z")
         expected = xr.Dataset(coords={"ilev": self.ds_sn.ilev, "lev": self.ds_sn.lev})
 
-        assert result.identical(expected)
+        xr.testing.assert_identical(result, expected)
 
     def test_returns_dataarray_dimension_coordinate_var_using_axis_attr(self):
         result = get_dim_coords(self.ds_axis.hyai, "Z")

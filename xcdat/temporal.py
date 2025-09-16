@@ -1398,8 +1398,8 @@ class TemporalAccessor:
         # method concatenates the time dimension to non-time dimension data
         # vars, which is not a desired behavior.
         ds = dataset.copy()
-        ds_time = ds.get([v for v in ds.data_vars if self.dim in ds[v].dims])
-        ds_no_time = ds.get([v for v in ds.data_vars if self.dim not in ds[v].dims])
+        ds_time = ds[[v for v in ds.data_vars if self.dim in ds[v].dims]]
+        ds_no_time = ds[[v for v in ds.data_vars if self.dim not in ds[v].dims]]
 
         start_year, end_year = (
             ds[self.dim].dt.year.values[0],
