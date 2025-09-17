@@ -80,7 +80,7 @@ class RegridderAccessor:
 
         >>> grid = ds.regridder.grid
         """
-        return obj_to_grid_ds(self._ds)
+        return _obj_to_grid_ds(self._ds)
 
     def horizontal(
         self,
@@ -249,7 +249,35 @@ class RegridderAccessor:
         return output_ds
 
 
-def obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
+def _obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
+    """
+    Convert an xarray object to a new Dataset containing axis coordinates and
+    bounds.
+
+    This function extracts axis coordinates and bounds for the specified
+    axes ("X", "Y", "Z") from the input object and creates a new xarray
+    Dataset. If bounds are missing for an axis, they are added to the
+    output Dataset.
+
+    Parameters
+    ----------
+    obj : xr.Dataset or xr.DataArray
+        The input xarray object containing the data and attributes.
+
+    Returns
+    -------
+    xr.Dataset
+        A new xarray Dataset containing the axis coordinates, bounds, and
+        attributes from the input object.
+
+    Notes
+    -----
+    - The function ensures that bounds are only added for axes that do not
+      already have them. This avoids duplicating bounds for axes with
+      multiple coordinates (e.g., curvilinear grids).
+    - The `xr.set_options(keep_attrs=True)` context is used to preserve
+      attributes from the input object in the output Dataset.
+    """
     axis_names: list[CFAxisKey] = ["X", "Y", "Z"]
 
     axis_coords: dict[str, xr.DataArray] = {}
