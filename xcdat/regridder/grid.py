@@ -118,7 +118,7 @@ def _create_gaussian_axis(nlats: int) -> tuple[xr.DataArray, xr.DataArray]:
 
     points, weights = _gaussian_axis(mid, nlats)
 
-    bounds = np.zeros((nlats + 1), dtype="f")
+    bounds = np.zeros((nlats + 1), dtype="float32")
     bounds[0], bounds[-1] = 1.0, -1.0
 
     for i in range(1, mid + 1):

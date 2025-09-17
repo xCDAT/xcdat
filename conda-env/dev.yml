@@ -13,6 +13,7 @@ dependencies:
     - netcdf4
     - numpy >=2.0.0,<3.0.0
     - pandas
+    - pooch >=1.8
     - python-dateutil
     - regionmask
     - scipy
@@ -35,7 +36,6 @@ dependencies:
     - pandoc
     - ipython # Required for nbsphinx syntax highlighting
     - gsw-xarray # Required for vertical regridding example
-    - pooch # Required for xarray tutorial data
     # Quality Assurance
     # ==================
     - types-python-dateutil

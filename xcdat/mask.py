@@ -1,5 +1,3 @@
-from importlib import resources
-from pathlib import Path
 from typing import Any, Callable
 
 import numpy as np
@@ -7,9 +5,10 @@ import regionmask
 import xarray as xr
 
 from xcdat import open_dataset
+from xcdat._data import _get_pcmdi_mask_path
 from xcdat._logger import _setup_custom_logger
 from xcdat.axis import get_dim_coords
-from xcdat.regridder.accessor import obj_to_grid_ds
+from xcdat.regridder.accessor import _obj_to_grid_ds
 from xcdat.regridder.grid import create_grid
 
 logger = _setup_custom_logger(__name__)
@@ -76,7 +75,8 @@ class MaskAccessor:
             dataset. By default False.
         **options : Any
             These options are passed directly to the ``method``. See specific
-            method documentation for available options; :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
+            method documentation for available options:
+            :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
 
         Returns
         -------
@@ -144,7 +144,8 @@ class MaskAccessor:
             dataset. By default False.
         **options : Any
             These options are passed directly to the ``method``. See specific
-            method documentation for available options; :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options
+            method documentation for available options:
+            :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options
 
         Returns
         -------
@@ -213,7 +214,8 @@ def generate_mask(
         A custom mask to apply, by default None. If None, a mask is
         generated using the specified ``method``.
     **options : Any
-        These options are passed directly to the ``method``. See :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
+        These options are passed directly to the ``method``. See
+        :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
 
     Returns
     -------
@@ -283,7 +285,8 @@ def generate_land_sea_mask(
         Supported methods: "regionmask", "pcmdi".
     **options : Any
         These options are passed directly to the ``method``. See specific
-        method documentation for available options; :func:`pcmdi_land_sea_mask` for PCMDI options
+        method documentation for available options:
+        :func:`pcmdi_land_sea_mask` for PCMDI options
 
     Returns
     -------
@@ -301,7 +304,8 @@ def generate_land_sea_mask(
 
     History
     -------
-    2023-06 The [original code](https://github.com/CDAT/cdutil/blob/master/cdutil/create_landsea_mask.py) was rewritten using xarray and xcdat by Jiwoo Lee
+    2023-06 The [original code](https://github.com/CDAT/cdutil/blob/master/
+    cdutil/create_landsea_mask.py) was rewritten using xarray and xcdat by Jiwoo Lee
 
     Examples
     --------
@@ -310,11 +314,13 @@ def generate_land_sea_mask(
 
     >>> import xcdat
     >>> ds = xcdat.open_dataset("/path/to/file")
-    >>> land_sea_mask = xcdat.mask.generate_land_sea_mask(ds["tas"], method="regionmask")
+    >>> mask = xcdat.mask.generate_land_sea_mask(ds["tas"], method="regionmask")
 
     Generate a land-sea mask using the PCMDI method with custom options:
 
-    >>> land_sea_mask = xcdat.mask.generate_land_sea_mask(ds["tas"], method="pcmdi", threshold1=0.3, threshold2=0.4)
+    >>> mask = xcdat.mask.generate_land_sea_mask(
+    ...     ds["tas"], method="pcmdi", threshold1=0.3, threshold2=0.4
+    ... )
     """
     if method not in VALID_METHODS:
         raise ValueError(
@@ -342,10 +348,12 @@ def pcmdi_land_sea_mask(
     source: xr.Dataset | None = None,
     source_data_var: str | None = None,
 ) -> xr.DataArray:
-    """Generate a land-sea mask using the PCMDI method.
+    """
+    Generate a land-sea mask using the PCMDI method.
 
     This method uses a high-resolution land-sea mask and regrids it to the
-    resolution of the input DataArray. It then iteratively improves the mask.
+    resolution of the input DataArray. It then iteratively improves the mask
+    based on specified thresholds.
 
     Parameters
     ----------
@@ -356,18 +364,42 @@ def pcmdi_land_sea_mask(
     threshold2 : float, optional
         The second threshold for improving the mask, by default 0.3.
     source : xr.Dataset | None, optional
-        The Dataset containing the variable to use as the high resolution source.
+        A custom Dataset containing the variable to use as the high-resolution
+        source. If not provided, a default high-resolution land-sea mask is used.
     source_data_var : str | None, optional
-        Name of the variable in `source` to use as the high resolution source.
+        The name of the variable in `source` to use as the high-resolution
+        source. If `source` is not provided, this defaults to "sftlf".
 
     Returns
     -------
     xr.DataArray
-        The land-sea mask.
+        The generated land-sea mask.
+
+    Raises
+    ------
+    ValueError
+        If `source` is provided but `source_data_var` is None.
+
+    Notes
+    -----
+    By default, the ``navy_land.nc`` file is used as the high-resolution land–sea
+    mask. This file is distributed by the [1]_ PCMDI (Program for Climate Model
+    Diagnosis and Intercomparison) Metrics Package, and is derived from the U.S.
+    Navy 1/6° land–sea mask dataset.
+
+    If ``source`` is not provided, the ``navy_land.nc`` file is automatically
+    downloaded and cached from the `xcdat-data` repository:
+    https://github.com/xCDAT/xcdat-data.
+
+    For more information on caching behavior, refer to the
+    :py:func:`xcdat._data._get_pcmdi_mask_path()` function.
+
+    References
+    ----------
+    .. [1] https://github.com/PCMDI/pcmdi_metrics/blob/main/
 
     Examples
     --------
-
     Generate a land-sea mask using the PCMDI method:
 
     >>> import xcdat
@@ -376,12 +408,21 @@ def pcmdi_land_sea_mask(
 
     Generate a land-sea mask using the PCMDI method with custom thresholds:
 
-    >>> land_sea_mask = xcdat.mask.pcmdi_land_sea_mask(ds["tas"], threshold1=0.3, threshold2=0.4)
+    >>> land_sea_mask = xcdat.mask.pcmdi_land_sea_mask(
+    ...     ds["tas"], threshold1=0.3, threshold2=0.4
+    ... )
 
-    Generate a land-sea mask using the PCMDI method with a custom high resolution source:
+    Generate a land-sea mask using the PCMDI method with a custom high-res source:
 
-    >>> highres_ds = xcdata.open_dataset("/path/to/file")
-    >>> land_sea_mask = xcdat.mask.pcmdi_land_sea_mask(ds["tas"], source=highres_ds, source_data_var="highres")
+    >>> highres_ds = xcdat.open_dataset("/path/to/file")
+    >>> land_sea_mask = xcdat.mask.pcmdi_land_sea_mask(
+    ...     ds["tas"], source=highres_ds, source_data_var="highres"
+    ... )
+
+    For offline workflows, you can pre-download the mask with:
+
+    >>> from xcdat._data import _get_pcmdi_mask_path
+    >>> path = _get_pcmdi_mask_path()
     """
     if source is not None and source_data_var is None:
         raise ValueError(
@@ -391,12 +432,14 @@ def pcmdi_land_sea_mask(
     if source is None:
         source_data_var = "sftlf"
 
-        resource_path = str(_get_resource_path("navy_land.nc", Path.cwd()))
+        resource_path = _get_pcmdi_mask_path()
 
-        source = open_dataset(resource_path)
+        # Turn off time decoding to prevent logger warning since this dataset
+        # does not have a time axis.
+        source = open_dataset(resource_path, decode_times=False)
 
     source_regrid = source.regridder.horizontal(
-        source_data_var, obj_to_grid_ds(da), tool="regrid2"
+        source_data_var, _obj_to_grid_ds(da), tool="regrid2"
     )
 
     mask = source_regrid.copy()
@@ -433,44 +476,6 @@ def pcmdi_land_sea_mask(
         i += 1
 
     return mask[source_data_var]
-
-
-def _get_resource_path(filename: str, default_path: Path | None = None) -> Path:
-    """Get the path to a resource file.
-
-    Parameters
-    ----------
-    filename : str
-        The name of the resource file.
-
-    Returns
-    -------
-    Path
-        The path to the resource file.
-    """
-    if default_path is None:
-        default_path = Path.cwd()
-
-    resource_path: Path | None = None
-
-    try:
-        with resources.as_file(resources.files("xcdat").joinpath(filename)) as x:
-            resource_path = x
-    except (ModuleNotFoundError, FileNotFoundError) as e:
-        logger.warning(e)
-        resource_path = None
-
-    if resource_path and resource_path.exists():
-        return resource_path
-
-    resource_path = default_path / "xcdat" / filename
-
-    if not resource_path.exists():
-        raise RuntimeError(
-            f"Resource file {filename!r} not found in package or at {resource_path!s}."
-        )
-
-    return resource_path
 
 
 def _is_circular(lon: xr.DataArray, lon_bnds: xr.DataArray) -> bool:
@@ -510,6 +515,11 @@ def _improve_mask(
 
     This function improves a land-sea mask by converting points based on
     their surrounding values and a source mask.
+
+    It is useful for enhancing the accuracy of land-sea masks, which are often
+    used in climate modeling and geospatial analysis. By considering surrounding
+    points and thresholds, it ensures smoother transitions and corrects
+    discrepancies between the mask and the source dataset.
 
     Parameters
     ----------
@@ -700,8 +710,8 @@ def _generate_surrounds(da: xr.DataArray, is_circular: bool) -> list[np.ndarray]
     """Generate surrounding points for each point in a DataArray.
 
     This function returns a list of 8 arrays, each representing the
-    values of the 8 surrounding points (UL, UC, UR, ML, MR, LL, LC, LR)
-    for each point in the input DataArray.
+    values of the 8 surrounding points (UL, UC, UR, ML, MR, LL, LC, LR) for each
+    point in the input DataArray.
 
     Parameters
     ----------

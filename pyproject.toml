@@ -28,6 +28,7 @@ dependencies = [
   "netcdf4",
   "numpy >=2.0.0,<3.0.0",
   "pandas",
+  "pooch >=1.8",
   "python-dateutil",
   "regionmask",
   "scipy",
@@ -53,15 +54,11 @@ docs = [
   "pandoc",
   "ipython",
   "gsw-xarray",
-  "pooch",
 ]
 dev = ["types-python-dateutil", "pre-commit", "ruff", "mypy"]
 
 [tool.setuptools.packages.find]
 include = ["xcdat", "xcdat.*"]
-
-[tool.setuptools.package-data]
-"xcdat" = ["*.nc"]
 
 [tool.setuptools.dynamic]
 version = { attr = "xcdat.__version__" }
