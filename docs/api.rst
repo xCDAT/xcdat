@@ -39,6 +39,17 @@ Below is a list of top-level API functions that are available in ``xcdat``.
     create_zonal_grid
     tutorial.open_dataset
 
+Module-level API Functions
+--------------------------
+
+Below is a list of model-level API functions that are available in ``xcdat``.
+
+.. autosummary::
+    :toctree: generated/
+
+    mask.pcmdi_land_sea_mask
+
+
 Accessors
 ---------
 
@@ -95,6 +106,7 @@ Classes
     regridder.regrid2.Regrid2Regridder
     regridder.xesmf.XESMFRegridder
     regridder.xgcm.XGCMRegridder
+    mask.MaskAccessor
 
 .. currentmodule:: xarray
 
@@ -129,6 +141,8 @@ Methods
     Dataset.temporal.departures
     Dataset.regridder.horizontal
     Dataset.regridder.vertical
+    Dataset.geomask.mask_land
+    Dataset.geomask.mask_sea
 
 .. _dsmeth_1:
 
