@@ -511,45 +511,6 @@ class TestSwapLonAxis:
         with pytest.raises(ValueError):
             swap_lon_axis(ds, to=9000)  # type: ignore
 
-    def test_raises_error_if_lon_bounds_contains_more_than_one_prime_meridian_cell(
-        self,
-    ):
-        ds_180 = xr.Dataset(
-            coords={
-                "lon": xr.DataArray(
-                    name="lon",
-                    data=np.array([-180, -1, 0, 1, 179]),
-                    dims=["lon"],
-                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                )
-            },
-            data_vars={
-                "lon_bnds": xr.DataArray(
-                    name="lon_bnds",
-                    data=np.array(
-                        [
-                            [-180.5, -1.5],
-                            [-1.5, -0.5],
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [-180.5, 1.5],
-                        ]
-                    ),
-                    dims=["lon", "bnds"],
-                    attrs={"xcdat_bounds": "True"},
-                ),
-                "ts": xr.DataArray(
-                    name="ts",
-                    data=np.array([0, 1, 2, 3, 4]),
-                    dims=["lon"],
-                    attrs={"test_attr": "test"},
-                ),
-            },
-        )
-
-        with pytest.raises(ValueError):
-            swap_lon_axis(ds_180, to=(0, 360))
-
     def test_does_not_swap_if_desired_orientation_is_the_same_as_the_existing_orientation(
         self,
     ):
@@ -617,6 +578,81 @@ class TestSwapLonAxis:
 
         assert result.identical(expected)
 
+    def test_indempotency_when_converting_0_to_360_to_0_to_360(self):
+        ds_360 = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([0, 90, 180, 270, 360]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                ),
+            },
+            data_vars={
+                "ts": xr.DataArray(
+                    name="ts",
+                    data=np.array([0, 1, 2, 3, 4]),
+                    dims=["lon"],
+                    attrs={"test_attr": "test"},
+                ),
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [0, 90],
+                            [90, 180],
+                            [180, 270],
+                            [270, 360],
+                            [360, 360],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"xcdat_bounds": "True"},
+                ),
+            },
+        )
+
+        result = swap_lon_axis(ds_360, to=(0, 360))
+        xr.testing.assert_identical(result, ds_360)
+
+    def test_indempotency_when_converting_minus_180_to_180_to_minus_180_to_180(self):
+        ds_180 = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([-180, -90, 0, 90, 180]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                ),
+            },
+            data_vars={
+                "ts": xr.DataArray(
+                    name="ts",
+                    data=np.array([0, 1, 2, 3, 4]),
+                    dims=["lon"],
+                    attrs={"test_attr": "test"},
+                ),
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [-180, -135],
+                            [-135, -45],
+                            [-45, 45],
+                            [45, 135],
+                            [135, 180],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"xcdat_bounds": "True"},
+                ),
+            },
+        )
+
+        result = swap_lon_axis(ds_180, to=(-180, 180))
+
+        xr.testing.assert_identical(result, ds_180)
+
     def test_swaps_single_dim_from_360_to_180_and_sorts(self):
         ds_360 = xr.Dataset(
             coords={
@@ -681,14 +717,81 @@ class TestSwapLonAxis:
 
         assert result.identical(expected)
 
-    def test_swaps_single_dim_from_180_to_360_and_sorts_with_prime_meridian_cell_in_lon_bnds(
+    def test_swaps_single_dim_from_180_to_360_without_prime_meridian_cell(self):
+        ds_180 = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([-135, -45, 45, 135]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                ),
+            },
+            data_vars={
+                "ts": xr.DataArray(
+                    name="ts",
+                    data=np.array([0, 1, 2, 3]),
+                    dims=["lon"],
+                    attrs={"test_attr": "test"},
+                ),
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [-180, -90],
+                            [-90, 0],
+                            [0, 90],
+                            [90, 180],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"xcdat_bounds": "True"},
+                ),
+            },
+        )
+        result = swap_lon_axis(ds_180, to=(0, 360))
+        expected = xr.Dataset(
+            coords={
+                "lon": xr.DataArray(
+                    name="lon",
+                    data=np.array([45, 135, 225, 315]),
+                    dims=["lon"],
+                    attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
+                ),
+            },
+            data_vars={
+                "ts": xr.DataArray(
+                    name="ts",
+                    data=np.array([2, 3, 0, 1]),
+                    dims=["lon"],
+                    attrs={"test_attr": "test"},
+                ),
+                "lon_bnds": xr.DataArray(
+                    name="lon_bnds",
+                    data=np.array(
+                        [
+                            [0, 90],
+                            [90, 180],
+                            [180, 270],
+                            [270, 360],
+                        ]
+                    ),
+                    dims=["lon", "bnds"],
+                    attrs={"xcdat_bounds": "True"},
+                ),
+            },
+        )
+
+        xr.testing.assert_identical(result, expected)
+
+    def test_swaps_single_dim_from_180_to_360_and_normalizes_prime_meridian_cell_in_lon_bnds_to_360(
         self,
     ):
         ds_180 = xr.Dataset(
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([-180, -1, 0, 1, 179]),
+                    data=np.array([-179.5, -1.5, -0.5, 1.5, 179.5]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
                 ),
@@ -704,11 +807,11 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [-180.5, -1.5],
-                            [-1.5, -0.5],
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
+                            [-180.0, -179],
+                            [-2.0, -1.0],
+                            [-1.0, 0.0],  # Prime meridian cell.
+                            [1.0, 2.0],
+                            [179.0, 180.0],
                         ]
                     ),
                     dims=["lon", "bnds"],
@@ -721,7 +824,7 @@ class TestSwapLonAxis:
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([0, 1, 179, 180, 359]),
+                    data=np.array([1.5, 179.5, 180.5, 358.5, 359.5]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
                 ),
@@ -729,7 +832,7 @@ class TestSwapLonAxis:
             data_vars={
                 "ts": xr.DataArray(
                     name="ts",
-                    data=np.array([2, 3, 4, 0, 1]),
+                    data=np.array([3, 4, 0, 1, 2]),
                     dims=["lon"],
                     attrs={"test_attr": "test"},
                 ),
@@ -737,11 +840,12 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
-                            [179.5, 358.5],
-                            [358.5, 359.5],
+                            [1.0, 2.0],
+                            [179.0, 180.0],
+                            [180.0, 181.0],
+                            [358.0, 359.0],
+                            # Instead of [359, 0], normalize to [359, 360].
+                            [359.0, 360.0],
                         ]
                     ),
                     dims=["lon", "bnds"],
@@ -752,20 +856,20 @@ class TestSwapLonAxis:
 
         xr.testing.assert_identical(result, expected)
 
-    def test_swaps_all_dims_from_180_to_360_and_sorts_with_prime_meridian_cell_in_lon_bnds(
+    def test_swaps_multiple_dims_from_180_to_360_and_normalizes_prime_meridian_cell_in_lon_bnds_to_360(
         self,
     ):
         ds_180 = xr.Dataset(
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([-180, -1, 0, 1, 179]),
+                    data=np.array([-179.5, -1.5, -0.5, 1.5, 179.5]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
                 ),
                 "zlon": xr.DataArray(
                     name="zlon",
-                    data=np.array([-180, -1, 0, 1, 179]),
+                    data=np.array([-179.5, -1.5, -0.5, 1.5, 179.5]),
                     dims=["zlon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "zlon_bnds"},
                 ),
@@ -787,11 +891,11 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [-180.5, -1.5],
-                            [-1.5, -0.5],
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
+                            [-180.0, -179],
+                            [-2.0, -1.0],
+                            [-1.0, 0.0],  # Prime meridian cell.
+                            [1.0, 2.0],
+                            [179.0, 180.0],
                         ]
                     ),
                     dims=["lon", "bnds"],
@@ -801,11 +905,11 @@ class TestSwapLonAxis:
                     name="zlon_bnds",
                     data=np.array(
                         [
-                            [-180.5, -1.5],
-                            [-1.5, -0.5],
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
+                            [-180.0, -179],
+                            [-2.0, -1.0],
+                            [-1.0, 0.0],  # Prime meridian cell.
+                            [1.0, 2.0],
+                            [179.0, 180.0],
                         ]
                     ),
                     dims=["zlon", "bnds"],
@@ -818,13 +922,13 @@ class TestSwapLonAxis:
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([0, 1, 179, 180, 359]),
+                    data=np.array([1.5, 179.5, 180.5, 358.5, 359.5]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
                 ),
                 "zlon": xr.DataArray(
                     name="zlon",
-                    data=np.array([0, 1, 179, 180, 359]),
+                    data=np.array([1.5, 179.5, 180.5, 358.5, 359.5]),
                     dims=["zlon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "zlon_bnds"},
                 ),
@@ -832,13 +936,13 @@ class TestSwapLonAxis:
             data_vars={
                 "ts": xr.DataArray(
                     name="ts",
-                    data=np.array([2, 3, 4, 0, 1]),
+                    data=np.array([3, 4, 0, 1, 2]),
                     dims=["lon"],
                     attrs={"test_attr": "test"},
                 ),
                 "ts2": xr.DataArray(
-                    name="ts2",
-                    data=np.array([2, 3, 4, 0, 1]),
+                    name="ts",
+                    data=np.array([3, 4, 0, 1, 2]),
                     dims=["zlon"],
                     attrs={"test_attr": "test"},
                 ),
@@ -846,11 +950,12 @@ class TestSwapLonAxis:
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
-                            [179.5, 358.5],
-                            [358.5, 359.5],
+                            [1.0, 2.0],
+                            [179.0, 180.0],
+                            [180.0, 181.0],
+                            [358.0, 359.0],
+                            # Instead of [359, 0], normalize to [359, 360].
+                            [359.0, 360.0],
                         ]
                     ),
                     dims=["lon", "bnds"],
@@ -860,11 +965,12 @@ class TestSwapLonAxis:
                     name="zlon_bnds",
                     data=np.array(
                         [
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
-                            [179.5, 358.5],
-                            [358.5, 359.5],
+                            [1.0, 2.0],
+                            [179.0, 180.0],
+                            [180.0, 181.0],
+                            [358.0, 359.0],
+                            # Instead of [359, 0], normalize to [359, 360].
+                            [359.0, 360.0],
                         ]
                     ),
                     dims=["zlon", "bnds"],

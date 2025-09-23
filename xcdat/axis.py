@@ -8,8 +8,6 @@ from typing import Literal
 import numpy as np
 import xarray as xr
 
-from xcdat.utils import _if_multidim_dask_array_then_load
-
 # https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axis-names
 CFAxisKey = Literal["X", "Y", "T", "Z"]
 # https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names
@@ -286,30 +284,33 @@ def swap_lon_axis(
     -------
     xr.Dataset
         The Dataset with swapped lon axes orientation.
+    Raises
+    ------
+    ValueError
+        If the ``to`` argument is not one of the supported orientations,
+        including (-180, 180) or (0, 360).
     """
     ds = dataset.copy()
     coords = get_dim_coords(ds, "X").coords
     coord_keys = list(coords.keys())
 
-    # Attempt to swap the orientation for longitude coordinates.
+    if to not in [(-180, 180), (0, 360)]:
+        raise ValueError(
+            "Only (-180, 180) and (0, 360) longitude ranges are supported."
+        )
+
+    # Attempt to swap the orientation for longitude coordinates and bounds (if
+    # they exist).
     for key in coord_keys:
-        new_coord = _swap_lon_axis(ds.coords[key], to)
+        ds[key] = _orient_lon_coords(ds.coords[key], to)
 
-        if ds.coords[key].identical(new_coord):
-            continue
+        try:
+            bounds = ds.bounds.get_bounds("X", ds[key].name)
+        except KeyError:
+            bounds = None
 
-        ds.coords[key] = new_coord
-
-    try:
-        bounds = ds.bounds.get_bounds("X")
-    except KeyError:
-        bounds = None
-
-    if isinstance(bounds, xr.DataArray):
-        ds = _swap_lon_bounds(ds, str(bounds.name), to)
-    elif isinstance(bounds, xr.Dataset):
-        for key in bounds.data_vars.keys():
-            ds = _swap_lon_bounds(ds, str(key), to)
+        if isinstance(bounds, xr.DataArray):
+            ds[bounds.name] = _orient_lon_bounds(ds[key], bounds, to)
 
     if sort_ascending:
         ds = ds.sortby(list(coords.dims), ascending=True)
@@ -365,294 +366,181 @@ def _get_all_coord_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> list
     return list(set(keys))
 
 
-def _swap_lon_bounds(ds: xr.Dataset, key: str, to: tuple[float, float]):
-    bounds = ds[key].copy()
-    new_bounds = _swap_lon_axis(bounds, to)
+def _orient_lon_coords(coords: xr.DataArray, to: tuple[float, float]) -> xr.DataArray:
+    """
+    Adjust longitude coordinates to match the specified orientation range.
 
-    if not ds[key].identical(new_bounds):
-        ds_new = ds.copy()
-        ds_new[key] = new_bounds
-
-        # Handle cases where a prime meridian cell exists after converting
-        # longitude bounds to the range (0, 360). This involves extending
-        # longitude bounds and data variables by one cell to account for the
-        # prime meridian, updating bounds interval for the prime meridian cell,
-        # and then trimming the extra cell to maintain the original shape.
-        if to == (0, 360):
-            p_meridian_index = _get_prime_meridian_index(ds_new[key])
-
-            if p_meridian_index is not None:
-                ds_new = _adjust_bounds_for_prime_meridian(
-                    ds_new, key, p_meridian_index
-                )
-
-        return ds_new
-
-    return ds
-
-
-def _swap_lon_axis(coords: xr.DataArray, to: tuple[float, float]) -> xr.DataArray:
-    """Swaps the axis orientation for longitude coordinates.
+    This function ensures that longitude centers are mapped correctly to the
+    target orientation range and avoids introducing a literal 360 center. If
+    the coordinates are already in the desired orientation, they are returned
+    as-is (idempotent). Longitude centers are treated as half-open in the range
+    [0, 360), ensuring no literal 360 center is introduced.
 
     Parameters
     ----------
     coords : xr.DataArray
-        Coordinates on a longitude axis.
+        The longitude coordinates to be reoriented.
     to : tuple[float, float]
-        The new longitude axis orientation.
+        The orientation to swap the Dataset's longitude axis to. Supported
+        orientations include:
+
+        * (-180, 180): represents [-180, 180) in math notation
+        * (0, 360): represents [0, 360) in math notation
 
     Returns
     -------
     xr.DataArray
-        The longitude coordinates the opposite axis orientation If the
-        coordinates are already on the specified axis orientation, the same
-        coordinates are returned.
+        The longitude coordinates reoriented to the target range, with the
+        original encoding preserved.
     """
     with xr.set_options(keep_attrs=True):
-        if to == (-180, 180):
-            # FIXME: Performance warning produced after swapping and then sorting
-            # based on how datasets are chunked.
-            new_coords = ((coords + 180) % 360) - 180
-        elif to == (0, 360):
-            # Example with 180 coords: [-180, -0, 179] -> [0, 180, 360]
-            # Example with 360 coords: [60, 150, 360] -> [60, 150, 0]
-            # FIXME: Performance warning produced after swapping and then sorting
-            # based on how datasets are chunked.
-            new_coords = coords % 360
-
-            # Check if the original coordinates contain an element with a value
-            # of 360. If this element exists, use its index to revert its
-            # swapped value of 0 (360 % 360 is 0) back to 360. This case usually
-            # happens if the coordinate are already on the (0, 360) axis
-            # orientation.
-            # Example with 360 coords: [60, 150, 0] -> [60, 150, 360]
-            index_with_360 = np.where(coords == 360)
-
-            if index_with_360[0].size > 0:
-                _if_multidim_dask_array_then_load(new_coords)
-
-                new_coords[index_with_360] = 360
+        if _is_in_orientation(coords, to):
+            out = coords
         else:
-            raise ValueError(
-                "Currently, only (-180, 180) and (0, 360) are supported longitude axis "
-                "orientations."
-            )
+            out = _map_to_orientation(coords, to)
 
-    new_coords.encoding = coords.encoding
-
-    return new_coords
+    out.encoding = coords.encoding
+    return out
 
 
-def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> np.ndarray | None:
-    """Gets the index of the prime meridian cell in the longitude bounds.
-
-    A prime meridian cell can exist when converting the axis orientation
-    from [-180, 180) to [0, 360).
-
-    Parameters
-    ----------
-    lon_bounds : xr.DataArray
-        The longitude bounds.
-
-    Returns
-    -------
-    np.ndarray | None
-        An array with a single element representing the index of the prime
-        meridian index if it exists. Otherwise, None if the cell does not exist.
-
-    Raises
-    ------
-    ValueError
-        If more than one grid cell spans the prime meridian.
-    """
-    p_meridian_index = np.where(lon_bounds[:, 1] - lon_bounds[:, 0] < 0)[0]
-
-    if p_meridian_index.size == 0:  # pragma:no cover
-        return None
-    elif p_meridian_index.size > 1:
-        raise ValueError("More than one grid cell spans prime meridian.")
-
-    return p_meridian_index
-
-
-def _adjust_bounds_for_prime_meridian(
-    ds: xr.Dataset, key: str, p_meridian_index: np.ndarray
-) -> xr.Dataset:
-    """Adjusts bounds for the prime meridian cell in longitude coordinates.
-
-    This function modifies the longitude bounds to handle cases where a grid
-    cell spans the prime meridian. It ensures that the longitude bounds are
-    aligned to the (0, 360) range by splitting the prime meridian cell into
-    two parts and adjusting the bounds accordingly. The extra cell created
-    during this process is removed to restore the original shape of the dataset.
-
-    Parameters
-    ----------
-    ds : xr.Dataset
-        The Dataset containing longitude bounds and coordinates.
-    key : str
-        The name of the longitude bounds variable in the dataset.
-    p_meridian_index : np.ndarray
-        An array with a single element representing the index of the prime
-        meridian cell.
-
-    Returns
-    -------
-    xr.Dataset
-        The Dataset with adjusted longitude bounds for the prime meridian cell.
-    """
-    ds_new = ds.copy()
-
-    ds_new = _align_lon_to_360(ds_new, ds_new[key], p_meridian_index)
-    dim = get_dim_keys(ds_new[key], "X")
-
-    # NOTE: The logic for calculating new bounds is similar to the
-    # implementation in xcdat.bounds.create_bounds.
-    # Calculate the bounds interval for the prime meridian cell using
-    # the cell as the midpoint and the difference of the bounds.
-    bounds = ds_new[key].isel({dim: 0})
-    bounds_dim = _get_bounds_dim(ds_new[dim], ds_new[key])
-    bounds_delta = abs(bounds.diff(bounds_dim).item()) / 2
-
-    # Create new bounds for the prime meridian cell.
-    midpoint = ds_new[dim][p_meridian_index].item()
-    new_lower = midpoint - bounds_delta
-    new_upper = midpoint + bounds_delta
-
-    ds_new[key][p_meridian_index, :] = [new_lower, new_upper]
-
-    # Remove the extra cell to restore the original shape.
-    ds_new = ds_new.isel({dim: slice(0, -1)})
-
-    return ds_new
-
-
-def _align_lon_to_360(
-    ds: xr.Dataset,
-    lon_bounds: xr.DataArray,
-    p_meridian_index: np.ndarray,
-) -> xr.Dataset:
-    """Handles a prime meridian cell to align longitude axis to (0, 360).
-
-    This method ensures the domain bounds are within 0 to 360 by handling
-    the grid cell that encompasses the prime meridian (e.g., [359, 1]).
-
-    First, it handles the prime meridian cell within the longitude axis bounds
-    by splitting the cell into two parts (one east and one west of the prime
-    meridian, refer to `_align_lon_bounds_to_360()` for more information). Then
-    it concatenates the 360 coordinate point to the longitude coordinates to
-    handle the addition of the extra grid cell from the previous step. Finally,
-    for each data variable associated with the longitude axis, the value of the
-    data variable at the prime meridian cell is concatenated to the data
-    variable.
-
-    Parameters
-    ----------
-    dataset : xr.Dataset
-        The Dataset.
-    p_meridian_index : np.ndarray
-        An array with a single element representing the index of the prime
-        meridian cell.
-
-    Returns
-    -------
-    xr.Dataset
-        The Dataset.
-    """
-    dim = get_dim_keys(lon_bounds, "X")
-
-    # Create a dataset to store updated longitude variables.
-    ds_lon = xr.Dataset()
-
-    # Align the the longitude bounds to the 360 orientation using the prime
-    # meridian index. This function splits the grid cell into two parts (east
-    # and west), which appends an extra set of bounds for the 360 coordinate.
-    ds_lon[lon_bounds.name] = _align_lon_bounds_to_360(lon_bounds, p_meridian_index)
-
-    # After appending the extra set of bounds, update the last coordinate from
-    # 0 to 360.
-    for key, coord in ds_lon.coords.items():
-        coord.values[-1] = 360
-        ds_lon[key] = coord
-
-    # Get the data variables related to the longitude axis and concatenate each
-    # with the value at the prime meridian.
-    for key, var in ds.cf.data_vars.items():
-        if key != lon_bounds.name and dim in var.dims:
-            # Concatenate the prime meridian cell to the variable
-            p_meridian_val = var.isel({dim: p_meridian_index}).copy()
-            new_var = xr.concat((var, p_meridian_val), dim=dim)
-
-            # Update the longitude coordinates for the variable.
-            new_var[dim] = ds_lon[dim]
-            ds_lon[var.name] = new_var
-
-    # Create a new dataset of non-longitude vars and updated longitude vars.
-    ds_no_lon = ds.get([v for v in ds.data_vars if dim not in ds[v].dims])  # type: ignore
-    ds_final = xr.merge((ds_no_lon, ds_lon))
-
-    return ds_final
-
-
-def _align_lon_bounds_to_360(
-    bounds: xr.DataArray, p_meridian_index: np.ndarray
+def _orient_lon_bounds(
+    da_coords: xr.DataArray, da_bounds: xr.DataArray, to: tuple[float, float]
 ) -> xr.DataArray:
-    """Handles a prime meridian cell to align longitude bounds axis to (0, 360).
+    """Map longitude bounds to the target orientation.
 
-    This method ensures the domain bounds are within 0 to 360 by handling
-    the grid cell that encompasses the prime meridian (e.g., [359, 1]). In
-    this case, calculating longitudinal weights is complicated because the
-    weights are determined by the difference of the bounds.
-
-    If this situation exists, the method will split this grid cell into
-    two parts (one east and west of the prime meridian). The original
-    grid cell will have domain bounds extending east of the prime meridian
-    and an extra set of bounds will be concatenated to ``bounds``
-    corresponding to the domain bounds west of the prime meridian. For
-    instance, a grid cell spanning -1 to 1, will be broken into a cell
-    from 0 to 1 and 359 to 360 (or -1 to 0).
+    This function adjusts the longitude bounds of a dataset to match the specified
+    orientation. It ensures idempotency, meaning if the bounds are already in the
+    target orientation, they are returned as-is. For the (0, 360) orientation, it
+    optionally normalizes seam wraps (e.g., [359, 0] → [359, 360]).
 
     Parameters
     ----------
-    bounds : xr.DataArray
-        The longitude domain bounds with prime meridian cell.
-    p_meridian_index : np.ndarray
-        The index of the prime meridian cell.
+    da_coords : xr.DataArray
+        The longitude coordinate values of the dataset.
+    da_bounds : xr.DataArray
+        The longitude bounds of the dataset.
+    to : tuple[float, float]
+        The orientation to swap the Dataset's longitude axis to. Supported
+        orientations include:
+
+        * (-180, 180): represents [-180, 180) in math notation
+        * (0, 360): represents [0, 360) in math notation
 
     Returns
     -------
     xr.DataArray
-        The longitude domain bounds with split prime meridian cell.
-
-    Raises
-    ------
-    ValueError
-        If longitude bounds are inclusively between 0 and 360.
+        The longitude bounds adjusted to the target orientation.
     """
-    _if_multidim_dask_array_then_load(bounds)
+    with xr.set_options(keep_attrs=True):
+        if _is_in_orientation(da_bounds, to):
+            out = da_bounds
+        else:
+            out = _map_to_orientation(da_bounds, to)
 
-    # Example array: [[359, 1], [1, 90], [90, 180], [180, 359]]
-    # Reorient bound to span across zero (i.e., [359, 1] -> [-1, 1]).
-    # Result: [[-1, 1], [1, 90], [90, 180], [180, 359]]
-    bounds[p_meridian_index, 0] = bounds[p_meridian_index, 0] - 360.0
+            # Adjusts wrap-around bounds in a DataArray from [0, 360) longitude
+            # range. Example: [359, 0] -> [359, 360].
+            if to == (0, 360):
+                bounds_dim = _get_bounds_dim(da_coords, out)
+                out = _normalize_wrap_bounds_0_to_360(out, bounds_dim)
 
-    # Extend the array to nlon+1 by concatenating the grid cell that
-    # spans the prime meridian to the end.
-    # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [-1, 1]]
-    dim = get_dim_keys(bounds, "X")
-    bounds = xr.concat((bounds, bounds[p_meridian_index, :]), dim=dim)
+    out.encoding = da_bounds.encoding
 
-    # Add an equivalent bound that spans 360
-    # (i.e., [-1, 1] -> [359, 361]) to the end of the array.
-    # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [359, 361]]
-    repeat_bound = bounds[p_meridian_index, :][0] + 360.0
-    bounds[-1, :] = repeat_bound
+    return out
 
-    # Update the lower-most min and upper-most max bounds to [0, 360].
-    # Result: [[0, 1], [1, 90], [90, 180], [180, 359], [359, 360]]
-    bounds[p_meridian_index, 0], bounds[-1, 1] = (0.0, 360.0)
 
-    return bounds
+def _is_in_orientation(da: xr.DataArray, to: tuple[float, float]) -> bool:
+    """
+    Check if the values in a DataArray conform to a specified orientation range.
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        The input data array to check.
+    to : tuple[float, float]
+        The orientation to swap the Dataset's longitude axis to. Supported
+        orientations include:
+
+        * (-180, 180): represents [-180, 180) in math notation
+        * (0, 360): represents [0, 360) in math notation
+
+    Returns
+    -------
+    bool
+        True if all values in `da` fall within the specified range, False otherwise.
+    """
+    if to == (-180, 180):
+        return bool(np.all(da >= -180) and np.all(da <= 180))
+
+    return bool(np.all(da >= 0) and np.all(da <= 360))
+
+
+def _map_to_orientation(da: xr.DataArray, to: tuple[float, float]) -> xr.DataArray:
+    """
+    Map the values of a DataArray to a specified longitude orientation.
+
+    Parameters
+    ----------
+    da : xr.DataArray
+        The input DataArray containing longitude values.
+    to : tuple[float, float]
+        The orientation to swap the Dataset's longitude axis to. Supported
+        orientations include:
+
+        * (-180, 180): represents [-180, 180) in math notation
+        * (0, 360): represents [0, 360) in math notation
+
+    Returns
+    -------
+    xr.DataArray
+        The DataArray with longitude values mapped to the specified range.
+
+    Notes
+    -----
+    If a dataset includes both -180 and +180, this will create a duplicate 180
+    when converting to [0, 360). We may need to drop or remap one of them in the
+    future if this becomes an issue. Datasets that follow CF convetion typically
+    do not run into this issue, as the longitude centers are within the
+    half-open interval [0, 360).
+    """
+    if to == (-180, 180):
+        return ((da + 180) % 360) - 180
+
+    return da % 360
+
+
+def _normalize_wrap_bounds_0_to_360(
+    da_bounds: xr.DataArray, bounds_dim: str
+) -> xr.DataArray:
+    """
+    Adjusts wrap-around bounds in a DataArray from [0, 360) longitude range.
+
+    This function modifies rows in the input DataArray where the bounds wrap
+    around the seam (e.g., [359, 0]) to ensure continuity by converting them
+    to [359, 360]. Rows that do not wrap are left unchanged.
+
+    Parameters
+    ----------
+    da_bounds : xr.DataArray
+        The input DataArray containing bounds to normalize. It is expected
+        to have a dimension specified by `bounds_dim` with two elements
+        representing the lower and upper bounds.
+    bounds_dim : str
+        The name of the dimension in `da_bounds` that represents the bounds.
+
+    Returns
+    -------
+    xr.DataArray
+        A copy of the input DataArray with normalized wrap-around bounds.
+    """
+    lo = da_bounds.sel({bounds_dim: 0})
+    hi = da_bounds.sel({bounds_dim: 1})
+
+    wrap = lo > hi
+
+    out = da_bounds.copy()
+    out.loc[{bounds_dim: 1}] = xr.where(wrap, 360.0, hi)
+
+    return out
 
 
 def _get_bounds_dim(da_coords: xr.DataArray, da_bounds: xr.DataArray) -> str:
