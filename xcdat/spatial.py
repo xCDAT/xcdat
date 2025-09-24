@@ -9,8 +9,6 @@ import numpy as np
 import xarray as xr
 
 from xcdat.axis import (
-    _align_lon_bounds_to_360,
-    _get_prime_meridian_index,
     get_dim_coords,
     get_dim_keys,
 )
@@ -430,23 +428,15 @@ class SpatialAccessor:
             If the there are multiple instances in which the
             domain_bounds[:, 0] > domain_bounds[:, 1]
         """
-        p_meridian_index: np.ndarray | None = None
         d_bounds = domain_bounds.copy()
-
-        pm_cells = np.where(domain_bounds[:, 1] - domain_bounds[:, 0] < 0)[0]
-        if len(pm_cells) > 1:
-            raise ValueError(
-                "More than one longitude bound is out of order. Only one bound "
-                "value spanning the prime meridian is permitted in data on "
-                "a rectilinear grid."
-            )
         d_bounds: xr.DataArray = self._swap_lon_axis(d_bounds, to=360)  # type: ignore
+
         p_meridian_index = _get_prime_meridian_index(d_bounds)
         if p_meridian_index is not None:
             d_bounds = _align_lon_bounds_to_360(d_bounds, p_meridian_index)
 
         if region_bounds is not None:
-            r_bounds: np.ndarray = self._swap_lon_axis(region_bounds, to=360)  # type:ignore
+            r_bounds: np.ndarray = self._swap_lon_axis(region_bounds, to=360)  # type: ignore
 
             is_region_circular = r_bounds[1] - r_bounds[0] == 0
             if is_region_circular:
@@ -842,3 +832,96 @@ class SpatialAccessor:
         dv_new.name = dv_mean.name
 
         return dv_new
+
+
+def _align_lon_bounds_to_360(
+    bounds: xr.DataArray, p_meridian_index: np.ndarray
+) -> xr.DataArray:
+    """Handles a prime meridian cell to align longitude bounds axis to (0, 360).
+
+    This method ensures the domain bounds are within 0 to 360 by handling
+    the grid cell that encompasses the prime meridian (e.g., [359, 1]). In
+    this case, calculating longitudinal weights is complicated because the
+    weights are determined by the difference of the bounds.
+
+    If this situation exists, the method will split this grid cell into
+    two parts (one east and west of the prime meridian). The original
+    grid cell will have domain bounds extending east of the prime meridian
+    and an extra set of bounds will be concatenated to ``bounds``
+    corresponding to the domain bounds west of the prime meridian. For
+    instance, a grid cell spanning -1 to 1, will be broken into a cell
+    from 0 to 1 and 359 to 360 (or -1 to 0).
+
+    Parameters
+    ----------
+    bounds : xr.DataArray
+        The longitude domain bounds with prime meridian cell.
+    p_meridian_index : np.ndarray
+        The index of the prime meridian cell.
+
+    Returns
+    -------
+    xr.DataArray
+        The longitude domain bounds with split prime meridian cell.
+
+    Raises
+    ------
+    ValueError
+        If longitude bounds are inclusively between 0 and 360.
+    """
+    _if_multidim_dask_array_then_load(bounds)
+
+    # Example array: [[359, 1], [1, 90], [90, 180], [180, 359]]
+    # Reorient bound to span across zero (i.e., [359, 1] -> [-1, 1]).
+    # Result: [[-1, 1], [1, 90], [90, 180], [180, 359]]
+    bounds[p_meridian_index, 0] = bounds[p_meridian_index, 0] - 360.0
+
+    # Extend the array to nlon+1 by concatenating the grid cell that
+    # spans the prime meridian to the end.
+    # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [-1, 1]]
+    dim = get_dim_keys(bounds, "X")
+    bounds = xr.concat((bounds, bounds[p_meridian_index, :]), dim=dim)
+
+    # Add an equivalent bound that spans 360
+    # (i.e., [-1, 1] -> [359, 361]) to the end of the array.
+    # Result: [[-1, 1], [1, 90], [90, 180], [180, 359], [359, 361]]
+    repeat_bound = bounds[p_meridian_index, :][0] + 360.0
+    bounds[-1, :] = repeat_bound
+
+    # Update the lower-most min and upper-most max bounds to [0, 360].
+    # Result: [[0, 1], [1, 90], [90, 180], [180, 359], [359, 360]]
+    bounds[p_meridian_index, 0], bounds[-1, 1] = (0.0, 360.0)
+
+    return bounds
+
+
+def _get_prime_meridian_index(lon_bounds: xr.DataArray) -> np.ndarray | None:
+    """Gets the index of the prime meridian cell in the longitude bounds.
+
+    A prime meridian cell can exist when converting the axis orientation
+    from [-180, 180) to [0, 360).
+
+    Parameters
+    ----------
+    lon_bounds : xr.DataArray
+        The longitude bounds.
+
+    Returns
+    -------
+    np.ndarray | None
+        An array with a single element representing the index of the prime
+        meridian index if it exists. Otherwise, None if the cell does not exist.
+
+    Raises
+    ------
+    ValueError
+        If more than one grid cell spans the prime meridian.
+    """
+    p_meridian_index = np.where(lon_bounds[:, 1] - lon_bounds[:, 0] < 0)[0]
+
+    if p_meridian_index.size == 0:  # pragma: no cover
+        return None
+    elif p_meridian_index.size > 1:  # pragma: no cover
+        raise ValueError("More than one grid cell spans the prime meridian.")
+
+    return p_meridian_index
