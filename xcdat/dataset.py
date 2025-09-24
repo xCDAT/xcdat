@@ -132,6 +132,10 @@ def open_mfdataset(
     lon_orient: tuple[float, float] | None = None,
     data_vars: Literal["minimal", "different", "all"] | list[str] = "minimal",
     preprocess: Callable | None = None,
+    *,
+    compat: Literal["no_conflicts", "override", "equals", "identical"] = "no_conflicts",
+    join: Literal["outer", "exact", "left", "right", "inner"] = "outer",
+    use_new_combine_kwarg_defaults: bool | None = None,
     **kwargs: dict[str, Any],
 ) -> xr.Dataset:
     """Wraps ``xarray.open_mfdataset()`` with post-processing options.
@@ -159,9 +163,9 @@ def open_mfdataset(
         * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
         * Supported CF axes include "X", "Y", "Z", and "T"
         * By default, missing "T" bounds are generated using the time frequency
-          of the coordinates. If desired, refer to
-          :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
-          granular configuration for how "T" bounds are generated.
+        of the coordinates. If desired, refer to
+        :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
+        granular configuration for how "T" bounds are generated.
     data_var: str | None, optional
         The key of the data variable to keep in the Dataset, by default None.
     decode_times: bool, optional
@@ -204,6 +208,16 @@ def open_mfdataset(
         If provided, call this function on each dataset prior to concatenation.
         You can find the file-name from which each dataset was loaded in
         ``ds.encoding["source"]``.
+    compat : {"no_conflicts", "override", "equals", "identical"}, optional
+        Merge/combine compatibility behavior. Defaults to ``"no_conflicts"`` to
+        preserve historical xCDAT behavior. Users can override explicitly.
+    join : {"outer", "exact", "left", "right", "inner"}, optional
+        Dimension joining strategy. Defaults to ``"outer"`` to preserve
+        historical behavior.
+    use_new_combine_kwarg_defaults : bool | None, optional
+        If ``None`` (default), xCDAT preserves legacy xarray combine defaults
+        for this call (equivalent to ``False``). Set to ``True`` to opt into
+        xarray's newer combine defaults, or ``False`` to force legacy behavior.
     **kwargs : dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
         the [3]_ xarray docs for accepted keyword arguments.
@@ -229,15 +243,30 @@ def open_mfdataset(
         if os.path.isdir(paths):
             paths = _parse_dir_for_nc_glob(paths)
 
+    # Add internal preprocessing to user-defined preprocessing (if provided).
     preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
 
-    ds = xr.open_mfdataset(
-        paths,
-        decode_times=False,
-        data_vars=data_vars,
-        preprocess=preprocess,
-        **kwargs,  # type: ignore
+    # Preserve legacy defaults for `compat` and `join` by default
+    # (scoped to this call). Respect explicit parameters; they take precedence
+    # over any duplicates in kwargs.
+    # Related to https://github.com/pydata/xarray/pull/10062.
+    kwargs["compat"] = compat  # type: ignore
+    kwargs["join"] = join  # type: ignore
+
+    _use_new_combine_kwarg_defaults = (
+        False
+        if use_new_combine_kwarg_defaults is None
+        else use_new_combine_kwarg_defaults
     )
+
+    with xr.set_options(use_new_combine_kwarg_defaults=_use_new_combine_kwarg_defaults):
+        ds = xr.open_mfdataset(
+            paths,
+            decode_times=False,  # decoding handled in _preprocess/_postprocess
+            data_vars=data_vars,
+            preprocess=preprocess,
+            **kwargs,  # type: ignore
+        )
 
     ds = _postprocess_dataset(ds, data_var, center_times, add_bounds, lon_orient)
 
