@@ -941,7 +941,7 @@ class TestSwapLonAxis:
                     attrs={"test_attr": "test"},
                 ),
                 "ts2": xr.DataArray(
-                    name="ts",
+                    name="ts2",
                     data=np.array([3, 4, 0, 1, 2]),
                     dims=["zlon"],
                     attrs={"test_attr": "test"},
