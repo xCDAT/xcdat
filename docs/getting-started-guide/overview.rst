@@ -218,13 +218,14 @@ Thank you to all of our `contributors`_!
 Endorsements
 ------------
 
-xCDAT is proudly endorsed by the `Xarray ecosystem`_, the `Pangeo community`_, and the
-`World Climate Research Programme (WCRP)`_ as a recommended tool for geoscience and
-climate data analysis.
+xCDAT is proudly endorsed by the `Xarray ecosystem`_, the `Pangeo community`_,
+`World Climate Research Programme (WCRP)`_, and `Python for Atmosphere and Ocean Science (PyAOS)`_
+as a recommended tool for geoscience and climate data analysis.
 
 .. _Xarray ecosystem: https://docs.xarray.dev/en/stable/user-guide/ecosystem.html#geosciences
 .. _Pangeo community: https://www.pangeo.io/#ecosystem
 .. _World Climate Research Programme (WCRP): https://wcrp-cmip.org/tools/
+.. _Python for Atmosphere and Ocean Science (PyAOS): https://pyaos.github.io/packages/#general-utilities
 
 .. raw:: html
 
