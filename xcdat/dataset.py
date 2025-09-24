@@ -163,9 +163,9 @@ def open_mfdataset(
         * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
         * Supported CF axes include "X", "Y", "Z", and "T"
         * By default, missing "T" bounds are generated using the time frequency
-        of the coordinates. If desired, refer to
-        :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
-        granular configuration for how "T" bounds are generated.
+          of the coordinates. If desired, refer to
+          :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
+          granular configuration for how "T" bounds are generated.
     data_var: str | None, optional
         The key of the data variable to keep in the Dataset, by default None.
     decode_times: bool, optional
