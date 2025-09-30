@@ -106,7 +106,6 @@ Classes
     regridder.regrid2.Regrid2Regridder
     regridder.xesmf.XESMFRegridder
     regridder.xgcm.XGCMRegridder
-    mask.MaskAccessor
 
 .. currentmodule:: xarray
 
@@ -135,14 +134,15 @@ Methods
     Dataset.bounds.get_bounds
     Dataset.bounds.add_missing_bounds
     Dataset.spatial.average
+    Dataset.spatial.mask_land
+    Dataset.spatial.mask_sea
+    Dataset.spatial.generate_land_sea_mask
     Dataset.temporal.average
     Dataset.temporal.group_average
     Dataset.temporal.climatology
     Dataset.temporal.departures
     Dataset.regridder.horizontal
     Dataset.regridder.vertical
-    Dataset.geomask.mask_land
-    Dataset.geomask.mask_sea
 
 .. _dsmeth_1:
 
