@@ -356,8 +356,9 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset([self.file_path1, self.file_path2], decode_times=False)
+        # Use legacy compat and join defaults to match open_mfdataset behavior.
+        expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
-        expected = ds1.merge(ds2)
         assert result.identical(expected)
 
     def test_skips_adding_bounds(self):
@@ -378,10 +379,11 @@ class TestOpenMfDataset:
         ds2 = ds2.rename_vars({"ts": "tas"})
         ds2.to_netcdf(self.file_path2)
 
-        result = open_mfdataset(str(self.dir), decode_times=True)
-        expected = ds1.merge(ds2)
+        result = open_mfdataset(str(self.dir), decode_times=False)
+        # Use legacy compat and join defaults to match open_mfdataset behavior.
+        expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
-        result.identical(expected)
+        assert result.identical(expected)
 
     def test_opens_netcdf_files_from_pathlib_path_directory(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -390,10 +392,11 @@ class TestOpenMfDataset:
         ds2 = ds2.rename_vars({"ts": "tas"})
         ds2.to_netcdf(self.file_path2)
 
-        result = open_mfdataset(self.dir, decode_times=True)
-        expected = ds1.merge(ds2)
+        result = open_mfdataset(self.dir, decode_times=False)
+        # Use legacy compat and join defaults to match open_mfdataset behavior.
+        expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
-        result.identical(expected)
+        assert result.identical(expected)
 
     def test_user_specified_callable_results_in_subsetting_dataset_on_time_slice(self):
         def callable(ds):

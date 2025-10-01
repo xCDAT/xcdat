@@ -67,12 +67,13 @@ def open_dataset(
         ("X", "Y"). Set to None to not add any missing bounds. Please note that
         bounds are required for many xCDAT features.
 
-        * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
-        * Supported CF axes include "X", "Y", "Z", and "T"
-        * By default, missing "T" bounds are generated using the time frequency
-          of the coordinates. If desired, refer to
-          :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
-          granular configuration for how "T" bounds are generated.
+          * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
+          * Supported CF axes include "X", "Y", "Z", and "T"
+          * By default, missing "T" bounds are generated using the time frequency
+            of the coordinates. If desired, refer to
+            :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
+            granular configuration for how "T" bounds are generated.
+
     decode_times: bool, optional
         If True, attempt to decode times encoded in the standard NetCDF
         datetime format into cftime.datetime objects. Otherwise, leave them
@@ -87,9 +88,10 @@ def open_dataset(
         Either `(-180, 180)` or `(0, 360)`, by default None. Supported options
         include:
 
-        * None:  use the current orientation (if the longitude axis exists)
-        * (-180, 180): represents [-180, 180) in math notation
-        * (0, 360): represents [0, 360) in math notation
+          * None:  use the current orientation (if the longitude axis exists)
+          * (-180, 180): represents [-180, 180) in math notation
+          * (0, 360): represents [0, 360) in math notation
+
     **kwargs : dict[str, Any]
         Additional arguments passed on to ``xarray.open_dataset``. Refer to the
         [1]_ xarray docs for accepted keyword arguments.
@@ -132,6 +134,11 @@ def open_mfdataset(
     lon_orient: tuple[float, float] | None = None,
     data_vars: Literal["minimal", "different", "all"] | list[str] = "minimal",
     preprocess: Callable | None = None,
+    *,
+    compat: Literal[
+        "no_conflicts", "override", "equals", "identical", "broadcast_equals"
+    ] = "no_conflicts",
+    join: Literal["outer", "exact", "left", "right", "inner", "override"] = "outer",
     **kwargs: dict[str, Any],
 ) -> xr.Dataset:
     """Wraps ``xarray.open_mfdataset()`` with post-processing options.
@@ -142,26 +149,28 @@ def open_mfdataset(
         Paths to dataset files. Paths can be given as strings or as pathlib.Path
         objects. Supported options include:
 
-        * Directory path (e.g., ``"path/to/files"``), which is converted
-          to a string glob of `*.nc` files
-        * String glob (e.g., ``"path/to/files/*.nc"``), which is expanded
-          to a 1-dimensional list of file paths
-        * File path to dataset (e.g., ``"path/to/files/file1.nc"``)
-        * List of file paths (e.g., ``["path/to/files/file1.nc", ...]``).
-          If concatenation along more than one dimension is desired, then
-          ``paths`` must be a nested list-of-lists (see [2]_
-          ``xarray.combine_nested`` for details).
+          * Directory path (e.g., ``"path/to/files"``), which is converted
+            to a string glob of `*.nc` files
+          * String glob (e.g., ``"path/to/files/*.nc"``), which is expanded
+            to a 1-dimensional list of file paths
+          * File path to dataset (e.g., ``"path/to/files/file1.nc"``)
+          * List of file paths (e.g., ``["path/to/files/file1.nc", ...]``).
+            If concatenation along more than one dimension is desired, then
+            ``paths`` must be a nested list-of-lists (see [2]_
+            ``xarray.combine_nested`` for details).
+
     add_bounds: list[CFAxisKey] | tuple[CFAxisKey, ...] | None
         List of CF axes to try to add bounds for (if missing), by default
         ("X", "Y"). Set to None to not add any missing bounds. Please note that
         bounds are required for many xCDAT features.
 
-        * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
-        * Supported CF axes include "X", "Y", "Z", and "T"
-        * By default, missing "T" bounds are generated using the time frequency
-          of the coordinates. If desired, refer to
-          :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
-          granular configuration for how "T" bounds are generated.
+          * This parameter calls :py:func:`xarray.Dataset.bounds.add_missing_bounds`
+          * Supported CF axes include "X", "Y", "Z", and "T"
+          * By default, missing "T" bounds are generated using the time frequency
+            of the coordinates. If desired, refer to
+            :py:func:`xarray.Dataset.bounds.add_time_bounds` if you require more
+            granular configuration for how "T" bounds are generated.
+
     data_var: str | None, optional
         The key of the data variable to keep in the Dataset, by default None.
     decode_times: bool, optional
@@ -177,13 +186,15 @@ def open_mfdataset(
         The orientation to use for the Dataset's longitude axis (if it exists),
         by default None. Supported options include:
 
-        * None:  use the current orientation (if the longitude axis exists)
-        * (-180, 180): represents [-180, 180) in math notation
-        * (0, 360): represents [0, 360) in math notation
+          * None:  use the current orientation (if the longitude axis exists)
+          * (-180, 180): represents [-180, 180) in math notation
+          * (0, 360): represents [0, 360) in math notation
+
     data_vars: {"minimal", "different", "all" or list of str}, optional
         These data variables will be concatenated together:
-          * "minimal": Only data variables in which the dimension already
-            appears are included, the default value.
+
+          * "minimal" (default): Only data variables in which the dimension
+            already appears are included.
           * "different": Data variables which are not equal (ignoring
             attributes) across all datasets are also concatenated (as well as
             all for which dimension already appears). Beware: this option may
@@ -204,6 +215,40 @@ def open_mfdataset(
         If provided, call this function on each dataset prior to concatenation.
         You can find the file-name from which each dataset was loaded in
         ``ds.encoding["source"]``.
+    compat : {"no_conflicts", "broadcast_equals", "override", "equals", "identical"}, optional
+        String indicating how to compare variables of the same name for potential
+        conflicts when merging. Defaults to ``"no_conflicts"`` to preserve
+        legacy Xarray behavior (``"override"`` is the new Xarray default as of
+        v2025.08.0). Options include:
+
+          * "no_conflicts" (default): only values which are not null in both
+            datasets must be equal. The returned dataset then contains the
+            combination of all non-null values
+          * "broadcast_equals": all values must be equal when variables are
+            broadcast against each other to ensure common dimensions
+          * "equals": all values and dimensions must be the same
+          * "identical": all values, dimensions and attributes must be the
+            same
+          * "override": skip comparing and pick variable from first dataset.
+            This is the new Xarray default behavior.
+
+    join : {"outer", "exact", "left", "right", "inner", "override"}, optional
+        String indicating how to combine differing indexes (excluding
+        concat_dim) in objects. Defaults to ``"outer"`` to preserve legacy
+        Xarray behavior (``"exact"`` is the new Xarray default as of
+        v2025.08.0). Options include:
+
+          * "outer" (default): use the union of object indexes
+          * "inner": use the intersection of object indexes
+          * "left": use indexes from the first object with each dimension
+          * "right": use indexes from the last object with each dimension
+          * "exact": instead of aligning, raise `ValueError` when
+            indexes to be aligned are not equal. This is the new Xarray
+            default behavior.
+          * "override": if indexes are of same size, rewrite indexes to be
+            those of the first object with that dimension. Indexes for the same
+            dimension must have the same size in all objects.
+
     **kwargs : dict[str, Any]
         Additional arguments passed on to ``xarray.open_mfdataset``. Refer to
         the [3]_ xarray docs for accepted keyword arguments.
@@ -229,11 +274,19 @@ def open_mfdataset(
         if os.path.isdir(paths):
             paths = _parse_dir_for_nc_glob(paths)
 
+    # Add internal preprocessing to user-defined preprocessing (if provided).
     preprocess = partial(_preprocess, decode_times=decode_times, callable=preprocess)
+
+    # Preserve legacy defaults for `compat` and `join` by default
+    # (scoped to this call). Respect explicit parameters; they take precedence
+    # over any duplicates in kwargs.
+    # Related to https://github.com/pydata/xarray/pull/10062.
+    kwargs["compat"] = compat  # type: ignore
+    kwargs["join"] = join  # type: ignore
 
     ds = xr.open_mfdataset(
         paths,
-        decode_times=False,
+        decode_times=False,  # decoding handled in _preprocess/_postprocess
         data_vars=data_vars,
         preprocess=preprocess,
         **kwargs,  # type: ignore
