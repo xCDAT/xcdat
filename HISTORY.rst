@@ -14,7 +14,7 @@ Bug Fixes
 ~~~~~~~~~
 
 -  Constrain ``cf_xarray >=0.10.7`` by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/804.
-   This constraint is necessary because cf_xarray v0.10.7 introduces a fix to
+   This constraint is necessary because ``cf_xarray=0.10.7`` introduces a fix to
    ``bounds_to_vertices()``, enabling support for non-monotonic bounds and propagating
    correct regridding results in xESMF for such cases
    (refer to https://github.com/xarray-contrib/cf-xarray/pull/579).
