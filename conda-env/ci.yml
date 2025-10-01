@@ -7,7 +7,7 @@ dependencies:
     # =========================================
     - python >=3.11,<3.14
     - setuptools
-    - cf_xarray >=0.10.6
+    - cf_xarray >=0.10.7
     - cftime
     - dask
     - netcdf4
