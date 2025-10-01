@@ -219,9 +219,9 @@ def open_mfdataset(
         legacy Xarray behavior ("override" is the new Xarray default).
         Options include:
 
-          * "no_conflicts" (default): only values which are not null in both datasets
-            must be equal. The returned dataset then contains the combination
-            of all non-null values
+          * "no_conflicts" (default): only values which are not null in both
+            datasets must be equal. The returned dataset then contains the
+            combination of all non-null values
           * "broadcast_equals": all values must be equal when variables are
             broadcast against each other to ensure common dimensions
           * "equals": all values and dimensions must be the same
