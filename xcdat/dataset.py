@@ -230,7 +230,7 @@ def open_mfdataset(
           * "override": skip comparing and pick variable from first dataset.
             This is the new Xarray default behavior.
 
-    join : {"outer", "exact", "left", "right", "inner"}, optional
+    join : {"outer", "exact", "left", "right", "inner", "override"}, optional
         String indicating how to combine differing indexes (excluding
         concat_dim) in objects. Defaults to ``"outer"`` to preserve legacy
         Xarray behavior ("exact" is the new Xarray default). Options
