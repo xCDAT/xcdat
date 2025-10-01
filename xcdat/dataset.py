@@ -218,7 +218,7 @@ def open_mfdataset(
     compat : {"no_conflicts", "broadcast_equals", "override", "equals", "identical"}, optional
         String indicating how to compare variables of the same name for potential
         conflicts when merging. Defaults to ``"no_conflicts"`` to preserve
-        legacy Xarray behavior ("override" is the new Xarray default as of
+        legacy Xarray behavior (``"override"`` is the new Xarray default as of
         v2025.08.0). Options include:
 
           * "no_conflicts" (default): only values which are not null in both
@@ -235,8 +235,8 @@ def open_mfdataset(
     join : {"outer", "exact", "left", "right", "inner", "override"}, optional
         String indicating how to combine differing indexes (excluding
         concat_dim) in objects. Defaults to ``"outer"`` to preserve legacy
-        Xarray behavior ("exact" is the new Xarray default as of v2025.08.0).
-        Options include:
+        Xarray behavior (``"exact"`` is the new Xarray default as of
+        v2025.08.0). Options include:
 
           * "outer" (default): use the union of object indexes
           * "inner": use the intersection of object indexes
