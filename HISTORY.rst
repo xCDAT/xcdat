@@ -6,7 +6,7 @@ v0.10.1 (01 October 2025)
 -------------------------
 
 This patch release introduces bug fixes, documentation updates, and DevOps changes,
-including constraining ``cf_xarray >=0.10.7``, preservin Xarray legacy behaviors for
+including constraining ``cf_xarray >=0.10.7``, preserving Xarray legacy behaviors for
 ``open_mfdataset()`` and ``compat``/``join`` to ensure stability across dependencies,
 dropping Python 3.10 support, and adding PyAOS to the endorsements list.
 
