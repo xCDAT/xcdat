@@ -213,7 +213,7 @@ def open_mfdataset(
         If provided, call this function on each dataset prior to concatenation.
         You can find the file-name from which each dataset was loaded in
         ``ds.encoding["source"]``.
-    compat : {"no_conflicts", "override", "equals", "identical"}, optional
+    compat : {"no_conflicts", "broadcast_equals", "override", "equals", "identical"}, optional
         String indicating how to compare variables of the same name for potential
         conflicts when merging. Defaults to ``"no_conflicts"`` to preserve
         legacy Xarray behavior ("override" is the new Xarray default).
