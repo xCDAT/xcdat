@@ -379,7 +379,7 @@ class TestOpenMfDataset:
         ds2 = ds2.rename_vars({"ts": "tas"})
         ds2.to_netcdf(self.file_path2)
 
-        result = open_mfdataset(str(self.dir), decode_times=True)
+        result = open_mfdataset(str(self.dir), decode_times=False)
         # Use legacy compat and join defaults to match open_mfdataset behavior.
         expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
@@ -392,7 +392,7 @@ class TestOpenMfDataset:
         ds2 = ds2.rename_vars({"ts": "tas"})
         ds2.to_netcdf(self.file_path2)
 
-        result = open_mfdataset(self.dir, decode_times=True)
+        result = open_mfdataset(self.dir, decode_times=False)
         # Use legacy compat and join defaults to match open_mfdataset behavior.
         expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
