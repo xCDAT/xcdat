@@ -5,10 +5,11 @@ History
 v0.10.1 (01 October 2025)
 -------------------------
 
-This patch release introduces bug fixes, documentation updates, and DevOps changes,
+This patch release introduces bug fixes, documentation updates, and devops changes,
 including constraining ``cf_xarray >=0.10.7``, preserving Xarray legacy behaviors for
-``open_mfdataset()`` and ``compat``/``join`` to ensure stability across dependencies,
-dropping Python 3.10 support, and adding PyAOS to the endorsements list.
+``open_mfdataset()`` with ``compat`` and ``join`` arguments to prevent unexpected
+breaking changes for users, dropping Python 3.10 support, and adding PyAOS to the 
+endorsements list.
 
 Bug Fixes
 ~~~~~~~~~
