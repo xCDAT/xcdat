@@ -135,7 +135,7 @@ def open_mfdataset(
     data_vars: Literal["minimal", "different", "all"] | list[str] = "minimal",
     preprocess: Callable | None = None,
     *,
-    compat: Literal["no_conflicts", "override", "equals", "identical"] = "no_conflicts",
+    compat: Literal["no_conflicts", "override", "equals", "identical", "broadcast_equals"] = "no_conflicts",
     join: Literal["outer", "exact", "left", "right", "inner"] = "outer",
     **kwargs: dict[str, Any],
 ) -> xr.Dataset:
