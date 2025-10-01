@@ -136,7 +136,7 @@ def open_mfdataset(
     preprocess: Callable | None = None,
     *,
     compat: Literal["no_conflicts", "override", "equals", "identical", "broadcast_equals"] = "no_conflicts",
-    join: Literal["outer", "exact", "left", "right", "inner"] = "outer",
+    join: Literal["outer", "exact", "left", "right", "inner", "override"] = "outer",
     **kwargs: dict[str, Any],
 ) -> xr.Dataset:
     """Wraps ``xarray.open_mfdataset()`` with post-processing options.
