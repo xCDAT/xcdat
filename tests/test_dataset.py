@@ -383,7 +383,7 @@ class TestOpenMfDataset:
         # Use legacy compat and join defaults to match open_mfdataset behavior.
         expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
-        result.identical(expected)
+        assert result.identical(expected)
 
     def test_opens_netcdf_files_from_pathlib_path_directory(self):
         ds1 = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -396,7 +396,7 @@ class TestOpenMfDataset:
         # Use legacy compat and join defaults to match open_mfdataset behavior.
         expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
-        result.identical(expected)
+        assert result.identical(expected)
 
     def test_user_specified_callable_results_in_subsetting_dataset_on_time_slice(self):
         def callable(ds):
