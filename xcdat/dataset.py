@@ -135,7 +135,9 @@ def open_mfdataset(
     data_vars: Literal["minimal", "different", "all"] | list[str] = "minimal",
     preprocess: Callable | None = None,
     *,
-    compat: Literal["no_conflicts", "override", "equals", "identical", "broadcast_equals"] = "no_conflicts",
+    compat: Literal[
+        "no_conflicts", "override", "equals", "identical", "broadcast_equals"
+    ] = "no_conflicts",
     join: Literal["outer", "exact", "left", "right", "inner", "override"] = "outer",
     **kwargs: dict[str, Any],
 ) -> xr.Dataset:
@@ -216,8 +218,8 @@ def open_mfdataset(
     compat : {"no_conflicts", "broadcast_equals", "override", "equals", "identical"}, optional
         String indicating how to compare variables of the same name for potential
         conflicts when merging. Defaults to ``"no_conflicts"`` to preserve
-        legacy Xarray behavior ("override" is the new Xarray default).
-        Options include:
+        legacy Xarray behavior ("override" is the new Xarray default as of
+        v2025.08.0). Options include:
 
           * "no_conflicts" (default): only values which are not null in both
             datasets must be equal. The returned dataset then contains the
@@ -233,8 +235,8 @@ def open_mfdataset(
     join : {"outer", "exact", "left", "right", "inner", "override"}, optional
         String indicating how to combine differing indexes (excluding
         concat_dim) in objects. Defaults to ``"outer"`` to preserve legacy
-        Xarray behavior ("exact" is the new Xarray default). Options
-        include:
+        Xarray behavior ("exact" is the new Xarray default as of v2025.08.0).
+        Options include:
 
           * "outer" (default): use the union of object indexes
           * "inner": use the intersection of object indexes
