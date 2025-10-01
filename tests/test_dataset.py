@@ -356,10 +356,8 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset([self.file_path1, self.file_path2], decode_times=False)
-
-        # Use legacy combine defaults to match open_mfdataset behavior.
-        with xr.set_options(use_new_combine_kwarg_defaults=False):
-            expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
+        # Use legacy compat and join defaults to match open_mfdataset behavior.
+        expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
         assert result.identical(expected)
 
@@ -382,10 +380,8 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset(str(self.dir), decode_times=True)
-
-        # Use legacy combine defaults to match open_mfdataset behavior.
-        with xr.set_options(use_new_combine_kwarg_defaults=False):
-            expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
+        # Use legacy compat and join defaults to match open_mfdataset behavior.
+        expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
         result.identical(expected)
 
@@ -397,10 +393,8 @@ class TestOpenMfDataset:
         ds2.to_netcdf(self.file_path2)
 
         result = open_mfdataset(self.dir, decode_times=True)
-
-        # Use legacy combine defaults to match open_mfdataset behavior.
-        with xr.set_options(use_new_combine_kwarg_defaults=False):
-            expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
+        # Use legacy compat and join defaults to match open_mfdataset behavior.
+        expected = ds1.merge(ds2, compat="no_conflicts", join="outer")
 
         result.identical(expected)
 
