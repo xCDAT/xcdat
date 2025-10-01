@@ -2,6 +2,40 @@
 History
 =======
 
+v0.10.1 (01 October 2025)
+-------------------------
+
+Release 0.10.1 introduces bug fixes, documentation updates, and DevOps changes,
+including constraining ``cf_xarray >=0.10.7``, preservin Xarray legacy behaviors for
+``open_mfdataset()`` and ``compat``/``join`` to ensure stability across dependencies,
+dropping Python 3.10 support, and adding PyAOS to the endorsements list.
+
+Bug Fixes
+~~~~~~~~~
+
+-  Constrain ``cf_xarray >=0.10.7`` by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/804.
+   This constraint is necessary because cf_xarray v0.10.7 introduces a fix to
+   ``bounds_to_vertices()``, enabling support for non-monotonic bounds and propagating
+   correct regridding results in xESMF for such cases
+   (refer to https://github.com/xarray-contrib/cf-xarray/pull/579).
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Add PyAOS to list of endorsements by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/802
+
+DevOps
+~~~~~~
+
+-  Preserve Xarray legacy ``compat`` and ``join`` behaviors by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/800. This change was made to maintain consistent
+   functionality across environments after Xarray updates, preventing unexpected breaking
+   changes for downstream users.
+-  Drop Python 3.10 support by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/794
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.10.0...v0.10.1
+
+
 v0.10.0 (27 Aug 2025)
 ---------------------
 
