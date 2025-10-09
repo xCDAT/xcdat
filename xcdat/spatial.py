@@ -206,7 +206,7 @@ class SpatialAccessor:
 
     def generate_land_sea_mask(
         self,
-        data_var: str,
+        data_var: str | None = None,
         method: str = "regionmask",
         **options: Any,
     ) -> xr.DataArray:
@@ -215,8 +215,10 @@ class SpatialAccessor:
 
         Parameters
         ----------
-        data_var : str
-            Name of the variable to generate land/sea mask from.
+        data_var : str, optional
+            Name of the variable whose lat/lon coordinates will be used to
+            generate the land/sea mask. If omitted then a `mask` variable will
+            be generated using the lat/lon coordinates in the dataset.
         method : str, optional
             The method to use for generating the mask, by default "regionmask".
             Supported methods: "regionmask", "pcmdi".
@@ -244,8 +246,30 @@ class SpatialAccessor:
         Generate a mask using the "pcmdi" method, with customization:
 
         >>> mask = ds.spatial.generate_land_sea_mask("tas", method="pcmdi", source=high_res_ds, source_data_var="highres")
+
+        Generating a mask from a new grid:
+
+        >>> grid = xc.create_uniform_grid(-90, 90, 1, 0, 359, 1)
+
+        >>> mask = grid.spatial.generate_land_sea_mask()
         """
-        return generate_land_sea_mask(self._dataset[data_var], method, **options)
+        if data_var is None:
+            try:
+                da_shape = list(self._dataset.cf[x].shape[0] for x in ("X", "Y"))
+
+                da_dims = list(self._dataset.cf[x].name for x in ("X", "Y"))
+
+                da_coords = {x: self._dataset[x].copy() for x in da_dims}
+            except KeyError:
+                raise KeyError(
+                    "Dataset is missing a required coordinate, ensure a lat and lon coordinate exist"
+                ) from None
+
+            da = xr.DataArray(np.ones(da_shape), dims=da_dims, coords=da_coords)
+        else:
+            da = self._dataset[data_var]
+
+        return generate_land_sea_mask(da, method, **options)
 
     def average(
         self,

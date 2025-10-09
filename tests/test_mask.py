@@ -7,6 +7,7 @@ import xarray as xr
 
 from tests import fixtures
 from xcdat import mask
+from xcdat.regridder import grid
 
 np.set_printoptions(threshold=sys.maxsize, suppress=True)
 
@@ -115,6 +116,35 @@ class TestMask:
         output = ds.spatial.generate_land_sea_mask("ts")
 
         xr.testing.assert_allclose(output, expected)
+
+    def test_generate_land_sea_mask_from_grid(self):
+        ds = grid.create_uniform_grid(-90, 90, 36, 0, 359, 32)
+
+        expected = xr.DataArray(
+            [
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
+                [0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0],
+                [1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1],
+                [0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1],
+                [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            ],
+            dims=("lat", "lon"),
+            coords={"lat": ds.lat.copy(), "lon": ds.lon.copy()},
+        )
+
+        output = ds.spatial.generate_land_sea_mask()
+
+        xr.testing.assert_allclose(output, expected)
+
+    def test_generate_land_sea_mask_missing_coordinate(self):
+        ds = grid.create_grid(x=grid.create_axis("lat", [x for x in range(10)]))
+
+        with pytest.raises(
+            KeyError,
+            match="Dataset is missing a required coordinate, ensure a lat and lon coordinate exist",
+        ):
+            ds.spatial.generate_land_sea_mask()
 
 
 class TestMaskGeneration:
