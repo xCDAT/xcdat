@@ -10,6 +10,10 @@
   path: examples/spatial-average.ipynb
   thumbnail: _static/thumbnails/spatial-avg.png
 
+- title: Spatial Land/Sea Mask
+  path: examples/spatial-landsea-mask.ipynb
+  thumbnail: _static/thumbnails/spatial-landsea-mask.png
+
 - title: Temporal Averaging
   path: examples/temporal-average.ipynb
   thumbnail: _static/thumbnails/temporal-average.png

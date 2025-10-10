@@ -12,6 +12,7 @@ This gallery demonstrates how to use some of the features in ``xcdat``. Contribu
     examples/introduction-to-xcdat.ipynb
     examples/general-utilities.ipynb
     examples/spatial-average.ipynb
+    examples/spatial-landsea-mask.ipynb
     examples/temporal-average.ipynb
     examples/climatology-and-departures.ipynb
     examples/regridding-horizontal.ipynb
