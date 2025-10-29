@@ -152,9 +152,9 @@ class XGCMRegridder(BaseRegridder):
         """See documentation in :py:func:`xcdat.regridder.xgcm.XGCMRegridder`"""
         # NOTE: Importing xgcm triggers Numba’s @guvectorize JIT compilation
         # in the xgcm.transform module, which can be time-consuming during
-        # initial imports. To avoid impacting the import time measurements
-        # in the profiling scripts, we import xgcm only when this method is
-        # called. Subsequent calls to this method will use the cached import.
+        # initial imports. To avoid impacting the import time of xcdat, we
+        # import xgcm only when this method is called. Subsequent calls to this
+        # method will use the cached import.
         from xgcm import Grid
 
         try:
