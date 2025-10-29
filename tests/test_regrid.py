@@ -40,7 +40,7 @@ class TestXGCMRegridder:
         z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
         self.output_grid = grid.create_grid(z=z)
 
-    @mock.patch("xcdat.regridder.xgcm.Grid")
+    @mock.patch("xgcm.Grid")
     def test_infer_target_data(self, grid):
         ds = self.ds.copy(True)
 
@@ -75,7 +75,7 @@ class TestXGCMRegridder:
         ):
             regridder.vertical("so", ds)
 
-    @mock.patch("xcdat.regridder.xgcm.Grid")
+    @mock.patch("xgcm.Grid")
     def test_infer_target_data_missing_formula_terms(self, _):
         ds = self.ds.copy(True)
 
@@ -92,7 +92,7 @@ class TestXGCMRegridder:
         ):
             regridder.vertical("so", ds)
 
-    @mock.patch("xcdat.regridder.xgcm.Grid")
+    @mock.patch("xgcm.Grid")
     def test_infer_target_data_invalid_standard_name(self, _):
         ds = self.ds.copy(True)
 
@@ -110,7 +110,7 @@ class TestXGCMRegridder:
         ):
             regridder.vertical("so", ds)
 
-    @mock.patch("xcdat.regridder.xgcm.Grid")
+    @mock.patch("xgcm.Grid")
     def test_infer_target_data_missing_required_variable(self, _):
         ds = self.ds.copy(True)
 
@@ -128,7 +128,7 @@ class TestXGCMRegridder:
         ):
             regridder.vertical("so", ds)
 
-    @mock.patch("xcdat.regridder.xgcm.Grid")
+    @mock.patch("xgcm.Grid")
     def test_infer_target_data_empty_formula_terms(self, _):
         ds = self.ds.copy(True)
 
@@ -176,7 +176,7 @@ class TestXGCMRegridder:
 
         assert output_data.so.shape == (15, 2, 4, 4)
 
-    @mock.patch("xcdat.regridder.xgcm.Grid")
+    @mock.patch("xgcm.Grid")
     def test_target_data(self, grid):
         regridder = xgcm.XGCMRegridder(self.ds, self.output_grid, method="linear")
 
@@ -189,7 +189,7 @@ class TestXGCMRegridder:
         assert "method" in call_kwargs and call_kwargs["method"] == "linear"
         assert "target_data" in call_kwargs and call_kwargs["target_data"] is None
 
-    @mock.patch("xcdat.regridder.xgcm.Grid")
+    @mock.patch("xgcm.Grid")
     def test_target_data_da(self, grid):
         target_data = np.random.normal(size=self.ds["so"].shape)
 
@@ -212,7 +212,7 @@ class TestXGCMRegridder:
 
         xr.testing.assert_allclose(call_kwargs["target_data"], target_da)
 
-    @mock.patch("xcdat.regridder.xgcm.Grid")
+    @mock.patch("xgcm.Grid")
     def test_target_data_ds(self, grid):
         target_data = np.random.normal(size=self.ds["so"].shape)
 
