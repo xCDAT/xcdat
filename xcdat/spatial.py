@@ -140,7 +140,7 @@ class SpatialAccessor:
         method: str = "regionmask",
         criteria: float | None = None,
         mask: xr.DataArray | None = None,
-        output_mask: bool = False,
+        output_mask: bool | str = False,
         **options: Any,
     ):
         """
@@ -166,7 +166,7 @@ class SpatialAccessor:
         **options : Any
             These options are passed directly to the ``method``. See specific
             method documentation for available options:
-            :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options
+            :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
 
         Returns
         -------

@@ -42,7 +42,7 @@ Below is a list of top-level API functions that are available in ``xcdat``.
 Module-level API Functions
 --------------------------
 
-Below is a list of model-level API functions that are available in ``xcdat``.
+Below is a list of module-level API functions that are available in ``xcdat``.
 
 .. autosummary::
     :toctree: generated/

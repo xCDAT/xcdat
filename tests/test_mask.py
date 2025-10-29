@@ -201,8 +201,7 @@ class TestMaskGeneration:
         xr.testing.assert_allclose(output.ts, expected_sea)
 
         # invert expected
-        expected_land = expected_sea.copy()
-        expected_land = xr.where(expected_sea == 1, np.nan, expected_land)
+        expected_land = xr.where(expected_sea == 1, np.nan, expected_sea)
         expected_land = xr.where(np.isnan(expected_sea), 1.0, np.nan)
 
         output = mask.generate_and_apply_land_sea_mask(
