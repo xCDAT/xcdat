@@ -2,7 +2,6 @@ from collections.abc import Hashable
 from typing import Any, Literal, get_args
 
 import xarray as xr
-from xgcm import Grid
 
 from xcdat._logger import _setup_custom_logger
 from xcdat.axis import get_dim_coords
@@ -151,6 +150,13 @@ class XGCMRegridder(BaseRegridder):
 
     def vertical(self, data_var: str, ds: xr.Dataset) -> xr.Dataset:
         """See documentation in :py:func:`xcdat.regridder.xgcm.XGCMRegridder`"""
+        # NOTE: Importing xgcm triggers Numba’s @guvectorize JIT compilation
+        # in the xgcm.transform module, which can be time-consuming during
+        # initial imports. To avoid impacting the import time of xcdat, we
+        # import xgcm only when this method is called. Subsequent calls to this
+        # method will use the cached import.
+        from xgcm import Grid
+
         try:
             output_coord_z = get_dim_coords(self._output_grid, "Z")
         except KeyError as e:
