@@ -68,7 +68,7 @@ class SpatialAccessor:
         self,
         data_var: str,
         method: str = "regionmask",
-        criteria: float | None = None,
+        threshold: float | None = None,
         mask: xr.DataArray | None = None,
         output_mask: bool | str = False,
         **options: Any,
@@ -83,9 +83,9 @@ class SpatialAccessor:
         method : str, optional
             The masking method, by default "regionmask".
             Supported methods: "regionmask", "pcmdi".
-        criteria : float | None, optional
-            The value to use as the criteria for cell values that are considered
-            land, by default 0.2.
+        threshold : float | None, optional
+            The threshold used to determine cell classification, values below
+            or equal to this are considered sea, defaults to 0.2.
         mask : xr.DataArray | None, optional
             A custom mask to apply, by default None. If None, a mask is
             generated using the specified ``method``.
@@ -110,9 +110,9 @@ class SpatialAccessor:
 
         >>> ds_masked = ds.spatial.mask_land("tas")
 
-        Mask a data variable by land using the PCMDI method with custom criteria:
+        Mask a data variable by land using the PCMDI method with custom threshold:
 
-        >>> ds_masked = ds.spatial.mask_land("tas", method="pcmdi", criteria=0.3)
+        >>> ds_masked = ds.spatial.mask_land("tas", method="pcmdi", threshold=0.3)
 
         Mask a data variable by land using a custom mask and output the mask:
 
@@ -128,7 +128,7 @@ class SpatialAccessor:
             data_var,
             method,
             keep="sea",
-            criteria=criteria,
+            threshold=threshold,
             mask=mask,
             output_mask=output_mask,
             **options,
@@ -138,7 +138,7 @@ class SpatialAccessor:
         self,
         data_var: str,
         method: str = "regionmask",
-        criteria: float | None = None,
+        threshold: float | None = None,
         mask: xr.DataArray | None = None,
         output_mask: bool | str = False,
         **options: Any,
@@ -153,9 +153,9 @@ class SpatialAccessor:
         method : str, optional
             The masking method, by default "regionmask".
             Supported methods: "regionmask", "pcmdi".
-        criteria : float | None, optional
-            The value to use as the criteria for cell values that are considered
-            sea, by default 0.8.
+        threshold : float | None, optional
+            The threshold used to determine cell classification, values above
+            or equal to this are considered land, defaults to 0.8.
         mask : xr.DataArray | None, optional
             A custom mask to apply, by default None. If None, a mask is
             generated using the specified ``method``.
@@ -180,9 +180,9 @@ class SpatialAccessor:
 
         >>> ds_masked = ds.spatial.mask_sea("tas")
 
-        Mask a data variable by sea using the PCMDI method with custom criteria:
+        Mask a data variable by sea using the PCMDI method with custom threshold:
 
-        >>> ds_masked = ds.spatial.mask_sea("tas", method="pcmdi", criteria=0.7)
+        >>> ds_masked = ds.spatial.mask_sea("tas", method="pcmdi", threshold=0.7)
 
         Mask a data variable by sea using a custom mask and output the mask:
 
@@ -198,7 +198,7 @@ class SpatialAccessor:
             data_var,
             method,
             keep="land",
-            criteria=criteria,
+            threshold=threshold,
             mask=mask,
             output_mask=output_mask,
             **options,
@@ -545,7 +545,7 @@ class SpatialAccessor:
             get_dim_coords(self._dataset, key)
 
     def _validate_region_bounds(self, axis: SpatialAxis, bounds: RegionAxisBounds):
-        """Validates the ``bounds`` arg based on a set of criteria.
+        """Validates the ``bounds`` arg based on a set of threshold.
 
         Parameters
         ----------
@@ -877,7 +877,7 @@ class SpatialAccessor:
     def _validate_weights(
         self, data_var: xr.DataArray, axis: list[SpatialAxis] | tuple[SpatialAxis, ...]
     ):
-        """Validates the ``weights`` arg based on a set of criteria.
+        """Validates the ``weights`` arg based on a set of threshold.
 
         This methods checks for the dimensional alignment between the
         ``weights`` and ``data_var``. It assumes that ``data_var`` has the same
@@ -934,7 +934,7 @@ class SpatialAccessor:
         """Perform a weighted average of a data variable.
 
         This method assumes all specified keys in ``axis`` exists in the data
-        variable. Validation for this criteria is performed in
+        variable. Validation for this threshold is performed in
         ``_validate_weights()``.
 
         Operations include:

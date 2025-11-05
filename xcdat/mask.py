@@ -22,7 +22,7 @@ def generate_and_apply_land_sea_mask(
     data_var: str,
     method: str = "regionmask",
     keep: str = "sea",
-    criteria: float | None = None,
+    threshold: float | None = None,
     mask: xr.DataArray | None = None,
     output_mask: bool | str = False,
     **options: Any,
@@ -40,9 +40,12 @@ def generate_and_apply_land_sea_mask(
         Supported methods: "regionmask", "pcmdi".
     keep : str, optional
         Whether to keep "land" or "sea" points, by default "sea".
-    criteria : float | None, optional
-        The value to use as the criteria for masking, by default None.
-        If None, defaults to 0.2 for "sea" and 0.8 for "land".
+    threshold : float | None, optional
+        The threshold used to determine cell classification. The default
+        value for this argument depends on `keep`. If `keep` is `sea` then
+        the default is 0.2 and values less than or equal will be considered
+        sea. If `keep` is `land` then the default is 0.8 and values greater
+        or equal will be considered land.
     mask : xr.DataArray | None, optional
         A custom mask to apply, by default None. If None, a mask is
         generated using the specified ``method``.
@@ -66,8 +69,8 @@ def generate_and_apply_land_sea_mask(
     Mask a data variable by land using the default method (regionmask):
     >>> ds_masked = generate_mask(ds, "tas", keep="sea")
 
-    Mask a data variable by sea using the PCMDI method with custom criteria:
-    >>> ds_masked = generate_mask(ds, "tas", method="pcmdi", keep="land", criteria=0.7)
+    Mask a data variable by sea using the PCMDI method with custom threshold:
+    >>> ds_masked = generate_mask(ds, "tas", method="pcmdi", keep="land", threshold=0.7)
 
     Mask a data variable by land using a custom mask and output the mask:
     >>> custom_mask = xr.DataArray(...)  # Define your custom mask here
@@ -89,9 +92,9 @@ def generate_and_apply_land_sea_mask(
         mask = generate_land_sea_mask(da, method, **options)
 
     if keep == "sea":
-        _ds[data_var] = da.where(mask <= (criteria or 0.2))
+        _ds[data_var] = da.where(mask <= (threshold or 0.2))
     else:
-        _ds[data_var] = da.where(mask >= (criteria or 0.8))
+        _ds[data_var] = da.where(mask >= (threshold or 0.8))
 
     if output_mask:
         if isinstance(output_mask, str):
