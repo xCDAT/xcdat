@@ -12,6 +12,15 @@ def reset_logging():
 
     for handler in logging.root.handlers[:]:
         logging.root.removeHandler(handler)
+
+    # Reset xcdat logger specifically
+    xcdat_logger = logging.getLogger("xcdat")
+    for handler in xcdat_logger.handlers[:]:
+        xcdat_logger.removeHandler(handler)
+
+    xcdat_logger.setLevel(logging.NOTSET)
+    xcdat_logger.propagate = True
+
     yield
 
     # Cleanup after test.
@@ -49,9 +58,23 @@ class TestSetupXCDATLogger:
         handler = logger.handlers[0]
 
         assert isinstance(handler.formatter, logging.Formatter)
-        assert handler.formatter._fmt == (
-            "%(asctime)s [%(levelname)s]: %(filename)s(%(funcName)s:%(lineno)s) >> %(message)s"
+
+        # Use the public API to check the formatter's output
+        test_record = logging.LogRecord(
+            name="xcdat",
+            level=logging.INFO,
+            pathname=__file__,
+            lineno=123,
+            msg="Test message",
+            args=(),
+            exc_info=None,
+            func="test_func",
         )
+        formatted = handler.formatter.format(test_record)
+        assert "Test message" in formatted
+        assert "[INFO]" in formatted
+        assert "test_func" in formatted
+        assert str(123) in formatted
 
     def test_logger_propagation(self):
         logger = _setup_xcdat_logger()
