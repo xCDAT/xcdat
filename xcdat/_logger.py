@@ -3,31 +3,46 @@
 import logging
 import logging.handlers
 
-# Logging module setup
 LOG_FORMAT = (
     "%(asctime)s [%(levelname)s]: %(filename)s(%(funcName)s:%(lineno)s) >> %(message)s"
 )
 LOG_LEVEL = logging.INFO
 
 
-def _setup_root_logger():
-    """Configures the root logger.
+def _setup_xcdat_logger(level: int = LOG_LEVEL, force: bool = False) -> logging.Logger:
+    """Configures and returns the xCDAT package logger.
 
-    This function sets up the root logger with a predefined format and log level.
-    It also enables capturing of warnings issued by the `warnings` module and
-    redirects them to the logging system.
+    Parameters
+    ----------
+    level : int
+        Logging level for xCDAT (e.g., logging.DEBUG, logging.INFO).
+    force : bool, optional
+        If True, clears existing handlers before adding a new one.
 
-    Notes
-    -----
-    - The `force=True` parameter ensures that any existing logging configuration
-      is overridden.
+    Returns
+    -------
+    logging.Logger
+        The xCDAT package logger.
     """
-    logging.basicConfig(
-        format=LOG_FORMAT,
-        level=LOG_LEVEL,
-        force=True,
-    )
-    logging.captureWarnings(True)
+    logger = logging.getLogger("xcdat")
+
+    if force:
+        # Remove all existing handlers (e.g., during reconfiguration)
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setLevel(level)
+        handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        logger.addHandler(handler)
+
+    logger.setLevel(level)
+
+    # Don’t double-log through the root logger
+    logger.propagate = False
+
+    return logger
 
 
 def _setup_custom_logger(name, propagate=True) -> logging.Logger:

@@ -1,7 +1,7 @@
 """Top-level package for xcdat."""
 
 from xcdat import tutorial  # noqa: F401
-from xcdat._logger import _setup_root_logger
+from xcdat._logger import _setup_xcdat_logger
 from xcdat.axis import (  # noqa: F401
     center_times,
     get_coords_by_name,
@@ -26,7 +26,7 @@ from xcdat.spatial import SpatialAccessor  # noqa: F401
 from xcdat.temporal import TemporalAccessor  # noqa: F401
 from xcdat.utils import compare_datasets  # noqa: F401
 
-# Initialize root logger once when the package is imported
-_setup_root_logger()
+# Initialize xCDAT logger once when the package is imported
+_setup_xcdat_logger()
 
 __version__ = "0.10.1"
