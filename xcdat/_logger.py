@@ -1,20 +1,49 @@
 """Logger module for setting up a logger."""
 
 import logging
-import logging.handlers
 
-# Logging module setup
-log_format = (
+LOG_FORMAT = (
     "%(asctime)s [%(levelname)s]: %(filename)s(%(funcName)s:%(lineno)s) >> %(message)s"
 )
-logging.basicConfig(format=log_format, filemode="w", level=logging.INFO)
+LOG_LEVEL = logging.INFO
 
-# Console handler setup
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.INFO)
-logFormatter = logging.Formatter(log_format)
-console_handler.setFormatter(logFormatter)
-logging.getLogger().addHandler(console_handler)
+
+def _setup_xcdat_logger(level: int = LOG_LEVEL, force: bool = False) -> logging.Logger:
+    """Configures and returns the xCDAT package logger.
+
+    Parameters
+    ----------
+    level : int
+        Logging level for xCDAT. Should be a logging level constant (e.g.,
+        logging.DEBUG, logging.INFO, logging.WARNING, logging.ERROR,
+        logging.CRITICAL).
+    force : bool, optional
+        If True, clears existing handlers before adding a new one. If False
+        (default), only adds a handler if none exist. Defaults to False.
+
+    Returns
+    -------
+    logging.Logger
+        The xCDAT package logger.
+    """
+    logger = logging.getLogger("xcdat")
+
+    if force:
+        for handler in logger.handlers[:]:
+            logger.removeHandler(handler)
+
+    if not logger.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter(LOG_FORMAT))
+        logger.addHandler(handler)
+
+    # Update level on logger and all handlers
+    logger.setLevel(level)
+    for handler in logger.handlers:
+        handler.setLevel(level)
+
+    logger.propagate = False
+    return logger
 
 
 def _setup_custom_logger(name, propagate=True) -> logging.Logger:
