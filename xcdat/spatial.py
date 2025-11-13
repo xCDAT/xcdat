@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Hashable
 from functools import reduce
-from typing import Literal, TypedDict, get_args
+from typing import Any, Literal, TypedDict, get_args
 
 import cf_xarray  # noqa: F401
 import numpy as np
@@ -15,6 +15,10 @@ from xcdat.axis import (
     get_dim_keys,
 )
 from xcdat.dataset import _get_data_var
+from xcdat.mask import (
+    generate_and_apply_land_sea_mask,
+    generate_land_sea_mask,
+)
 from xcdat.utils import (
     _get_masked_weights,
     _if_multidim_dask_array_then_load,
@@ -59,6 +63,213 @@ class SpatialAccessor:
 
     def __init__(self, dataset: xr.Dataset):
         self._dataset: xr.Dataset = dataset
+
+    def mask_land(
+        self,
+        data_var: str,
+        method: str = "regionmask",
+        threshold: float | None = None,
+        mask: xr.DataArray | None = None,
+        output_mask: bool | str = False,
+        **options: Any,
+    ):
+        """
+        Masks a data variable by land.
+
+        Parameters
+        ----------
+        data_var : str
+            The key of the data variable to mask.
+        method : str, optional
+            The masking method, by default "regionmask".
+            Supported methods: "regionmask", "pcmdi".
+        threshold : float | None, optional
+            The threshold used to determine cell classification, values below
+            or equal to this are considered sea, defaults to 0.2.
+        mask : xr.DataArray | None, optional
+            A custom mask to apply, by default None. If None, a mask is
+            generated using the specified ``method``.
+        output_mask : bool | str, optional
+            If True, returns the mask as a DataArray along with the masked
+            dataset. If a string, the name of the mask variable to add to the
+            dataset. By default False.
+        **options : Any
+            These options are passed directly to the ``method``. See specific
+            method documentation for available options:
+            :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset with the data variable masked by land.
+
+        Examples
+        --------
+
+        Mask a data variable by land using the default method (regionmask):
+
+        >>> ds_masked = ds.spatial.mask_land("tas")
+
+        Mask a data variable by land using the PCMDI method with custom threshold:
+
+        >>> ds_masked = ds.spatial.mask_land("tas", method="pcmdi", threshold=0.3)
+
+        Mask a data variable by land using a custom mask and output the mask:
+
+        >>> custom_mask = xr.DataArray(...)  # Define your custom mask here
+        >>> ds_masked = ds.spatial.mask_land("tas", mask=custom_mask, output_mask=True)
+
+        Mask a data variable by land and add the mask to the dataset with a custom name:
+
+        >>> ds_masked = ds.spatial.mask_land("tas", output_mask="land_mask")
+        """
+        return generate_and_apply_land_sea_mask(
+            self._dataset,
+            data_var,
+            method,
+            keep="sea",
+            threshold=threshold,
+            mask=mask,
+            output_mask=output_mask,
+            **options,
+        )
+
+    def mask_sea(
+        self,
+        data_var: str,
+        method: str = "regionmask",
+        threshold: float | None = None,
+        mask: xr.DataArray | None = None,
+        output_mask: bool | str = False,
+        **options: Any,
+    ):
+        """
+        Masks a data variable by sea.
+
+        Parameters
+        ----------
+        data_var : str
+            The key of the data variable to mask.
+        method : str, optional
+            The masking method, by default "regionmask".
+            Supported methods: "regionmask", "pcmdi".
+        threshold : float | None, optional
+            The threshold used to determine cell classification, values above
+            or equal to this are considered land, defaults to 0.8.
+        mask : xr.DataArray | None, optional
+            A custom mask to apply, by default None. If None, a mask is
+            generated using the specified ``method``.
+        output_mask : bool | str, optional
+            If True, returns the mask as a DataArray along with the masked
+            dataset. If a string, the name of the mask variable to add to the
+            dataset. By default False.
+        **options : Any
+            These options are passed directly to the ``method``. See specific
+            method documentation for available options:
+            :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options.
+
+        Returns
+        -------
+        xr.Dataset
+            The dataset with the data variable masked by sea.
+
+        Examples
+        --------
+
+        Mask a data variable by sea using the default method (regionmask):
+
+        >>> ds_masked = ds.spatial.mask_sea("tas")
+
+        Mask a data variable by sea using the PCMDI method with custom threshold:
+
+        >>> ds_masked = ds.spatial.mask_sea("tas", method="pcmdi", threshold=0.7)
+
+        Mask a data variable by sea using a custom mask and output the mask:
+
+        >>> custom_mask = xr.DataArray(...)  # Define your custom mask here
+        >>> ds_masked = ds.spatial.mask_sea("tas", mask=custom_mask, output_mask=True)
+
+        Mask a data variable by sea and add the mask to the dataset with a custom name:
+
+        >>> ds_masked = ds.spatial.mask_sea("tas", output_mask="sea_mask")
+        """
+        return generate_and_apply_land_sea_mask(
+            self._dataset,
+            data_var,
+            method,
+            keep="land",
+            threshold=threshold,
+            mask=mask,
+            output_mask=output_mask,
+            **options,
+        )
+
+    def generate_land_sea_mask(
+        self,
+        data_var: str | None = None,
+        method: str = "regionmask",
+        **options: Any,
+    ) -> xr.DataArray:
+        """
+        Generate a land-sea mask.
+
+        Parameters
+        ----------
+        data_var : str, optional
+            Name of the variable whose lat/lon coordinates will be used to
+            generate the land/sea mask. If omitted then a `mask` variable will
+            be generated using the lat/lon coordinates in the dataset.
+        method : str, optional
+            The method to use for generating the mask, by default "regionmask".
+            Supported methods: "regionmask", "pcmdi".
+        **options : Any
+            These options are passed directly to the ``method``. See specific
+            method documentation for available options:
+            :func:`xcdat.mask.pcmdi_land_sea_mask` for PCMDI options
+
+        Returns
+        -------
+        xr.DataArray
+            The land/sea mask.
+
+        Examples
+        --------
+
+        Generate a mask using the default method (regionmask):
+
+        >>> mask = ds.spatial.generate_land_sea_mask("tas")
+
+        Generate a mask using the "pcmdi" method:
+
+        >>> mask = ds.spatial.generate_land_sea_mask("tas", method="pcmdi")
+
+        Generate a mask using the "pcmdi" method, with customization:
+
+        >>> mask = ds.spatial.generate_land_sea_mask("tas", method="pcmdi", source=high_res_ds, source_data_var="highres")
+
+        Generating a mask from a new grid:
+
+        >>> grid = xc.create_uniform_grid(-90, 90, 1, 0, 359, 1)
+
+        >>> mask = grid.spatial.generate_land_sea_mask()
+        """
+        if data_var is None:
+            try:
+                da_shape = list(self._dataset.cf[x].shape[0] for x in ("X", "Y"))
+
+                da_dims = list(self._dataset.cf[x].name for x in ("X", "Y"))
+
+                da_coords = {x: self._dataset[x].copy() for x in da_dims}
+            except KeyError:
+                raise KeyError(
+                    "Dataset is missing a required coordinate, ensure a lat and lon coordinate exist"
+                ) from None
+
+            da = xr.DataArray(np.ones(da_shape), dims=da_dims, coords=da_coords)
+        else:
+            da = self._dataset[data_var]
+
+        return generate_land_sea_mask(da, method, **options)
 
     def average(
         self,
@@ -334,7 +545,7 @@ class SpatialAccessor:
             get_dim_coords(self._dataset, key)
 
     def _validate_region_bounds(self, axis: SpatialAxis, bounds: RegionAxisBounds):
-        """Validates the ``bounds`` arg based on a set of criteria.
+        """Validates the ``bounds`` arg based on a set of threshold.
 
         Parameters
         ----------
@@ -666,7 +877,7 @@ class SpatialAccessor:
     def _validate_weights(
         self, data_var: xr.DataArray, axis: list[SpatialAxis] | tuple[SpatialAxis, ...]
     ):
-        """Validates the ``weights`` arg based on a set of criteria.
+        """Validates the ``weights`` arg based on a set of threshold.
 
         This methods checks for the dimensional alignment between the
         ``weights`` and ``data_var``. It assumes that ``data_var`` has the same
@@ -723,7 +934,7 @@ class SpatialAccessor:
         """Perform a weighted average of a data variable.
 
         This method assumes all specified keys in ``axis`` exists in the data
-        variable. Validation for this criteria is performed in
+        variable. Validation for this threshold is performed in
         ``_validate_weights()``.
 
         Operations include:
