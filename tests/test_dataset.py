@@ -1617,29 +1617,35 @@ class Test_PostProcessDataset:
         assert "lon_bnds" in result_data_vars
         assert "time_bnds" in result_data_vars
 
-    def test_orients_longitude_bounds_from_180_to_360_and_sorts_with_prime_meridian_cell(
+    def test_swaps_single_dim_from_180_to_360_and_normalizes_prime_meridian_cell_in_lon_bnds_to_360(
         self,
     ):
         # Chunk the input dataset to test method also works with Dask.
-        ds = xr.Dataset(
+        ds_180 = xr.Dataset(
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([-180, -1, 0, 1, 179]),
+                    data=np.array([-179.5, -1.5, -0.5, 1.5, 179.5]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                )
+                ),
             },
             data_vars={
+                "ts": xr.DataArray(
+                    name="ts",
+                    data=np.array([0, 1, 2, 3, 4]),
+                    dims=["lon"],
+                    attrs={"test_attr": "test"},
+                ),
                 "lon_bnds": xr.DataArray(
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [-180.5, -1.5],
-                            [-1.5, -0.5],
-                            [-0.5, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
+                            [-180.0, -179],
+                            [-2.0, -1.0],
+                            [-1.0, 0.0],  # Prime meridian cell.
+                            [1.0, 2.0],
+                            [179.0, 180.0],
                         ]
                     ),
                     dims=["lon", "bnds"],
@@ -1648,27 +1654,33 @@ class Test_PostProcessDataset:
             },
         ).chunk({"lon": 2})
 
-        result = _postprocess_dataset(ds, lon_orient=(0, 360))
+        result = _postprocess_dataset(ds_180, lon_orient=(0, 360))
         expected = xr.Dataset(
             coords={
                 "lon": xr.DataArray(
                     name="lon",
-                    data=np.array([0.0, 1.0, 179.0, 180.0, 359.0, 360.0]),
+                    data=np.array([1.5, 179.5, 180.5, 358.5, 359.5]),
                     dims=["lon"],
                     attrs={"units": "degrees_east", "axis": "X", "bounds": "lon_bnds"},
-                )
+                ),
             },
             data_vars={
+                "ts": xr.DataArray(
+                    name="ts",
+                    data=np.array([3, 4, 0, 1, 2]),
+                    dims=["lon"],
+                    attrs={"test_attr": "test"},
+                ),
                 "lon_bnds": xr.DataArray(
                     name="lon_bnds",
                     data=np.array(
                         [
-                            [0, 0.5],
-                            [0.5, 1.5],
-                            [1.5, 179.5],
-                            [179.5, 358.5],
-                            [358.5, 359.5],
-                            [359.5, 360],
+                            [1.0, 2.0],
+                            [179.0, 180.0],
+                            [180.0, 181.0],
+                            [358.0, 359.0],
+                            # Instead of [359, 0], normalize to [359, 360].
+                            [359.0, 360.0],
                         ]
                     ),
                     dims=["lon", "bnds"],
