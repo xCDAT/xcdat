@@ -279,9 +279,9 @@ def pcmdi_land_sea_mask(
     )
 
     mask = source_regrid.copy()
-    mask[source_data_var] = xr.where(source_regrid[source_data_var] > 0.5, 1, 0).astype(
-        "i"
-    )
+    mask[source_data_var] = xr.where(
+        source_regrid[source_data_var] > 0.5, 1, 0, keep_attrs=False
+    ).astype("i")
 
     lon = mask[source_data_var].cf["X"]
     lon_bnds = mask.bounds.get_bounds("X")
