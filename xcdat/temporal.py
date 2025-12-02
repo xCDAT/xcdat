@@ -1744,6 +1744,11 @@ class TemporalAccessor:
         weights: xr.DataArray = grouped_time_lengths / grouped_time_lengths.sum()
         weights.name = f"{self.dim}_wts"
 
+        # Drop attributes from weights to avoid unintended propagation,
+        # as the new default behavior for Xarray as of version 2025.11.0
+        # is to keep attributes by default (including arithmetic operations).
+        weights = weights.drop_attrs()
+
         return weights
 
     def _group_data(self, data_var: xr.DataArray) -> DataArrayGroupBy:
