@@ -279,9 +279,13 @@ def pcmdi_land_sea_mask(
     )
 
     mask = source_regrid.copy()
-    mask[source_data_var] = xr.where(source_regrid[source_data_var] > 0.5, 1, 0).astype(
-        "i"
-    )
+    # Set keep_attrs=False to ensure that attributes from the argument x (1 in
+    # this case) are not copied. This preserves the existing attributes of the
+    # data variable. The default value is None, which removes all attributes,
+    # while True would incorrectly copy attributes from x.
+    mask[source_data_var] = xr.where(
+        source_regrid[source_data_var] > 0.5, 1, 0, keep_attrs=False
+    ).astype("i")
 
     lon = mask[source_data_var].cf["X"]
     lon_bnds = mask.bounds.get_bounds("X")
