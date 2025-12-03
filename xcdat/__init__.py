@@ -29,4 +29,4 @@ from xcdat.utils import compare_datasets  # noqa: F401
 # Initialize xCDAT logger once when the package is imported
 _setup_xcdat_logger()
 
-__version__ = "0.10.1"
+__version__ = "0.11.0"
