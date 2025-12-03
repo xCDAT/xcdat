@@ -385,7 +385,7 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
     input_grid = ds.drop_dims(to_drop)
 
     # drops extra dimensions on input grid
-    # FIXME: Line 402 --Can't add bounds for multidimensional coordinates
+    # FIXME: Line 389 --Can't add bounds for multidimensional coordinates
     grid = input_grid.regridder.grid
 
     # preserve mask on grid
