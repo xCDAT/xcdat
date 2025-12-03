@@ -372,10 +372,7 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
     all_coords = set(ds.coords.keys())
 
     for dimension in dup_check_dims:
-        try:
-            coords = get_dim_coords(ds, dimension)
-        except KeyError:
-            coords = None
+        coords = get_dim_coords(ds, dimension)
 
         if isinstance(coords, xr.Dataset):
             coord = set([get_dim_coords(ds[data_var], dimension).name])
