@@ -5,6 +5,7 @@ coordinates.
 
 from typing import Literal
 
+import cf_xarray as cfxr  # noqa: F401
 import numpy as np
 import xarray as xr
 
@@ -121,6 +122,17 @@ def get_dim_coords(
     # NOTE: xarray does not include multidimensional coordinates as index keys.
     # Example: ["lat", "lon", "time"]
     index_keys = obj.indexes.keys()
+
+    # FIXME: Attempt -- If index_keys is None, attempt to retrieve keys using
+    # cf_xarray for the axis. This is a fallback for objects with
+    # multidimensional coordiantes.
+    if not index_keys:
+        try:
+            obj = obj.cf[axis]
+        except KeyError:
+            raise KeyError(
+                f"Could not find coordinate for dimension '{axis}'"
+            ) from None
 
     # Attempt to map the axis it all of its coordinate variable(s) using the
     # axis and coordinate names in the object attributes (if they are set).
