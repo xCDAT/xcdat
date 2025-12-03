@@ -166,6 +166,7 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices {list(HORIZONTAL_REGRID_TOOLS)}"
             ) from e
 
+        # FIXME: Line 170 -- Can't add bounds for multidimensional coordinates
         input_grid = _get_input_grid(self._ds, data_var, ["X", "Y"])
         regridder = regrid_tool(input_grid, output_grid, **options)
         output_ds = regridder.horizontal(data_var, self._ds)
@@ -236,13 +237,8 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices "
                 f"{list(VERTICAL_REGRID_TOOLS)}"
             ) from e
-        input_grid = _get_input_grid(
-            self._ds,
-            data_var,
-            [
-                "Z",
-            ],
-        )
+
+        input_grid = _get_input_grid(self._ds, data_var, ["Z"])
         regridder = regrid_tool(input_grid, output_grid, **options)
         output_ds = regridder.vertical(data_var, self._ds)
 
@@ -310,8 +306,10 @@ def _obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
     # same axis (e.g., (nlat, lat) for X and (nlon, lon) for Y). We only
     # need lat_bnds and lon_bnds for the X and Y axes, respectively, and not
     # nlat_bnds and nlon_bnds.
+
     for axis, has_bounds in axis_has_bounds.items():
         if not has_bounds:
+            # FIXME: Line 313 --Can't add bounds for multidimensional coordinates
             output_ds = output_ds.bounds.add_bounds(axis=axis)
 
     return output_ds
@@ -374,7 +372,20 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
     all_coords = set(ds.coords.keys())
 
     for dimension in dup_check_dims:
-        coords = get_dim_coords(ds, dimension)
+        try:
+            coords = get_dim_coords(ds, dimension)
+        except KeyError:
+            coords = None
+
+        # If index_keys is None, attempt to retrieve keys using cf_xarray for the axis.
+        # This is a fallback for objects with multidimensional coordiantes
+        if not coords:
+            try:
+                coords = ds.cf.axes[dimension]
+            except KeyError:
+                raise KeyError(
+                    f"Could not find coordinate for dimension '{dimension}'"
+                ) from None
 
         if isinstance(coords, xr.Dataset):
             coord = set([get_dim_coords(ds[data_var], dimension).name])
@@ -387,6 +398,7 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
     input_grid = ds.drop_dims(to_drop)
 
     # drops extra dimensions on input grid
+    # FIXME: Line 402 --Can't add bounds for multidimensional coordinates
     grid = input_grid.regridder.grid
 
     # preserve mask on grid
