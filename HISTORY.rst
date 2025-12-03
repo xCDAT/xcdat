@@ -2,6 +2,39 @@
 History
 =======
 
+v0.11.0 (03 December 2025)
+--------------------
+
+This minor release includes enhancements, bug fixes, and documentation updates. Key
+changes introduce land–sea mask generation support, faster startup times through
+deferred ``xgcm`` imports, improved logging consistency, and fixes for attribute handling
+issues introduced in Xarray v2025.11.0.
+
+Enhancements
+~~~~~~~~~~~~
+
+-  Add land–sea mask generation by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/783
+-  Defer ``xgcm`` import to speed up xCDAT startup time by ~3 seconds by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/810
+
+Bug Fixes
+~~~~~~~~~
+
+-  Refactor xCDAT logging for consistency and safety by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/811
+-  Fix attributes behavior change due to Xarray v2025.11.0 by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/818
+
+Documentation
+~~~~~~~~~~~~~
+
+-  Add land–sea mask generation docs by `Jason Boutte`_ in
+   https://github.com/xCDAT/xcdat/pull/783
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.10.1...v0.11.0
+
+
 v0.10.1 (01 October 2025)
 -------------------------
 
@@ -37,7 +70,7 @@ DevOps
 **Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.10.0...v0.10.1
 
 
-v0.10.0 (27 Aug 2025)
+v0.10.0 (27 August 2025)
 ---------------------
 
 This release introduces a new **weight threshold option** for temporal operations,
