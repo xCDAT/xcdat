@@ -377,16 +377,6 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
         except KeyError:
             coords = None
 
-        # If index_keys is None, attempt to retrieve keys using cf_xarray for the axis.
-        # This is a fallback for objects with multidimensional coordiantes
-        if not coords:
-            try:
-                coords = ds.cf.axes[dimension]
-            except KeyError:
-                raise KeyError(
-                    f"Could not find coordinate for dimension '{dimension}'"
-                ) from None
-
         if isinstance(coords, xr.Dataset):
             coord = set([get_dim_coords(ds[data_var], dimension).name])
 
