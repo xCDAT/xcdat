@@ -3,7 +3,7 @@ History
 =======
 
 v0.11.0 (03 December 2025)
---------------------
+--------------------------
 
 This minor release includes enhancements, bug fixes, and documentation updates. Key
 changes introduce land–sea mask generation support, faster startup times through
@@ -25,12 +25,6 @@ Bug Fixes
    https://github.com/xCDAT/xcdat/pull/811
 -  Fix attributes behavior change due to Xarray v2025.11.0 by `Tom Vo`_ in
    https://github.com/xCDAT/xcdat/pull/818
-
-Documentation
-~~~~~~~~~~~~~
-
--  Add land–sea mask generation docs by `Jason Boutte`_ in
-   https://github.com/xCDAT/xcdat/pull/783
 
 **Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.10.1...v0.11.0
 
@@ -71,7 +65,7 @@ DevOps
 
 
 v0.10.0 (27 August 2025)
----------------------
+------------------------
 
 This release introduces a new **weight threshold option** for temporal operations,
 improves regridding alignment, and fixes multiple issues with ``xgcm.Grid`` and
