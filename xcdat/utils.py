@@ -1,11 +1,12 @@
 import importlib
 import json
+from typing import Hashable, cast
 
 import xarray as xr
 from dask.array.core import Array
 
 
-def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> dict[str, list[str]]:
+def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> dict[str, list[Hashable]]:
     """Compares the keys and values of two datasets.
 
     This utility function is especially useful for debugging tests that
@@ -29,9 +30,9 @@ def compare_datasets(ds1: xr.Dataset, ds2: xr.Dataset) -> dict[str, list[str]]:
 
     Returns
     -------
-    dict[str, list[str]]
-        A dictionary mapping unique, non-identical, and
-        non-equal keys in both Datasets.
+    dict[str, list[Hashable]]
+        A dictionary mapping unique, non-identical, and non-equal keys in
+        both Datasets.
     """
     results = {
         "unique_coords": list(ds1.coords.keys() ^ ds2.coords.keys()),
@@ -188,3 +189,27 @@ def _validate_min_weight(min_weight: float | None) -> float:
         )
 
     return min_weight
+
+
+def _as_dataarray(x) -> xr.DataArray:
+    """Assert (for typing purposes) that `x` is an xarray.DataArray.
+
+    This function is useful for type checkers like mypy to understand that
+    the input `x` should be treated as an xarray.DataArray. For example, calling
+    NumPy functions directly on Xarray objects can cause mypy to think a
+    NumPy ndarray is being used, leading to type errors.
+
+    It relies on xarray's __array_ufunc__ behavior when applying NumPy ufuncs
+    to DataArray inputs. No runtime conversion is performed.
+
+    Parameters
+    ----------
+    x : Any
+        The input to be treated as an xarray.DataArray.
+
+    Returns
+    -------
+    xr.DataArray
+        The input `x` cast as an xarray.DataArray.
+    """
+    return cast(xr.DataArray, x)

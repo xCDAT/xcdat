@@ -10,6 +10,7 @@ from xcdat._logger import _setup_custom_logger
 from xcdat.axis import get_dim_coords
 from xcdat.regridder.accessor import _obj_to_grid_ds
 from xcdat.regridder.grid import create_grid
+from xcdat.utils import _as_dataarray
 
 logger = _setup_custom_logger(__name__)
 
@@ -518,7 +519,7 @@ def _convert_points(
 
     c1 = compare_func(diff, threshold1)
     c2 = compare_func(source, threshold2)
-    c = np.logical_and(c1, c2)
+    c = _as_dataarray(np.logical_and(c1, c2))
 
     cUL, cUC, cUR, cML, cMR, cLL, cLC, cLR = _generate_surrounds(c, is_circular)
 

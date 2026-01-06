@@ -6,14 +6,14 @@ fail_fast: true
 # Then update the versions in `conda-env/dev.yml`.
 repos:
     - repo: https://github.com/pre-commit/pre-commit-hooks
-      rev: v5.0.0
+      rev: v6.0.0
       hooks:
           - id: trailing-whitespace
           - id: end-of-file-fixer
           - id: check-yaml
 
     - repo: https://github.com/astral-sh/ruff-pre-commit
-      rev: v0.9.4
+      rev: v0.14.10
       hooks:
           # Sort the imports
           - id: ruff
@@ -26,7 +26,7 @@ repos:
           - id: ruff-format
 
     - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.14.1
+      rev: v1.19.1
       hooks:
           - id: mypy
             args: ["--config=pyproject.toml"]
