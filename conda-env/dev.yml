@@ -5,7 +5,7 @@ channels:
 dependencies:
     # Base - required for building the package.
     # =========================================
-    - python >=3.11,<3.14
+    - python >=3.11
     - setuptools
     - cf_xarray >=0.10.7
     - cftime
@@ -41,8 +41,8 @@ dependencies:
     - types-python-dateutil
     # NOTE: If the tools below are updated, also update their 'rev' in `.pre-commit.config.yaml`
     - pre-commit=4.1.0
-    - ruff=0.9.4
-    - mypy=1.14.1
+    - ruff=0.14.10
+    - mypy=1.19.1
     # Testing
     # ==================
     - pytest
