@@ -20,6 +20,7 @@ from xcdat.mask import (
     generate_land_sea_mask,
 )
 from xcdat.utils import (
+    _as_dataarray,
     _get_masked_weights,
     _if_multidim_dask_array_then_load,
     _validate_min_weight,
@@ -696,8 +697,9 @@ class SpatialAccessor:
         if region_bounds is not None:
             domain_bounds = self._scale_domain_to_region(domain_bounds, region_bounds)
 
-        d_bounds = np.sin(np.radians(domain_bounds))
+        d_bounds = _as_dataarray(np.sin(np.radians(domain_bounds)))
         weights = self._calculate_weights(d_bounds)
+
         return weights
 
     def _calculate_weights(self, domain_bounds: xr.DataArray):

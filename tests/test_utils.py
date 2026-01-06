@@ -1,7 +1,13 @@
+import numpy as np
 import pytest
 import xarray as xr
 
-from xcdat.utils import _validate_min_weight, compare_datasets, str_to_bool
+from xcdat.utils import (
+    _as_dataarray,
+    _validate_min_weight,
+    compare_datasets,
+    str_to_bool,
+)
 
 
 class TestCompareDatasets:
@@ -50,10 +56,13 @@ class TestCompareDatasets:
         )
 
         result = compare_datasets(ds1, ds2)
-        assert sorted(result["nonidentical_coords"]) == ["coord1", "coord2"]
-        assert sorted(result["nonequal_coords"]) == ["coord1", "coord2"]
-        assert sorted(result["nonidentical_data_vars"]) == ["data_var1", "data_var2"]
-        assert sorted(result["nonequal_data_vars"]) == ["data_var1", "data_var2"]
+        assert set(map(str, result["nonidentical_coords"])) == {"coord1", "coord2"}
+        assert set(map(str, result["nonequal_coords"])) == {"coord1", "coord2"}
+        assert set(map(str, result["nonidentical_data_vars"])) == {
+            "data_var1",
+            "data_var2",
+        }
+        assert set(map(str, result["nonequal_data_vars"])) == {"data_var1", "data_var2"}
 
     def test_returns_no_differences_between_datasets(self):
         ds1 = xr.Dataset(
@@ -123,3 +132,19 @@ class TestValidateMinWeight:
         result = _validate_min_weight(1)
 
         assert result == 1
+
+
+class TestAsDataArray:
+    def test_returns_dataarray_without_modification(self):
+        da = xr.DataArray([1, 2, 3])
+        result = _as_dataarray(da)
+
+        assert result is da
+        assert isinstance(result, xr.DataArray)
+
+    def test_returns_dataarray_after_numpy_ufunc(self):
+        da = xr.DataArray([0, 30, 45])
+        result = _as_dataarray(np.sin(np.radians(da)))
+
+        assert isinstance(result, xr.DataArray)
+        assert np.allclose(result.values, [0, 0.5, np.sqrt(2) / 2])
