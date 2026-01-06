@@ -2,6 +2,19 @@
 History
 =======
 
+v0.11.1 (06 January 2026)
+-------------------------
+
+This patch release adds supports for Python 3.14.
+
+DevOps
+~~~~~~~~~~~~
+
+-  Add support for Python 3.14 by `Tom Vo`_ in
+   https://github.com/xCDAT/xcdat/pull/822
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.11.0...v0.11.1
+
 v0.11.0 (03 December 2025)
 --------------------------
 
