@@ -195,7 +195,7 @@ def _as_dataarray(x) -> xr.DataArray:
     """Assert (for typing purposes) that `x` is an xarray.DataArray.
 
     This function is useful for type checkers like mypy to understand that
-    the input `x` should be treated as an xarray.DataArray For example, calling
+    the input `x` should be treated as an xarray.DataArray. For example, calling
     NumPy functions directly on Xarray objects can cause mypy to think a
     NumPy ndarray is being used, leading to type errors.
 
