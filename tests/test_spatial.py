@@ -604,6 +604,24 @@ class TestGetWeights:
 
         xr.testing.assert_allclose(result, expected)
 
+    def test_dataset_weights_raises_error_when_more_than_one_grid_cell_spans_prime_meridian(
+        self,
+    ):
+        ds = self.ds.copy(deep=True)
+
+        # Modify the dataset to have more than one grid cell spanning the prime meridian.
+        lon_bnds = ds.lon_bnds.copy()
+        lon_bnds[0, :] = [359, 1]  # First grid cell spans the prime meridian.
+        lon_bnds[1, :] = [358, 0]  # Second grid cell also spans the prime meridian.
+        ds["lon_bnds"] = lon_bnds
+
+        with pytest.raises(
+            ValueError, match="More than one grid cell spans the prime meridian"
+        ):
+            ds.spatial._get_longitude_weights(
+                domain_bounds=ds.lon_bnds, region_bounds=np.array([359, 1])
+            )
+
     def test_dataset_weights_all_longitudes_for_equal_region_bounds(self):
         expected = xr.DataArray(
             data=np.array(

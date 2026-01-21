@@ -17,7 +17,7 @@ from xarray.core.groupby import DataArrayGroupBy
 
 from xcdat import bounds  # noqa: F401
 from xcdat._logger import _setup_custom_logger
-from xcdat.axis import get_dim_coords
+from xcdat.axis import _get_bounds_dim, get_dim_coords
 from xcdat.dataset import _get_data_var
 from xcdat.utils import _get_masked_weights, _validate_min_weight
 
@@ -1726,7 +1726,7 @@ class TemporalAccessor:
         time_bounds = ds.bounds.get_bounds("T", var_key=data_var)
         time_coords = ds[data_var][self.dim]
 
-        bounds_dim = bounds._get_bounds_dim(time_coords, time_bounds)
+        bounds_dim = _get_bounds_dim(time_coords, time_bounds)
         time_lengths = time_bounds.diff(dim=bounds_dim).squeeze()
 
         # Must be cast dtype from "timedelta64[ns]" to "float64", specifically
