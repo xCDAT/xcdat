@@ -514,9 +514,13 @@ def _align_lon_to_360(
 
     # After appending the extra set of bounds, update the last coordinate from
     # 0 to 360.
+    new_coords = {}
     for key, coord in ds_lon.coords.items():
-        coord.values[-1] = 360
-        ds_lon[key] = coord
+        values = coord.values.copy()
+        values[-1] = 360
+        new_coords[key] = coord.copy(data=values)
+
+    ds_lon = ds_lon.assign_coords(new_coords)
 
     # Get the data variables related to the longitude axis and concatenate each
     # with the value at the prime meridian.
