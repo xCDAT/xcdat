@@ -1495,7 +1495,7 @@ class Test_PostProcessDataset:
             ],
             dtype="object",
         )
-        ds.time.data[:] = uncentered_time
+        ds["time"] = ds.time.copy(data=uncentered_time)
         ds.time.encoding = {
             "source": None,
             "original_shape": ds.time.shape,
