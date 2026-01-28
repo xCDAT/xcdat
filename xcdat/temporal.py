@@ -1357,23 +1357,56 @@ class TemporalAccessor:
         >>>  (2001, "DJF", 1), (2001, "DJF", 2)]
         """
         ds_new = ds.copy()
-        time_coords = ds_new[self.dim].copy()
-        dec_indexes = time_coords.dt.month == 12
+        time_coords = ds_new[self.dim]
+
+        is_december = time_coords.dt.month == 12
 
         if isinstance(time_coords.values[0], cftime.datetime):
-            time_coords.values[dec_indexes] = [
-                time.replace(year=time.year + 1)
-                for time in time_coords.values[dec_indexes]
-            ]
+            shift_func = self._shift_cftime_year
         else:
-            time_coords.values[dec_indexes] = [
-                pd.Timestamp(time) + pd.DateOffset(years=1)
-                for time in time_coords.values[dec_indexes]
-            ]
+            shift_func = self._shift_datetime_year
 
-        ds_new = ds_new.assign_coords({self.dim: time_coords})
+        shifted_time = xr.apply_ufunc(shift_func, time_coords, vectorize=True)
+        shifted_time_dec_only = xr.where(is_december, shifted_time, time_coords)
+        shifted_time_dec_only.encoding = time_coords.encoding.copy()
+
+        ds_new = ds_new.assign_coords({self.dim: shifted_time_dec_only})
 
         return ds_new
+
+    def _shift_cftime_year(self, time: cftime.datetime) -> cftime.datetime:
+        """
+        Shift the year of a cftime.datetime object by 1.
+
+        Parameters
+        ----------
+        time : cftime.datetime
+            The cftime.datetime object to shift.
+
+        Returns
+        -------
+        cftime.datetime
+            The cftime.datetime object with the year incremented by 1.
+        """
+        return time.replace(year=time.year + 1)
+
+    def _shift_datetime_year(self, time) -> pd.Timestamp:
+        """
+        Shift the year of a datetime-like object by 1.
+
+        Parameters
+        ----------
+        time : datetime-like
+            The datetime-like object to shift.
+
+        Returns
+        -------
+        pd.Timestamp
+            The datetime-like object with the year incremented by 1.
+        """
+        ts = pd.Timestamp(time)
+
+        return ts.replace(year=ts.year + 1)
 
     def _drop_incomplete_djf(self, dataset: xr.Dataset) -> xr.Dataset:
         """Drops incomplete DJF seasons within a continuous time series.
