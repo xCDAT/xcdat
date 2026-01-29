@@ -1,4 +1,3 @@
-import logging
 import pooch
 import pytest
 
