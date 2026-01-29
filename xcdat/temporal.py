@@ -1420,7 +1420,7 @@ class TemporalAccessor:
         """
         ts = pd.Timestamp(time)
 
-        return ts.replace(year=ts.year + 1)
+        return ts + pd.DateOffset(years=1)
 
     def _drop_incomplete_djf(self, dataset: xr.Dataset) -> xr.Dataset:
         """Drops incomplete DJF seasons within a continuous time series.
