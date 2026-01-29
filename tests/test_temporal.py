@@ -48,7 +48,7 @@ class TestAverage:
 
     def test_defaults_calendar_attribute_to_standard_if_missing(self, caplog):
         # Silence warning to not pollute test suite output
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.temporal")
 
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
@@ -468,7 +468,7 @@ class TestGroupAverage:
 
     def test_defaults_calendar_attribute_to_standard_if_missing(self, caplog):
         # Silence warning to not pollute test suite output
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.temporal")
 
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
@@ -1268,7 +1268,7 @@ class TestGroupAverage:
         self,
     ):
         ds = self.ds.copy()
-        ds["time"].values[:] = np.array(
+        new_time = np.array(
             [
                 "2000-01-16T12:00:00.000000000",
                 "2000-02-15T12:00:00.000000000",
@@ -1278,6 +1278,7 @@ class TestGroupAverage:
             ],
             dtype="datetime64[ns]",
         )
+        ds["time"] = ds.time.copy(data=new_time)
 
         result = ds.temporal.group_average(
             "ts",
@@ -1329,7 +1330,7 @@ class TestGroupAverage:
 
     def test_weighted_custom_seasonal_averages_drops_incomplete_seasons(self):
         ds = self.ds.copy()
-        ds["time"].values[:] = np.array(
+        new_time = np.array(
             [
                 "2000-11-16T12:00:00.000000000",
                 "2000-12-16T12:00:00.000000000",
@@ -1339,6 +1340,8 @@ class TestGroupAverage:
             ],
             dtype="datetime64[ns]",
         )
+
+        ds["time"] = ds.time.copy(data=new_time)
 
         custom_seasons = [["Nov", "Dec"], ["Feb", "Mar", "Apr"]]
 
@@ -1388,7 +1391,7 @@ class TestGroupAverage:
         self,
     ):
         ds = self.ds.copy()
-        ds["time"].values[:] = np.array(
+        new_time = np.array(
             [
                 "2000-11-16T12:00:00.000000000",
                 "2000-12-16T12:00:00.000000000",
@@ -1398,6 +1401,7 @@ class TestGroupAverage:
             ],
             dtype="datetime64[ns]",
         )
+        ds["time"] = ds.time.copy(data=new_time)
 
         custom_seasons = [
             ["Nov", "Dec", "Jan", "Feb", "Mar"],
@@ -1795,7 +1799,7 @@ class TestClimatology:
 
     def test_defaults_calendar_attribute_to_standard_if_missing(self, caplog):
         # Silence warning to not pollute test suite output
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.temporal")
 
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
@@ -3009,7 +3013,7 @@ class TestDepartures:
 
     def test_defaults_calendar_attribute_to_standard_if_missing(self, caplog):
         # Silence warning to not pollute test suite output
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.temporal")
 
         ds: xr.Dataset = generate_dataset(
             decode_times=True, cf_compliant=False, has_bounds=True
