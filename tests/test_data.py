@@ -1,3 +1,5 @@
+import logging
+import pooch
 import pytest
 
 import xcdat._data as data
@@ -21,8 +23,11 @@ class TestGetPcmdiMaskPath:
         assert path.read_bytes() == b"dummy"
 
     @pytest.mark.network
-    def test_get_path_with_real_fetch(self, tmp_path, monkeypatch):
+    def test_get_path_with_real_fetch(self, tmp_path, monkeypatch, caplog):
         """Test fetching the file from the network."""
+        # Suppress pooch logging.
+        pooch.utils.get_logger().disabled = True
+
         # Override the XCDAT_DATA_DIR to use a temporary directory
         monkeypatch.setenv("XCDAT_DATA_DIR", str(tmp_path))
         path = data._get_pcmdi_mask_path()
@@ -31,8 +36,11 @@ class TestGetPcmdiMaskPath:
         assert path.stat().st_size > 1000
 
     @pytest.mark.network
-    def test_get_path_from_cache(self, tmp_path, monkeypatch):
+    def test_get_path_from_cache(self, tmp_path, monkeypatch, caplog):
         """Test fetching the file from the cache."""
+        # Suppress pooch logging.
+        pooch.utils.get_logger().disabled = True
+
         # Override the XCDAT_DATA_DIR to use a temporary directory
         monkeypatch.setenv("XCDAT_DATA_DIR", str(tmp_path))
 
