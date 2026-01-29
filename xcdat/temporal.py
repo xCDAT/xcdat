@@ -1354,7 +1354,7 @@ class TemporalAccessor:
         >>>  (2001, "DJF", 1), (2001, "DJF", 2)]
         """
         ds_new = ds.copy()
-        time_coords = ds_new[self.dim]
+        time_coords = ds_new[self.dim].copy()
 
         is_december = time_coords.dt.month == 12
 
