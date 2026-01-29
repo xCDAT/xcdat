@@ -29,7 +29,7 @@ class TestOpenDataset:
 
     def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
         # Silence warning to not pollute test suite output
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.dataset")
 
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds = ds.drop_dims("time")
@@ -60,7 +60,7 @@ class TestOpenDataset:
 
     def test_skips_decoding_non_cf_compliant_time_with_unsupported_units(self, caplog):
         # Update logger level to silence the logger warning during test runs.
-        caplog.set_level(logging.ERROR)
+        caplog.set_level(logging.ERROR, logger="xcdat.dataset")
 
         ds = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
         ds["time"].attrs["units"] = "year A.D."
@@ -332,7 +332,7 @@ class TestOpenMfDataset:
 
     def test_raises_warning_if_decode_times_but_no_time_coords_found(self, caplog):
         # Silence warning to not pollute test suite output
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.dataset")
 
         ds = generate_dataset(decode_times=False, cf_compliant=True, has_bounds=True)
         ds = ds.drop_dims("time")
@@ -600,7 +600,7 @@ class TestDecodeTime:
 
     def test_skips_decoding_time_coords_if_units_is_not_set(self, caplog):
         # Update logger level to silence the logger warning during test runs.
-        caplog.set_level(logging.ERROR)
+        caplog.set_level(logging.ERROR, logger="xcdat.dataset")
 
         ds = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
 
@@ -611,7 +611,7 @@ class TestDecodeTime:
 
     def test_skips_decoding_time_coords_if_units_is_not_supported(self, caplog):
         # Update logger level to silence the logger warning during test runs.
-        caplog.set_level(logging.ERROR)
+        caplog.set_level(logging.ERROR, logger="xcdat.dataset")
 
         # Create the input dataset and update the units.
         ds = generate_dataset(decode_times=False, cf_compliant=False, has_bounds=True)
@@ -872,7 +872,7 @@ class TestDecodeTime:
 
     def test_decodes_time_coords_and_bounds_without_calendar_attr_set(self, caplog):
         # Update logger level to silence the logger warning during test runs.
-        caplog.set_level(logging.ERROR)
+        caplog.set_level(logging.ERROR, logger="xcdat.dataset")
 
         ds = xr.Dataset(
             coords={

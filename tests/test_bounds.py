@@ -94,7 +94,8 @@ class TestAddMissingBounds:
 
     def test_skips_adding_bounds_for_coords_that_are_1_dim_singleton(self, caplog):
         # NOTE: Suppress logger warning to avoid polluting test suite.
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.bounds")
+
         ds = xr.Dataset(
             coords={
                 "lon": xr.DataArray(
@@ -110,7 +111,7 @@ class TestAddMissingBounds:
 
     def test_skips_adding_bounds_for_coords_that_are_0_dim_singleton(self, caplog):
         # NOTE: Suppress logger warning to avoid polluting test suite.
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.bounds")
         ds = xr.Dataset(
             coords={
                 "lon": xr.DataArray(
@@ -125,7 +126,7 @@ class TestAddMissingBounds:
 
     def test_skips_adding_time_bounds_for_coords_that_are_1_dim_singleton(self, caplog):
         # NOTE: Suppress logger warning to avoid polluting test suite.
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.bounds")
         ds = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -144,7 +145,7 @@ class TestAddMissingBounds:
         self, caplog
     ):
         # NOTE: Suppress logger warning to avoid polluting test suite.
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.bounds")
         ds = xr.Dataset(
             coords={
                 "time": xr.DataArray(
@@ -415,7 +416,7 @@ class TestAddBounds:
         self, caplog
     ):
         # NOTE: Suppress logger warning to avoid polluting test suite.
-        caplog.set_level(logging.CRITICAL)
+        caplog.set_level(logging.CRITICAL, logger="xcdat.bounds")
 
         ds = self.ds.copy()
         del ds.lat.attrs["units"]

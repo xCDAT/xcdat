@@ -3,7 +3,7 @@
 import warnings
 from datetime import datetime
 from itertools import chain
-from typing import Literal, TypedDict, get_args
+from typing import Callable, Literal, TypedDict, get_args
 
 import cf_xarray  # noqa: F401
 import cftime
@@ -1307,22 +1307,19 @@ class TemporalAccessor:
                 span_months.extend(month_ints[: month_ints.index(1)])
             break
 
-        if span_months:
-            time_coords = ds_new[self.dim].copy()
-            indexes = time_coords.dt.month.isin(span_months)
+        if not span_months:
+            return ds_new
 
-            if isinstance(time_coords.values[0], cftime.datetime):
-                time_coords.values[indexes] = [
-                    time.replace(year=time.year + 1)
-                    for time in time_coords.values[indexes]
-                ]
-            else:
-                time_coords.values[indexes] = [
-                    pd.Timestamp(time) + pd.DateOffset(years=1)
-                    for time in time_coords.values[indexes]
-                ]
+        time_coords = ds_new[self.dim].copy()
+        indexes = time_coords.dt.month.isin(span_months)
 
-            ds_new = ds_new.assign_coords({self.dim: time_coords})
+        shift_func = self._get_shift_func(time_coords)
+        shifted_time = xr.apply_ufunc(shift_func, time_coords, vectorize=True)
+
+        shifted_time_span_only = xr.where(indexes, shifted_time, time_coords)
+        shifted_time_span_only.encoding = time_coords.encoding.copy()
+
+        ds_new = ds_new.assign_coords({self.dim: shifted_time_span_only})
 
         return ds_new
 
@@ -1361,18 +1358,35 @@ class TemporalAccessor:
 
         is_december = time_coords.dt.month == 12
 
-        if isinstance(time_coords.values[0], cftime.datetime):
-            shift_func = self._shift_cftime_year
-        else:
-            shift_func = self._shift_datetime_year
-
+        shift_func = self._get_shift_func(time_coords)
         shifted_time = xr.apply_ufunc(shift_func, time_coords, vectorize=True)
+
         shifted_time_dec_only = xr.where(is_december, shifted_time, time_coords)
         shifted_time_dec_only.encoding = time_coords.encoding.copy()
 
         ds_new = ds_new.assign_coords({self.dim: shifted_time_dec_only})
 
         return ds_new
+
+    def _get_shift_func(self, time_coords: xr.DataArray) -> Callable:
+        """Gets the appropriate year shifting function based on time coordinate type.
+
+        Parameters
+        ----------
+        time_coords : xr.DataArray
+            The time coordinates.
+
+        Returns
+        -------
+        Callable
+            The year shifting function.
+        """
+        if isinstance(time_coords.values[0], cftime.datetime):
+            shift_func = self._shift_cftime_year
+        else:
+            shift_func = self._shift_datetime_year
+
+        return shift_func
 
     def _shift_cftime_year(self, time: cftime.datetime) -> cftime.datetime:
         """
@@ -2253,7 +2267,7 @@ def _infer_freq(time_coords: xr.DataArray) -> Frequency:
     time_deltas = np.diff(time_coords.values).astype("timedelta64[ns]")
 
     # Calculate the median delta
-    median_delta = pd.to_timedelta(np.median(time_deltas), unit="ns")
+    median_delta = pd.to_timedelta(np.median(time_deltas))
 
     if median_delta < pd.Timedelta(days=1):
         return "hour"
