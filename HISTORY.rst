@@ -5,13 +5,17 @@ History
 v0.11.2 (02 February 2026)
 --------------------------
 
-This patch release fixes coordinate assignment behavior and improves cftime documentation.
+This patch release fixes coordinate assignment behavior and dropping of attributes in
+the PCMDI land sea masking API. It also improves documentation around the default
+use of `cftime` in xCDAT.
 
 Bug Fixes
 ~~~~~~~~~
 
 - Replace in-place ``.values`` assignment with ``assign_coords()`` by
   `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/827
+- Fix attributes dropping in `pcmdi_land_sea_mask()` due to change in Xarray 2026.01.0
+  by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/829
 
 Documentation
 ~~~~~~~~~~~~~
