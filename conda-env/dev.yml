@@ -27,7 +27,9 @@ dependencies:
     - nc-time-axis >=1.4.1
     # Documentation
     # ==================
-    - sphinx
+    # NOTE: Constrain sphinx to <=9.0 until support for sphinx-auto-summary-accessors is added in a later version.
+    # See https://github.com/xarray-contrib/sphinx-autosummary-accessors/issues/165
+    - sphinx <=9.0
     - sphinx-autosummary-accessors
     - sphinx-book-theme
     - sphinx-copybutton
