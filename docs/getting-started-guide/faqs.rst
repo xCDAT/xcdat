@@ -135,26 +135,30 @@ References:
 
 * https://cfconventions.org/cf-conventions/cf-conventions#calendar
 
-Why does ``xcdat`` decode time coordinates as ``cftime`` objects instead of ``datetime64[ns]``?
+Why does ``xcdat`` decode time coordinates as ``cftime`` objects instead of ``datetime64``?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-One unfortunate limitation of using ``datetime64[ns]`` is that it limits the native
-representation of dates to those that fall between the years 1678 and 2262. This affects
-climate modeling datasets that have time coordinates outside of this range.
+``xcdat`` is designed to work reliably with climate and Earth system model datasets,
+which commonly use CF calendars such as ``noleap``, ``365_day``, and ``360_day``. These
+calendars cannot be represented using NumPy or Pandas datetimes, so ``cftime`` is
+required to correctly decode and interpret time coordinates.
 
-As a workaround, ``xarray`` uses the ``cftime`` library when decoding/encoding
-datetimes for non-standard calendars or for dates before year 1678 or after year 2262.
+While recent versions of pandas and xarray support non-nanosecond datetime resolutions,
+native datetime types still have limitations for climate data. In particular,
+``datetime64[ns]`` is restricted to a limited date range, and non-Gregorian calendars
+continue to require ``cftime``. As a result, xarray may decode time coordinates as
+either native datetimes or ``cftime`` objects depending on the dataset.
 
-``xcdat`` opted to decode time coordinates exclusively with ``cftime`` because it
-has no timestamp range limitations, simplifies implementation, and the output object
-type is deterministic. Another benefit with this approach is that ``xcdat`` has its own
-algorithm for lazily decoding ``cftime`` objects, which improves up-front I/O performance.
+To provide consistent, predictable behavior, ``xcdat`` always decodes time coordinates
+as ``cftime`` objects. This ensures full CF calendar support, avoids conditional type
+switching, and allows ``xcdat`` to apply optimized lazy decoding for improved I/O
+performance.
 
 References:
 
-* https://github.com/pydata/xarray/issues/789
-* https://pandas.pydata.org/pandas-docs/stable/user_guide/timeseries.html#timestamp-limitations
-* https://discourse.pangeo.io/t/pandas-dtypes-now-free-from-nanosecond-limitation/3106
+* https://docs.xarray.dev/en/stable/user-guide/weather-climate.html#cftimeindex
+* https://github.com/pydata/xarray/issues/7493
+* https://unidata.github.io/cftime/
 
 
 xCDAT Does Not Support Model-Specific Data Wrangling
