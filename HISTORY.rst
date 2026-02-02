@@ -2,6 +2,26 @@
 History
 =======
 
+v0.11.2 (02 February 2026)
+-------------------------
+
+This patch release fixes coordinate assignment behavior and improves cftime documentation.
+
+Bug Fixes
+~~~~~~~~~
+
+- Replace in-place ``.values`` assignment with ``assign_coords()`` by
+  `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/827
+
+Documentation
+~~~~~~~~~~~~~
+
+- Update ``cftime`` section in FAQs by
+  `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/828
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.11.1...v0.11.2
+
+
 v0.11.1 (06 January 2026)
 -------------------------
 
