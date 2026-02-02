@@ -5,7 +5,7 @@ History
 v0.11.2 (02 February 2026)
 --------------------------
 
-This patch release fixes coordinate assignment behavior and dropping of attributes in
+This patch release fixes coordinate assignment behavior and attributes dropping in
 the PCMDI land sea masking API. It also improves documentation around the default
 use of `cftime` in xCDAT.
 
