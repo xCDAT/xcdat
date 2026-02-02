@@ -3,7 +3,7 @@ History
 =======
 
 v0.11.2 (02 February 2026)
--------------------------
+--------------------------
 
 This patch release fixes coordinate assignment behavior and improves cftime documentation.
 
