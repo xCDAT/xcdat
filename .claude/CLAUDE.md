@@ -1,17 +1,18 @@
 # CLAUDE.md — Claude Code Instructions for xCDAT
 
-<!-- Canonical guidelines live in AGENTS.md at the repository root. -->
+<!-- See AGENTS.md at the repository root for full AI development guidelines. -->
 
 ## Project
 
 xCDAT (Xarray Climate Data Analysis Tools) extends xarray for climate data
-analysis on structured grids. Python ≥3.11.
+analysis on structured grids. See `pyproject.toml` for the supported Python
+version and dependency constraints.
 
 ## Coding Rules
 
 - Format and lint with **Ruff** (config in `pyproject.toml`). Import sorting is
-  handled by Ruff (`ruff check --select I --fix`).
-- Type-check with **MyPy** (`check_untyped_defs = true`). All public APIs must
+  handled by Ruff.
+- Type-check with **MyPy** (config in `pyproject.toml`). All public APIs must
   have type annotations.
 - Write **NumPy-style** docstrings with `Parameters`, `Returns`, and `Raises`
   sections.
@@ -36,9 +37,7 @@ analysis on structured grids. Python ≥3.11.
 ## Dependencies
 
 - Do not add new runtime dependencies without discussion.
-- Core: xarray, numpy, cf_xarray, cftime, dask, pandas, scipy, netcdf4, pooch,
-  regionmask, sparse, python-dateutil.
-- Regridding: xesmf, xgcm.
+- See `pyproject.toml` for the full dependency list and version constraints.
 
 ## Workflow
 

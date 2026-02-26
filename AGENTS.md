@@ -10,7 +10,10 @@ aligned with this document.
 xCDAT (Xarray Climate Data Analysis Tools) is a Python library that extends
 [xarray](https://xarray.dev) for climate data analysis on structured grids. It
 provides spatial/temporal averaging, regridding, bounds handling, and dataset
-I/O with CF-convention support. The minimum supported Python version is 3.11.
+I/O with CF-convention support.
+
+See `pyproject.toml` for the minimum supported Python version and all dependency
+constraints.
 
 ## Repository Layout
 
@@ -33,19 +36,16 @@ conda-env/          # Conda environment files
 
 ## Coding Standards
 
-- **Formatter / Linter**: [Ruff](https://docs.astral.sh/ruff/) — handles
-  formatting, linting, and import sorting. Configuration is in `pyproject.toml`
-  under `[tool.ruff]`.
-- **Type Checking**: [MyPy](https://mypy-lang.org/) with `check_untyped_defs = true`.
-  All public APIs must include type annotations. Configuration is in `pyproject.toml`
-  under `[tool.mypy]`.
+- **Formatter / Linter**: Ruff — handles formatting, linting, and import sorting.
+  See `pyproject.toml` under `[tool.ruff]` for configuration.
+- **Type Checking**: MyPy — all public APIs must include type annotations.
+  See `pyproject.toml` under `[tool.mypy]` for configuration.
 - **Docstrings**: Use **NumPy-style** docstrings for all public functions, classes,
   and methods. Include `Parameters`, `Returns`, and `Raises` sections as applicable.
-- **Imports**: Sort imports with Ruff (`ruff check --select I --fix`). Use absolute
-  imports within the package (e.g., `from xcdat.axis import get_dim_coords`).
-- **Line Length**: No hard limit enforced (E501 is ignored), but aim for readability.
-- **Pre-commit**: The project uses pre-commit hooks (`.pre-commit-config.yaml`) that
-  run Ruff and MyPy automatically on each commit.
+- **Imports**: Use absolute imports within the package
+  (e.g., `from xcdat.axis import get_dim_coords`). Import sorting is handled by Ruff.
+- **Pre-commit**: The project uses pre-commit hooks. See `.pre-commit-config.yaml`
+  for the configured checks (Ruff, MyPy, whitespace, etc.).
 - **License**: New contributions must be made under the Apache-2.0 with LLVM exception
   license.
 
@@ -63,7 +63,8 @@ conda-env/          # Conda environment files
 
 ## Testing Conventions
 
-- **Framework**: [pytest](https://docs.pytest.org/) with `pytest-cov`.
+- **Framework**: pytest with pytest-cov. See `pyproject.toml` under
+  `[tool.pytest.ini_options]` for configuration.
 - **File Naming**: Test files live in `tests/` and follow the pattern `test_<module>.py`.
 - **Assertions**: Prefer `xarray.testing.assert_identical` and
   `xarray.testing.assert_allclose` for comparing xarray objects.
@@ -71,17 +72,13 @@ conda-env/          # Conda environment files
   explicitly and compare against actual output.
 - **Running Tests**: `pytest` (full suite) or `pytest tests/test_<module>.py` (targeted).
   Use `make test` for the full suite with coverage.
-- **Markers**: `@pytest.mark.flaky` and `@pytest.mark.network` are available for
-  unstable or network-dependent tests.
 
 ## Dependencies
 
-- **Core**: xarray (≥2024.03.0), numpy (≥2.0.0, <3.0.0), cf_xarray (≥0.10.7),
-  cftime, dask, pandas, scipy, netcdf4, pooch (≥1.8), regionmask, sparse,
-  python-dateutil.
-- **Regridding**: xesmf (≥0.8.7), xgcm (≥0.9.0).
-- **Dev**: ruff, mypy, pre-commit, types-python-dateutil.
-- **Test**: pytest, pytest-cov.
+- See `pyproject.toml` under `[project.dependencies]` for runtime dependencies and
+  version constraints.
+- See `pyproject.toml` under `[project.optional-dependencies]` for dev, test, and
+  docs dependencies.
 - Do not add new runtime dependencies without discussion. Prefer leveraging existing
   dependencies before introducing new ones.
 
