@@ -95,6 +95,12 @@ def _drop_axis(ds: xr.Dataset, axis: list[CFAxisKey]) -> xr.Dataset:
 class BaseRegridder(abc.ABC):
     """BaseRegridder."""
 
+    supports_multidim: bool
+
+    @classmethod
+    def can_handle_multidim(cls) -> bool:
+        return cls.supports_multidim
+
     def __init__(self, input_grid: xr.Dataset, output_grid: xr.Dataset, **options: Any):
         self._input_grid = input_grid
         self._output_grid = output_grid

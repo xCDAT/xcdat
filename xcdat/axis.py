@@ -74,7 +74,7 @@ def get_dim_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> str | list[
 
 
 def get_dim_coords(
-    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey
+    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey, multidim: bool = False
 ) -> xr.Dataset | xr.DataArray:
     """Gets the dimension coordinates for an axis.
 
@@ -118,21 +118,14 @@ def get_dim_coords(
     ----------
     .. [1] https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axes-and-coordinates
     """
-    # Get the object's index keys, with each being a dimension.
-    # NOTE: xarray does not include multidimensional coordinates as index keys.
-    # Example: ["lat", "lon", "time"]
-    index_keys = obj.indexes.keys()
-
-    # FIXME: Attempt -- If index_keys is None, attempt to retrieve keys using
-    # cf_xarray for the axis. This is a fallback for objects with
-    # multidimensional coordiantes.
-    if not index_keys:
-        try:
-            obj = obj.cf[axis]
-        except KeyError:
-            raise KeyError(
-                f"Could not find coordinate for dimension '{axis}'"
-            ) from None
+    if multidim:
+        # multidimensional coordinates cannot be indexes, use all coords
+        index_keys = list(obj.coords)
+    else:
+        # Get the object's index keys, with each being a dimension.
+        # NOTE: xarray does not include multidimensional coordinates as index keys.
+        # Example: ["lat", "lon", "time"]
+        index_keys = obj.indexes.keys()
 
     # Attempt to map the axis it all of its coordinate variable(s) using the
     # axis and coordinate names in the object attributes (if they are set).

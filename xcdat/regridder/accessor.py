@@ -166,8 +166,9 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices {list(HORIZONTAL_REGRID_TOOLS)}"
             ) from e
 
-        # FIXME: Line 170 -- Can't add bounds for multidimensional coordinates
-        input_grid = _get_input_grid(self._ds, data_var, ["X", "Y"])
+        input_grid = _get_input_grid(
+            self._ds, data_var, ["X", "Y"], multidim=regrid_tool.can_handle_multidim()
+        )
         regridder = regrid_tool(input_grid, output_grid, **options)
         output_ds = regridder.horizontal(data_var, self._ds)
 
@@ -245,7 +246,9 @@ class RegridderAccessor:
         return output_ds
 
 
-def _obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
+def _obj_to_grid_ds(
+    obj: xr.Dataset | xr.DataArray, multidim: bool = False
+) -> xr.Dataset:
     """
     Convert an xarray object to a new Dataset containing axis coordinates and
     bounds.
@@ -300,6 +303,10 @@ def _obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
         attrs=obj.attrs,
     )
 
+    # Multidimensional coordinates bounds generation is not supported
+    if multidim:
+        return output_ds
+
     # Add bounds only for axes that do not already have them. This
     # prevents multiple sets of bounds being added for the same axis.
     # For example, curvilinear grids can have multiple coordinates for the
@@ -345,7 +352,12 @@ def _get_axis_coord_and_bounds(
     return coord_var, bounds_var
 
 
-def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKey]):
+def _get_input_grid(
+    ds: xr.Dataset,
+    data_var: str,
+    dup_check_dims: list[CFAxisKey],
+    multidim: bool = False,
+):
     """
     Extract the grid from ``ds``.
 
@@ -372,10 +384,12 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
     all_coords = set(ds.coords.keys())
 
     for dimension in dup_check_dims:
-        coords = get_dim_coords(ds, dimension)
+        coords = get_dim_coords(ds, dimension, multidim=multidim)
 
         if isinstance(coords, xr.Dataset):
-            coord = set([get_dim_coords(ds[data_var], dimension).name])
+            coord = set(
+                [get_dim_coords(ds[data_var], dimension, multidim=multidim).name]
+            )
 
             dimension_coords = set(ds.cf[[dimension]].coords.keys())
 
@@ -385,8 +399,7 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
     input_grid = ds.drop_dims(to_drop)
 
     # drops extra dimensions on input grid
-    # FIXME: Line 389 --Can't add bounds for multidimensional coordinates
-    grid = input_grid.regridder.grid
+    grid = _obj_to_grid_ds(input_grid, multidim=multidim)
 
     # preserve mask on grid
     if "mask" in ds:
