@@ -120,12 +120,12 @@ def get_dim_coords(
     """
     if multidim:
         # multidimensional coordinates cannot be indexes, use all coords
-        index_keys = list(obj.coords)
+        index_keys = list([y for x in obj.cf.coordinates.values() for y in x])
     else:
         # Get the object's index keys, with each being a dimension.
         # NOTE: xarray does not include multidimensional coordinates as index keys.
         # Example: ["lat", "lon", "time"]
-        index_keys = obj.indexes.keys()
+        index_keys = list(obj.indexes.keys())
 
     # Attempt to map the axis it all of its coordinate variable(s) using the
     # axis and coordinate names in the object attributes (if they are set).
