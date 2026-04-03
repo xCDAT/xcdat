@@ -5,16 +5,17 @@ import xarray as xr
 from xcdat.axis import CFAxisKey, get_coords_by_name, get_dim_coords
 from xcdat.bounds import create_bounds
 from xcdat.regridder import regrid2, xesmf, xgcm
+from xcdat.regridder.base import BaseRegridder
 from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
 
 HorizontalRegridTools = Literal["xesmf", "regrid2"]
-HORIZONTAL_REGRID_TOOLS = {
+HORIZONTAL_REGRID_TOOLS: dict[str, type[BaseRegridder]] = {
     "regrid2": regrid2.Regrid2Regridder,
     "xesmf": xesmf.XESMFRegridder,
 }
 
 VerticalRegridTools = Literal["xgcm"]
-VERTICAL_REGRID_TOOLS = {"xgcm": xgcm.XGCMRegridder}
+VERTICAL_REGRID_TOOLS: dict[str, type[BaseRegridder]] = {"xgcm": xgcm.XGCMRegridder}
 
 
 @xr.register_dataset_accessor(name="regridder")
