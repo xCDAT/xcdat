@@ -1702,6 +1702,51 @@ class TestAccessor:
         assert "ts" in output
         assert output.ts.dims == ("lat", "lon")
 
+    def test_horizontal_with_nonstandard_multidim_coord_names_issue_816(self):
+        """Regression test for #816: multidim coords with non-standard names.
+
+        Ensures that ds.regridder.horizontal(..., tool="xesmf") works when
+        2D coordinates use non-standard names (e.g., nav_lat/nav_lon) that
+        are not in VAR_NAME_MAP but are discoverable via CF axis attributes.
+        """
+        ny, nx = 10, 20
+
+        lat_2d = np.linspace(-90, 90, ny * nx).reshape(ny, nx)
+        lon_2d = np.linspace(-180, 180, ny * nx).reshape(ny, nx)
+
+        nav_lat = xr.DataArray(
+            data=lat_2d,
+            dims=["y", "x"],
+            attrs={"units": "degrees_north", "axis": "Y"},
+        )
+        nav_lon = xr.DataArray(
+            data=lon_2d,
+            dims=["y", "x"],
+            attrs={"units": "degrees_east", "axis": "X"},
+        )
+
+        ts = xr.DataArray(
+            data=np.random.default_rng(42).random((ny, nx)),
+            dims=["y", "x"],
+            attrs={"units": "K"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"ts": ts},
+            coords={"nav_lat": nav_lat, "nav_lon": nav_lon},
+        )
+
+        output_grid = grid.create_uniform_grid(-90, 90, 30.0, -180, 180, 60.0)
+
+        # This should not raise KeyError; the multidim flag must be plumbed
+        # through _get_axis_coord_and_bounds to get_dim_coords.
+        output = ds.regridder.horizontal(
+            "ts", output_grid, tool="xesmf", method="bilinear"
+        )
+
+        assert "ts" in output
+        assert output.ts.dims == ("lat", "lon")
+
 
 class TestBase:
     def test_preserve_bounds(self):

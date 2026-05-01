@@ -286,7 +286,7 @@ def _obj_to_grid_ds(
 
     with xr.set_options(keep_attrs=True):
         for axis in axis_names:
-            coord, bounds = _get_axis_coord_and_bounds(obj, axis)
+            coord, bounds = _get_axis_coord_and_bounds(obj, axis, multidim=multidim)
 
             if coord is not None:
                 axis_coords[str(coord.name)] = coord
@@ -323,7 +323,7 @@ def _obj_to_grid_ds(
 
 
 def _get_axis_coord_and_bounds(
-    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey
+    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey, multidim: bool = False
 ) -> tuple[xr.DataArray | None, xr.DataArray | None]:
     try:
         coord_var = get_coords_by_name(obj, axis)
@@ -333,7 +333,7 @@ def _get_axis_coord_and_bounds(
             )
     except (ValueError, KeyError):
         try:
-            coord_var = get_dim_coords(obj, axis)  # type: ignore
+            coord_var = get_dim_coords(obj, axis, multidim=multidim)  # type: ignore
             _validate_grid_has_single_axis_dim(axis, coord_var)
         except KeyError:
             coord_var = None
