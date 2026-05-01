@@ -119,8 +119,15 @@ def get_dim_coords(
     .. [1] https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axes-and-coordinates
     """
     if multidim:
-        # multidimensional coordinates cannot be indexes, use all coords
-        index_keys = list([y for x in obj.cf.coordinates.values() for y in x])
+        # multidimensional coordinates cannot be indexes, use all coords.
+        # Combine both obj.cf.coordinates and obj.cf.axes to avoid missing
+        # coordinates that are only discoverable via CF axis metadata.
+        cf_keys: set[str] = set()
+        for keys in obj.cf.coordinates.values():
+            cf_keys.update(keys)
+        for keys in obj.cf.axes.values():
+            cf_keys.update(keys)
+        index_keys = list(cf_keys)
     else:
         # Get the object's index keys, with each being a dimension.
         # NOTE: xarray does not include multidimensional coordinates as index keys.
