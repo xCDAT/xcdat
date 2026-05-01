@@ -1657,6 +1657,51 @@ class TestAccessor:
         ):
             self.ac.vertical("ts", mock_data, tool="dummy", target_data=None)  # type: ignore
 
+    def test_horizontal_with_multidim_coords_issue_816(self):
+        """Regression test for #816: dataset with 2D lat/lon and no 1D coord vars.
+
+        Ensures that ds.regridder.horizontal(..., tool="xesmf") works on
+        datasets shaped like curvilinear/unstructured grids where lat and lon
+        are multidimensional coordinates (not index dimensions).
+        """
+        ny, nx = 10, 20
+
+        lat_2d = np.linspace(-90, 90, ny * nx).reshape(ny, nx)
+        lon_2d = np.linspace(-180, 180, ny * nx).reshape(ny, nx)
+
+        lat = xr.DataArray(
+            data=lat_2d,
+            dims=["y", "x"],
+            attrs={"units": "degrees_north", "axis": "Y"},
+        )
+        lon = xr.DataArray(
+            data=lon_2d,
+            dims=["y", "x"],
+            attrs={"units": "degrees_east", "axis": "X"},
+        )
+
+        ts = xr.DataArray(
+            data=np.random.default_rng(42).random((ny, nx)),
+            dims=["y", "x"],
+            attrs={"units": "K"},
+        )
+
+        ds = xr.Dataset(
+            data_vars={"ts": ts},
+            coords={"lat": lat, "lon": lon},
+        )
+
+        output_grid = grid.create_uniform_grid(-90, 90, 30.0, -180, 180, 60.0)
+
+        # This should not raise KeyError; the multidim path must discover
+        # lat/lon via CF axis metadata.
+        output = ds.regridder.horizontal(
+            "ts", output_grid, tool="xesmf", method="bilinear"
+        )
+
+        assert "ts" in output
+        assert output.ts.dims == ("lat", "lon")
+
 
 class TestBase:
     def test_preserve_bounds(self):
