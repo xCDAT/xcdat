@@ -1717,3 +1717,25 @@ class TestBase:
         ds_out = regridder.horizontal("ts", ds_in)
 
         assert ds_in == ds_out
+
+    def test_supports_multidim_defaults_to_false(self):
+        """Test that BaseRegridder subclasses default supports_multidim to False."""
+
+        class MinimalRegridder(base.BaseRegridder):
+            def horizontal(self, data_var, ds):
+                return ds
+
+        assert MinimalRegridder.supports_multidim is False
+        assert MinimalRegridder.can_handle_multidim() is False
+
+    def test_supports_multidim_can_be_overridden(self):
+        """Test that subclasses can override supports_multidim to True."""
+
+        class MultidimRegridder(base.BaseRegridder):
+            supports_multidim = True
+
+            def horizontal(self, data_var, ds):
+                return ds
+
+        assert MultidimRegridder.supports_multidim is True
+        assert MultidimRegridder.can_handle_multidim() is True
