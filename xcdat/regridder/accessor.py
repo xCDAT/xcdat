@@ -317,7 +317,6 @@ def _obj_to_grid_ds(
 
     for axis, has_bounds in axis_has_bounds.items():
         if not has_bounds:
-            # FIXME: Line 313 --Can't add bounds for multidimensional coordinates
             output_ds = output_ds.bounds.add_bounds(axis=axis)
 
     return output_ds
