@@ -15,7 +15,7 @@ dependencies:
     - pandas
     - pooch >=1.8
     - python-dateutil
-    - regionmask
+    - regionmask >=0.11.0
     - scipy
     - sparse
     - xarray >=2024.03.0
