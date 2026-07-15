@@ -120,13 +120,13 @@ def get_dim_coords(
     """
     if multidim:
         # multidimensional coordinates cannot be indexes, use all coords.
-        # Combine both obj.cf.coordinates and obj.cf.axes to avoid missing
-        # coordinates that are only discoverable via CF axis metadata.
         cf_keys: set[str] = set()
         for keys in obj.cf.coordinates.values():
             cf_keys.update(keys)
-        for keys in obj.cf.axes.values():
-            cf_keys.update(keys)
+        # use cf.axes as fallback
+        if len(cf_keys) == 0:
+            for keys in obj.cf.axes.values():
+                cf_keys.update(keys)
         index_keys = list(cf_keys)
     else:
         # Get the object's index keys, with each being a dimension.
