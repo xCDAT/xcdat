@@ -2,6 +2,28 @@
 History
 =======
 
+v0.11.3 (16 July 2026)
+--------------------------
+
+This patch release fixes xgcm 0.10 compatibility by translating xCDAT's legacy grid
+options to the new padding API. This restores vertical regridding without requiring
+caller changes. The minimum xgcm version is now 0.10.0, which is required for the new
+padding API. It also constrains regionmask >=0.11.0 for numpy 2.0 compatibility.
+
+Bug Fixes
+~~~~~~~~~
+
+- Fix xgcm 0.10 padding compatibility by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/840
+
+DevOps
+~~~~~~
+
+- Constrain regionmask >=0.11.0 for numpy 2.0 compatibility by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/838
+
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.11.2...v0.11.3
+
+
 v0.11.2 (02 February 2026)
 --------------------------
 
