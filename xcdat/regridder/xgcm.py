@@ -120,7 +120,7 @@ class XGCMRegridder(BaseRegridder):
         >>>     ds,
         >>>     output_grid,
         >>>     method="linear",
-        >>>     extra_init_options={"boundary": "fill", "fill_value": 1e27},
+        >>>     extra_init_options={"padding": "fill", "fill_value": 1e27},
         >>>     mask_edges=True
         >>> )
         """
@@ -138,8 +138,17 @@ class XGCMRegridder(BaseRegridder):
 
         if extra_init_options is None:
             extra_init_options = {}
+        else:
+            extra_init_options = extra_init_options.copy()
 
-        extra_init_options["periodic"] = periodic
+        # xgcm v0.10.0 renamed ``boundary`` to ``padding`` and removed
+        # ``periodic``. Normalize both legacy options to the new argument.
+        boundary = extra_init_options.pop("boundary", None)
+        if "padding" not in extra_init_options:
+            default_padding = "periodic" if periodic else "fill"
+            extra_init_options["padding"] = (
+                default_padding if boundary is None else boundary
+            )
 
         self._extra_init_options = extra_init_options
         self._extra_options = options

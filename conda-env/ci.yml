@@ -20,7 +20,7 @@ dependencies:
     - sparse
     - xarray >=2024.03.0
     - xesmf >=0.8.7
-    - xgcm >=0.9.0
+    - xgcm >=0.10.0
     # Quality Assurance
     # ==================
     - types-python-dateutil
