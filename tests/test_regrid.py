@@ -40,6 +40,46 @@ class TestXGCMRegridder:
         z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
         self.output_grid = grid.create_grid(z=z)
 
+    @pytest.mark.parametrize(
+        ("periodic", "expected_padding"),
+        ((False, "fill"), (True, "periodic")),
+    )
+    def test_periodic_padding(self, periodic, expected_padding):
+        regridder = xgcm.XGCMRegridder(
+            self.ds, self.output_grid, method="linear", periodic=periodic
+        )
+
+        assert regridder._extra_init_options == {"padding": expected_padding}
+
+    @pytest.mark.parametrize(
+        ("extra_init_options", "expected_options"),
+        (
+            ({"boundary": "extend"}, {"padding": "extend"}),
+            ({"padding": "extend"}, {"padding": "extend"}),
+            (
+                {"boundary": "fill", "padding": "extend"},
+                {"padding": "extend"},
+            ),
+            (
+                {"boundary": "fill", "fill_value": 1e27},
+                {"padding": "fill", "fill_value": 1e27},
+            ),
+        ),
+    )
+    def test_padding_precedence(self, extra_init_options, expected_options):
+        original_options = extra_init_options.copy()
+
+        regridder = xgcm.XGCMRegridder(
+            self.ds,
+            self.output_grid,
+            method="linear",
+            periodic=True,
+            extra_init_options=extra_init_options,
+        )
+
+        assert regridder._extra_init_options == expected_options
+        assert extra_init_options == original_options
+
     @mock.patch("xgcm.Grid")
     def test_infer_target_data(self, grid):
         ds = self.ds.copy(True)
