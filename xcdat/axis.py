@@ -5,6 +5,7 @@ coordinates.
 
 from typing import Literal
 
+import cf_xarray as cfxr  # noqa: F401
 import numpy as np
 import xarray as xr
 
@@ -73,7 +74,7 @@ def get_dim_keys(obj: xr.Dataset | xr.DataArray, axis: CFAxisKey) -> str | list[
 
 
 def get_dim_coords(
-    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey
+    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey, multidim: bool = False
 ) -> xr.Dataset | xr.DataArray:
     """Gets the dimension coordinates for an axis.
 
@@ -117,10 +118,21 @@ def get_dim_coords(
     ----------
     .. [1] https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axes-and-coordinates
     """
-    # Get the object's index keys, with each being a dimension.
-    # NOTE: xarray does not include multidimensional coordinates as index keys.
-    # Example: ["lat", "lon", "time"]
-    index_keys = obj.indexes.keys()
+    if multidim:
+        # multidimensional coordinates cannot be indexes, use all coords.
+        cf_keys: set[str] = set()
+        for keys in obj.cf.coordinates.values():
+            cf_keys.update(keys)
+        # use cf.axes as fallback
+        if len(cf_keys) == 0:
+            for keys in obj.cf.axes.values():
+                cf_keys.update(keys)
+        index_keys = list(cf_keys)
+    else:
+        # Get the object's index keys, with each being a dimension.
+        # NOTE: xarray does not include multidimensional coordinates as index keys.
+        # Example: ["lat", "lon", "time"]
+        index_keys = list(obj.indexes.keys())
 
     # Attempt to map the axis it all of its coordinate variable(s) using the
     # axis and coordinate names in the object attributes (if they are set).

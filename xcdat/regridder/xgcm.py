@@ -13,6 +13,8 @@ logger = _setup_custom_logger(__name__)
 
 
 class XGCMRegridder(BaseRegridder):
+    supports_multidim = False
+
     def __init__(
         self,
         input_grid: xr.Dataset,

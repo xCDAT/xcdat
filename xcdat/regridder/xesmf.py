@@ -19,6 +19,8 @@ VALID_EXTRAP_METHODS = ["inverse_dist", "nearest_s2d"]
 
 
 class XESMFRegridder(BaseRegridder):
+    supports_multidim = True
+
     def __init__(
         self,
         input_grid: xr.Dataset,
