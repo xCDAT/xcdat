@@ -25,6 +25,7 @@ Below is a list of top-level API functions that are available in ``xcdat``.
     decode_time
     swap_lon_axis
     compare_datasets
+    validate_dataset
     get_dim_coords
     get_dim_keys
     get_coords_by_name
@@ -38,6 +39,28 @@ Below is a list of top-level API functions that are available in ``xcdat``.
     create_uniform_grid
     create_zonal_grid
     tutorial.open_dataset
+
+Dataset Validation
+------------------
+
+``validate_dataset`` inspects CF metadata, axis mappings, and coordinate bounds
+without modifying the input dataset. It reports malformed or contradictory
+metadata as errors and missing metadata that xCDAT may be able to infer or
+generate as warnings. Each issue includes the operations that may be affected.
+
+.. code-block:: python
+
+    >>> result = xcdat.validate_dataset(ds)
+    >>> for issue in result.issues:
+    ...     print(issue.severity, issue.variable, issue.problem)
+    >>> result.raise_for_errors()
+
+.. autosummary::
+    :toctree: generated/
+
+    ValidationIssue
+    ValidationResult
+    DatasetValidationError
 
 Module-level API Functions
 --------------------------
