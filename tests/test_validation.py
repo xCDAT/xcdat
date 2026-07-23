@@ -1,3 +1,5 @@
+from unittest.mock import MagicMock
+
 import numpy as np
 import pytest
 import xarray as xr
@@ -8,6 +10,8 @@ from xcdat.validation import (
     DatasetValidationError,
     ValidationIssue,
     ValidationResult,
+    _IssueCollector,
+    _validate_bounds,
     validate_dataset,
 )
 
@@ -95,6 +99,31 @@ class TestValidationResult:
 
         issue_keys = [(issue.code, issue.variable) for issue in result.issues]
         assert issue_keys == sorted(issue_keys)
+
+
+def test_issue_collector_merges_affected_operations_for_duplicate_issue():
+    collector = _IssueCollector()
+    collector.add(
+        "duplicate",
+        "warning",
+        "lat",
+        "Duplicate problem.",
+        ("spatial_average",),
+        "Correct the metadata.",
+    )
+    collector.add(
+        "duplicate",
+        "warning",
+        "lat",
+        "Duplicate problem.",
+        ("horizontal_regrid",),
+        "Correct the metadata.",
+    )
+
+    assert collector.result().issues[0].operations == (
+        "spatial_average",
+        "horizontal_regrid",
+    )
 
 
 def test_rejects_non_dataset():
@@ -219,6 +248,32 @@ class TestBoundsValidation:
             issue.code == "bounds-missing-coordinate-dimensions"
             and issue.variable == "lat_bnds"
             for issue in result.errors
+        )
+
+    def test_errors_if_bounds_dimension_size_differs_from_coordinate(self):
+        coord = xr.DataArray(
+            [-30.0, 30.0],
+            dims="lat",
+            attrs={"bounds": "lat_bnds"},
+        )
+        bounds = xr.DataArray(np.ones((3, 2)), dims=("lat", "bnds"))
+        ds = MagicMock()
+        ds.__getitem__.side_effect = {"lat": coord, "lat_bnds": bounds}.__getitem__
+        ds.variables = {"lat", "lat_bnds"}
+        collector = _IssueCollector()
+        axis_coords = {
+            "X": set(),
+            "Y": {"lat"},
+            "T": set(),
+            "Z": set(),
+        }
+
+        _validate_bounds(ds, axis_coords, collector)  # type: ignore[arg-type]
+
+        assert any(
+            issue.code == "bounds-dimension-size-mismatch"
+            and issue.variable == "lat_bnds"
+            for issue in collector.result().errors
         )
 
     def test_errors_for_unrelated_bounds_dimensions(self):

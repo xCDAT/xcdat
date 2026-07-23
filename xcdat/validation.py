@@ -8,7 +8,7 @@ from typing import Iterable, Literal
 import cf_xarray  # noqa: F401
 import xarray as xr
 
-from xcdat.axis import CFAxisKey, CF_ATTR_MAP, VAR_NAME_MAP
+from xcdat.axis import CF_ATTR_MAP, VAR_NAME_MAP, CFAxisKey
 
 _Severity = Literal["error", "warning"]
 _AFFECTED_OPERATIONS = (
