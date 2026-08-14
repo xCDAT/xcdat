@@ -247,6 +247,32 @@ class TestGetDimCoords:
 
         assert result.identical(expected)
 
+    def test_multidim_finds_coords_only_in_cf_axes(self):
+        """Test that multidim=True finds coords discoverable via cf axes."""
+        # Create a dataset where 'lat' has axis="Y" attribute but no
+        # standard_name or recognized coordinate name that cf_xarray would
+        # put in obj.cf.coordinates.
+        lat = xr.DataArray(
+            data=np.array([[0, 1], [2, 3]]),
+            dims=["y", "x"],
+            attrs={"axis": "Y"},
+        )
+        lon = xr.DataArray(
+            data=np.array([[10, 11], [12, 13]]),
+            dims=["y", "x"],
+            attrs={"axis": "X"},
+        )
+        ds = xr.Dataset(coords={"lat": lat, "lon": lon})
+
+        # Without multidim, this would raise KeyError because lat/lon are
+        # multidimensional and not in indexes.
+        with pytest.raises(KeyError):
+            get_dim_coords(ds, "Y", multidim=False)
+
+        # With multidim=True, it should find lat via cf axes.
+        result = get_dim_coords(ds, "Y", multidim=True)
+        xr.testing.assert_identical(result, ds["lat"])
+
 
 class TestGetCoordsByName:
     def test_raises_error_if_coordinate_not_found(self):

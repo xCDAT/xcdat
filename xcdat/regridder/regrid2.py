@@ -11,6 +11,8 @@ from xcdat.regridder.grid import create_mask, create_nan_mask
 
 
 class Regrid2Regridder(BaseRegridder):
+    supports_multidim = False
+
     def __init__(
         self,
         input_grid: xr.Dataset,

@@ -5,16 +5,17 @@ import xarray as xr
 from xcdat.axis import CFAxisKey, get_coords_by_name, get_dim_coords
 from xcdat.bounds import create_bounds
 from xcdat.regridder import regrid2, xesmf, xgcm
+from xcdat.regridder.base import BaseRegridder
 from xcdat.regridder.grid import _validate_grid_has_single_axis_dim
 
 HorizontalRegridTools = Literal["xesmf", "regrid2"]
-HORIZONTAL_REGRID_TOOLS = {
+HORIZONTAL_REGRID_TOOLS: dict[str, type[BaseRegridder]] = {
     "regrid2": regrid2.Regrid2Regridder,
     "xesmf": xesmf.XESMFRegridder,
 }
 
 VerticalRegridTools = Literal["xgcm"]
-VERTICAL_REGRID_TOOLS = {"xgcm": xgcm.XGCMRegridder}
+VERTICAL_REGRID_TOOLS: dict[str, type[BaseRegridder]] = {"xgcm": xgcm.XGCMRegridder}
 
 
 @xr.register_dataset_accessor(name="regridder")
@@ -166,7 +167,9 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices {list(HORIZONTAL_REGRID_TOOLS)}"
             ) from e
 
-        input_grid = _get_input_grid(self._ds, data_var, ["X", "Y"])
+        input_grid = _get_input_grid(
+            self._ds, data_var, ["X", "Y"], multidim=regrid_tool.can_handle_multidim()
+        )
         regridder = regrid_tool(input_grid, output_grid, **options)
         output_ds = regridder.horizontal(data_var, self._ds)
 
@@ -236,20 +239,17 @@ class RegridderAccessor:
                 f"Tool {e!s} does not exist, valid choices "
                 f"{list(VERTICAL_REGRID_TOOLS)}"
             ) from e
-        input_grid = _get_input_grid(
-            self._ds,
-            data_var,
-            [
-                "Z",
-            ],
-        )
+
+        input_grid = _get_input_grid(self._ds, data_var, ["Z"])
         regridder = regrid_tool(input_grid, output_grid, **options)
         output_ds = regridder.vertical(data_var, self._ds)
 
         return output_ds
 
 
-def _obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
+def _obj_to_grid_ds(
+    obj: xr.Dataset | xr.DataArray, multidim: bool = False
+) -> xr.Dataset:
     """
     Convert an xarray object to a new Dataset containing axis coordinates and
     bounds.
@@ -286,7 +286,7 @@ def _obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
 
     with xr.set_options(keep_attrs=True):
         for axis in axis_names:
-            coord, bounds = _get_axis_coord_and_bounds(obj, axis)
+            coord, bounds = _get_axis_coord_and_bounds(obj, axis, multidim=multidim)
 
             if coord is not None:
                 axis_coords[str(coord.name)] = coord
@@ -304,12 +304,17 @@ def _obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
         attrs=obj.attrs,
     )
 
+    # Multidimensional coordinates bounds generation is not supported
+    if multidim:
+        return output_ds
+
     # Add bounds only for axes that do not already have them. This
     # prevents multiple sets of bounds being added for the same axis.
     # For example, curvilinear grids can have multiple coordinates for the
     # same axis (e.g., (nlat, lat) for X and (nlon, lon) for Y). We only
     # need lat_bnds and lon_bnds for the X and Y axes, respectively, and not
     # nlat_bnds and nlon_bnds.
+
     for axis, has_bounds in axis_has_bounds.items():
         if not has_bounds:
             output_ds = output_ds.bounds.add_bounds(axis=axis)
@@ -318,7 +323,7 @@ def _obj_to_grid_ds(obj: xr.Dataset | xr.DataArray) -> xr.Dataset:
 
 
 def _get_axis_coord_and_bounds(
-    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey
+    obj: xr.Dataset | xr.DataArray, axis: CFAxisKey, multidim: bool = False
 ) -> tuple[xr.DataArray | None, xr.DataArray | None]:
     try:
         coord_var = get_coords_by_name(obj, axis)
@@ -328,7 +333,7 @@ def _get_axis_coord_and_bounds(
             )
     except (ValueError, KeyError):
         try:
-            coord_var = get_dim_coords(obj, axis)  # type: ignore
+            coord_var = get_dim_coords(obj, axis, multidim=multidim)  # type: ignore
             _validate_grid_has_single_axis_dim(axis, coord_var)
         except KeyError:
             coord_var = None
@@ -347,7 +352,12 @@ def _get_axis_coord_and_bounds(
     return coord_var, bounds_var
 
 
-def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKey]):
+def _get_input_grid(
+    ds: xr.Dataset,
+    data_var: str,
+    dup_check_dims: list[CFAxisKey],
+    multidim: bool = False,
+):
     """
     Extract the grid from ``ds``.
 
@@ -374,10 +384,12 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
     all_coords = set(ds.coords.keys())
 
     for dimension in dup_check_dims:
-        coords = get_dim_coords(ds, dimension)
+        coords = get_dim_coords(ds, dimension, multidim=multidim)
 
         if isinstance(coords, xr.Dataset):
-            coord = set([get_dim_coords(ds[data_var], dimension).name])
+            coord = set(
+                [get_dim_coords(ds[data_var], dimension, multidim=multidim).name]
+            )
 
             dimension_coords = set(ds.cf[[dimension]].coords.keys())
 
@@ -387,7 +399,7 @@ def _get_input_grid(ds: xr.Dataset, data_var: str, dup_check_dims: list[CFAxisKe
     input_grid = ds.drop_dims(to_drop)
 
     # drops extra dimensions on input grid
-    grid = input_grid.regridder.grid
+    grid = _obj_to_grid_ds(input_grid, multidim=multidim)
 
     # preserve mask on grid
     if "mask" in ds:
