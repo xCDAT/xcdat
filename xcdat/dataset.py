@@ -6,7 +6,7 @@ from collections.abc import Callable
 from datetime import datetime
 from functools import partial
 from io import BufferedIOBase
-from typing import Any, Literal
+from typing import Any, Literal, cast
 
 import numpy as np
 import xarray as xr
@@ -769,7 +769,7 @@ def _keep_single_var(dataset: xr.Dataset, key: str) -> xr.Dataset:
     if key in bounds_vars:
         raise ValueError("Please specify a non-bounds data variable.")
 
-    return dataset[[key] + bounds_vars]
+    return cast(xr.Dataset, dataset[[key] + bounds_vars])
 
 
 def _get_data_var(dataset: xr.Dataset, key: str) -> xr.DataArray:

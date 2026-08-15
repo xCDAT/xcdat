@@ -1729,3 +1729,18 @@ class Test_KeepSingleVar:
         assert ds.get("lat_bnds") is not None
         assert ds.get("lon_bnds") is not None
         assert ds.get("time_bnds") is not None
+
+    def test_drops_coords_and_dimensions_used_only_by_unselected_var(self):
+        ds = xr.Dataset(
+            data_vars={
+                "selected": ("time", [1, 2]),
+                "unselected": ("level", [3, 4]),
+            },
+            coords={"time": [0, 1], "level": [1000, 850]},
+        )
+
+        result = _keep_single_var(ds, key="selected")
+
+        assert list(result.data_vars) == ["selected"]
+        assert "level" not in result.coords
+        assert "level" not in result.dims
