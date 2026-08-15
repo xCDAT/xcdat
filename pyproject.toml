@@ -56,7 +56,7 @@ docs = [
   "ipython",
   "gsw-xarray",
 ]
-dev = ["types-python-dateutil", "pre-commit", "ruff", "mypy"]
+dev = ["types-python-dateutil", "pre-commit", "ruff", "ty"]
 
 [tool.setuptools.packages.find]
 include = ["xcdat", "xcdat.*"]
@@ -125,11 +125,13 @@ python_files = ["tests.py", "test_*.py"]
 # These markers are defined in `xarray.tests` and must be included to avoid warnings when importing from this module.
 markers = ["flaky", "network"]
 
-[tool.mypy]
-# Docs: https://mypy.readthedocs.io/en/stable/config_file.html
-python_version = "3.13"
-check_untyped_defs = true
-ignore_missing_imports = true
-warn_unused_ignores = true
-warn_redundant_casts = true
-warn_unused_configs = true
+[tool.ty.environment]
+python-version = "3.13"
+
+[tool.ty.src]
+exclude = ["docs"]
+
+[tool.ty.rules]
+unresolved-import = "ignore"
+unused-ignore-comment = "error"
+redundant-cast = "error"
