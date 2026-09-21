@@ -32,7 +32,12 @@ release of this demo.
 ## Data inputs
 
 - `kerchunk_list.json` is a Kerchunk catalog snapshot used to identify remote
-  CMIP6 reference JSON files.
+  CMIP6 reference JSON files. It is hosted in
+  [`xcdat-data`](https://github.com/xCDAT/xcdat-data/blob/e31bf6cdfd478550e9a284e6d17ef35edce5ee03/resources/kerchunk_list.json),
+  not this repository, because the 50 MB file is a data asset. The notebook uses
+  `pooch` to retrieve the catalog from commit
+  `e31bf6cdfd478550e9a284e6d17ef35edce5ee03`, verify its SHA-256 checksum, and
+  cache it under the xCDAT application cache directory.
 - `ecsdata.pickle` contains model equilibrium climate sensitivity (ECS) values
   prepared from Zelinka's repository. Treat this repository-managed pickle as
   trusted input; do not load untrusted pickle files.
