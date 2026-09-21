@@ -1,8 +1,8 @@
 # CWSS 2026 remote-Kerchunk demonstration
 
 This directory contains the presentation notebook for the September 24, 2026
-Climate and Weather Seminar Series talk, *New Tools for Accessing CMIP Data at
-NERSC and Beyond*.
+Climate and Weather Seminar Series talk, _New Tools for Accessing CMIP Data at
+NERSC and Beyond_.
 
 The [companion presentation](https://docs.google.com/presentation/d/1eDkwAIJC_peYnRnLnicplOPiR1eqiDZj2Sgwfrkvvrg/edit?slide=id.g3fa9c64b4de_0_73#slide=id.g3fa9c64b4de_0_73)
 provides the broader seminar context. The notebook is its remote JSON/Kerchunk
@@ -16,7 +16,7 @@ for the presentation.
 
 ```bash
 conda create -n cwss-kerchunk -c conda-forge \
-    xcdat matplotlib cartopy fsspec zarr jupyter ipykernel
+    xcdat matplotlib cartopy fsspec aiohttp requests zarr jupyter ipykernel
 conda activate cwss-kerchunk
 python -m pip install git+https://github.com/PCMDI/xsearch.git
 python -m ipykernel install --user --name cwss-kerchunk \
@@ -38,9 +38,9 @@ release of this demo.
   `pooch` to retrieve the catalog from commit
   `e31bf6cdfd478550e9a284e6d17ef35edce5ee03`, verify its SHA-256 checksum, and
   cache it under the xCDAT application cache directory.
-- `ecsdata.pickle` contains model equilibrium climate sensitivity (ECS) values
-  prepared from Zelinka's repository. Treat this repository-managed pickle as
-  trusted input; do not load untrusted pickle files.
+- `ecsdata.json` contains model equilibrium climate sensitivity (ECS) values
+  prepared from Mark Zelinka's repository. The notebook retrieves the pinned file
+  from `xcdat-data` with Pooch and verifies its SHA-256 checksum.
 
 The notebook's remote portion uses an ORNL-hosted Kerchunk reference catalog.
 The local comparison additionally requires NERSC data access. Remote URLs,
