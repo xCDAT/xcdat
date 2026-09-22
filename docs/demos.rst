@@ -18,3 +18,5 @@ This page includes relevant xCDAT presentations, demos, and papers.
     SciPy 2024 (Presentation Notebook) <demos/24-07-11-scipy-2024/scipy-2024.ipynb>
     SciPy 2024 (Recorded Talk) <https://www.youtube.com/watch?v=hcUnb_IztSs>
     DOE EESM PI Meeting Presentation <https://climatemodeling.science.energy.gov/presentations/xcdat-xarray-climate-data-analysis-tools-python-package-simple-and-robust-analysis>
+    CWSS 2026 Presentation: New Tools for Accessing CMIP Data at NERSC and Beyond <https://docs.google.com/presentation/d/1eDkwAIJC_peYnRnLnicplOPiR1eqiDZj2Sgwfrkvvrg/edit?slide=id.g3fa9c64b4de_0_73#slide=id.g3fa9c64b4de_0_73>
+    CWSS 2026 Remote JSON/Kerchunk Demo <demos/26-09-24-cwss-seminar/riotai_example_remote.ipynb>
