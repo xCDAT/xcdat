@@ -25,6 +25,12 @@ from xcdat.regridder.grid import (  # noqa: F401
 from xcdat.spatial import SpatialAccessor  # noqa: F401
 from xcdat.temporal import TemporalAccessor  # noqa: F401
 from xcdat.utils import compare_datasets  # noqa: F401
+from xcdat.validation import (  # noqa: F401
+    DatasetValidationError,
+    ValidationIssue,
+    ValidationResult,
+    validate_dataset,
+)
 
 # Initialize xCDAT logger once when the package is imported
 _setup_xcdat_logger()
