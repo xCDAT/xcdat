@@ -547,7 +547,8 @@ def _align_lon_to_360(
             ds_lon[var.name] = new_var
 
     # Create a new dataset of non-longitude vars and updated longitude vars.
-    ds_no_lon = ds.get([v for v in ds.data_vars if dim not in ds[v].dims])  # type: ignore
+    ds_no_lon = ds.get([v for v in ds.data_vars if dim not in ds[v].dims])
+    assert isinstance(ds_no_lon, xr.Dataset)
     ds_final = xr.merge((ds_no_lon, ds_lon))
 
     return ds_final

@@ -167,7 +167,8 @@ def generate_land_sea_mask(
     if method == "regionmask":
         land_mask = regionmask.defined_regions.natural_earth_v5_0_0.land_110
 
-        lon, lat = get_dim_coords(da, "X"), get_dim_coords(da, "Y")
+        lon = _as_dataarray(get_dim_coords(da, "X"))
+        lat = _as_dataarray(get_dim_coords(da, "Y"))
 
         land_sea_mask = land_mask.mask(lon, lat=lat)
 
@@ -261,11 +262,6 @@ def pcmdi_land_sea_mask(
     >>> from xcdat._data import _get_pcmdi_mask_path
     >>> path = _get_pcmdi_mask_path()
     """
-    if source is not None and source_data_var is None:
-        raise ValueError(
-            "The 'source_data_var' value cannot be None when using the 'source' option."
-        )
-
     if source is None:
         source_data_var = "sftlf"
 
@@ -274,6 +270,10 @@ def pcmdi_land_sea_mask(
         # Turn off time decoding to prevent logger warning since this dataset
         # does not have a time axis.
         source = open_dataset(resource_path, decode_times=False)
+    elif source_data_var is None:
+        raise ValueError(
+            "The 'source_data_var' value cannot be None when using the 'source' option."
+        )
 
     source_regrid = source.regridder.horizontal(
         source_data_var, _obj_to_grid_ds(da), tool="regrid2"
@@ -302,7 +302,7 @@ def pcmdi_land_sea_mask(
         improved_mask = _improve_mask(
             mask.copy(deep=True),
             source_regrid,
-            source_data_var,  # type: ignore[arg-type]
+            source_data_var,
             surrounds,
             is_circular,
             threshold1,

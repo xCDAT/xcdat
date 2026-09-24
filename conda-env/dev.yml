@@ -44,7 +44,7 @@ dependencies:
     # NOTE: If the tools below are updated, also update their 'rev' in `.pre-commit.config.yaml`
     - pre-commit=4.1.0
     - ruff=0.14.10
-    - mypy=1.19.1
+    - ty=0.0.71
     # Testing
     # ==================
     - pytest

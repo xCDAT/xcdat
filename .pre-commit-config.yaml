@@ -25,16 +25,7 @@ repos:
           # Run the formatter.
           - id: ruff-format
 
-    - repo: https://github.com/pre-commit/mirrors-mypy
-      rev: v1.19.1
+    - repo: https://github.com/astral-sh/ty-pre-commit
+      rev: v0.0.71
       hooks:
-          - id: mypy
-            args: ["--config=pyproject.toml"]
-            additional_dependencies:
-                [
-                    dask,
-                    "numpy>=2.0.0,<3.0.0",
-                    pandas,
-                    xarray>=2024.03.0,
-                    types-python-dateutil,
-                ]
+          - id: ty
