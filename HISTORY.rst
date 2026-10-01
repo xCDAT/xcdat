@@ -11,17 +11,13 @@ regridding, fixes the ReadTheDocs build, and adds a remote kerchunk demo noteboo
 Enhancements
 ~~~~~~~~~~~~
 
-- Support multidimensional coordinates for bounds and regridding by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/820
+- Support multidimensional coordinates for bounds and regridding by `Jason Boutte`_ and `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/820
 
 Documentation
 ~~~~~~~~~~~~~
 
 - Add CWSS remote kerchunk demo notebook by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/846
 
-DevOps
-~~~~~~
-
-- Fix ReadTheDocs build with config updates by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/847
 
 **Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.11.3...v0.11.4
 
