@@ -2,6 +2,26 @@
 History
 =======
 
+v0.11.4 (01 October 2026)
+-------------------------
+
+This patch release adds support for multidimensional coordinates in bounds and
+regridding, fixes the ReadTheDocs build, and adds a remote kerchunk demo notebook.
+
+Enhancements
+~~~~~~~~~~~~
+
+- Support multidimensional coordinates for bounds and regridding by `Jason Boutte`_ and `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/820
+
+Documentation
+~~~~~~~~~~~~~
+
+- Add CWSS remote kerchunk demo notebook by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/846
+
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.11.3...v0.11.4
+
+
 v0.11.3 (16 July 2026)
 --------------------------
 
