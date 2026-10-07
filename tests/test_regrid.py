@@ -1752,10 +1752,14 @@ class TestAccessor:
         assert "ts" in output
         assert output.ts.dims == ("lat", "lon")
 
-    def test_input_grid_curvilinear_with_axis_labelled_indexes(self):
+    @pytest.mark.parametrize("cf_attrs", [False, True])
+    def test_input_grid_curvilinear_with_axis_labelled_indexes(self, cf_attrs):
         ds = fixtures.generate_curvilinear_dataset()
         ds.nlat.attrs["axis"] = "Y"
         ds.nlon.attrs["axis"] = "X"
+        if not cf_attrs:
+            ds.lat.attrs = {"bounds": "lat_bnds"}
+            ds.lon.attrs = {"bounds": "lon_bnds"}
         ds["ts"] = (("nlat", "nlon"), np.ones((ds.sizes["nlat"], ds.sizes["nlon"])))
         result = accessor._get_input_grid(ds, "ts", ["X", "Y"], multidim=True)
         xr.testing.assert_identical(result.lat, ds.lat)
