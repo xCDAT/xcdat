@@ -2,6 +2,22 @@
 History
 =======
 
+v0.11.5 (08 October 2026)
+-------------------------
+
+This patch release fixes coordinate discovery regressions affecting xESMF
+regridding, including prioritizing physical latitude and longitude coordinates
+over grid indexes and recognizing coordinates with common names.
+
+Bug Fixes
+~~~~~~~~~
+
+- Fix xESMF coordinate discovery regressions by `Tom Vo`_ in https://github.com/xCDAT/xcdat/pull/851
+
+
+**Full Changelog**: https://github.com/xCDAT/xcdat/compare/v0.11.4...v0.11.5
+
+
 v0.11.4 (01 October 2026)
 -------------------------
 
