@@ -1488,6 +1488,56 @@ class TestAccessor:
 
         assert output_data.ts.shape == (15, 4, 4)
 
+    @pytest.mark.parametrize("scalar_z", [False, True])
+    def test_horizontal_rectilinear_regressions_issue_850(self, scalar_z):
+        ds = xr.Dataset(
+            {"ts": (("lat", "lon"), np.full((4, 4), 2.0))},
+            coords={"lat": [-30.0, -10.0, 10.0, 30.0], "lon": [0.0, 20.0, 40.0, 60.0]},
+        )
+        if scalar_z:
+            ds.lat.attrs = {"axis": "Y", "units": "degrees_north"}
+            ds.lon.attrs = {"axis": "X", "units": "degrees_east"}
+            ds = ds.assign_coords(
+                plev=(
+                    "plev",
+                    [85000.0, 50000.0],
+                    {
+                        "axis": "Z",
+                        "units": "Pa",
+                        "standard_name": "air_pressure",
+                        "positive": "down",
+                    },
+                ),
+                height=(
+                    (),
+                    10.0,
+                    {"axis": "Z", "standard_name": "height", "units": "m"},
+                ),
+            )
+            ds["ta"] = (("plev", "lat", "lon"), np.ones((2, 4, 4)))
+
+        ds = ds.bounds.add_missing_bounds(axes=["X", "Y"])
+        original = ds.copy(deep=True)
+        input_grid = accessor._get_input_grid(ds, "ts", ["X", "Y"], multidim=True)
+        for name in ("lat", "lon", "lat_bnds", "lon_bnds"):
+            xr.testing.assert_identical(input_grid[name], ds[name])
+        if scalar_z:
+            xr.testing.assert_identical(input_grid.plev, ds.plev)
+
+        output_grid = grid.create_uniform_grid(-20.0, 20.0, 20.0, 10.0, 50.0, 20.0)
+        output = ds.regridder.horizontal(
+            "ts", output_grid, tool="xesmf", method="bilinear"
+        )
+        assert output.ts.dims == ("lat", "lon")
+        horizontal_output = output
+        if scalar_z:
+            xr.testing.assert_identical(output.height, ds.height)
+            horizontal_output = output.drop_vars("height")
+        xr.testing.assert_identical(horizontal_output.lat, output_grid.lat)
+        xr.testing.assert_identical(horizontal_output.lon, output_grid.lon)
+        np.testing.assert_allclose(output.ts.values, np.full((3, 3), 2.0))
+        xr.testing.assert_identical(ds, original)
+
     def test_vertical(self):
         z = grid.create_axis("lev", np.linspace(10000, 2000, 2), generate_bounds=False)
 
@@ -1701,6 +1751,19 @@ class TestAccessor:
 
         assert "ts" in output
         assert output.ts.dims == ("lat", "lon")
+
+    @pytest.mark.parametrize("cf_attrs", [False, True])
+    def test_input_grid_curvilinear_with_axis_labelled_indexes(self, cf_attrs):
+        ds = fixtures.generate_curvilinear_dataset()
+        ds.nlat.attrs["axis"] = "Y"
+        ds.nlon.attrs["axis"] = "X"
+        if not cf_attrs:
+            ds.lat.attrs = {"bounds": "lat_bnds"}
+            ds.lon.attrs = {"bounds": "lon_bnds"}
+        ds["ts"] = (("nlat", "nlon"), np.ones((ds.sizes["nlat"], ds.sizes["nlon"])))
+        result = accessor._get_input_grid(ds, "ts", ["X", "Y"], multidim=True)
+        xr.testing.assert_identical(result.lat, ds.lat)
+        xr.testing.assert_identical(result.lon, ds.lon)
 
     def test_horizontal_with_nonstandard_multidim_coord_names_issue_816(self):
         """Regression test for #816: multidim coords with non-standard names.

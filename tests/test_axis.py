@@ -151,7 +151,10 @@ class TestGetDimCoords:
         with pytest.raises(KeyError):
             get_dim_coords(ds, "Y")
 
-    def test_raises_error_if_a_dataarray_has_multiple_dims_for_the_same_axis(self):
+    @pytest.mark.parametrize("multidim", [False, True])
+    def test_raises_error_if_a_dataarray_has_multiple_dims_for_the_same_axis(
+        self, multidim
+    ):
         da = xr.DataArray(
             coords={
                 "ilev": xr.DataArray(
@@ -169,7 +172,7 @@ class TestGetDimCoords:
         )
 
         with pytest.raises(ValueError):
-            get_dim_coords(da, "Z")
+            get_dim_coords(da, "Z", multidim=multidim)
 
     def test_raises_error_if_multidimensional_coords_are_only_present_for_an_axis(self):
         lat = xr.DataArray(
@@ -182,8 +185,10 @@ class TestGetDimCoords:
         with pytest.raises(KeyError):
             get_dim_coords(ds, "Y")
 
+    @pytest.mark.parametrize("multidim", [False, True])
     def test_returns_dataset_dimension_coordinate_vars_using_common_var_names(
         self,
+        multidim,
     ):
         ds = xr.Dataset(
             coords={
@@ -194,22 +199,23 @@ class TestGetDimCoords:
             }
         )
 
-        result = get_dim_coords(ds, "X")
+        result = get_dim_coords(ds, "X", multidim=multidim)
         xr.testing.assert_identical(result, ds["lon"])
 
-        result = get_dim_coords(ds, "Y")
+        result = get_dim_coords(ds, "Y", multidim=multidim)
         xr.testing.assert_identical(result, ds["lat"])
 
-        result = get_dim_coords(ds, "T")
+        result = get_dim_coords(ds, "T", multidim=multidim)
         xr.testing.assert_identical(result, ds["time"])
 
-        result = get_dim_coords(ds, "Z")
+        result = get_dim_coords(ds, "Z", multidim=multidim)
         xr.testing.assert_identical(result, ds["lev"])
 
-    def test_returns_dataset_dimension_coordinate_vars_using_axis_attr(self):
+    @pytest.mark.parametrize("multidim", [False, True])
+    def test_returns_dataset_dimension_coordinate_vars_using_axis_attr(self, multidim):
         # For example, E3SM datasets might have "ilev" and "lev" dimensions
         # with the dim coord var attr "axis" both mapped to "Z".
-        result = get_dim_coords(self.ds_axis, "Z")
+        result = get_dim_coords(self.ds_axis, "Z", multidim=multidim)
         expected = xr.Dataset(
             coords={"ilev": self.ds_axis.ilev, "lev": self.ds_axis.lev}
         )
@@ -272,6 +278,131 @@ class TestGetDimCoords:
         # With multidim=True, it should find lat via cf axes.
         result = get_dim_coords(ds, "Y", multidim=True)
         xr.testing.assert_identical(result, ds["lat"])
+
+    def test_multidim_ignores_scalar_axis_candidate(self):
+        ds = xr.Dataset(
+            coords={
+                "plev": (
+                    "plev",
+                    [85000.0, 50000.0],
+                    {
+                        "axis": "Z",
+                        "standard_name": "air_pressure",
+                        "units": "Pa",
+                        "positive": "down",
+                    },
+                ),
+                "height": ((), 10.0, {"axis": "Z", "standard_name": "height"}),
+            }
+        )
+        xr.testing.assert_identical(get_dim_coords(ds, "Z", multidim=True), ds.plev)
+
+        with pytest.raises(KeyError):
+            get_dim_coords(ds.drop_vars("plev"), "Z", multidim=True)
+
+    def test_multidim_preserves_length_one_dimension_coordinate(self):
+        ds = xr.Dataset(coords={"plev": ("plev", [85000.0], {"axis": "Z"})})
+        xr.testing.assert_identical(get_dim_coords(ds, "Z", multidim=True), ds.plev)
+
+    @pytest.mark.parametrize("axis, name", [("X", "longitude"), ("Y", "latitude")])
+    def test_multidim_finds_common_long_names_without_cf_attrs(self, axis, name):
+        ds = xr.Dataset(coords={name: (name, [0.0, 10.0])})
+        xr.testing.assert_identical(get_dim_coords(ds, axis, multidim=True), ds[name])
+
+    def test_multidim_finds_mixed_cf_metadata(self):
+        ds = xr.Dataset(
+            coords={
+                "nav_lat": (("y", "x"), [[0, 1], [2, 3]], {"axis": "Y"}),
+                "nav_lon": (
+                    ("y", "x"),
+                    [[10, 11], [12, 13]],
+                    {"standard_name": "longitude"},
+                ),
+            }
+        )
+        xr.testing.assert_identical(get_dim_coords(ds, "Y", multidim=True), ds.nav_lat)
+        xr.testing.assert_identical(get_dim_coords(ds, "X", multidim=True), ds.nav_lon)
+
+    @pytest.mark.parametrize("cf_attrs", [False, True])
+    @pytest.mark.parametrize(
+        "lat_name, lon_name", [("lat", "lon"), ("latitude", "longitude")]
+    )
+    def test_multidim_prefers_physical_coords_over_axis_labelled_indexes(
+        self, cf_attrs, lat_name, lon_name
+    ):
+        ds = xr.Dataset(
+            coords={
+                "rlat": (
+                    "rlat",
+                    [0.0, 1.0],
+                    {"axis": "Y", "standard_name": "grid_latitude"},
+                ),
+                "rlon": (
+                    "rlon",
+                    [0.0, 1.0],
+                    {"axis": "X", "standard_name": "grid_longitude"},
+                ),
+                "lat": (
+                    ("rlat", "rlon"),
+                    [[0.0, 0.0], [1.0, 1.0]],
+                    {"standard_name": "latitude"},
+                ),
+                "lon": (
+                    ("rlat", "rlon"),
+                    [[0.0, 1.0], [0.0, 1.0]],
+                    {"standard_name": "longitude"},
+                ),
+            }
+        )
+        if not cf_attrs:
+            ds.lat.attrs = {}
+            ds.lon.attrs = {}
+        ds = ds.rename({"lat": lat_name, "lon": lon_name})
+        for obj in (
+            ds,
+            xr.DataArray(np.ones((2, 2)), dims=("rlat", "rlon"), coords=ds.coords),
+        ):
+            xr.testing.assert_identical(
+                get_dim_coords(obj, "Y", multidim=True), ds[lat_name]
+            )
+            xr.testing.assert_identical(
+                get_dim_coords(obj, "X", multidim=True), ds[lon_name]
+            )
+
+    def test_multidim_prefers_cf_coords_over_common_names(self):
+        ds = xr.Dataset(
+            coords={
+                "nav_lat": (
+                    ("y", "x"),
+                    [[0.0, 0.0], [1.0, 1.0]],
+                    {"standard_name": "latitude"},
+                ),
+                "lat": ("y", [0.0, 1.0]),
+                "x": ("x", [0.0, 1.0]),
+            }
+        )
+        xr.testing.assert_identical(get_dim_coords(ds, "Y", multidim=True), ds.nav_lat)
+
+    def test_multidim_name_preference_preserves_ambiguity(self):
+        da = xr.DataArray(
+            np.ones((2, 2)),
+            dims=("y", "x"),
+            coords={
+                "lat": (("y", "x"), [[0.0, 0.0], [1.0, 1.0]]),
+                "latitude": (("y", "x"), [[2.0, 2.0], [3.0, 3.0]]),
+            },
+        )
+        with pytest.raises(ValueError, match="more than one dimension"):
+            get_dim_coords(da, "Y", multidim=True)
+
+    def test_multidim_name_preference_ignores_scalars(self):
+        ds = xr.Dataset(
+            coords={
+                "lat": 10.0,
+                "y": ("y", [0.0, 1.0], {"axis": "Y"}),
+            }
+        )
+        xr.testing.assert_identical(get_dim_coords(ds, "Y", multidim=True), ds.y)
 
 
 class TestGetCoordsByName:

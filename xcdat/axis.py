@@ -95,6 +95,9 @@ def get_dim_coords(
         The Dataset or DataArray object.
     axis : CFAxisKey
         The CF axis key ("X", "Y", "T", "Z").
+    multidim : bool
+        If True, also consider non-index coordinates, including multidimensional
+        coordinates. Scalar coordinates are excluded. Defaults to False.
 
     Returns
     -------
@@ -112,35 +115,40 @@ def get_dim_coords(
 
     Notes
     -----
-    Multidimensional coordinates are ignored.
+    Coordinates are identified using CF metadata or recognized common names.
+    Multidimensional coordinates are ignored unless ``multidim=True``.
+    In multidimensional mode, CF coordinate mappings take precedence over
+    axis-only mappings and common names (e.g., 2D latitude over a grid index).
+    If no CF coordinate mapping exists for a horizontal axis, recognized
+    latitude/longitude names take precedence over axis-only mappings.
 
     References
     ----------
     .. [1] https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#axes-and-coordinates
     """
     if multidim:
-        # multidimensional coordinates cannot be indexes, use all coords.
-        cf_keys: set[str] = set()
-        for keys in obj.cf.coordinates.values():
-            cf_keys.update(keys)
-        # use cf.axes as fallback
-        if len(cf_keys) == 0:
-            for keys in obj.cf.axes.values():
-                cf_keys.update(keys)
-        index_keys = list(cf_keys)
+        # Multidimensional coordinates cannot be indexes; exclude only scalars.
+        candidate_keys = [name for name, coord in obj.coords.items() if coord.ndim > 0]
+
+        cf_names = obj.cf.coordinates.get(CF_ATTR_MAP[axis]["coordinate"], [])
+        cf_keys = [name for name in candidate_keys if name in cf_names]
+        geographic_keys = (
+            [name for name in candidate_keys if name in VAR_NAME_MAP[axis]]
+            if axis in ("X", "Y")
+            else []
+        )
+
+        # Prefer CF physical coordinates, then geographic names, over grid indexes.
+        candidate_keys = cf_keys or geographic_keys or candidate_keys
     else:
         # Get the object's index keys, with each being a dimension.
         # NOTE: xarray does not include multidimensional coordinates as index keys.
         # Example: ["lat", "lon", "time"]
-        index_keys = list(obj.indexes.keys())
+        candidate_keys = list(obj.indexes.keys())
 
-    # Attempt to map the axis it all of its coordinate variable(s) using the
-    # axis and coordinate names in the object attributes (if they are set).
-    # Example: Returns ["time", "time_centered"] with `axis="T"`
+    # Identify the requested axis using CF metadata and recognized common names.
     coord_keys = _get_all_coord_keys(obj, axis)
-    # Filter the index keys to just the dimension coordinate keys.
-    # Example: Returns ["time"], since "time_centered" is not in `index_keys`
-    dim_coord_keys = list(set(index_keys) & set(coord_keys))
+    dim_coord_keys = list(set(candidate_keys) & set(coord_keys))
 
     if isinstance(obj, xr.DataArray) and len(dim_coord_keys) > 1:
         raise ValueError(
