@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from dask.array.core import Array
+from pandas._libs.tslibs.nattype import NaTType
 from xarray.coding.cftime_offsets import get_date_type
 from xarray.core.common import contains_cftime_datetimes, is_np_datetime_like
 from xarray.core.groupby import DataArrayGroupBy
@@ -1195,16 +1196,14 @@ class TemporalAccessor:
                 {self.dim: slice(self._reference_period[0], self._reference_period[1])}
             )
 
-        if (
-            self._freq == "season"
-            and self._season_config.get("custom_seasons") is not None
-        ):
+        custom_seasons = self._season_config.get("custom_seasons")
+        if self._freq == "season" and custom_seasons is not None:
             # Get a flat list of all of the months included in the custom
             # seasons to determine if the dataset needs to be subsetted
             # on just those months. For example, if we define a custom season
             # "NDJFM", we should subset the dataset for time coordinates
             # belonging to those months.
-            months = self._season_config["custom_seasons"].values()  # type: ignore
+            months = custom_seasons.values()
             months = list(chain.from_iterable(months))
 
             if len(months) != 12:
@@ -1295,12 +1294,13 @@ class TemporalAccessor:
         """
         ds_new = ds.copy()
         custom_seasons = self._season_config["custom_seasons"]
+        assert custom_seasons is not None
 
         # Identify months that span across years in custom seasons by getting
         # the months before "Jan" if "Jan" is not the first month of the season.
         # Note: Only one custom season can span the calendar year.
         span_months: list[int] = []
-        for months in custom_seasons.values():  # type: ignore
+        for months in custom_seasons.values():
             month_ints = [MONTH_STR_TO_INT[month] for month in months]
 
             if 1 in month_ints and month_ints.index(1) != 0:
@@ -1404,7 +1404,7 @@ class TemporalAccessor:
         """
         return time.replace(year=time.year + 1)
 
-    def _shift_datetime_year(self, time) -> pd.Timestamp:
+    def _shift_datetime_year(self, time) -> pd.Timestamp | NaTType:
         """
         Shift the year of a datetime-like object by 1.
 
@@ -1415,7 +1415,7 @@ class TemporalAccessor:
 
         Returns
         -------
-        pd.Timestamp
+        pd.Timestamp | NaTType
             The datetime-like object with the year incremented by 1.
         """
         ts = pd.Timestamp(time)
@@ -1528,13 +1528,17 @@ class TemporalAccessor:
             # broadcasting, which is a behavior we do not desire.
             # https://github.com/pydata/xarray/issues/1234
             # https://github.com/pydata/xarray/issues/8796#issuecomment-1974878267
-            ds_no_time = ds.get([v for v in ds.data_vars if self.dim not in ds[v].dims])  # type: ignore
-            ds_time = ds.get([v for v in ds.data_vars if self.dim in ds[v].dims])  # type: ignore
+            ds_no_time = ds.get([v for v in ds.data_vars if self.dim not in ds[v].dims])
+            ds_time = ds.get([v for v in ds.data_vars if self.dim in ds[v].dims])
+            assert isinstance(ds_no_time, xr.Dataset)
+            assert isinstance(ds_time, xr.Dataset)
 
             coords_to_drop = time_coords.values[indexes_to_drop]
             ds_time = ds_time.where(~time_coords.isin(coords_to_drop), drop=True)
+            assert isinstance(ds_time, xr.Dataset)
 
-            ds_new = xr.merge([ds_time, ds_no_time])
+            ds_new = xr.merge((ds_time, ds_no_time))
+            assert isinstance(ds_new, xr.Dataset)
 
             return ds_new
 
@@ -1976,12 +1980,13 @@ class TemporalAccessor:
             to a custom season.
         """
         custom_seasons = self._season_config["custom_seasons"]
+        assert custom_seasons is not None
 
         # NOTE: This for loop has a time complexity of O(n^2), but it is fine
         # because these data structures are small.
         seasons_map = {}
         for mon_int, mon_str in MONTH_INT_TO_STR.items():
-            for season in custom_seasons:  # type: ignore
+            for season in custom_seasons:
                 if mon_str in season:
                     seasons_map[mon_int] = season
 
@@ -2164,7 +2169,7 @@ class TemporalAccessor:
         }
 
         if self._weighted:
-            attrs_to_set["min_weight"] = self._min_weight  # type: ignore
+            attrs_to_set["min_weight"] = self._min_weight
 
         if self._freq == "season":
             drop_incomplete_seasons = self._season_config["drop_incomplete_seasons"]
@@ -2179,10 +2184,10 @@ class TemporalAccessor:
 
             custom_seasons = self._season_config.get("custom_seasons")
             if custom_seasons is not None:
-                attrs_to_set["custom_seasons"] = list(custom_seasons.keys())  # type: ignore
+                attrs_to_set["custom_seasons"] = list(custom_seasons.keys())
             else:
                 dec_mode = self._season_config.get("dec_mode")
-                attrs_to_set["dec_mode"] = dec_mode  # type: ignore
+                attrs_to_set["dec_mode"] = dec_mode
 
         data_var.attrs.update(attrs_to_set)
 

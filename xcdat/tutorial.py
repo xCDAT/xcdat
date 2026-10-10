@@ -8,6 +8,7 @@ repository.
 import os
 import pathlib
 import sys
+from typing import Any
 
 import xarray as xr
 from xarray.tutorial import _construct_cache_dir, file_formats
@@ -107,8 +108,22 @@ def open_dataset(
     headers = {"User-Agent": f"xcdat {sys.modules['xcdat'].__version__}"}
     downloader = pooch.HTTPDownloader(headers=headers)
 
+    def download(
+        fname: str,
+        action: str | os.PathLike[str] | None,
+        pooch: Any,
+        *,
+        check_only: bool | None = None,
+    ) -> Any:
+        return downloader(
+            url=fname,
+            output_file=action,
+            pooch=pooch,
+            check_only=bool(check_only),
+        )
+
     filepath = pooch.retrieve(
-        url=url, known_hash=None, path=cache_dir, downloader=downloader
+        url=url, known_hash=None, path=cache_dir, downloader=download
     )
     ds = open_dataset(filepath, **kargs, add_bounds=add_bounds)
 

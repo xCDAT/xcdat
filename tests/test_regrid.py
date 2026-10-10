@@ -1,6 +1,7 @@
 import datetime
 import re
 import sys
+from typing import cast
 from unittest import mock
 
 import numpy as np
@@ -387,6 +388,50 @@ class TestXGCMRegridder:
         ):
             regridder.vertical("so", ds)
 
+    def test_multiple_output_z_coords(self):
+        output_grid = self.output_grid.assign_coords(
+            ilev=xr.DataArray(
+                self.output_grid.lev.data,
+                dims="ilev",
+                attrs=self.output_grid.lev.attrs.copy(),
+            )
+        )
+        regridder = xgcm.XGCMRegridder(
+            self.ds, output_grid, method="linear", target_data=None
+        )
+
+        with pytest.raises(
+            RuntimeError,
+            match="Could not determine a single 'Z' coordinate in output dataset",
+        ):
+            regridder.vertical("so", self.ds)
+
+    @mock.patch("xgcm.Grid")
+    def test_non_string_vertical_coordinate_names(self, grid):
+        output_coord_z = xr.DataArray(
+            self.output_grid.lev.data,
+            dims="output_lev",
+            name=0,
+            attrs=self.output_grid.lev.attrs.copy(),
+        )
+        get_dim_coords = xgcm.get_dim_coords
+
+        with mock.patch("xcdat.regridder.xgcm.get_dim_coords") as get_dim_coords_mock:
+            get_dim_coords_mock.side_effect = lambda obj, axis: (
+                output_coord_z if obj is self.output_grid else get_dim_coords(obj, axis)
+            )
+            grid.return_value.transform.return_value = self.ds.so.rename(
+                {"lev": "output_lev"}
+            )
+            regridder = xgcm.XGCMRegridder(
+                self.ds, self.output_grid, method="linear", target_data=None
+            )
+
+            with pytest.raises(
+                RuntimeError, match="Vertical coordinate names must be strings"
+            ):
+                regridder.vertical("so", self.ds)
+
     def test_missing_input_z_bounds(self):
         ds = fixtures.generate_lev_dataset()
 
@@ -758,6 +803,24 @@ class TestRegrid2Regridder:
         output_data = regridder.horizontal("ts", self.fine_2d_ds)
 
         assert np.all(output_data.ts == 1)
+
+    @pytest.mark.parametrize(("axis", "coord"), (("X", "lon"), ("Y", "lat")))
+    def test_multiple_output_dimension_coords(self, axis, coord):
+        output_grid = self.fine_2d_ds.assign_coords(
+            {
+                f"{coord}_alternate": xr.DataArray(
+                    self.fine_2d_ds[coord].data,
+                    dims=f"{coord}_alternate",
+                    attrs=self.fine_2d_ds[coord].attrs.copy(),
+                )
+            }
+        )
+        regridder = regrid2.Regrid2Regridder(self.coarse_2d_ds, output_grid)
+
+        with pytest.raises(
+            ValueError, match=f"Multiple dimension coordinates found for {axis!r} axis"
+        ):
+            regridder.horizontal("ts", self.coarse_2d_ds)
 
     def test_regrid_3d(self):
         regridder = regrid2.Regrid2Regridder(self.coarse_3d_ds, self.fine_2d_ds)
@@ -1242,7 +1305,11 @@ class TestGrid:
                 "Argument 'x' should be an xr.DataArray representing coordinates or a tuple (xr.DataArray, xr.DataArray) representing coordinates and bounds."
             ),
         ):
-            grid.create_grid(x=(self.lon, self.lon_bnds, self.lat))  # type: ignore[arg-type]
+            invalid_x = cast(
+                tuple[xr.DataArray, xr.DataArray | None],
+                (self.lon, self.lon_bnds, self.lat),
+            )
+            grid.create_grid(x=invalid_x)
 
     def test_uniform_grid(self):
         new_grid = grid.create_uniform_grid(-90, 90, 4.0, -180, 180, 5.0)

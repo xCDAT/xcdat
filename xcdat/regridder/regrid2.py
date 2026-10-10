@@ -392,10 +392,13 @@ def _get_output_coords(
 
     # First get the X and Y axes from the output grid.
     for key in ["X", "Y"]:
-        input_coord = xc.get_dim_coords(dv_input, key)  # type: ignore
-        output_coord = xc.get_dim_coords(output_grid, key)  # type: ignore
+        input_coord = xc.get_dim_coords(dv_input, key)
+        output_coord = xc.get_dim_coords(output_grid, key)
 
-        output_coords[str(input_coord.name)] = output_coord  # type: ignore
+        if isinstance(output_coord, xr.Dataset):
+            raise ValueError(f"Multiple dimension coordinates found for {key!r} axis")
+
+        output_coords[str(input_coord.name)] = output_coord
 
     # Get the remaining axes the input data variable (e.g., "time").
     for dim in dv_input.dims:

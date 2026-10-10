@@ -3,6 +3,7 @@
 import collections
 import datetime
 import warnings
+from collections.abc import Callable
 from typing import Literal
 
 import cf_xarray as cfxr  # noqa: F401
@@ -23,6 +24,10 @@ from xcdat.temporal import (
 )
 
 logger = _setup_custom_logger(__name__)
+
+TimeSteps = np.ndarray | pd.DatetimeIndex
+TimeBound = cftime.datetime | pd.Timestamp
+TimeBoundFactory = Callable[..., TimeBound]
 
 
 @xr.register_dataset_accessor("bounds")
@@ -620,7 +625,7 @@ class BoundsAccessor:
             # pandas time/date components which simplifies creating bounds.
             # https://pandas.pydata.org/docs/user_guide/timeseries.html#time-date-components
             timesteps = pd.to_datetime(timesteps)
-            obj_type = pd.Timestamp
+            obj_type: TimeBoundFactory = pd.Timestamp
         elif _get_datetime_like_type(time) == cftime.datetime:
             calendar = time.encoding["calendar"]
             obj_type = get_date_type(calendar)
@@ -666,8 +671,8 @@ class BoundsAccessor:
 
     def _create_yearly_time_bounds(
         self,
-        timesteps: np.ndarray,
-        obj_type: cftime.datetime | pd.Timestamp,
+        timesteps: TimeSteps,
+        obj_type: TimeBoundFactory,
     ) -> list[cftime.datetime | pd.Timestamp]:
         """Creates time bounds for each timestep with the start and end of the year.
 
@@ -703,8 +708,8 @@ class BoundsAccessor:
 
     def _create_monthly_time_bounds(
         self,
-        timesteps: np.ndarray,
-        obj_type: cftime.datetime | pd.Timestamp,
+        timesteps: TimeSteps,
+        obj_type: TimeBoundFactory,
         end_of_month: bool = False,
     ) -> list[cftime.datetime | pd.Timestamp]:
         """Creates time bounds for each timestep with the start and end of the month.
@@ -758,7 +763,7 @@ class BoundsAccessor:
     def _add_months_to_timestep(
         self,
         timestep: cftime.datetime | pd.Timestamp,
-        obj_type: cftime.datetime | pd.Timestamp,
+        obj_type: TimeBoundFactory,
         delta: int,
     ) -> cftime.datetime | pd.Timestamp:
         """Adds delta month(s) to a timestep.
@@ -807,8 +812,8 @@ class BoundsAccessor:
 
     def _create_daily_time_bounds(
         self,
-        timesteps: np.ndarray,
-        obj_type: cftime.datetime | pd.Timestamp,
+        timesteps: TimeSteps,
+        obj_type: TimeBoundFactory,
         freq: Literal[1, 2, 3, 4, 6, 8, 12, 24] = 1,
     ) -> list[cftime.datetime | pd.Timestamp]:
         """Creates time bounds for each timestep with the start and end of the day.
