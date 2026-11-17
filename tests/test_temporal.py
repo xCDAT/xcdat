@@ -947,6 +947,68 @@ class TestGroupAverage:
 
         xr.testing.assert_identical(result, expected)
 
+    @staticmethod
+    def _daily_month_dataset() -> xr.Dataset:
+        # Four complete years of daily data whose value is the calendar month.
+        time = pd.date_range("2001-01-01", "2004-12-31", freq="D")
+        ds = xr.Dataset(
+            {"ts": ("time", time.month.values.astype("float64"))},
+            coords={
+                "time": xr.DataArray(
+                    time, dims="time", attrs={"axis": "T", "standard_name": "time"}
+                )
+            },
+        )
+
+        return ds.bounds.add_missing_bounds(axes=["T"])
+
+    @pytest.mark.parametrize(
+        "season_config",
+        [
+            {"dec_mode": "DJF", "drop_incomplete_seasons": True},
+            {"dec_mode": "DJF", "drop_incomplete_djf": True},
+        ],
+    )
+    def test_seasonal_averages_with_DJF_drop_incomplete_on_daily_data(
+        self, season_config
+    ):
+        ds = self._daily_month_dataset()
+
+        with warnings.catch_warnings():
+            # `drop_incomplete_djf` is deprecated and emits a warning.
+            warnings.simplefilter("ignore", DeprecationWarning)
+            result = ds.temporal.group_average(
+                "ts", "season", season_config=season_config
+            )
+
+        # The incomplete Jan-Feb 2001 and Dec 2004 seasons are dropped entirely,
+        # leaving 3 complete DJF seasons and 4 each of MAM, JJA and SON.
+        assert result.time.size == 15
+        assert result.time.dt.month.values[0] == 4
+        assert result.time.dt.year.values[0] == 2001
+
+        djf = result.ts.where(result.time.dt.month == 1, drop=True)
+        assert djf.size == 3
+        # Each DJF mean mixes Dec (12) with Jan (1) and Feb (2) days.
+        assert np.all(djf.values > 4.0)
+        assert np.all(djf.values < 6.0)
+
+    def test_climatology_with_DJF_drop_incomplete_seasons_on_daily_data(self):
+        ds = self._daily_month_dataset()
+
+        result = ds.temporal.climatology(
+            "ts",
+            "season",
+            season_config={"dec_mode": "DJF", "drop_incomplete_seasons": True},
+        )
+
+        assert result.time.size == 4
+        djf = result.ts.where(result.time.dt.month == 1, drop=True).item()
+        # Only complete DJF seasons (Dec 2001-Feb 2004) enter the climatology.
+        expected = ds.ts.sel(time=slice("2001-12-01", "2004-02-29"))
+        expected = expected.where(expected.time.dt.season == "DJF", drop=True)
+        np.testing.assert_allclose(djf, expected.mean().item(), rtol=1e-2)
+
     def test_weighted_seasonal_averages_with_JFD(self):
         ds = self.ds.copy()
 

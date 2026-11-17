@@ -1461,8 +1461,11 @@ class TemporalAccessor:
 
         for year_month in incomplete_seasons:
             try:
-                coord_pt = ds.loc[dict(time=year_month)][self.dim][0]
-                ds_time = ds_time.where(ds_time[self.dim] != coord_pt, drop=True)
+                # Drop every time coordinate in the incomplete month, not just
+                # the first one, so that sub-monthly (e.g., daily) data are
+                # handled correctly.
+                coord_pts = ds.loc[dict(time=year_month)][self.dim].values
+                ds_time = ds_time.where(~ds_time[self.dim].isin(coord_pts), drop=True)
             except (KeyError, IndexError):
                 continue
 
@@ -1509,7 +1512,11 @@ class TemporalAccessor:
 
         # Get the expected and actual number of months for each season group.
         df["expected_months"] = df["season"].str.split(r"(?<=.)(?=[A-Z])").str.len()
-        df["actual_months"] = df.groupby(["year", "season"])["year"].transform("count")
+        # Count the distinct months (not the time steps) in each season so that
+        # sub-monthly (e.g., daily) data are handled correctly.
+        df["actual_months"] = df.groupby(["year", "season"])["month"].transform(
+            "nunique"
+        )
 
         # Get the incomplete seasons and drop the time coordinates that are in
         # those incomplete seasons.
