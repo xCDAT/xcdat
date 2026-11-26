@@ -56,6 +56,30 @@ What CF attributes are interpreted using ``cf_xarray`` mapping tables?
 .. _Coordinate Names: https://cf-xarray.readthedocs.io/en/latest/coord_axes.html#coordinate-names
 .. _Bounds Variables: https://cf-xarray.readthedocs.io/en/latest/bounds.html
 
+How can I validate a dataset before using xCDAT operations?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use ``xcdat.validate_dataset()`` to inspect CF metadata, axis mappings, and
+coordinate bounds without changing the dataset:
+
+.. code-block:: python
+
+    >>> result = xcdat.validate_dataset(ds)
+    >>> for issue in result.issues:
+    ...     print(issue.severity, issue.variable, issue.problem)
+
+Generic validation treats malformed or contradictory existing metadata as
+errors. Missing metadata that xCDAT may be able to infer or generate is reported
+as a warning. Raise one exception containing all errors when desired:
+
+.. code-block:: python
+
+    >>> result.raise_for_errors()
+
+Each issue identifies the affected variable, likely affected operations, and a
+suggested action. Validation only diagnoses problems; users remain responsible
+for correcting source metadata or explicitly generating missing bounds.
+
 Handling Bounds
 ---------------
 
