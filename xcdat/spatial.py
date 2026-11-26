@@ -14,6 +14,7 @@ from xcdat.axis import (
     get_dim_coords,
     get_dim_keys,
 )
+from xcdat.bounds import _get_bounds_dim
 from xcdat.dataset import _get_data_var
 from xcdat.mask import (
     generate_and_apply_land_sea_mask,
@@ -507,6 +508,14 @@ class SpatialAccessor:
                     f"{list(d_bounds.data_vars)}. Pass a `data_var` key "
                     "to reference a specific data variable's axis bounds."
                 )
+
+            # The weights methods index the lower and upper bounds by position
+            # (e.g., ``domain_bounds[:, 0]``), so move the bounds dimension last
+            # in case it is stored first (e.g., ``(bnds, lat)``). Bounds with
+            # extra dimensions (e.g., ``(time, lat, bnds)``) raise a ValueError.
+            coords = get_dim_coords(d_bounds, key)
+            bounds_dim = _get_bounds_dim(coords, d_bounds)  # type: ignore[arg-type]
+            d_bounds = d_bounds.transpose(..., bounds_dim)
 
             r_bounds = axis_bounds[key]["region"]
 
