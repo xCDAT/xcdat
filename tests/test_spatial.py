@@ -301,6 +301,24 @@ class TestAverage:
 
         assert result.identical(expected)
 
+    def test_spatial_average_for_bounds_with_bounds_dim_first(self):
+        ds = self.ds.copy(deep=True)
+        ds["lat_bnds"] = ds.lat_bnds.transpose("bnds", "lat")
+        ds["lon_bnds"] = ds.lon_bnds.transpose("bnds", "lon")
+
+        result = ds.spatial.average(
+            "ts", axis=["X", "Y"], lat_bounds=(-5.0, 5), lon_bounds=(-170, -120.1)
+        )
+
+        expected = ds.copy(deep=True)
+        expected["ts"] = xr.DataArray(
+            data=np.array([2.25, 1.0, 1.0]),
+            coords={"time": expected.time},
+            dims="time",
+        )
+
+        assert result.identical(expected)
+
 
 class TestAveragerMinWeight:
     @pytest.fixture(autouse=True)
@@ -547,6 +565,36 @@ class TestGetWeights:
         )
 
         xr.testing.assert_allclose(result, expected)
+
+    def test_dataset_weights_for_bounds_with_bounds_dim_first(self):
+        ds = self.ds.copy(deep=True)
+        ds["lat_bnds"] = ds.lat_bnds.transpose("bnds", "lat")
+        ds["lon_bnds"] = ds.lon_bnds.transpose("bnds", "lon")
+
+        result = ds.spatial.get_weights(
+            axis=["Y", "X"], lat_bounds=(-5, 5), lon_bounds=(-170, -120)
+        )
+        expected = xr.DataArray(
+            data=np.array(
+                [
+                    [0.0, 0.0, 0.0, 0.0],
+                    [0.0, 0.0, 4.35778714, 0.0],
+                    [0.0, 0.0, 4.35778714, 0.0],
+                    [0.0, 0.0, 0.0, 0.0],
+                ]
+            ),
+            coords={"lat": self.ds.lat, "lon": self.ds.lon},
+            dims=["lat", "lon"],
+        )
+
+        xr.testing.assert_allclose(result, expected)
+
+    def test_raises_error_if_bounds_have_extra_dims(self):
+        ds = self.ds.copy(deep=True)
+        ds["lat_bnds"] = ds.lat_bnds.expand_dims(time=ds.time)
+
+        with pytest.raises(ValueError, match="exactly one more dimension"):
+            ds.spatial.get_weights(axis=["Y", "X"])
 
     def test_dataset_weights_for_region_in_lat_domain(self):
         result = self.ds.spatial.get_weights(
