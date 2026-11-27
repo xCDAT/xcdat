@@ -1,4 +1,3 @@
-from collections.abc import Hashable
 from typing import Any, Literal, get_args
 
 import xarray as xr
@@ -175,6 +174,12 @@ class XGCMRegridder(BaseRegridder):
                 "Could not determine 'Z' coordinate in output dataset"
             ) from e
 
+        if isinstance(output_coord_z, xr.Dataset):
+            raise RuntimeError(
+                "Could not determine a single 'Z' coordinate in output dataset"
+            )
+
+        grid_coords: dict[str, dict[str, str]]
         if self._grid_positions is None:
             grid_coords = self._get_grid_positions()
         else:
@@ -208,10 +213,19 @@ class XGCMRegridder(BaseRegridder):
         # transposed to match the input dimension order
         if output_da.dims != ds[data_var].dims:
             input_coord_z = get_dim_coords(ds[data_var], "Z")
+            input_coord_z_name = input_coord_z.name
+            output_coord_z_name = output_coord_z.name
+
+            if not isinstance(input_coord_z_name, str) or not isinstance(
+                output_coord_z_name, str
+            ):
+                raise RuntimeError("Vertical coordinate names must be strings")
 
             output_order = [
-                x.replace(input_coord_z.name, output_coord_z.name)  # type: ignore[attr-defined]
-                for x in ds[data_var].dims
+                dim.replace(input_coord_z_name, output_coord_z_name)
+                if isinstance(dim, str)
+                else dim
+                for dim in ds[data_var].dims
             ]
 
             output_da = output_da.transpose(*output_order)
@@ -284,14 +298,13 @@ class XGCMRegridder(BaseRegridder):
 
         return ds.decoded_vertical_coord
 
-    def _get_target_data(self, ds) -> xr.DataArray | None:
+    def _get_target_data(self, ds: xr.Dataset) -> xr.DataArray | None:
         """Retrieve the target data from the given xarray Dataset.
 
         Attempts to access the target data variable from the provided dataset
         using the attribute `self._target_data`. If `self._target_data` is a
-        string and not found in the dataset, raises a RuntimeError. If
-        `self._target_data` is not a string or is None, returns None. If a
-        ValueError occurs, returns `self._target_data` as is.
+        string and not found in the dataset, raises a RuntimeError. If it is a
+        DataArray, returns it as is. If it is None, returns None.
 
         Parameters
         ----------
@@ -308,21 +321,20 @@ class XGCMRegridder(BaseRegridder):
         RuntimeError
             If `self._target_data` is a string and not found in the dataset.
         """
+        if self._target_data is None:
+            return None
+
+        if isinstance(self._target_data, xr.DataArray):
+            return self._target_data
+
         try:
-            target_data = ds[self._target_data]
-        except ValueError:
-            target_data = self._target_data
+            return ds[self._target_data]
         except KeyError as e:
-            if self._target_data is not None and isinstance(self._target_data, str):
-                raise RuntimeError(
-                    f"Could not find target variable {self._target_data!r} in dataset"
-                ) from e
+            raise RuntimeError(
+                f"Could not find target variable {self._target_data!r} in dataset"
+            ) from e
 
-            target_data = None
-
-        return target_data
-
-    def _get_grid_positions(self) -> dict[str, Any | Hashable]:
+    def _get_grid_positions(self) -> dict[str, dict[str, str]]:
         """
         Determine the grid point positions for the "Z" axis in the input grid.
 
@@ -334,7 +346,7 @@ class XGCMRegridder(BaseRegridder):
 
         Returns
         -------
-        dict[str, Any | Hashable]
+        dict[str, dict[str, str]]
             Mapping of the "Z" axis to its grid position,
             e.g., {"Z": {"center": <coord_name>}}.
 
@@ -357,19 +369,23 @@ class XGCMRegridder(BaseRegridder):
             raise RuntimeError("Could not determine `Z` coordinate in dataset.") from e
 
         if isinstance(coord_z, xr.Dataset):
-            coords = ", ".join(sorted(list(coord_z.coords.keys())))  # type: ignore[arg-type]
+            coord_names = list(coord_z.coords.keys())
+            coords = ", ".join(sorted(str(coord) for coord in coord_names))
 
             raise RuntimeError(
                 "Could not determine the `Z` coordinate in the input grid. "
                 f"Found multiple axes ({coords}), ensure there is only a "
                 "single `Z` axis in the input grid.",
-                list(coord_z.coords.keys()),
+                coord_names,
             )
 
         try:
             bounds_z = self._input_grid.bounds.get_bounds("Z")
         except KeyError as e:
             raise RuntimeError("Could not determine `Z` bounds in dataset.") from e
+
+        if not isinstance(coord_z.name, str):
+            raise RuntimeError("Vertical coordinate name must be a string")
 
         # handle simple point positions based on point and bounds
         if (coord_z[0] > bounds_z[0][0] and coord_z[0] < bounds_z[0][1]) or (

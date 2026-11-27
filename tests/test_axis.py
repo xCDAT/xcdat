@@ -135,7 +135,7 @@ class TestGetDimCoords:
 
         for dim in dims:
             with pytest.raises(KeyError):
-                get_dim_coords(ds, dim)  # type: ignore
+                get_dim_coords(ds, dim)
 
     def test_raises_error_if_axis_or_standard_name_is_not_set_or_dim_name_is_not_valid(
         self,

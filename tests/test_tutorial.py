@@ -55,6 +55,32 @@ class TestOpenDataset:
         )
         assert not os.path.exists(mock_retrieve.return_value)
 
+    @patch("pooch.retrieve")
+    @patch("pooch.HTTPDownloader")
+    @patch("xcdat.dataset.open_dataset")
+    def test_retrieve_downloader_adapter(
+        self, mock_open_dataset, mock_http_downloader, mock_retrieve
+    ):
+        mock_open_dataset.return_value = xr.Dataset()
+        mock_downloader = mock_http_downloader.return_value
+        mock_downloader.return_value = str(self.cache_dir / "test.nc")
+
+        def retrieve(*, downloader, **_):
+            return downloader(
+                "https://example.com/test.nc", None, None, check_only=None
+            )
+
+        mock_retrieve.side_effect = retrieve
+
+        open_dataset("tas_amon_access", cache_dir=self.cache_dir)
+
+        mock_downloader.assert_called_once_with(
+            url="https://example.com/test.nc",
+            output_file=None,
+            pooch=None,
+            check_only=False,
+        )
+
     def test_raises_error_with_invalid_name(self):
         with pytest.raises(ValueError):
             open_dataset("invalid_name", cache_dir=self.cache_dir)

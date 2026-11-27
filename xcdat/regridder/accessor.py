@@ -333,8 +333,11 @@ def _get_axis_coord_and_bounds(
             )
     except (ValueError, KeyError):
         try:
-            coord_var = get_dim_coords(obj, axis, multidim=multidim)  # type: ignore
-            _validate_grid_has_single_axis_dim(axis, coord_var)
+            coord_var = get_dim_coords(obj, axis, multidim=multidim)
+            if isinstance(coord_var, xr.Dataset):
+                _validate_grid_has_single_axis_dim(axis, coord_var)
+
+            assert isinstance(coord_var, xr.DataArray)
         except KeyError:
             coord_var = None
 
@@ -343,7 +346,7 @@ def _get_axis_coord_and_bounds(
 
     bounds_var = None
     bounds_key = coord_var.attrs.get("bounds")
-    if bounds_key:
+    if isinstance(bounds_key, str) and bounds_key:
         try:
             bounds_var = obj.get(bounds_key)
         except AttributeError:

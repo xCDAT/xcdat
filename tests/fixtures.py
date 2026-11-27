@@ -1,5 +1,6 @@
 """This module stores reusable test fixtures."""
 
+from collections.abc import Hashable
 from typing import Literal
 
 import cftime
@@ -457,10 +458,10 @@ def generate_multiple_variable_dataset(
     for idx in range(copies):
         ds_copy = ds_base.copy(deep=True)
 
-        var_names = list(["ts"])
+        var_names: list[Hashable] = ["ts"]
 
         if separate_dims:
-            var_names += list(ds_base.sizes.keys())  # type: ignore[arg-type]
+            var_names += list(ds_base.sizes.keys())
 
         ds_copy = ds_copy.rename({x: f"{x}{idx + 1}" for x in var_names})
 
